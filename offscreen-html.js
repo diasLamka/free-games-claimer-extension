@@ -24,6 +24,8 @@ const MAX_TEXT = 300;
  * coup, ce qui est tout l'interet de mesurer. */
 const MAX_SAMPLES = 8;
 const MAX_HTML = 400;
+/** Un extrait de valeur JSON : assez pour lire un schema, pas pour le recopier. */
+const MAX_DUMP = 1800;
 
 function coupe(texte) {
   const t = String(texte || '').replace(/\s+/g, ' ').trim();
@@ -44,7 +46,7 @@ function valeur(el, attr, base) {
 }
 
 /** Ce qu'un element a d'identifiant, sans recopier la page entiere. */
-function echantillon(el, needles) {
+function echantillon(el, needles, dumpKeyMatch) {
   const attrs = {};
   for (const nom of ['id', 'class', 'href', 'type', 'data-a-target', 'aria-label']) {
     const v = el.getAttribute && el.getAttribute(nom);
@@ -79,10 +81,28 @@ function echantillon(el, needles) {
    * Mesurer un schema plutot que le supposer : si `gogcom-store-state` porte
    * une cle `giveaway`, on le saura sans avoir a deviner son nom. */
   let topKeys = null;
+  let dump = null;
   if ((attrs.type || '').includes('json')) {
     try {
       const parsed = JSON.parse(contenu);
-      if (parsed && typeof parsed === 'object') topKeys = Object.keys(parsed).slice(0, 60);
+      if (parsed && typeof parsed === 'object') {
+        const cles = Object.keys(parsed);
+        topKeys = cles.slice(0, 60);
+
+        /* Le contenu d'une cle, pas seulement son nom.
+         *
+         * Connaitre la cle « sections.gog/v1/pages/2f?... » dit qu'une API de
+         * sections existe ; voir sa valeur dit quel champ porte le prix, le
+         * titre et la gratuite. La premiere information se raconte, la seconde
+         * se code. */
+        if (dumpKeyMatch) {
+          const trouvee = cles.find((k) => k.includes(dumpKeyMatch));
+          if (trouvee) {
+            const valeur = JSON.stringify(parsed[trouvee]);
+            dump = { key: trouvee, excerpt: valeur.slice(0, MAX_DUMP), chars: valeur.length };
+          }
+        }
+      }
     } catch { topKeys = ['<json illisible>']; }
   }
 
@@ -93,6 +113,7 @@ function echantillon(el, needles) {
     hits,
     around,
     topKeys,
+    dump,
     text: coupe(contenu).slice(0, 120),
     html: html.length > MAX_HTML ? `${html.slice(0, MAX_HTML)}\u2026` : html,
   };
@@ -138,7 +159,7 @@ async function lire({ url, queries, patterns, samples, timeoutMs }) {
       try {
         structure[sp.name] = Array.from(doc.querySelectorAll(sp.selector))
           .slice(0, Math.min(sp.limit || MAX_SAMPLES, MAX_SAMPLES))
-          .map((el) => echantillon(el, sp.needles));
+          .map((el) => echantillon(el, sp.needles, sp.dumpKeyMatch));
       } catch {
         structure[sp.name] = [];
       }

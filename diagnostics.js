@@ -345,6 +345,15 @@ const ANCRES_GOG = [
 const CANDIDATS = [
   'https://www.gog.com/giveaway',
   'https://www.gog.com/games/ajax/filtered?mediaType=game&price=free&sort=popularity',
+  /* Le TEMOIN, et c'est le plus important des trois.
+   *
+   * La requete precedente rend 200 avec une liste VIDE. Deux lectures
+   * opposees : soit aucun jeu gratuit en ce moment, soit l'endpoint est
+   * desaffecte et rendra une liste vide pour toujours. La meme requete sans le
+   * filtre tranche -- et la seconde lecture serait un piege parfait, puisqu'une
+   * source batie dessus repondrait « rien » eternellement, sans jamais
+   * echouer. */
+  'https://www.gog.com/games/ajax/filtered?mediaType=game&sort=popularity',
   'https://www.gog.com/en/games?price=free',
 ];
 
@@ -367,6 +376,18 @@ async function sonderCandidat(url) {
       try {
         const j = JSON.parse(corps);
         out.topKeys = j && typeof j === 'object' ? Object.keys(j).slice(0, 30) : null;
+
+        /* Le premier element de la premiere liste trouvee.
+         *
+         * Un jeu de cles dit qu'il y a des produits ; un produit dit quel champ
+         * porte le prix et la gratuite. On ne peut pas ecrire une source avec
+         * le premier, on peut avec le second. */
+        for (const v of Object.values(j || {})) {
+          if (Array.isArray(v) && v.length) {
+            out.firstItem = JSON.stringify(v[0]).slice(0, 1200);
+            break;
+          }
+        }
       } catch { out.topKeys = ['<json illisible>']; }
     }
     // Le mot compte autant que le code : une page 200 qui ne parle pas de
@@ -427,6 +448,10 @@ async function lancerSonde() {
           limit: 6,
           // La question a mille euros : lequel de ces blocs porte le giveaway ?
           needles: ['giveaway', 'jeu offert', 'claim it free'],
+          // La page porte DEJA les reponses de son API de sections, sous des
+          // cles qui sont les requetes elles-memes. Lire l'une d'elles donne le
+          // schema d'un produit sans ouvrir un seul hote de plus.
+          dumpKeyMatch: 'sections.gog/v1/pages',
         },
       ],
     });
