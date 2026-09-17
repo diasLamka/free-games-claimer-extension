@@ -7,6 +7,8 @@
  * est ouvert -- a condition de rester au premier plan, sinon Chrome la bride
  * exactement comme la cible qu'elle mesure.
  */
+import { queryHtml } from './watch/offscreen.js';
+
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
 // robots.txt plutot qu'une page de magasin complete : le throttling ne depend
@@ -17,7 +19,7 @@ const SEUIL_INTENSIF_MS = 5 * 60 * 1000;
 const INTERVALLE_MS = 1000;
 
 const $ = (id) => document.getElementById(id);
-const resultats = { throttle: null, offscreen: null };
+const resultats = { throttle: null, offscreen: null, sonde: null };
 
 $('version').textContent = 'v' + api.runtime.getManifest().version;
 
@@ -313,6 +315,100 @@ async function lancerOffscreen() {
   }
 }
 
+/* ------------------------------------------- V6-V7 : ce qu'il reste a mesurer */
+
+/* Les ancres GOG, dans l'ordre de ce qu'on en sait.
+ *
+ * `.giveaway__title` n'est pas une supposition : c'est le selecteur que le
+ * moteur utilise depuis des versions sur la vraie page (src/core/17-gog-
+ * giveaway.js). Les autres sont des candidats, et la mesure dira lesquels
+ * repondent -- c'est tout l'interet de mesurer plutot que de deviner. */
+const ANCRES_GOG = [
+  { name: 'titreGiveaway', selector: '.giveaway__title' },
+  { name: 'giveawayId', selector: '#giveaway' },
+  { name: 'giveawayClasse', selector: '[class*="giveaway"]' },
+  { name: 'lienProduit', selector: 'a[href*="/game/"]', attr: 'href' },
+];
+
+async function lancerSonde() {
+  $('sonde-run').disabled = true;
+  $('sonde-out').classList.remove('hidden');
+  $('sonde-state').textContent = 'lecture...';
+  verdict($('s-verdict'), '', 'Mesure en cours', '');
+
+  const out = {};
+
+  try {
+    /* Prime Gaming. Lecture PUBLIQUE et sans cookies : on cherche a savoir si
+       le domaine sert encore quelque chose, pas a agir sur un compte. */
+    out.prime = await queryHtml(api, {
+      url: 'https://gaming.amazon.com/home',
+      queries: [
+        { name: 'cartesOffre', selector: '[data-a-target*="offer"], [class*="offer"]' },
+        { name: 'liensLuna', selector: 'a[href*="luna.amazon"]', attr: 'href' },
+      ],
+      patterns: [
+        { name: 'motPrime', source: 'prime gaming' },
+        { name: 'motReclamer', source: 'claim|r[e\u00e9]clamer|obtenir' },
+      ],
+    });
+
+    out.gog = await queryHtml(api, {
+      url: 'https://www.gog.com/',
+      queries: ANCRES_GOG,
+      patterns: [{ name: 'motGiveaway', source: 'giveaway|jeu offert|claim it free' }],
+    });
+
+    resultats.sonde = out;
+
+    const prime = out.prime || {};
+    $('s-prime').textContent = prime.ok
+      ? `HTTP ${prime.status} -- ${prime.bytes} octets, titre "${prime.title}" en ${prime.ms} ms`
+      : `echec : ${prime.error}`;
+    $('s-prime-offres').textContent = prime.ok
+      ? `${(prime.results.cartesOffre || []).length} carte(s), ${(prime.results.liensLuna || []).length} lien(s) Luna`
+        + `, mention « Prime Gaming » ${prime.matches.motPrime ? 'presente' : 'absente'}`
+      : '--';
+
+    const gog = out.gog || {};
+    $('s-gog').textContent = gog.ok
+      ? `HTTP ${gog.status} -- ${gog.bytes} octets, titre "${gog.title}" en ${gog.ms} ms`
+      : `echec : ${gog.error}`;
+    $('s-gog-ancres').textContent = gog.ok
+      ? ANCRES_GOG.map((a) => `${a.selector} : ${(gog.results[a.name] || []).length}`).join(' | ')
+      : '--';
+    $('s-gog-texte').textContent = gog.ok ? (gog.matches.motGiveaway ? 'oui' : 'non') : '--';
+
+    /* Le verdict ne tranche que ce que la mesure montre. Une page vide n'est
+       pas la preuve qu'un domaine est mort : elle peut etre rendue cote
+       client, comme l'etait store.epicgames.com en V0-3. */
+    const primeVivant = prime.ok && prime.status === 200 && prime.bytes > 2000;
+    const gogAncre = gog.ok && ANCRES_GOG.some((a) => (gog.results[a.name] || []).length > 0);
+
+    if (primeVivant && gogAncre) {
+      verdict($('s-verdict'), 'ok', 'Les deux entrees sont mesurables',
+        'gaming.amazon.com repond et la page GOG expose des ancres exploitables. '
+        + 'Coller le rapport dans ROADMAP.md : les deux entrees peuvent passer a l\'ecriture.');
+    } else if (primeVivant || gogAncre) {
+      verdict($('s-verdict'), 'warn', 'Une seule des deux',
+        (primeVivant ? 'gaming.amazon.com repond' : 'GOG expose des ancres')
+        + ', l\'autre non. Le detail ci-dessus dit laquelle, et le rapport le garde.');
+    } else {
+      verdict($('s-verdict'), 'ko', 'Rien d\'exploitable dans le HTML brut',
+        'Les deux pages sont probablement rendues cote client, comme l\'etait '
+        + 'store.epicgames.com en V0-3. Ce n\'est pas une fin de non-recevoir : cela veut dire '
+        + 'qu\'il faut viser une API JSON plutot que le HTML, et la mesure suivante est de la trouver.');
+    }
+    $('sonde-state').textContent = 'termine';
+  } catch (e) {
+    verdict($('s-verdict'), 'ko', 'Mesure impossible', String((e && e.message) || e));
+    $('sonde-state').textContent = 'echec';
+  } finally {
+    $('sonde-run').disabled = false;
+    majRapport();
+  }
+}
+
 /* -------------------------------------------------------------- le rapport */
 
 function majRapport() {
@@ -343,13 +439,23 @@ function majRapport() {
     l.push('');
   }
 
+  if (resultats.sonde) {
+    const r = resultats.sonde;
+    l.push('## V6-V7 -- ce qu\'il reste a mesurer');
+    l.push(`gaming.amazon.com          : ${JSON.stringify(r.prime)}`);
+    l.push(`gog.com                    : ${JSON.stringify(r.gog)}`);
+    l.push('');
+  }
+
   $('report').value = l.join('\n');
-  $('report-state').textContent = (resultats.throttle ? 1 : 0) + (resultats.offscreen ? 1 : 0) + ' / 2 mesures';
+  const faites = (resultats.throttle ? 1 : 0) + (resultats.offscreen ? 1 : 0) + (resultats.sonde ? 1 : 0);
+  $('report-state').textContent = `${faites} / 3 mesures`;
 }
 
 /* --------------------------------------------------------------- cablage */
 
 $('throttle-run').addEventListener('click', lancerThrottling);
+$('sonde-run').addEventListener('click', lancerSonde);
 $('throttle-stop').addEventListener('click', () => { if (mesureEnCours) mesureEnCours.nettoyer(); });
 $('offscreen-run').addEventListener('click', lancerOffscreen);
 $('report-copy').addEventListener('click', async () => {

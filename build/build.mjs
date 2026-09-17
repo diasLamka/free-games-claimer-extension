@@ -190,7 +190,8 @@ for (const fichier of ['manifest.json', 'manifest.firefox.json']) {
  * designe un module de la plateforme, pas un fichier du paquet.
  */
 const AVEC_IMPORTS = [
-  'background.js', 'popup.js', 'journal.js', 'diagnostics.js', 'probe-offscreen.js', 'i18n.js',
+  'background.js', 'popup.js', 'journal.js', 'diagnostics.js',
+  'probe-offscreen.js', 'offscreen-html.js', 'i18n.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'sources')).map((f) => `watch/sources/${f}`),
@@ -208,7 +209,7 @@ for (const fichier of AVEC_IMPORTS) {
 }
 
 /** Sources locales citees par une page HTML de l'extension. */
-for (const page of ['popup.html', 'journal.html', 'diagnostics.html', 'probe-offscreen.html']) {
+for (const page of ['popup.html', 'journal.html', 'diagnostics.html', 'probe-offscreen.html', 'offscreen-html.html']) {
   if (!existe(page)) { problems.push(`page attendue absente : ${page}`); continue; }
   const src = readFileSync(join(ROOT, page), 'utf8');
   const re = /(?:src|href)="([^"#:]+)"/g;
@@ -235,7 +236,8 @@ for (const page of ['popup.html', 'journal.html', 'diagnostics.html', 'probe-off
  */
 const { undefinedRefs } = await import('./undefined-refs.mjs');
 
-for (const fichier of ['popup.js', 'journal.js', 'background.js', 'diagnostics.js', 'i18n.js', 'probe-offscreen.js']) {
+for (const fichier of ['popup.js', 'journal.js', 'background.js', 'diagnostics.js', 'i18n.js',
+  'probe-offscreen.js', 'offscreen-html.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }

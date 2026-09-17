@@ -234,12 +234,39 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
   const demarrage = [];
   const installation = [];
 
+  /* Documents offscreen.
+   *
+   * La propriete qui compte est le refus du SECOND : la plateforme n'en
+   * autorise qu'un pour toute l'extension, et `createDocument` rejette avec un
+   * message parlant. Un faux qui accepterait le second laisserait passer un
+   * code qui echoue en production des le deuxieme cycle. */
+  const offscreenEtat = { ouvert: false, creations: 0, fermetures: 0, dernier: null };
+  const messagesRecus = [];
+  let repondeur = null;
+
   const chrome = {
     storage: {
       local,
       session,
       sync,
       onChanged: { addListener: (fn) => auditeursChangement.push(fn) },
+    },
+
+    offscreen: {
+      async createDocument(options) {
+        if (offscreenEtat.ouvert) {
+          throw new Error('Only a single offscreen document may be created.');
+        }
+        offscreenEtat.ouvert = true;
+        offscreenEtat.creations++;
+        offscreenEtat.dernier = options;
+      },
+      async closeDocument() {
+        if (!offscreenEtat.ouvert) throw new Error('No offscreen document to close.');
+        offscreenEtat.ouvert = false;
+        offscreenEtat.fermetures++;
+      },
+      async hasDocument() { return offscreenEtat.ouvert; },
     },
 
     notifications: {
@@ -273,6 +300,16 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
       onMessage: { addListener: () => {} },
       getManifest: () => ({ version: '2.8.0' }),
       lastError: undefined,
+      /* Le message part vers le document offscreen. Sans document ouvert,
+         Chrome rejette avec « Could not establish connection » : c'est ce cas
+         qu'un appelant doit savoir traverser sans tomber. */
+      async sendMessage(msg) {
+        messagesRecus.push(msg);
+        if (!offscreenEtat.ouvert) {
+          throw new Error('Could not establish connection. Receiving end does not exist.');
+        }
+        return repondeur ? repondeur(msg) : undefined;
+      },
     },
 
     tabs: {
@@ -296,6 +333,11 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
     async demarrerProfil() { for (const fn of demarrage) await fn(); },
     /** Rejoue runtime.onInstalled. */
     async installer(reasonText = 'install') { for (const fn of installation) await fn({ reason: reasonText }); },
+    offscreen: offscreenEtat,
+    messagesRecus,
+    /** Ce que le document offscreen repondra au prochain sendMessage. */
+    repondreOffscreen(fn) { repondeur = fn; },
+
     /** Ce que le stockage contient reellement, pour inspection. */
     payload(zone = 'local') {
       const m = zone === 'local' ? local._donnees : zone === 'sync' ? sync._donnees : session._donnees;
