@@ -213,7 +213,10 @@ export const TABLES = Object.freeze({
     "journalEmpty": "Nothing logged yet. The watcher writes here on every wake-up.",
     "journalNoMatch": "No entry matches this filter.",
     "journalNote": "Attach the downloaded file to a bug report: it reads in the order things happened.",
-    "openJournal": "Watch log"
+    "openJournal": "Watch log",
+    "canaryStreak": "$1 failures in a row",
+    "canaryAck": "Seen",
+    "canaryHint": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find."
   },
   "fr": {
     "appName": "Free Games Auto-Claimer",
@@ -426,6 +429,9 @@ export const TABLES = Object.freeze({
     "journalEmpty": "Rien pour l'instant. La veille écrit ici à chaque réveil.",
     "journalNoMatch": "Aucune entrée ne correspond à ce filtre.",
     "journalNote": "Joignez le fichier téléchargé à un rapport de bug : il se lit dans le sens où les choses se sont produites.",
-    "openJournal": "Journal de la veille"
+    "openJournal": "Journal de la veille",
+    "canaryStreak": "$1 échecs d'affilée",
+    "canaryAck": "J'ai vu",
+    "canaryHint": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé."
   }
 });

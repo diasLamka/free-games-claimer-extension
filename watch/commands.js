@@ -11,6 +11,7 @@
  */
 import { readKeys, write, writeCycle, normaliseSettings, KEYS } from './storage.js';
 import { claimWhatCanBe, KEY_STOP } from './cycle.js';
+import { KEY_CANARY } from './canary.js';
 import { STATES, isExpired } from './offer.js';
 import { MAX_PER_HOUR } from './claim.js';
 
@@ -34,10 +35,10 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     return { claimed: 0, left: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY]);
   const settings = normaliseSettings(raw[KEYS.SETTINGS]);
 
-  const { catalog, cadence, claims } = await claimWhatCanBe({
+  const { catalog, cadence, claims, canary } = await claimWhatCanBe({
     chrome,
     now,
     catalog: raw[KEYS.OFFERS] || {},
@@ -48,11 +49,15 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
        l'utilisateur a explicitement decoche. */
     watchedStores: settings.watchedStores,
     cadence: raw[KEYS.CADENCE] || [],
+    /* « Tout recuperer » nourrit le canari comme un cycle ordinaire : un
+       magasin casse l'est aussi quand c'est l'utilisateur qui clique, et
+       c'est meme le moment ou il regarde. */
+    canary: raw[KEY_CANARY] || {},
     maxReclamations: MAX_PER_HOUR,
     record,
   });
 
-  await writeCycle(chrome, { catalog, cadence });
+  await writeCycle(chrome, { catalog, cadence, canary });
 
   const claimed = claims.filter((c) => c.verdict === 'claimed').length;
   return { claimed, left: claims.length - claimed, claims };

@@ -631,5 +631,14 @@
   },
   "openJournal": {
     "message": "Journal de la veille"
+  },
+  "canaryStreak": {
+    "message": "$1 échecs d'affilée"
+  },
+  "canaryAck": {
+    "message": "J'ai vu"
+  },
+  "canaryHint": {
+    "message": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé."
   }
 }

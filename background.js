@@ -39,6 +39,7 @@ import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.
 import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
+import { KEY_CANARY, acknowledge } from './watch/canary.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -466,6 +467,19 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'purge impossible', e);
         sendResponse({ dropped: 0 });
       });
+    return true;
+  }
+
+  /* Acquitter une alerte du canari. Meme regle que le catalogue : un seul
+     ecrivain. Le compteur repart a zero, le dernier succes connu reste -- une
+     alerte qu'on ne peut pas acquitter est une alerte qui finit ignoree. */
+  if (msg.type === 'fgc-canary-ack') {
+    (async () => {
+      const raw = await api.storage.local.get(KEY_CANARY);
+      await write(api, { [KEY_CANARY]: acknowledge(raw[KEY_CANARY] || {}, msg.store) });
+      record('info', `canari acquitte : ${msg.store}`);
+      sendResponse({ acknowledged: true });
+    })().catch((e) => sendResponse({ acknowledged: false, error: String((e && e.message) || e) }));
     return true;
   }
 

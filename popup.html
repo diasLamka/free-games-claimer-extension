@@ -175,6 +175,29 @@
   }
   .stopped button { margin-left: auto; font-weight: 400; }
 
+  /* ------------------------------------------------------------- canari */
+  /* Le seul bloc du popup qui parle d'une panne du MAGASIN, par opposition a
+     une panne de l'extension : ambre, comme les alertes, jamais rouge -- le
+     rouge est reserve a l'arret d'urgence. */
+  .canary {
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: color-mix(in srgb, var(--amber) 10%, transparent);
+  }
+  .canary-head { display: flex; align-items: baseline; gap: 7px; }
+  .canary-store { font-weight: 600; }
+  .canary-count { color: var(--amber); font-size: 11px; }
+  .canary-head button.link { margin-left: auto; }
+  .canary-why {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin: 5px 0 4px;
+    word-break: break-word;
+    color: var(--paper);
+  }
+
   /* --------------------------------------------------- status + progress */
   .status {
     padding: 8px var(--pad);
@@ -864,6 +887,7 @@
 
     <section>
       <h2 data-i18n="stores"></h2>
+      <div id="canary"></div>
       <div id="stores"></div>
       <details id="more-stores">
         <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>

@@ -631,5 +631,14 @@
   },
   "openJournal": {
     "message": "Watch log"
+  },
+  "canaryStreak": {
+    "message": "$1 failures in a row"
+  },
+  "canaryAck": {
+    "message": "Seen"
+  },
+  "canaryHint": {
+    "message": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find."
   }
 }

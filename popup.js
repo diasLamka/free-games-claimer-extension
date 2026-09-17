@@ -25,6 +25,7 @@ import { CLAIMABLE_STORES } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles } from './watch/library.js';
+import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -138,6 +139,7 @@ const KEYS_READ = [
   'FGC_auto_state',
   ...Object.values(HISTORY_KEYS),
   KEY_STATE, KEY_SOURCES, KEY_SETTINGS, KEY_CATALOG, KEY_FILTERS, KEY_STATS, KEY_UI, KEY_STOP, KEY_LIBRARY,
+  KEY_CANARY,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -916,6 +918,39 @@ function renderStatus(all) {
 
 /* ------------------------------------------------------------------ stores */
 
+/* Le canari, en tete des magasins.
+ *
+ * Il n'apparait que lorsqu'il a quelque chose a dire : deux echecs de
+ * selecteur d'affilee sur un magasin qui marchait. Le motif technique est
+ * recopie tel quel -- c'est lui qui nomme le bouton manquant, et une capture
+ * de cette ligne a suffi a corriger la 2.13.2. */
+function renderCanary(all) {
+  const host = document.getElementById('canary');
+  host.textContent = '';
+
+  for (const a of canaryAlerts(get(all, KEY_CANARY, {}))) {
+    const bloc = el('div', 'canary');
+    const titre = el('div', 'canary-head');
+    titre.append(el('span', 'canary-store', STORE_LABELS[a.store] || a.store));
+    titre.append(el('span', 'canary-count', t('canaryStreak', String(a.streak))));
+
+    const seen = el('button', 'link', t('canaryAck'));
+    seen.addEventListener('click', () => {
+      // L'etat n'a qu'un ecrivain, le service worker. Le popup demande.
+      api.runtime.sendMessage({ type: 'fgc-canary-ack', store: a.store }, () => {
+        void api.runtime.lastError;
+        load();
+      });
+    });
+    titre.append(seen);
+    bloc.append(titre);
+
+    if (a.lastDetails) bloc.append(el('p', 'canary-why', a.lastDetails));
+    bloc.append(el('p', 'hint', t('canaryHint')));
+    host.append(bloc);
+  }
+}
+
 function renderStores(all, behaviour) {
   const host = document.getElementById('stores');
   host.textContent = '';
@@ -1220,6 +1255,7 @@ async function render() {
   renderCodes(get(all, KEY_CODES, []));
   renderTally(all);
   renderFilters(all, behaviourCache);
+  renderCanary(all);
   renderStores(all, behaviourCache);
   renderSources(all, behaviourCache);
   renderPrediction(all);

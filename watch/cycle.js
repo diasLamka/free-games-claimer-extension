@@ -24,6 +24,7 @@ import {
   DEFAULTS as SCHEDULER_DEFAULTS,
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
+import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { split } from './filters.js';
 import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched,
@@ -443,6 +444,7 @@ export async function runCycle({
         // Un magasin decoche n'est pas seulement masque : on n'y touche pas.
         watchedStores: ctx.settings.watchedStores,
         cadence,
+        canary: ctx.canary,
         maxReclamations,
         record,
       });
@@ -451,7 +453,10 @@ export async function runCycle({
       claims = result.claims;
 
       if (claims.length) {
-        await writeCycle(chrome, { catalog, cadence });
+        // Le canari part dans la meme transition : un worker mort entre les
+        // deux laisserait un magasin marque casse pour une reclamation dont
+        // personne n'a garde la trace.
+        await writeCycle(chrome, { catalog, cadence, canary: result.canary });
         const succeeded = claims.filter((x) => x.verdict === VERDICTS.CLAIMED).length;
         const manual = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).length;
         if (succeeded) await notify({
@@ -562,11 +567,13 @@ export async function claimWhatCanBe({
   claimableStores,
   watchedStores,
   cadence,
+  canary = {},
   maxReclamations,
   record = () => {},
 }) {
   const next = { ...catalog };
   let timestamps = cadence;
+  let canaryNext = canary;
   const claims = [];
 
   const { candidates, dropped } = claimCandidates(next, filters, {
@@ -577,12 +584,12 @@ export async function claimWhatCanBe({
       reasons: [...new Set(dropped.map((e) => e.reason))],
     });
   }
-  if (!candidates.length) return { catalog: next, cadence: timestamps, claims };
+  if (!candidates.length) return { catalog: next, cadence: timestamps, claims, canary: canaryNext };
 
   const { left } = hasRoom(timestamps, now);
   if (!left) {
     record('warn', 'plafond horaire de reclamations atteint, on attend');
-    return { catalog: next, cadence: timestamps, claims };
+    return { catalog: next, cadence: timestamps, claims, canary: canaryNext };
   }
 
   const howMany = Math.min(candidates.length, left, maxReclamations);
@@ -648,9 +655,29 @@ export async function claimWhatCanBe({
     };
 
     record('info', `${offer.title} -> ${r.verdict}`, { details: r.details, attempts });
+
+    /* Le canari lit ce verdict, il n'en provoque aucun.
+     *
+     * Un echec de selecteur isole ne veut rien dire ; deux d'affilee sur le
+     * meme magasin veulent dire que le magasin a bouge. Sans ce comptage,
+     * l'echec restait silencieux : le recul espacait poliment les tentatives
+     * et personne n'apprenait rien avant de constater un jeu manquant. */
+    canaryNext = observeCanary(canaryNext, {
+      store: r.store || offer.store,
+      verdict: r.verdict,
+      details: r.details,
+      ts: Date.now(),
+    });
   }
 
-  return { catalog: next, cadence: timestamps, claims };
+  /* Une alerte n'est ecrite qu'a sa naissance. Repetee a chaque cycle, elle
+     noierait le journal et finirait ignoree -- exactement le sort qu'on veut
+     eviter a un canari. */
+  for (const alerte of newAlerts(canary, canaryNext)) {
+    record('warn', `canari : ${alertLine(alerte)}`);
+  }
+
+  return { catalog: next, cadence: timestamps, claims, canary: canaryNext };
 }
 
 /**

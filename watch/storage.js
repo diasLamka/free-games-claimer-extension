@@ -15,6 +15,12 @@
  */
 
 import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
+/* Le canari possede sa cle, comme la bibliotheque et le journal. Elle est
+   importee ici pour une raison precise : son etat doit s'ecrire dans la MEME
+   transition que le catalogue et la cadence, sans quoi un worker mort entre
+   les deux laisserait un magasin marque casse pour une reclamation qui, elle,
+   n'a jamais ete enregistree. */
+import { KEY_CANARY } from './canary.js';
 
 export const PREFIX = 'veille:';
 
@@ -245,7 +251,7 @@ export async function readState(chrome) {
 export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
-    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE,
+    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY,
   ]);
   return {
     catalog: raw[KEYS.OFFERS] || {},
@@ -256,6 +262,7 @@ export async function readContext(chrome) {
     stats: raw[KEYS.STATS] || {},
     filters: raw[KEYS.FILTERS] || {},
     cadence: raw[KEYS.CADENCE] || [],
+    canary: raw[KEY_CANARY] || {},
   };
 }
 
@@ -266,13 +273,14 @@ export async function readContext(chrome) {
  * deux, le service worker peut mourir. On prefere perdre une notification
  * qu'en envoyer deux, et le champ notifieLe rend la reprise possible.
  */
-export async function writeCycle(chrome, { catalog, sources, state, stats, cadence }) {
+export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary }) {
   const obj = {};
   if (catalog !== undefined) obj[KEYS.OFFERS] = catalog;
   if (sources !== undefined) obj[KEYS.SOURCES] = sources;
   if (state !== undefined) obj[KEYS.STATE] = state;
   if (stats !== undefined) obj[KEYS.STATS] = stats;
   if (cadence !== undefined) obj[KEYS.CADENCE] = cadence;
+  if (canary !== undefined) obj[KEY_CANARY] = canary;
   return write(chrome, obj);
 }
 
