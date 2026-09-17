@@ -1,0 +1,381 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": 1789700000
+      },
+      "buyable": true,
+      "title": "  Un Jeu Offert  ",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "offert",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "0.00",
+        "baseAmount": "9.99",
+        "finalAmount": "0.00",
+        "isDiscounted": true,
+        "discountPercentage": 100,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 2,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "Gratuit Pour Toujours",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "permanent",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "0.00",
+        "baseAmount": "0.00",
+        "finalAmount": "0.00",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 3,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "Pas Encore Sorti",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": true,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "bientot",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "3.99",
+        "baseAmount": "3.99",
+        "finalAmount": "3.99",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 4,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "Un Film",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": true,
+      "isGame": false,
+      "slug": "film",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "3.99",
+        "baseAmount": "3.99",
+        "finalAmount": "3.99",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 5,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": false,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "Indisponible",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "indispo",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "3.99",
+        "baseAmount": "3.99",
+        "finalAmount": "3.99",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 6,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "   ",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "sans-titre",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "3.99",
+        "baseAmount": "3.99",
+        "finalAmount": "3.99",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    },
+    {
+      "id": 1,
+      "releaseDate": 1551304800,
+      "availability": {
+        "isAvailable": true,
+        "isAvailableInAccount": true
+      },
+      "salesVisibility": {
+        "isActive": true,
+        "fromObject": {
+          "date": "2024-07-12 14:55:00.000000",
+          "timezone_type": 1,
+          "timezone": "+02:00"
+        },
+        "from": 1720788900,
+        "toObject": null,
+        "to": null
+      },
+      "buyable": true,
+      "title": "Un Jeu Offert",
+      "image": "//images-3.gog-statics.com/51ea7e3c7030f97e04e9a9b37afcb1c53a60537f2f496d3982fad21b44121b5d",
+      "url": "/fr/game/offworld_trading_company_market_corrections",
+      "supportUrl": "/support/offworld_trading_company_market_corrections",
+      "forumUrl": "/forum/offworld_trading_company",
+      "worksOn": {
+        "Windows": true,
+        "Mac": true,
+        "Linux": false
+      },
+      "category": "Simulation",
+      "originalCategory": "Simulation",
+      "rating": 0,
+      "type": 3,
+      "isComingSoon": false,
+      "isPriceVisible": true,
+      "isMovie": false,
+      "isGame": true,
+      "slug": "offert",
+      "isWishlistable": true,
+      "extraInfo": [],
+      "ageLimit": 0,
+      "boxImage": "//images-3.gog-statics.com/a0987c6a3a3effe3f195e0633119eb01a9f404581d0b4233ce119ae1d2270b26",
+      "isMod": false,
+      "price": {
+        "currency": "EUR",
+        "amount": "3.99",
+        "baseAmount": "3.99",
+        "finalAmount": "3.99",
+        "isDiscounted": false,
+        "discountPercentage": 0,
+        "discountDifference": "0.00"
+      }
+    }
+  ],
+  "ts": null,
+  "page": 1,
+  "totalPages": 1,
+  "totalResults": "7",
+  "totalGamesFound": 7,
+  "totalMoviesFound": 0
+}

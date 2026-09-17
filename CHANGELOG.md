@@ -4,6 +4,53 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.15.0 -- 2026-09-17
+
+**GOG a enfin sa propre source**
+
+Jusqu'ici, GOG n'etait vu que par l'agregateur tiers. Sa disparition est le
+premier risque du design, et elle aurait rendu la veille aveugle sur un des
+trois magasins que l'extension sait reclamer.
+
+- La source lit le catalogue filtre par prix, en JSON :
+  `/games/ajax/filtered?mediaType=game&price=free`. Mesure du 2026-09-17 : 200,
+  `application/json`, cles `products` / `page` / `totalPages` / `totalResults`.
+- **Le controle qui a evite un piege.** La requete filtree rend une liste VIDE.
+  Deux lectures opposees : aucun jeu gratuit en ce moment, ou endpoint
+  desaffecte qui rendra vide pour toujours. La meme requete SANS le filtre rend
+  7 591 octets de vrais produits -- l'endpoint est vivant, et le vide dit vrai.
+  La seconde lecture aurait ete le piege parfait : une source qui repond
+  « rien » eternellement SANS JAMAIS ECHOUER, donc sans declencher ni le
+  canari, ni le recul, ni la sentinelle.
+- Le JSON plutot que la page : un schema change quand le service change, une
+  classe CSS change quand un designer passe. Et la page d'accueil pese 953 Ko
+  contre quelques-uns ici.
+- La distinction d'Epic, transposee : `baseAmount > 0` et `finalAmount === 0`,
+  c'est un jeu payant offert un temps ; `baseAmount === 0`, c'est gratuit de
+  toute facon et il n'y a rien a reclamer. La valeur porte sa devise, jamais un
+  nombre nu.
+- La fin de promotion est lue en SECONDES (`salesVisibility.to`). Lue en
+  millisecondes, une offre qui se termine dans trois jours paraitrait expiree
+  depuis 1970.
+- La lecture est ANONYME. Connecte, GOG masque ce que le compte possede deja :
+  la veille verrait une offre disparaitre parce qu'elle a ete reclamee.
+- La liste est declaree INCOMPLETE : la source ne lit que la premiere page, et
+  le parametre de pagination n'a pas ete mesure. Une offre qui s'attarde coute
+  moins cher qu'une offre enterree a tort.
+- La source s'active chez ceux qui ont deja des reglages enregistres, faute de
+  quoi elle ne tournerait que sur les nouvelles installations. Defendable tant
+  que la liste des sources n'est editable nulle part -- le jour ou elle le
+  devient, ce rattrapage doit disparaitre.
+
+**Ce qu'elle ne voit pas, et c'est dit**
+
+Un giveaway GOG s'annonce aussi par une banniere sur la page d'accueil. Aucun
+giveaway ne tournait au moment de la mesure -- ni element de classe
+`giveaway`, ni structure de donnees du meme nom -- donc son balisage n'a PAS pu
+etre observe. Ecrire des selecteurs sans les avoir vus est precisement ce que
+la feuille de route interdit. Si un giveaway apparait sans passer par ce
+catalogue, l'agregateur le verra, et le journal dira lequel des deux a parle.
+
 ## 2.14.1 -- 2026-09-17
 
 **L'acquisition Epic s'arretait sur la derniere etape**

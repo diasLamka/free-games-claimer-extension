@@ -7,6 +7,7 @@
  */
 import * as epic from './epic.js';
 import * as gamerpower from './gamerpower.js';
+import * as gog from './gog.js';
 import * as steam from './steam.js';
 import { STORES } from '../offer.js';
 
@@ -57,6 +58,25 @@ export const SOURCES = Object.freeze({
      * distinguer d'un vrai fonctionnement en observant le trafic.
      */
     minIntervalMs: 10 * 60 * 1000,
+  }),
+
+  [gog.NAME]: Object.freeze({
+    name: gog.NAME,
+    libelle: 'GOG',
+    discover: gog.discover,
+    /**
+     * FAUX, et c'est deliberement conservateur.
+     *
+     * Le catalogue est pagine -- la reponse porte `page` et `totalPages` -- et
+     * cette source ne lit que la premiere page. Le parametre de pagination n'a
+     * pas ete mesure, seulement deduit de la reponse : tant qu'il ne l'est
+     * pas, promettre une liste complete ferait expirer, a chaque cycle, toute
+     * offre qui aurait glisse en deuxieme page. Une offre qui s'attarde coute
+     * moins cher qu'une offre enterree a tort.
+     */
+    completeList: false,
+    /** Une requete JSON de quelques kilo-octets sur un site marchand : on reste poli. */
+    minIntervalMs: 15 * 60 * 1000,
   }),
 
   [steam.NAME]: Object.freeze({

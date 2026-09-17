@@ -181,7 +181,7 @@ export async function withLease(chrome, name, job, { now, ttlMs = LEASE_TTL_MS, 
 export const DEFAULT_SETTINGS = Object.freeze({
   floorPerDay: 3,
   overrides: {},
-  activeSources: ['epic-api', 'gamerpower'],
+  activeSources: ['epic-api', 'gamerpower', 'gog'],
   autonomousClaim: true,
 
   /** 'every' | 'digest' | 'off'. Voir watch/notify-policy.js. */
@@ -222,6 +222,20 @@ export function normaliseSettings(raw) {
      Une preference perdue en silence est une trahison silencieuse. */
   if (raw && raw.notifications === false && raw.notifyMode === undefined) {
     settings.notifyMode = 'off';
+  }
+
+  /* Une source livree APRES coup doit s'activer chez ceux qui ont deja des
+     reglages enregistres -- sans quoi elle ne tournerait que sur les nouvelles
+     installations, et la seule personne a en profiter serait celle qui n'en a
+     pas besoin.
+     
+     C'est defendable AUJOURD'HUI pour une raison precise : la liste des
+     sources n'est editable nulle part dans l'interface. Son absence n'exprime
+     donc aucun choix. Le jour ou elle le devient, ce bloc doit disparaitre :
+     il reactiverait ce que l'utilisateur vient de decocher. */
+  if (Array.isArray(settings.activeSources)) {
+    const manquantes = DEFAULT_SETTINGS.activeSources.filter((n) => !settings.activeSources.includes(n));
+    if (manquantes.length) settings.activeSources = [...settings.activeSources, ...manquantes];
   }
 
   return settings;

@@ -128,7 +128,7 @@ watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   schedule/  clock.js  prediction.js  scheduler.js
-  sources/   index.js  epic.js  gamerpower.js  steam.js
+  sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/
   build.mjs                 build et controles
   reference.json            designe le temoin fige du moteur (build/reference-v*.js)

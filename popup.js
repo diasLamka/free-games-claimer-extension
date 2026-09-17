@@ -116,7 +116,7 @@ const DROP_KEYS = {
   [REASONS.NO_DESTINATION]: 'dropNoPage',
 };
 
-const SOURCE_LABELS = { 'epic-api': 'Epic Games', gamerpower: 'GamerPower', steam: 'Steam' };
+const SOURCE_LABELS = { 'epic-api': 'Epic Games', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
 
 /* ------------------------------------------------------------------ storage */
 

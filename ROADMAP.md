@@ -10,9 +10,8 @@ le travail en vagues V0 a V7. Six vagues et demie sont livrees ; ce qui suit
 est ce qu'il en reste, plus ce que les corrections des dernieres versions ont
 fait apparaitre.
 
-La premiere entree attend une derniere MESURE, pas du code, et
-`diagnostics.html` sait la prendre : section V6-V7, avec le reseau de la
-machine ou l'extension tourne. Les constats deja pris sont dans
+La premiere entree attend une mesure qu'on ne peut pas provoquer : il faut
+qu'un giveaway GOG tourne. Les quatre constats deja pris sont dans
 `docs/superpowers/specs/2026-09-17-v6-v7-constats.md`.
 
 Une regle du design vaut aussi ici, et c'est la plus utile : **une hypothese se
@@ -29,7 +28,7 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
 | V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
-| V6 | Sources HTML, mode repli | **repli livre** (`sentinel.html`), **lecture HTML livree** (`watch/offscreen.js`) ; il manque une source qui s'en serve |
+| V6 | Sources HTML, mode repli | **livree** -- repli (`sentinel.html`), lecture HTML (`watch/offscreen.js`) et source GOG en propre (2.15.0) |
 | V7 | Elargissement | **Prime Gaming mesure et ferme** le 2026-09-17 ; trois magasins reclamables, un quatrieme seulement detecte |
 
 ---
@@ -61,32 +60,30 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   defaut : son battement perime en trois minutes, et rien de ce qu'il laisse ne
   suspend la veille ordinaire.
 - **Prime Gaming : mesure, et ferme.** Voir la table « hors perimetre ».
+- **Une source GOG en propre** (2.15.0). Le catalogue filtre par prix, en JSON,
+  sur un hote deja autorise. Le controle sans filtre a evite le piege d'un
+  endpoint desaffecte qui aurait repondu « rien » eternellement sans jamais
+  echouer.
 
 ---
 
-## 1. Une source GOG en propre
+## 1. La banniere de giveaway GOG
 
-**Le mecanisme est la ; il manque un dernier constat.**
+**Le seul morceau de GOG que la source ne voit pas.**
 
-*Pourquoi maintenant.* Trois sources de decouverte, et gamerpower porte a lui
-seul GOG et tout ce qui n'est ni Epic ni Steam. Sa disparition est le premier
-risque du design (§15).
+*Ou on en est.* La 2.15.0 livre une source GOG en propre, qui lit le catalogue
+filtre par prix en JSON. Elle voit donc tout ce qui passe par ce catalogue.
 
-*Ce que la mesure du 2026-09-17 a montre* (voir
-`docs/superpowers/specs/2026-09-17-v6-v7-constats.md`) : la page d'accueil GOG
-est **rendue cote serveur** -- 953 Ko, vingt-quatre liens produit des le HTML
-brut -- contrairement a Epic, mesure entierement cote client en V0-3. Elle est
-donc lisible par une source HTML, et le document offscreen sait deja la lire.
+*Ce qui manque.* Un giveaway GOG s'annonce aussi par une banniere sur la page
+d'accueil, et rien ne garantit que le catalogue le porte. Aucun giveaway ne
+tournait lors des quatre mesures du 2026-09-17 -- ni element de classe
+`giveaway`, ni structure de donnees du meme nom -- donc son balisage n'a pas pu
+etre observe.
 
-*Ce qu'il reste a trancher.* Aucun element ne porte de classe `giveaway`, ce
-qui peut vouloir dire deux choses tres differentes : le selecteur a change, ou
-aucun giveaway ne tournait ce jour-la -- et c'est l'explication la plus
-economique. Trois blocs de donnees embarquees existent ; la mesure suivante dit
-lequel porte le giveaway, ce qui permet d'ecrire une source qui le trouvera le
-jour ou il y en aura un, au lieu d'attendre qu'il y en ait un pour l'ecrire.
-
-*Fini quand.* Couper gamerpower (hors ligne simule) laisse la veille voir les
-offres GOG, et le popup dit pourquoi elle est passee en repli.
+*Ce qu'il faut pour le fermer.* Une seule mesure, prise pendant qu'un giveaway
+tourne : `diagnostics.html`, section V6-V7. Les echantillons de structure
+diront alors ou il vit, et la source l'ajoutera en second signal. D'ici la,
+l'agregateur le voit, et le journal dit lequel des deux a parle.
 
 ## 2. Les quatre autres vues de l'onglet dedie
 
