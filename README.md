@@ -91,6 +91,10 @@ est declare `"type": "module"`.
 | `storage.js` | cles `veille:`, version de schema, verrou |
 | `cycle.js` | l'enchainement complet d'un reveil |
 | `claim.js` | reclamation pilotee : fenetre reduite, verdict, menage |
+| `journal.js` | 500 entrees qui survivent a la mort du service worker |
+| `canary.js` | compte les echecs de selecteur : un magasin qui a bouge le dit |
+| `backup.js` | les codes en attente, recopies dans la zone synchronisee |
+| `offscreen.js` | lire une page HTML depuis un contexte qui n'a pas de DOM |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -121,6 +125,7 @@ src/
     legacy-header.txt       tete v2.7.0, temoin pour --verify
 watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
+  journal.js canary.js backup.js offscreen.js  library.js  filters.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  steam.js
 build/
@@ -136,7 +141,9 @@ docs/superpowers/specs/     design de la veille et constats V0
 gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
-diagnostics.html / .js      mesures V0-2 et V0-3
+journal.html / journal.js   le journal de la veille, 500 entrees persistees
+offscreen-html.html / .js   lecture de HTML pour le service worker, qui n'a pas de DOM
+diagnostics.html / .js      mesures V0-2, V0-3 et V6-V7
 manifest.json               Chrome / Edge
 manifest.firefox.json       Firefox
 CHANGELOG.md                historique du moteur

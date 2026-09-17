@@ -4,6 +4,116 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.14.0 -- 2026-09-17
+
+Deux choses etaient affichees a cote de la verite sur un compte francais. Le
+reste de cette version rend visible ce que la veille faisait sans le dire.
+
+**Les montants gardent leur devise**
+
+- `money()` collait un « $ » sur tous les montants, au motif -- ecrit dans le
+  code -- que les sources publient des dollars. C'est faux pour celle qui
+  compte : Epic publie le prix DU COMPTE, « 23,99 EUR » avec son currencyCode a
+  cote. Le bilan lisait donc vingt-quatre dollars la ou il y a vingt-quatre
+  euros, et rien sur le chiffre seul ne permettait de s'en apercevoir.
+- La devise se lit desormais dans le montant lui-meme, et les totaux sont tenus
+  PAR DEVISE, jamais additionnes entre eux : une somme d'euros et de dollars ne
+  designe rien, et convertir demanderait un taux que personne ici ne peut
+  verifier. Une devise illisible s'affiche sans symbole plutot qu'avec le
+  mauvais.
+- Steam composait « $ » + les centimes ; il prend maintenant la forme deja
+  formatee par le magasin. Epic reconstruit son repli avec le currencyCode, au
+  lieu d'un nombre nu que quelqu'un devrait plus tard supposer en dollars.
+- Le tri par valeur faisait un `parseFloat` apres avoir retire tout sauf les
+  chiffres et les points : « 23,99 EUR » devenait 2399, et la moins chere des
+  offres francaises se rangeait avant la plus chere.
+- Le bilan et l'export lisent enfin le registre, ecrit pour ca : passe la purge
+  du catalogue -- trente jours -- les vieilles reclamations sortaient sans titre
+  et sans prix, c'est-a-dire au moment ou l'un et l'autre servent le plus.
+  L'export CSV gagne une colonne devise.
+
+**Le jour s'ecrit en francais**
+
+- `readableDelay` ecrivait « 2 d 4 h » en dur, dans une interface francaise
+  partout ailleurs. Les trois unites passent par les tables : « 2 j 4 h ».
+- Quand l'interface du navigateur n'est ni anglaise ni francaise, les langues
+  declarees par le lecteur sont consultees avant de retomber sur l'anglais. Une
+  interface livree reste prioritaire : c'est le signal le plus delibere.
+
+**Le journal de la veille survit a la nuit**
+
+- `record()` ecrivait dans la console du service worker, et un service worker
+  s'arrete apres trente secondes d'inactivite en emportant sa console. Le seul
+  endroit ou l'on pouvait lire ce qui s'etait passe a 4 h du matin etait efface
+  avant le reveil. C'est ce qui a rendu la 2.13.4 si difficile a trouver.
+- 500 entrees persistees, un seul ecrivain -- le service worker -- et une borne
+  imposee a l'ecriture : un journal sans fin remplirait le quota, et c'est
+  alors le CATALOGUE qui ne pourrait plus s'ecrire. Les Error sont reduites en
+  texte avant d'etre stockees : passees telles quelles, elles arrivent sous la
+  forme `{}`, sans que rien ne le signale.
+- `journal.html` le lit, le filtre -- « alertes » montre aussi les erreurs,
+  sinon la lecture de la nuit est fausse -- et le telecharge dans l'ordre ou
+  les choses se sont produites, a joindre a un rapport de bug.
+
+**Le canari : un magasin qui a bouge le dit**
+
+- Quatre des six dernieres versions corrigeaient un libelle ou un selecteur qui
+  avait change sous nos pieds. A chaque fois la reclamation echouait, le recul
+  espacait poliment les tentatives, et personne n'apprenait rien avant de
+  constater qu'un jeu manquait.
+- Deux echecs de selecteur d'affilee sur un magasin qui a deja reussi levent
+  une alerte, visible en tete des magasins, avec le motif technique recopie tel
+  quel -- c'est lui qui nomme le bouton manquant. Trois echecs pour un magasin
+  qui n'a jamais rien reclame : il peut simplement n'avoir jamais ete essaye.
+- Le classement se fait par elimination : un echec dont le motif n'est pas l'un
+  des NOTRES parle du magasin. Reconnaitre la forme d'un echec de selecteur
+  aurait rate les trois derniers, chacun pour une raison differente.
+- Le canari ne clique nulle part et n'ouvre aucun onglet. Un succes eteint
+  l'alerte tout seul.
+
+**Ne plus ouvrir d'onglet pour un jeu deja acquis**
+
+- Le registre savait ce qui avait ete reclame ; le filtre ne le lui demandait
+  pas. Une offre qui revient sous une autre cle faisait rouvrir un onglet et
+  consommait un jeton du plafond horaire -- la ressource qui protege le compte
+  -- pour un jeu deja possede.
+- Le magasin fait partie de la cle : posseder un titre sur Epic ne le donne pas
+  sur GOG, et la copie GOG vaut d'etre prise.
+
+**Les codes en attente survivent a une desinstallation**
+
+- Reglage, coupe par defaut : la zone de synchronisation traverse le compte du
+  navigateur, et y poser les codes de quelqu'un sans le lui demander serait
+  prendre une decision a sa place.
+- Les codes seuls y vont. Au-dela de 8 Ko par element, `set()` ne tronque pas :
+  il rejette, et rien ne serait sauvegarde. Le lot est donc coupe ici, par les
+  plus ANCIENS -- la queue de la liste est ce qui vient d'arriver et n'a pas
+  encore ete echange.
+- La restauration fusionne, jamais ne remplace : ecraser la liste locale
+  effacerait les codes recoltes depuis la derniere synchronisation.
+
+**Lire du HTML sans DOM**
+
+- `watch/offscreen.js` ouvre enfin la voie mesuree en aout et jamais branchee :
+  un document invisible lit une page et rend des extraits bruts, laissant a
+  chaque source le soin d'en faire des offres dans une fonction pure. Un seul
+  document a la fois, ferme systematiquement, absent sur Firefox et declare
+  comme tel.
+- La page de diagnostic gagne la mesure qui debloque les deux dernieres entrees
+  de la feuille de route : ce que la page d'accueil GOG expose reellement, et
+  si `gaming.amazon.com` sert encore quelque chose. On mesure les selecteurs au
+  lieu de les deviner.
+
+**Ailleurs**
+
+- `ROADMAP.md` : ce qui n'est pas encore fait, pourquoi, et ce qu'il faut
+  mesurer avant d'ecrire.
+- Integration continue : `npm run check` tourne a chaque push. La
+  reconstruction du moteur comparee au bit pres est exactement le controle
+  qu'une relecture de diff ne peut pas faire.
+- 486 tests. Le moteur n'a pas bouge : la reference figee de la 2.13.4 est
+  toujours reconstruite a l'identique.
+
 ## 2.13.4 -- 2026-09-16
 
 **La veille de fond tourne enfin, et plus d'erreurs dans chrome://extensions**

@@ -6,9 +6,13 @@ l'ordre ci-dessous est un avis, pas un engagement.
 
 Le design de fond est ailleurs --
 `docs/superpowers/specs/2026-08-27-veille-jeux-gratuits-design.md`, qui decoupe
-le travail en vagues V0 a V7. Cinq vagues et demie sont livrees ; ce qui suit
+le travail en vagues V0 a V7. Six vagues et demie sont livrees ; ce qui suit
 est ce qu'il en reste, plus ce que les corrections des dernieres versions ont
 fait apparaitre.
+
+Les deux premieres entrees attendent une MESURE, pas du code, et
+`diagnostics.html` sait maintenant la prendre : section V6-V7, avec le reseau
+de la machine ou l'extension tourne.
 
 Une regle du design vaut aussi ici, et c'est la plus utile : **une hypothese se
 mesure avant de s'ecrire** (§13). Chaque entree dit donc ce qu'il faut
@@ -22,44 +26,34 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V1 | Decoupage du moteur | livree -- `src/core/`, 34 modules, build reproductible au bit pres |
 | V2 | Veille en notification seule | livree -- `watch/`, 2.8.0 |
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
-| V4 | Onglet dedie, journal persistant | **partielle** -- le popup a absorbe quatre vues sur cinq, le journal n'existe pas |
+| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
-| V6 | Sources HTML, mode repli | **rien** -- la permission `offscreen` est declaree et inutilisee |
+| V6 | Sources HTML, mode repli | **mecanisme livre** en 2.14.0 (`watch/offscreen.js`) ; aucune source ne s'en sert encore |
 | V7 | Elargissement | **rien** -- trois magasins reclamables, un quatrieme seulement detecte |
 
 ---
 
-## 1. Le canari de selecteurs
+## Livre en 2.14.0
 
-**Savoir qu'un magasin a bouge avant que l'offre soit ratee.**
+Quatre entrees de cette liste sont parties dans la 2.14.0, et le detail est
+dans `CHANGELOG.md` :
 
-*Pourquoi maintenant.* Quatre des six dernieres versions du moteur corrigent un
-libelle ou un selecteur qui a change sous nos pieds : 2.12.1 (Epic saute
-l'etape panier), 2.13.1 (les titres de modales quittent `h1`-`h3`), 2.13.2 (un
-span invisible casse un motif ancre), 2.13.4 (l'iframe Turnstile passe dans un
-shadow root ferme). Et avant elles, 2.3.0, 2.5.0 et 2.7.0 sur les libelles
-accentues. Le scenario est toujours le meme : le magasin change, l'extension
-echoue en silence, et c'est l'utilisateur qui l'apprend -- souvent apres avoir
-rate quelque chose. Le design l'avait prevu (§15 : « un magasin change ses
-libelles -> echec silencieux -> canari sur les selecteurs structurels »).
+- **Le canari de selecteurs.** Deux echecs de selecteur d'affilee sur un
+  magasin levent une alerte, avec le motif technique recopie tel quel. Le
+  classement se fait par elimination -- reconnaitre la forme d'un echec de
+  selecteur aurait rate les trois derniers.
+- **Le journal persistant.** 500 entrees qui survivent a la mort du service
+  worker, lisibles et exportables depuis `journal.html`.
+- **Les codes qui survivent a la desinstallation.** Reglage coupe par defaut,
+  les codes seuls, coupes par les plus anciens quand le lot deborde.
+- **Ne pas ouvrir un onglet pour un jeu deja acquis.** Le filtre lit enfin le
+  registre, magasin par magasin.
 
-C'est la seule entree de cette liste qui rende les autres moins cheres : chaque
-magasin ajoute augmente la surface a surveiller.
+L'integration continue tourne aussi : `npm run check` a chaque push.
 
-*Ce que ca change.* Une sonde qui passe sur une page deja ouverte, ou pendant
-une reclamation, et qui verifie la presence des ancres structurelles -- bouton
-d'acquisition Epic, ligne de code GOG, carte d'offre Luna -- **sans cliquer**.
-Un manque ne casse rien : il ecrit au journal, leve un badge, et le popup dit
-« Epic : le bouton d'acquisition n'a pas ete vu depuis trois passages ».
+---
 
-*A mesurer d'abord.* Le taux de fausses alertes sur une page lente, derriere une
-banniere de cookies, ou en cours d'hydratation. Un canari qui crie pour rien
-sera coupe au bout d'une semaine, et alors il ne sert plus a rien.
-
-*Fini quand.* Retirer a la main un motif du moteur leve l'alerte au passage
-suivant, et l'alerte nomme le motif manquant.
-
-## 2. Prime Gaming
+## 1. Prime Gaming
 
 **Le trou le moins cher a combler -- si le domaine vit encore.**
 
@@ -71,99 +65,61 @@ les offres Prime arrivent souvent sous forme de CODE a echanger chez GOG, et le
 module d'echange existe deja (`src/core/26-gog-redeem-dom.js`,
 `src/core/27-gog-redeem-run.js`), file d'attente comprise.
 
-*A mesurer d'abord, et c'est bloquant.* Le commentaire du moteur affirme que le
-domaine est mort ; personne ne l'a reverifie depuis. Ouvrir `gaming.amazon.com`
-sur un compte connecte, noter ce qui s'y trouve (jeux, contenu en jeu, codes),
-d'ou part le bouton de reclamation, et si une API JSON porte la liste. Si les
-offres vivent en realite sous `luna.amazon.*/claims`, cette entree tombe et le
-commentaire avait raison -- ce qui est aussi un resultat.
-
-*Ce que ca change.* Une source de decouverte de plus, un magasin reclamable de
-plus, et le chainage code -> echange deja ecrit et teste.
+*La mesure existe maintenant, il faut la lancer.* `diagnostics.html`, section
+V6-V7, lit `gaming.amazon.com` avec votre reseau et rend son rapport. Le
+commentaire du moteur affirme que le domaine est mort ; personne ne l'a
+reverifie. S'il est vrai, cette entree tombe -- ce qui est aussi un resultat.
+S'il est faux, le module Luna se rebranche dessus.
 
 *Fini quand.* Une offre Prime apparait dans le popup sans qu'aucun onglet soit
 ouvert, est reclamee seule, et le code qui en sort part dans la file d'echange.
 
-## 3. Le journal persistant, puis l'onglet dedie
+## 2. Une source GOG en propre
 
-**Aujourd'hui, ce que la veille fait la nuit n'est lisible nulle part le matin.**
+**Le mecanisme est la ; il lui manque des selecteurs mesures.**
 
-*Pourquoi maintenant.* `background.js:57` : `record()` ecrit dans la console du
-service worker. Ce worker meurt apres trente secondes d'inactivite, et sa
-console avec lui. Le seul endroit ou l'on pourrait lire ce qui s'est passe est
-efface avant qu'on le regarde. C'est exactement ce qui a rendu 2.13.4 difficile
-a trouver : `alarms.create` jetait, plus aucune alarme n'etait posee, la veille
-ne tournait jamais -- et rien, nulle part, n'en portait la trace. Il a fallu
-charger l'extension dans un Chromium et regarder vivre.
+*Pourquoi maintenant.* Trois sources de decouverte, et gamerpower porte a lui
+seul GOG et tout ce qui n'est ni Epic ni Steam. Sa disparition est le premier
+risque du design (§15). Depuis la 2.14.0, `watch/offscreen.js` sait lire une
+page HTML depuis le service worker et rendre des extraits bruts qu'une fonction
+pure transforme en offres.
 
-*Ce que ca change.* Un anneau de 500 entrees dans le stockage (§9), puis une
-vraie page d'extension -- pas un popup -- qui les affiche, avec les vues que le
-popup porte aujourd'hui a l'etroit dans 328 px : veille par source, offres,
-historique filtrable, reglages complets.
-
-*Cout.* L'entree la plus chere en interface, et la moins risquee en moteur :
-elle ne touche a aucun magasin. Le journal seul vaut deja d'etre livre, avant
-la page.
-
-*Fini quand.* Un echec de cycle survenu a 4 h du matin se lit a 9 h sans ouvrir
-la console, et l'export du journal peut accompagner un rapport de bug.
-
-## 4. Les sources HTML, par document offscreen
-
-**La parade au risque numero un est ecrite, mesuree, et jamais branchee.**
-
-*Pourquoi maintenant.* Trois sources de decouverte (`watch/sources/`), et
-gamerpower porte a lui seul GOG et tout ce qui n'est ni Epic ni Steam. Sa
-disparition est le premier risque du design (§15). Or V0-3 a deja confirme
-qu'un document offscreen parse du HTML correctement (`diagnostics.js:251`,
-`probe-offscreen.js`), la permission `offscreen` est dans le manifeste, et
-aucune source ne s'en sert.
-
-*Ce que ca change.* Une source qui lit du HTML devient possible : une source
-**propre pour GOG**, qui n'a aujourd'hui que le tiers, et les boutiques que le
-JSON n'expose pas. Puis le mode repli du §10 : apres trois echecs d'une source,
-un onglet dedie reprend la decouverte avec un contexte persistant, en affichant
-en clair que le repli est actif et pourquoi.
+*Ce qu'il reste.* Savoir ce que la page d'accueil GOG expose reellement. La
+section V6-V7 de `diagnostics.html` cherche les ancres que le moteur connait
+deja -- `.giveaway__title` en tete, qui n'est pas une supposition -- et
+rapporte lesquelles repondent. Ecrire des selecteurs sans les avoir vus est
+precisement ce que ce fichier interdit.
 
 *Fini quand.* Couper gamerpower (hors ligne simule) laisse la veille voir les
 offres GOG, et le popup dit pourquoi elle est passee en repli.
 
-## 5. Les codes ne meurent plus avec l'extension
+## 3. Le mode repli sentinelle
 
-**Un code GOG perdu est un jeu perdu.**
+*Pourquoi.* Le §10 du design : apres trois echecs consecutifs d'une source, un
+onglet dedie reprend la decouverte avec un contexte persistant, en affichant en
+clair que le repli est actif et pourquoi. Le document offscreen couvre le cas
+ou la source repond mal ; la sentinelle couvre celui ou le service worker
+lui-meme ne suffit plus.
 
-*Pourquoi maintenant.* `watch/tally.js` le dit deja : « rien ne les sauvegarde
-aujourd'hui -- ni git, ni synchronisation. Une desinstallation les emporte. »
-Depuis, seuls les REGLAGES partent dans `storage.sync` (`popup.js:1223`).
-L'export manuel existe : il suppose qu'on y pense, c'est-a-dire qu'on y pense
-avant et non apres.
+*Fini quand.* Couper une source trois fois de suite bascule la veille en repli,
+et la remettre en ligne la fait revenir seule.
 
-*Ce que ca change.* Les codes en attente, et le registre des acquisitions,
-rejoignent la synchronisation. Plus un rappel quand un code dort depuis trop
-longtemps -- un code non echange a une date de peremption, le popup l'affiche
-deja.
+## 4. Les quatre autres vues de l'onglet dedie
 
-*A trancher, pas a coder d'abord.* `storage.sync` plafonne a 8 Ko par element et
-100 Ko au total : cela tient pour des codes, pas pour l'historique complet. Et
-il traverse le compte Google, ce qui doit rester un choix de l'utilisateur, pas
-un defaut.
+*Pourquoi.* Le popup porte a l'etroit dans 328 px ce que le design reserve a un
+onglet dedie (§9) : veille par source, offres, historique filtrable, reglages
+complets. Le journal en est sorti en 2.14.0 et a sa page ; les autres suivront
+si le popup devient trop dense.
 
-*Fini quand.* Desinstaller puis reinstaller sur un profil synchronise rend les
-codes en attente.
+*Cout.* L'entree la plus chere en interface, et la moins risquee en moteur :
+elle ne touche a aucun magasin. C'est aussi la moins urgente -- le popup fait
+le travail aujourd'hui.
 
-## 6. Ne pas ouvrir un onglet pour un jeu deja acquis
+## 5. Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension
 
-*Pourquoi maintenant.* Le filtre `keepable` de 2.12.0 a supprime le cas le plus
-couteux -- le cosmetique a 0 EUR reclame chaque semaine. Reste l'autre : un jeu
-deja dans la bibliotheque fait quand meme ouvrir une page, et ne se decouvre
-qu'une fois celle-ci chargee. Chaque ouverture inutile consomme un jeton du
-plafond horaire (`watch/claim.js`), c'est-a-dire precisement la ressource qui
-protege le compte.
-
-*Ce que ca change.* `watch/library.js` sait ce que l'extension a reclame ; il ne
-sait rien de ce que l'utilisateur possedait avant elle. Une lecture de la
-bibliotheque en amont -- la ou le magasin l'expose sans authentification
-fragile -- eviterait l'ouverture.
+*Pourquoi.* La 2.14.0 ecarte ce que l'extension a elle-meme reclame. Elle ne
+sait rien de ce que l'utilisateur possedait avant elle : ces ouvertures-la
+coutent encore un jeton du plafond horaire.
 
 *A mesurer d'abord.* Combien d'ouvertures sont reellement inutiles sur un mois.
 Si la reponse est « une », l'entree ne vaut pas son code, et elle sort de la
