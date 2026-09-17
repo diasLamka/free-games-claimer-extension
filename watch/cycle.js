@@ -186,8 +186,18 @@ export async function runCycle({
 
   const result = await withLease(chrome, 'veille-cycle', async () => {
     const ctx = await readContext(chrome);
+
+    /* `force` vaut true -- tout interroger, comme « Verifier maintenant » --
+       ou une LISTE de sources a forcer, ce que demande la sentinelle.
+       La distinction n'est pas cosmetique : forcer toutes les sources pour en
+       reparer une seule ferait payer les saines pour la cassee, et sur des API
+       tierces c'est exactement le trafic qu'on ne veut pas produire. */
+    const forceAll = force === true;
+    const forcedList = Array.isArray(force) ? force.filter((n) => sources[n]) : null;
+
     const names = Object.keys(sources).filter(
-      (n) => force || ctx.settings.activeSources.includes(n),
+      (n) => forceAll
+        || (forcedList ? forcedList.includes(n) : ctx.settings.activeSources.includes(n)),
     );
 
     const plan = schedule({
@@ -210,7 +220,9 @@ export async function runCycle({
       now,
     });
 
-    const toQuery = force ? names : plan.dueList;
+    // Forcer, c'est passer outre le recul et le plan -- le seul interet d'une
+    // reprise en main, qu'elle vienne d'un bouton ou de la sentinelle.
+    const toQuery = (forceAll || forcedList) ? names : plan.dueList;
     record('info', `cycle : ${toQuery.length} source(s) a interroger`, {
       dueList: toQuery,
       nextWake: plan.nextWake,

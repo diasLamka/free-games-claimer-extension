@@ -658,5 +658,65 @@
   },
   "syncUnavailable": {
     "message": "Ce navigateur n'a pas de stockage synchronisé disponible."
+  },
+  "durationSeconds": {
+    "message": "$1 s"
+  },
+  "sentinelTitle": {
+    "message": "Veille en repli"
+  },
+  "sentinelSub": {
+    "message": "Une ou plusieurs sources de découverte ont échoué trois fois de suite. Tant que cet onglet est ouvert, il les réessaie sur une horloge fiable — ce que la veille de fond ne peut pas faire, puisque trois échecs endorment une source pendant des heures. Fermez l'onglet et tout revient à la normale."
+  },
+  "sentinelWhy": {
+    "message": "Pourquoi cet onglet est ouvert"
+  },
+  "sentinelJournal": {
+    "message": "Ce que fait la veille"
+  },
+  "sentinelNote": {
+    "message": "Le repli ne devient jamais le mode par défaut. Rien ici ne suspend la veille ordinaire, et fermer l'onglet — ou le navigateur entier — ne laisse rien à nettoyer."
+  },
+  "sentinelTryNow": {
+    "message": "Réessayer maintenant"
+  },
+  "sentinelClose": {
+    "message": "Fermer"
+  },
+  "sentinelTrying": {
+    "message": "Essai en cours…"
+  },
+  "sentinelNextTry": {
+    "message": "Prochain essai dans $1"
+  },
+  "sentinelAttempts": {
+    "message": "$1 essai(s) depuis l'ouverture"
+  },
+  "sentinelRecovered": {
+    "message": "$1 est revenue. La veille ordinaire suffit de nouveau — vous pouvez fermer cet onglet."
+  },
+  "sentinelNothingFailing": {
+    "message": "Aucune source en panne. Rien à forcer, et aucune requête n'est émise."
+  },
+  "sentinelStillFailing": {
+    "message": "$1 échecs d'affilée"
+  },
+  "sentinelBack": {
+    "message": "revenue"
+  },
+  "sentinelLastSuccess": {
+    "message": "Dernier succès : $1"
+  },
+  "sentinelNeverSucceeded": {
+    "message": "N'a jamais réussi."
+  },
+  "openSentinel": {
+    "message": "Veille en repli"
+  },
+  "sentinelBanner": {
+    "message": "$1 échoue en série"
+  },
+  "sentinelBannerHint": {
+    "message": "Après trois échecs, une source dort pendant des heures. L'onglet de repli la réessaie pendant que vous regardez."
   }
 }

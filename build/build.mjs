@@ -190,7 +190,7 @@ for (const fichier of ['manifest.json', 'manifest.firefox.json']) {
  * designe un module de la plateforme, pas un fichier du paquet.
  */
 const AVEC_IMPORTS = [
-  'background.js', 'popup.js', 'journal.js', 'diagnostics.js',
+  'background.js', 'popup.js', 'journal.js', 'sentinel.js', 'diagnostics.js',
   'probe-offscreen.js', 'offscreen-html.js', 'i18n.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
@@ -209,7 +209,8 @@ for (const fichier of AVEC_IMPORTS) {
 }
 
 /** Sources locales citees par une page HTML de l'extension. */
-for (const page of ['popup.html', 'journal.html', 'diagnostics.html', 'probe-offscreen.html', 'offscreen-html.html']) {
+for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.html',
+  'probe-offscreen.html', 'offscreen-html.html']) {
   if (!existe(page)) { problems.push(`page attendue absente : ${page}`); continue; }
   const src = readFileSync(join(ROOT, page), 'utf8');
   const re = /(?:src|href)="([^"#:]+)"/g;
@@ -236,8 +237,8 @@ for (const page of ['popup.html', 'journal.html', 'diagnostics.html', 'probe-off
  */
 const { undefinedRefs } = await import('./undefined-refs.mjs');
 
-for (const fichier of ['popup.js', 'journal.js', 'background.js', 'diagnostics.js', 'i18n.js',
-  'probe-offscreen.js', 'offscreen-html.js']) {
+for (const fichier of ['popup.js', 'journal.js', 'sentinel.js', 'background.js', 'diagnostics.js',
+  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }
@@ -329,7 +330,8 @@ function citeeQuelquePart(cle, sources) {
   return sources.some((src) => mot.test(src));
 }
 
-const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js', 'background.js', 'watch/cycle.js']);
+const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js',
+  'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -343,7 +345,8 @@ const MSG_MANIFESTE = new Set(['appName', 'appDesc']);
    en prose, et « ended » dans « that is how ALREADY_OWNED ended up... » faisait
    passer une cle morte pour vivante. Le HTML garde ses commentaires -- ce qu'on
    y cherche vit dans les attributs. */
-const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js', 'background.js', 'watch/cycle.js'].map((f) => {
+const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
+  'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

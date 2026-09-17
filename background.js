@@ -41,6 +41,7 @@ import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js'
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
+import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -509,6 +510,63 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'purge impossible', e);
         sendResponse({ dropped: 0 });
       });
+    return true;
+  }
+
+  /* La sentinelle : un onglet ouvert par quelqu'un qui regarde.
+   *
+   * Elle n'ecrit ni le catalogue ni le journal -- elle DEMANDE un cycle, et le
+   * worker reste l'ecrivain unique. Ce qu'elle apporte est ailleurs : elle
+   * force les sources visees, donc elle passe outre le recul qui les endort
+   * pendant des heures apres trois echecs. C'est le seul pouvoir du repli, et
+   * il ne vaut que pendant qu'un humain regarde.
+   *
+   * Rien ici ne suspend la veille ordinaire. Le worker garde ses alarmes et
+   * son plan : un onglet ferme, ou un navigateur tue, ne peut donc pas laisser
+   * la veille en panne -- le pire qui puisse arriver est un cycle de trop, que
+   * le bail et l'idempotence absorbent deja. */
+  if (msg.type === 'fgc-sentinel') {
+    (async () => {
+      const now = Date.now();
+      const cibles = Array.isArray(msg.sources) ? msg.sources : [];
+
+      if (msg.state === 'close') {
+        await clearBeat(api);
+        record('info', 'sentinelle fermee : la veille ordinaire reprend seule');
+        sendResponse({ ok: true });
+        return;
+      }
+
+      await writeBeat(api, { at: now, attempts: msg.attempts || 0, sources: cibles });
+
+      /* UNE SEULE valeur declenche un cycle, et elle est nommee.
+       *
+       * Le defaut est inoffensif, deliberement : le battement passe ici toutes
+       * les minutes, et un `else` qui aurait force un cycle aurait martele les
+       * sources soixante fois plus que prevu -- sur des API tierces, et sans
+       * que rien dans l'interface ne le montre. */
+      if (msg.state === 'beat') {
+        const resultat = await startCycle('sentinelle', { force: cibles });
+        const raw = await readKeys(api, KEYS.SOURCES);
+        sendResponse({
+          ok: true,
+          erreur: (resultat && resultat.erreur) || null,
+          sources: raw[KEYS.SOURCES] || {},
+        });
+        return;
+      }
+
+      if (msg.state === 'open') {
+        record('warn', `sentinelle ouverte sur ${cibles.join(', ') || 'aucune source'}`);
+      }
+
+      // 'open', 'ping', ou tout le reste : le battement est pose, rien d'autre.
+      const raw = await readKeys(api, KEYS.SOURCES);
+      sendResponse({ ok: true, sources: raw[KEYS.SOURCES] || {} });
+    })().catch((e) => {
+      record('warn', 'sentinelle : commande impossible', e);
+      sendResponse({ ok: false, error: String((e && e.message) || e) });
+    });
     return true;
   }
 

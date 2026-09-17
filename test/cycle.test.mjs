@@ -597,3 +597,34 @@ test('sans forcage, une source qui vient de tourner n\'est pas reinterrogee', as
   assert.equal(src.appels, appelsApresPremier, 'la source a ete reinterrogee trop tot');
   assert.deepEqual(r.queried, []);
 });
+
+/* ------------------------------------------------------ forcage cible */
+
+test('forcer une LISTE n\'interroge que ces sources-la', async () => {
+  // Ce que demande la sentinelle : reparer une source cassee sans faire payer
+  // les saines. Sur des API tierces, c'est exactement le trafic a ne pas
+  // produire.
+  const appels = { a: 0, b: 0 };
+  const c = await contexteDeTest({
+    a: { name: 'a', minIntervalMs: 0, async discover() { appels.a++; return response([offer('Jeu A')]); } },
+    b: { name: 'b', minIntervalMs: 0, async discover() { appels.b++; return response([offer('Jeu B')]); } },
+  });
+
+  await c.cycle(T + DAY, { force: ['a'] });
+  assert.equal(appels.a, 1);
+  assert.equal(appels.b, 0, 'la source saine ne devait pas etre touchee');
+
+  await c.cycle(T + 2 * DAY, { force: true });
+  assert.equal(appels.b, 1, 'forcer tout interroge bien tout');
+});
+
+test('forcer une source inconnue n\'interroge rien, et ne jette pas', async () => {
+  const appels = { a: 0 };
+  const c = await contexteDeTest({
+    a: { name: 'a', minIntervalMs: 0, async discover() { appels.a++; return response([]); } },
+  });
+
+  const r = await c.cycle(T + DAY, { force: ['source-qui-n-existe-pas'] });
+  assert.equal(appels.a, 0);
+  assert.ok(r, 'le cycle doit rendre un resultat, pas une exception');
+});

@@ -658,5 +658,65 @@
   },
   "syncUnavailable": {
     "message": "This browser has no sync storage available."
+  },
+  "durationSeconds": {
+    "message": "$1 s"
+  },
+  "sentinelTitle": {
+    "message": "Fallback watch"
+  },
+  "sentinelSub": {
+    "message": "One or more discovery sources have failed three times in a row. While this tab is open, it retries them on a reliable clock — which the background watcher cannot do, because three failures put a source to sleep for hours. Close the tab and everything returns to normal."
+  },
+  "sentinelWhy": {
+    "message": "Why this tab is open"
+  },
+  "sentinelJournal": {
+    "message": "What the watcher is doing"
+  },
+  "sentinelNote": {
+    "message": "This never becomes the default mode. Nothing here suspends the ordinary watch, and closing the tab — or the whole browser — leaves nothing behind to clean up."
+  },
+  "sentinelTryNow": {
+    "message": "Retry now"
+  },
+  "sentinelClose": {
+    "message": "Close"
+  },
+  "sentinelTrying": {
+    "message": "Retrying…"
+  },
+  "sentinelNextTry": {
+    "message": "Next attempt in $1"
+  },
+  "sentinelAttempts": {
+    "message": "$1 attempt(s) since opening"
+  },
+  "sentinelRecovered": {
+    "message": "$1 is back. The ordinary watch is enough again — you can close this tab."
+  },
+  "sentinelNothingFailing": {
+    "message": "No source is failing. Nothing to force, and nothing is being requested."
+  },
+  "sentinelStillFailing": {
+    "message": "$1 failures in a row"
+  },
+  "sentinelBack": {
+    "message": "back"
+  },
+  "sentinelLastSuccess": {
+    "message": "Last success: $1"
+  },
+  "sentinelNeverSucceeded": {
+    "message": "Never succeeded yet."
+  },
+  "openSentinel": {
+    "message": "Fallback watch"
+  },
+  "sentinelBanner": {
+    "message": "$1 keeps failing"
+  },
+  "sentinelBannerHint": {
+    "message": "After three failures a source sleeps for hours. The fallback tab retries it while you watch."
   }
 }

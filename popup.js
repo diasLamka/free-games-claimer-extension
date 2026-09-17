@@ -27,6 +27,7 @@ import { DEFAULT_SETTINGS } from './watch/storage.js';
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
+import { failingSources, reasonText } from './watch/sentinel.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -1018,6 +1019,34 @@ function renderStores(all, behaviour) {
 
 /* ----------------------------------------------------------------- sources */
 
+/* Le repli, propose et jamais impose.
+ *
+ * Trois echecs consecutifs endorment une source pendant des heures : c'est le
+ * bon comportement quand personne ne regarde, et le mauvais quand quelqu'un
+ * vient justement de l'ouvrir. Le bouton mene a l'onglet qui reessaie sous
+ * surveillance -- il ne lance rien d'ici. */
+function renderFallback(all) {
+  const host = document.getElementById('fallback');
+  host.textContent = '';
+
+  const casse = failingSources(get(all, KEY_SOURCES, {}));
+  if (!casse.length) return;
+
+  const bloc = el('div', 'canary');
+  const tete = el('div', 'canary-head');
+  tete.append(el('span', 'canary-store', t('sentinelBanner', casse.map((s) => s.name).join(', '))));
+
+  const ouvrir = el('button', 'link', t('openSentinel'));
+  ouvrir.addEventListener('click', () => openTab(api.runtime.getURL('sentinel.html')));
+  tete.append(ouvrir);
+  bloc.append(tete);
+
+  const pourquoi = reasonText(casse);
+  if (pourquoi) bloc.append(el('p', 'canary-why', pourquoi));
+  bloc.append(el('p', 'hint', t('sentinelBannerHint')));
+  host.append(bloc);
+}
+
 function renderSources(all, behaviour) {
   const sources = get(all, KEY_SOURCES, {});
   const host = document.getElementById('sources');
@@ -1287,6 +1316,7 @@ async function render() {
   renderFilters(all, behaviourCache);
   renderCanary(all);
   renderStores(all, behaviourCache);
+  renderFallback(all);
   renderSources(all, behaviourCache);
   renderPrediction(all);
   renderNotifications(behaviourCache);
