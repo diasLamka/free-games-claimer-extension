@@ -1,6 +1,20 @@
   function claimEpicGame(startEl, title, PLATFORM) {
     // Les modales de fin d'achat vont arriver : on (re)lance la veille.
     startEpicPostPurchaseModalWatcher();
+
+    // La fenetre d'achat est deja ouverte : ne rien recliquer.
+    //
+    // withRetry rappelle claimEpicGame apres un echec -- typiquement une
+    // confirmation qui a mis trop longtemps. La fenetre, elle, est toujours
+    // la. Recliquer "Obtenir" par-dessus relance tout depuis le debut : c'est
+    // le cas signale le 2026-09-17, une popup ouverte qui reste figee pendant
+    // que le moteur clique dessous. On attend la confirmation au lieu
+    // d'ajouter un clic dont personne n'a besoin.
+    if (epicPurchaseOverlayOpen()) {
+      log(PLATFORM, 'info', 'Fenetre d\'achat Epic deja ouverte : on attend sa confirmation au lieu de recliquer.');
+      return settleEpicClaim(PLATFORM).then(function () { return 'CLAIMED'; });
+    }
+
     if (startEl && startEl !== document) robustClick(startEl);
 
     var alreadyOwned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
@@ -67,19 +81,40 @@
   // panier -> commande -> paiement.
   function claimEpicViaCart(PLATFORM) {
     return sleep(1000).then(function () {
+      // Le clic sur "Obtenir" a peut-etre deja ouvert la fenetre d'achat : il
+      // n'y a alors pas d'etape panier, et chercher un bouton a cliquer dans
+      // la page derriere la fenetre ne peut que la deranger.
+      if (epicPurchaseOverlayOpen()) return null;
+
       var checkoutPatterns = [/^check\s*out$/i, /passer ([a\u00e0] la caisse|commande)/i];
+      // Le bouton doit etre ACTIF : cliquer un "Passer commande" grise ne fait
+      // rien, sinon consommer le clic unique auquel la page a droit.
       return waitForElement(function () {
-        return findActionElement(document, checkoutPatterns, { mustBeEnabled: false });
+        return findShortestActionElement(document, checkoutPatterns);
       }, { timeout: 6000 }).catch(function () { return null; });
     }).then(function (nextStep) {
       var challenge = detectSecurityChallenge();
       if (challenge) throw new Error('Defi de securite (' + challenge.type + ') detecte apres le clic principal.');
 
-      if (nextStep) {
-        log(PLATFORM, 'info', 'Etape panier detectee, clic sur "Passer commande".');
-        robustClick(nextStep);
-      } else {
-        log(PLATFORM, 'info', 'Pas d\'etape panier intermediaire detectee, le paiement a peut-etre demarre directement.');
+      if (!nextStep) {
+        // Rien a dire si la fenetre d'achat est deja ouverte : l'etape panier
+        // n'existe pas sur ce parcours, ce n'est pas une anomalie.
+        if (!epicPurchaseOverlayOpen()) {
+          log(PLATFORM, 'info', 'Pas d\'etape panier intermediaire detectee, le paiement a peut-etre demarre directement.');
+        }
+        return null;
+      }
+      log(PLATFORM, 'info', 'Etape panier detectee, clic sur "' + (nextStep.textContent || '').replace(/\s+/g, ' ').trim() + '".');
+      robustClick(nextStep);
+      // On LAISSE la page reagir avant de chercher l'etape suivante. Les deux
+      // clics partaient auparavant dans le meme tour de boucle : de l'exterieur
+      // c'est un double-clic, et la fenetre qui venait de s'ouvrir le recevait
+      // en pleine ouverture.
+      return sleep(1500);
+    }).then(function () {
+      if (epicPurchaseOverlayOpen()) {
+        log(PLATFORM, 'info', 'Fenetre d\'achat ouverte : le clic final revient au module qui s\'execute dans l\'iframe.');
+        return settleEpicClaim(PLATFORM);
       }
 
       // La modale "C'est gratuit. Ajoutez cela a votre bibliotheque" peut etre
@@ -98,16 +133,19 @@
             robustClick(agreeBtn2);
             return sleep(1500);
           }
-        }).then(function () { return null; });
+        }).then(function () { return settleEpicClaim(PLATFORM); });
       }
-      return waitForElement('#webPurchaseContainer, iframe[src*="payment-website-pci" i], iframe[src*="payment" i]', { timeout: 8000 }).catch(function () { return null; });
-    }).then(function (paymentFrame) {
-      if (!paymentFrame) {
-        log(PLATFORM, 'warn', 'Aucune iframe de paiement detectee apres le clic -- si votre navigateur bloque les iframes tierces, la reclamation ne pourra pas se terminer automatiquement.');
-      } else {
-        log(PLATFORM, 'info', 'Iframe de paiement detectee. Le clic final est gere par le module dedie qui s\'execute dans cette iframe.');
-      }
-      return settleEpicClaim(PLATFORM);
+
+      return waitForElement('#webPurchaseContainer, iframe[src*="payment-website-pci" i], iframe[src*="payment" i]', { timeout: 8000 })
+        .catch(function () { return null; })
+        .then(function (paymentFrame) {
+          if (!paymentFrame) {
+            log(PLATFORM, 'warn', 'Aucune iframe de paiement detectee apres le clic -- si votre navigateur bloque les iframes tierces, la reclamation ne pourra pas se terminer automatiquement.');
+          } else {
+            log(PLATFORM, 'info', 'Iframe de paiement detectee. Le clic final est gere par le module dedie qui s\'execute dans cette iframe.');
+          }
+          return settleEpicClaim(PLATFORM);
+        });
     });
   }
 

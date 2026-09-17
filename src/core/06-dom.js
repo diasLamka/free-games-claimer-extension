@@ -76,11 +76,50 @@
     }
   }
 
+  // Memoire des clics deja donnes.
+  //
+  // Le moteur cliquait le meme bouton a chaque passage de sonde tant qu'il
+  // restait affiche. Vu de l'utilisateur : une rafale de clics la ou un seul
+  // etait demande, et une fenetre d'achat qui reste figee parce qu'elle a
+  // recu le clic suivant au milieu de son animation.
+  //
+  // WeakMap plutot qu'un tableau : un noeud retire du DOM ne doit pas rester
+  // retenu par le journal des clics.
+  var CLICK_MEMORY = (function () {
+    try { return new WeakMap(); } catch (e) { return null; }
+  })();
+
+  function clickHistoryFor(el) {
+    if (!CLICK_MEMORY) return null;
+    var seen = CLICK_MEMORY.get(el);
+    if (!seen) { seen = { count: 0, last: 0, warned: false }; CLICK_MEMORY.set(el, seen); }
+    return seen;
+  }
+
+  // Trop tot, ou trop souvent ? Le repli est le meme : on ne clique pas.
+  function isRepeatClick(el) {
+    var seen = clickHistoryFor(el);
+    if (!seen || !seen.count) return false;
+    if (seen.count >= CONFIG.maxClicksPerElement) return true;
+    return (Date.now() - seen.last) < CONFIG.clickCooldownMs;
+  }
+
   function robustClick(el) {
     if (!el) return false;
 
     if (emergencyStopped()) {
       log('CORE', 'error', 'Clic REFUSE : arret d\'urgence actif.');
+      return false;
+    }
+
+    if (isRepeatClick(el)) {
+      var journal = clickHistoryFor(el);
+      // Une seule ligne par bouton : l'avertissement doit rester lisible, pas
+      // remplir la console au rythme des sondes.
+      if (journal && !journal.warned) {
+        journal.warned = true;
+        log('CORE', 'warn', 'Clic ignore : "' + (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '" a deja ete clique ' + journal.count + ' fois. On laisse la page reagir.');
+      }
       return false;
     }
 
@@ -99,26 +138,62 @@
     var cx = rect.left + rect.width / 2;
     var cy = rect.top + rect.height / 2;
 
+    // UN clic, c'est UN clic.
+    //
+    // La sequence se terminait par un evenement 'click' dispatche PUIS un
+    // appel a el.click(), qui en dispatche un second : deux activations pour
+    // un seul appel, sur un bouton qui n'en attend qu'une. Sur Epic, le
+    // premier ouvre la fenetre d'achat et le second retombe dedans -- c'est
+    // le symptome de la fenetre qui s'ouvre et reste figee, signale le
+    // 2026-09-17. el.click() ne sert plus que de REPLI, quand le dispatch a
+    // echoue (pas de constructeur d'evenement, element hors document).
+    var dispatched = true;
     ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function (type) {
       try {
         var EventCtor = type.indexOf('pointer') === 0 ? PointerEvent : MouseEvent;
-        el.dispatchEvent(new EventCtor(type, {
+        var init = {
           bubbles: true,
           cancelable: true,
           composed: true,
           view: window,
+          detail: 1,
+          button: 0,
+          buttons: type === 'pointerdown' || type === 'mousedown' ? 1 : 0,
           clientX: cx,
           clientY: cy
-        }));
-      } catch (e) {}
+        };
+        // Un PointerEvent sans pointerId ni isPrimary est ignore par certains
+        // gestionnaires : ils le prennent pour un evenement de test.
+        if (type.indexOf('pointer') === 0) {
+          init.pointerId = 1;
+          init.pointerType = 'mouse';
+          init.isPrimary = true;
+        }
+        el.dispatchEvent(new EventCtor(type, init));
+      } catch (e) {
+        if (type === 'click') dispatched = false;
+      }
     });
 
-    try { el.click(); } catch (e) {}
+    if (!dispatched) {
+      try { el.click(); } catch (e) {}
+    }
+
+    var seen = clickHistoryFor(el);
+    if (seen) { seen.count++; seen.last = Date.now(); }
     return true;
   }
 
   var ACTION_WARN_SEEN = {};
   var ACTION_WARN_EVERY_MS = 5000;
+
+  // Le libelle d'un controle, ramene a une forme comparable : Epic ecrit ses
+  // libelles francais avec des espaces insecables et repartit le texte sur
+  // plusieurs descendants, ce qui donne des blancs multiples dans textContent.
+  // Un motif ancre en ^...$ echouait dessus alors que le bouton etait le bon.
+  function actionText(el) {
+    return (el.textContent || '').replace(/\s+/g, ' ').trim();
+  }
 
   function findActionElement(root, patterns, options) {
     options = options || {};
@@ -128,7 +203,7 @@
 
     var candidates = Array.prototype.slice.call(root.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
     var found = candidates.find(function (el) {
-      var text = (el.textContent || '').trim();
+      var text = actionText(el);
       if (!text) return false;
       var visible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
       if (!visible) return false;
@@ -159,7 +234,7 @@
     if (!root) return [];
     var candidates = Array.prototype.slice.call(root.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
     return candidates.filter(function (el) {
-      var text = (el.textContent || '').trim();
+      var text = actionText(el);
       if (!text) return false;
       var visible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
       if (!visible) return false;
@@ -175,7 +250,7 @@
     var all = collectActionElements(root, patterns);
     if (!all.length) return null;
     all.sort(function (a, b) {
-      return (a.textContent || '').trim().length - (b.textContent || '').trim().length;
+      return actionText(a).length - actionText(b).length;
     });
     return all[0];
   }
@@ -203,7 +278,7 @@
     if (!root) return [];
     var candidates = Array.prototype.slice.call(root.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
     return candidates.filter(function (el) {
-      var text = (el.textContent || '').trim();
+      var text = actionText(el);
       if (!text) return false;
       var visible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
       if (!visible) return false;
@@ -254,9 +329,44 @@
     return dialogs.find(function (d) { return pattern.test(d.textContent || ''); }) || null;
   }
 
+  // La fenetre d'achat Epic est-elle deja ouverte ?
+  //
+  // Sert a ne pas recliquer le bouton d'acquisition par-dessus une fenetre qui
+  // vient de s'ouvrir : withRetry rappelle la reclamation apres un echec, et
+  // le clic de trop laissait la fenetre figee.
+  function epicPurchaseOverlayOpen() {
+    try {
+      // Le conteneur d'achat d'Epic et SON iframe, pas "une iframe dont l'URL
+      // contient payment" : ce dernier selecteur sert de repli apres un clic,
+      // il serait trop large pour DECIDER de ne pas cliquer. Un faux positif
+      // ici, c'est une reclamation qui n'a jamais lieu.
+      if (document.querySelector('#webPurchaseContainer, iframe[src*="payment-website-pci" i]')) return true;
+
+      // Une modale de fin d'achat reellement affichee. Le texte seul ne suffit
+      // pas : une mention du droit de retractation en pied de page n'est pas
+      // une fenetre ouverte.
+      var dialogs = Array.prototype.slice.call(document.querySelectorAll('[role="dialog"], [aria-modal="true"]'));
+      return dialogs.some(function (d) {
+        var visible = !!(d.offsetWidth || d.offsetHeight || (d.getClientRects && d.getClientRects().length));
+        if (!visible) return false;
+        var text = d.textContent || '';
+        return EPIC_WITHDRAWAL_HEADING_PATTERN.test(text) || EPIC_LAUNCHER_MODAL_HEADING_PATTERN.test(text);
+      });
+    } catch (e) {}
+    return false;
+  }
+
+  // Les sondes repassent sur les memes modales : ces deux temoins bornent le
+  // RECLIC (le premier clic peut n'avoir pas pris ; un par seconde n'est pas
+  // une nouvelle chance). La memoire de robustClick ne suffit pas ici : React
+  // remonte parfois un noeud neuf, que le journal des clics ne reconnait pas.
+  var lastWithdrawalActionAt = 0;
+  var lastLauncherActionAt = 0;
+
   function handleEpicPostPurchaseModals() {
+    var now = Date.now();
     var modal1 = findEpicModalByText(EPIC_WITHDRAWAL_HEADING_PATTERN);
-    if (modal1) {
+    if (modal1 && now - lastWithdrawalActionAt >= CONFIG.epicModalActionRetryMs) {
       /* Le repli non ancre, ici aussi -- troisieme endroit ou le meme piege
        * coute une version. Le textContent d'un bouton Epic concatene tous ses
        * descendants ; un motif en ^...$ echoue des qu'un span s'y glisse.
@@ -269,7 +379,8 @@
           || findShortestActionElement(modal1, EPIC_AGREE_LOOSE_PATTERNS)
           || findShortestActionElement(document, EPIC_AGREE_LOOSE_PATTERNS);
       if (agreeBtn) {
-        log('Epic Games', 'info', 'Popup "droit de retractation" detectee, clic sur "' + (agreeBtn.textContent || '').trim() + '".');
+        lastWithdrawalActionAt = now;
+        log('Epic Games', 'info', 'Popup "droit de retractation" detectee, clic sur "' + (agreeBtn.textContent || '').replace(/\s+/g, ' ').trim() + '".');
         robustClick(agreeBtn);
       } else if (!epicWithdrawalReported) {
         /* Une modale vue sans bouton reconnu est le pire des deux mondes : le
@@ -284,6 +395,8 @@
     var modal2 = findEpicModalByText(EPIC_LAUNCHER_MODAL_HEADING_PATTERN);
     if (modal2) {
       epicLauncherModalSeen = true;
+      if (now - lastLauncherActionAt < CONFIG.epicModalActionRetryMs) return true;
+      lastLauncherActionAt = now;
       var closeBtn = findCloseButton(modal2);
       if (closeBtn) {
         log('Epic Games', 'info', 'Popup "Lanceur Epic Games installe ?" detectee (= succes), fermeture via la croix.');
@@ -302,13 +415,26 @@
   var epicWithdrawalReported = false;
   var epicModalWatcherId = 0;
   var epicModalWatcherUntil = 0;
+  var epicModalWatcherHardStop = 0;
 
   function startEpicPostPurchaseModalWatcher(durationMs) {
     if (IS_EPIC_PAYMENT_FRAME) return;
-    epicModalWatcherUntil = Date.now() + (durationMs || CONFIG.epicModalWatchDurationMs);
+    var debut = Date.now();
+    epicModalWatcherUntil = debut + (durationMs || CONFIG.epicModalWatchDurationMs);
+    epicModalWatcherHardStop = Math.max(epicModalWatcherHardStop, debut + CONFIG.epicModalWatchMaxDurationMs);
     if (epicModalWatcherId) return;
     epicModalWatcherId = setInterval(function () {
-      if (Date.now() > epicModalWatcherUntil) {
+      var t = Date.now();
+      // Tant que la fenetre d'achat est OUVERTE, la veille ne s'arrete pas :
+      // c'est precisement le moment ou les popups arrivent, et un achat lent
+      // depassait les trois minutes accordees depuis le debut de la
+      // reclamation -- la veille expirait juste avant la popup a fermer. Le
+      // plafond dur evite la veille perpetuelle sur une fenetre laissee
+      // ouverte sans suite.
+      if (t < epicModalWatcherHardStop && epicPurchaseOverlayOpen()) {
+        epicModalWatcherUntil = Math.min(t + CONFIG.epicModalWatchDurationMs, epicModalWatcherHardStop);
+      }
+      if (t > epicModalWatcherUntil) {
         clearInterval(epicModalWatcherId);
         epicModalWatcherId = 0;
         return;

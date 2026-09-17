@@ -9,6 +9,20 @@
     epicMaxRedirectsPerSlug: 2,
     epicPaymentCompletionTimeout: 30000,
     epicPostPurchaseModalPollMs: 1000,
+    // Un meme bouton ne recoit pas une rafale de clics. Le guetteur des
+    // modales de fin d'achat repasse toutes les secondes, et l'attente de
+    // confirmation toutes les 500 ms : sans ces bornes, le meme "J'accepte"
+    // prenait plusieurs clics par seconde, et une modale React cliquee
+    // pendant sa transition ne se referme plus.
+    clickCooldownMs: 4000,
+    maxClicksPerElement: 3,
+    // Delai avant de RECLIQUER l'action d'une modale toujours affichee : le
+    // premier clic peut n'avoir pas pris, mais un par seconde n'est pas une
+    // nouvelle chance, c'est du martelage.
+    epicModalActionRetryMs: 5000,
+    // Plafond dur de la veille des modales : elle se prolonge tant que la
+    // fenetre d'achat est ouverte, jamais au-dela.
+    epicModalWatchMaxDurationMs: 10 * 60 * 1000,
     epicFreeGamesApiUrls: [
       'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
       'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR'

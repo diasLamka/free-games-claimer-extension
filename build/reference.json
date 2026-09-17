@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.15.2.js",
-  "sha256": "E69E0C8A4020FF743CA01CF13255609477BF268398D6E40750A7B5E58164CAE2",
-  "octets": 163512,
-  "version": "2.15.2",
-  "motif": "2.15.2 : l'accord de retractation, repli non ancre et diagnostic"
+  "fichier": "reference-v2.15.3.js",
+  "sha256": "19C7F3983D52B79440F239B8023F80419EFBE09A4950C373F07C0ACF652F0D51",
+  "octets": 172685,
+  "version": "2.15.3",
+  "motif": "2.15.3 : un clic = un clic, fin des rafales et du reclic sur fenetre ouverte"
 }

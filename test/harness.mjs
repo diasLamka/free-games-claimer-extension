@@ -18,6 +18,15 @@ const BUNDLE = join(ROOT, 'free-games-claimer.js');
 
 const noop = () => {};
 
+/* Un evenement de navigateur reduit a ce que le moteur en lit : son type et
+ * les champs qu'il y a mis. */
+class FakeEvent {
+  constructor(type, init) {
+    this.type = type;
+    Object.assign(this, init || {});
+  }
+}
+
 function fakeElement() {
   return {
     style: {},
@@ -115,6 +124,13 @@ export function loadEngine(options = {}) {
     navigator: { clipboard: null, userAgent: 'node-test' },
     history: { pushState: noop, replaceState: noop },
     MutationObserver: class { observe() {} disconnect() {} },
+    // Le moteur dispatche de vrais evenements et tient un journal des clics
+    // dans une WeakMap : sans ces trois-la, le contexte vm n'est pas un
+    // navigateur assez fidele pour que robustClick s'y teste.
+    MouseEvent: FakeEvent,
+    PointerEvent: FakeEvent,
+    KeyboardEvent: FakeEvent,
+    WeakMap,
     addEventListener: noop,
     removeEventListener: noop,
     open: noop,

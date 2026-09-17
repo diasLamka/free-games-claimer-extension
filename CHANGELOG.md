@@ -4,6 +4,43 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.15.3 -- 2026-09-17
+
+**Un clic, c'est un clic**
+
+La 2.15.2 a rendu les boutons trouvables ; celle-ci corrige ce qu'on en
+faisait. Symptome rapporte le meme jour : la fenetre d'achat s'ouvre puis
+reste figee, et l'utilisateur voit passer plusieurs clics la ou un seul est
+demande -- un pour ouvrir la fenetre, un pour confirmer.
+
+- **Chaque appel de clic en envoyait deux.** `robustClick` dispatchait un
+  evenement `click` PUIS appelait `el.click()`, qui en dispatche un second :
+  deux activations pour un seul appel, sur un bouton qui n'en attend qu'une.
+  Le premier ouvre la fenetre d'achat, le second retombe dedans pendant son
+  ouverture. `el.click()` n'est plus qu'un repli, quand le dispatch echoue.
+  Les evenements de pointeur portent desormais `pointerId`, `isPrimary` et
+  `button`, que certains gestionnaires exigent pour ne pas les ignorer.
+- **Plus de rafale sur le meme bouton.** Le guetteur des modales repasse
+  toutes les secondes et l'attente de confirmation toutes les 500 ms : tant
+  que la modale restait affichee, le meme « J'accepte » recevait un clic par
+  passage. La 2.15.2 avait borne le MESSAGE ecrit dans la console, pas le
+  clic. Un bouton deja clique est desormais laisse tranquille (4 s de repos,
+  3 clics au plus), et les modales ne sont recliquees qu'au bout de 5 s.
+- **Une nouvelle tentative ne reclique plus par-dessus la fenetre ouverte.**
+  Apres un echec, `withRetry` relance la reclamation depuis le debut ; si la
+  fenetre d'achat est deja la, le moteur attend sa confirmation au lieu de
+  recliquer « Obtenir » dessous. Meme regle dans le parcours panier, ou deux
+  clics partaient dans le meme tour de boucle -- vu de la page, un double-clic.
+- **La veille des modales ne s'arrete plus au milieu d'un achat.** Bornee a
+  trois minutes depuis le debut de la reclamation, elle expirait parfois juste
+  avant la popup a fermer. Elle se prolonge tant que la fenetre d'achat est
+  ouverte, avec un plafond dur de dix minutes.
+- **Les libelles sont normalises avant comparaison.** Epic ecrit ses libelles
+  francais avec des espaces insecables et repartit le texte sur plusieurs
+  descendants : un motif ancre echouait sur un blanc que `trim()` ne voit pas.
+- L'etape « Passer commande » exige un bouton ACTIF : cliquer un bouton grise
+  ne faisait que consommer le clic unique auquel la page a droit.
+
 ## 2.15.2 -- 2026-09-17
 
 **L'accord de retractation : le meme piege, au troisieme endroit**
