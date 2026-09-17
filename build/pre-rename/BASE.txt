@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
-sha256  : 1CDC3F2A4C155B81E0BD28B71D01E7C2E32D0EEC952FF759766F38433649DF22
-motif   : v2.13.4 : demarrage quand load est deja passe (Firefox), detection du defi Cloudflare
+sha256  : 1852AFFB8CDC83D4A5279C2035C690F6AD677443AE058141DC16842384B3F58D
+motif   : 2.14.1 : correction de l'iframe de paiement Epic
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

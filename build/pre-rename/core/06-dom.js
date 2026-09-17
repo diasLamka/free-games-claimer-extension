@@ -117,6 +117,9 @@
     return true;
   }
 
+  var ACTION_WARN_SEEN = {};
+  var ACTION_WARN_EVERY_MS = 5000;
+
   function findActionElement(root, patterns, options) {
     options = options || {};
     var mustBeEnabled = options.mustBeEnabled !== false;
@@ -134,8 +137,19 @@
     }) || null;
 
     if (!found && label) {
-      var sources = patterns.map(function (p) { return p.source; }).join(', ');
-      log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+      /* Une fois par libelle et par tranche de cinq secondes.
+       *
+       * Ce message est appele depuis l'interieur d'une attente qui sonde
+       * toutes les 300 ms : sans frein, un echec de douze secondes ecrit
+       * quarante lignes identiques, et la ligne utile -- celle qui NOMME les
+       * boutons vus -- se perd au milieu. Constate le 2026-09-17 sur une
+       * capture de console. */
+      var now = Date.now();
+      if (!(ACTION_WARN_SEEN[label] > now - ACTION_WARN_EVERY_MS)) {
+        ACTION_WARN_SEEN[label] = now;
+        var sources = patterns.map(function (p) { return p.source; }).join(', ');
+        log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+      }
     }
     return found;
   }

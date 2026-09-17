@@ -404,3 +404,36 @@ test('la page de defi Cloudflare est reconnue, pas les scripts Cloudflare des pa
   // Script de detection pose par Cloudflare sur les pages ordinaires.
   assert.equal(avecScripts(['https://store.epicgames.com/cdn-cgi/challenge-platform/scripts/jsd/main.js']), null);
 });
+
+/* ------------------------------------------- Epic : l'iframe de paiement */
+
+test('le bouton de la derniere etape est reconnu meme avec un span invisible', () => {
+  // Constate le 2026-09-17 sur « Mindcop » : l'iframe de paiement affichait
+  // « Ajouter a la bibliotheque », le module ne le trouvait pas, et la
+  // commande restait a l'ecran jusqu'a l'expiration des trente secondes.
+  //
+  // La cause est celle deja payee en 2.13.2 sur la fiche produit : le
+  // textContent d'un bouton Epic concatene tous ses descendants, et un span de
+  // lecteur d'ecran suffit a faire echouer un motif ancre en ^...$. Le repli
+  // non ancre avait ete ajoute a la fiche, jamais a l'iframe.
+  const { EPIC_LIBRARY_PATTERNS, EPIC_LIBRARY_LOOSE_PATTERNS } = fgc;
+
+  const propre = 'Ajouter a la bibliotheque';
+  const avecSpan = 'Ajouter a la bibliotheque Chargement en cours';
+
+  assert.ok(EPIC_LIBRARY_PATTERNS.some((p) => p.test(propre)), 'le libelle nu doit matcher');
+  assert.ok(!EPIC_LIBRARY_PATTERNS.some((p) => p.test(avecSpan)), 'c\'est bien le motif ancre qui echoue');
+  assert.ok(EPIC_LIBRARY_LOOSE_PATTERNS.some((p) => p.test(avecSpan)), 'le repli non ancre doit rattraper');
+});
+
+test('l\'accord de retractation a le meme repli, sans attraper son contraire', () => {
+  const { EPIC_AGREE_PATTERNS, EPIC_AGREE_LOOSE_PATTERNS } = fgc;
+
+  assert.ok(EPIC_AGREE_PATTERNS.some((p) => p.test('J\'accepte')));
+  assert.ok(EPIC_AGREE_LOOSE_PATTERNS.some((p) => p.test('J\'accepte et je continue')));
+  assert.ok(EPIC_AGREE_LOOSE_PATTERNS.some((p) => p.test('J’accepte')), 'l\'apostrophe typographique compte');
+
+  // La liste ancree porte « accepter » ; la liste large ne le porte pas, et
+  // c'est delibere : non ancre, il matcherait « Ne pas accepter ».
+  assert.ok(!EPIC_AGREE_LOOSE_PATTERNS.some((p) => p.test('Ne pas accepter')));
+});

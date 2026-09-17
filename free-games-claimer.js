@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.14.0
+ * FREE GAMES AUTO-CLAIMER -- v2.14.1
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -113,6 +113,11 @@
   // court -- le vrai bouton, pas un conteneur qui l'embarque.
   var EPIC_LIBRARY_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i, /place order/i, /valider la commande/i];
   var EPIC_AGREE_PATTERNS = [/^j['\u2019]accepte$/i, /^i agree$/i, /^accepter$/i, /^accept$/i];
+  // Variante NON ancree, meme raison que EPIC_LIBRARY_LOOSE_PATTERNS : un span
+  // invisible dans le bouton fait echouer un motif ^...$. Volontairement plus
+  // etroite que la liste ancree -- "accepter" seul, non ancre, matcherait
+  // "Ne pas accepter".
+  var EPIC_AGREE_LOOSE_PATTERNS = [/j['\u2019]accepte/i, /i agree/i];
 
   function log(platform, level, var_args) {
     var prefix = '[FGC][' + platform + '][' + level.toUpperCase() + ']';
@@ -363,6 +368,9 @@
     return true;
   }
 
+  var ACTION_WARN_SEEN = {};
+  var ACTION_WARN_EVERY_MS = 5000;
+
   function findActionElement(root, patterns, options) {
     options = options || {};
     var mustBeEnabled = options.mustBeEnabled !== false;
@@ -380,8 +388,19 @@
     }) || null;
 
     if (!found && label) {
-      var sources = patterns.map(function (p) { return p.source; }).join(', ');
-      log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+      /* Une fois par libelle et par tranche de cinq secondes.
+       *
+       * Ce message est appele depuis l'interieur d'une attente qui sonde
+       * toutes les 300 ms : sans frein, un echec de douze secondes ecrit
+       * quarante lignes identiques, et la ligne utile -- celle qui NOMME les
+       * boutons vus -- se perd au milieu. Constate le 2026-09-17 sur une
+       * capture de console. */
+      var now = Date.now();
+      if (!(ACTION_WARN_SEEN[label] > now - ACTION_WARN_EVERY_MS)) {
+        ACTION_WARN_SEEN[label] = now;
+        var sources = patterns.map(function (p) { return p.source; }).join(', ');
+        log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+      }
     }
     return found;
   }
@@ -889,6 +908,16 @@
     log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + '.');
 
     var confirmPatterns = EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i]);
+    // Le repli non ancre, qui manquait ici alors qu'il avait ete ajoute au
+    // parcours de la fiche en 2.13.2. Constate le 2026-09-17 sur "Mindcop" :
+    // l'iframe affichait "Ajouter a la bibliotheque", le module ne le trouvait
+    // pas, et la commande restait a l'ecran jusqu'a l'expiration des 30 s.
+    var confirmLoose = EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS);
+
+    function findConfirm(step) {
+      return findActionElement(document, confirmPatterns, { label: 'Iframe paiement (etape ' + (step + 1) + ')' })
+          || findShortestActionElement(document, confirmLoose);
+    }
 
     function stepLoop(step) {
       if (step >= 3) return Promise.resolve();
@@ -899,9 +928,17 @@
         return Promise.resolve();
       }
 
+      /* La PREMIERE etape attend aussi longtemps que la fiche attend sa
+         confirmation. Douze secondes fixes etaient un pari sur la vitesse de
+         chargement du paiement : passe ce delai le module abandonnait, alors
+         que le parcours du dessus, lui, patientait encore dix-huit secondes
+         pour rien. Les etapes suivantes sont breves -- une modale qui suit un
+         clic apparait tout de suite ou pas du tout. */
+      var budget = step === 0 ? CONFIG.epicPaymentCompletionTimeout : 8000;
+
       return waitForElement(function () {
-        return findActionElement(document, confirmPatterns, { label: 'Iframe paiement (etape ' + (step + 1) + ')' });
-      }, { timeout: 12000 }).catch(function () { return null; }).then(function (btn) {
+        return findConfirm(step);
+      }, { timeout: budget }).catch(function () { return null; }).then(function (btn) {
         if (!btn) {
           log(PLATFORM, 'info', 'Aucun bouton de confirmation trouve a l\'etape ' + (step + 1) + ' (deja valide, ou structure differente).');
           return;
@@ -909,13 +946,18 @@
         var btnText = btn.textContent.trim();
         log(PLATFORM, 'info', 'Clic sur le bouton de confirmation : "' + btnText + '"');
         robustClick(btn);
-        return sleep(1500).then(function () {
-          if (!EPIC_AGREE_PATTERNS.some(function (p) { return p.test(btnText); })) {
-            log(PLATFORM, 'info', 'Confirmation finale envoyee. Le module iframe a termine son role.');
-            return;
-          }
-          return stepLoop(step + 1);
-        });
+
+        /* On enchaine TOUJOURS, au lieu de s'arreter sur un clic qui n'etait
+           pas un "j'accepte".
+
+           L'ancienne condition supposait que l'accord precedait la commande.
+           La capture du 2026-09-17 montre l'inverse : "Ajouter a la
+           bibliotheque" d'abord, puis la modale "droit de retractation" avec
+           "J'accepte". Le module s'arretait donc juste avant la derniere
+           etape. Enchainer ne risque rien : la boucle est bornee a trois
+           tours et s'arrete d'elle-meme des qu'aucun bouton connu n'apparait
+           plus. */
+        return sleep(1500).then(function () { return stepLoop(step + 1); });
       });
     }
 
@@ -1228,7 +1270,7 @@
     // dans le bouton suffit a faire echouer un motif ^...$.
     return waitForElement(function () {
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
-          || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton d\'acquisition (Obtenir / Ajouter au panier / Ajouter a la bibliotheque)' })
+          || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
     }, { timeout: 12000 }).catch(function () {
       // L'echec porte son diagnostic : les libelles reellement visibles disent
@@ -2976,7 +3018,11 @@
       LUNA_CLAIM_PATTERNS: LUNA_CLAIM_PATTERNS,
       LUNA_CLAIMED_TEXT: LUNA_CLAIMED_TEXT,
       GOG_REDEEM_SUCCESS_TEXT: GOG_REDEEM_SUCCESS_TEXT,
-      GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS
+      GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,
+      EPIC_LIBRARY_PATTERNS: EPIC_LIBRARY_PATTERNS,
+      EPIC_LIBRARY_LOOSE_PATTERNS: EPIC_LIBRARY_LOOSE_PATTERNS,
+      EPIC_AGREE_PATTERNS: EPIC_AGREE_PATTERNS,
+      EPIC_AGREE_LOOSE_PATTERNS: EPIC_AGREE_LOOSE_PATTERNS
     };
   }
 })();

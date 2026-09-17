@@ -4,6 +4,45 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.14.1 -- 2026-09-17
+
+**L'acquisition Epic s'arretait sur la derniere etape**
+
+Constate sur « Mindcop » : l'iframe de paiement s'ouvrait, affichait « Ajouter
+a la bibliotheque », et plus rien ne se passait jusqu'a l'expiration des trente
+secondes. Le jeu n'etait pas recupere.
+
+- **Le repli non ancre manquait dans l'iframe.** Le textContent d'un bouton
+  Epic concatene tous ses descendants : un span de lecteur d'ecran suffit a
+  faire echouer un motif en `^...$`. C'est exactement le piege corrige en
+  2.13.2 sur la fiche produit -- et le correctif n'avait jamais ete applique au
+  module de paiement, qui n'essayait que les motifs ancres. Il essaie desormais
+  les deux, et prefere le libelle le plus court : le vrai bouton, pas un
+  conteneur qui l'embarque.
+- **Le module abandonnait avant la fin.** Apres un clic, il ne continuait que
+  si le bouton clique etait un « J'accepte » -- il supposait donc que l'accord
+  precedait la commande. La capture montre l'inverse : « Ajouter a la
+  bibliotheque » d'abord, puis la modale « droit de retractation ». Le module
+  s'arretait juste avant la derniere etape. Il enchaine maintenant, borne a
+  trois tours, et s'arrete de lui-meme quand aucun bouton connu n'apparait
+  plus.
+- **Douze secondes etaient un pari.** L'iframe abandonnait la recherche a 12 s
+  alors que la fiche, au-dessus, patientait encore dix-huit secondes pour rien.
+  La premiere etape dispose desormais du meme budget que la confirmation
+  qu'elle doit produire ; les suivantes restent breves, une modale qui suit un
+  clic apparaissant tout de suite ou pas du tout.
+- **La console ne deborde plus.** L'avertissement « aucun element visible ne
+  correspond » etait emis depuis l'interieur d'une attente qui sonde toutes les
+  300 ms : un echec de douze secondes ecrivait quarante lignes identiques, et
+  la ligne utile -- celle qui NOMME les boutons vus -- se perdait au milieu.
+  Une fois par libelle et par tranche de cinq secondes.
+- Le message d'echec de la fiche ne promet plus de chercher « Ajouter a la
+  bibliotheque » dans une liste qui ne le contient pas : il nomme ce qu'il
+  cherche vraiment.
+
+Deux tests figent la cause : le motif ancre DOIT echouer sur le libelle avec
+span, et le repli DOIT le rattraper -- sans attraper « Ne pas accepter ».
+
 ## 2.14.0 -- 2026-09-17
 
 Deux choses etaient affichees a cote de la verite sur un compte francais. Le

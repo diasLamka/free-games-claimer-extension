@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.13.4.js",
-  "sha256": "632527DDBFED11AD6AAB20008493AB264DB78388CBD0F936BA79FF22F0B6ACC4",
-  "octets": 155570,
-  "version": "2.13.4",
-  "motif": "v2.13.4 : demarrage quand load est deja passe (Firefox), detection du defi Cloudflare"
+  "fichier": "reference-v2.14.1.js",
+  "sha256": "40D8EE5643103619140428DDB1F802289D5F50175A0543C289DC25E56AC948AB",
+  "octets": 158142,
+  "version": "2.14.1",
+  "motif": "2.14.1 : l'iframe de paiement Epic reconnait enfin son bouton final"
 }

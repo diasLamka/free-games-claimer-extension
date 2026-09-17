@@ -24,7 +24,7 @@
     // dans le bouton suffit a faire echouer un motif ^...$.
     return waitForElement(function () {
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
-          || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton d\'acquisition (Obtenir / Ajouter au panier / Ajouter a la bibliotheque)' })
+          || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
     }, { timeout: 12000 }).catch(function () {
       // L'echec porte son diagnostic : les libelles reellement visibles disent

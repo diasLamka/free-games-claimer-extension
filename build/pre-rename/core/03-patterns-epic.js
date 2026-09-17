@@ -21,4 +21,9 @@
   // court -- le vrai bouton, pas un conteneur qui l'embarque.
   var EPIC_LIBRARY_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i, /place order/i, /valider la commande/i];
   var EPIC_AGREE_PATTERNS = [/^j['\u2019]accepte$/i, /^i agree$/i, /^accepter$/i, /^accept$/i];
+  // Variante NON ancree, meme raison que EPIC_LIBRARY_LOOSE_PATTERNS : un span
+  // invisible dans le bouton fait echouer un motif ^...$. Volontairement plus
+  // etroite que la liste ancree -- "accepter" seul, non ancre, matcherait
+  // "Ne pas accepter".
+  var EPIC_AGREE_LOOSE_PATTERNS = [/j['\u2019]accepte/i, /i agree/i];
 
