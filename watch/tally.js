@@ -15,7 +15,7 @@
  *
  * Module pur.
  */
-import { readWorth } from './filters.js';
+import { readWorth, readCurrency, UNKNOWN_CURRENCY } from './filters.js';
 import { STORE_LABELS, STORES } from './offer.js';
 
 /** Statuts qui signifient « le jeu est a moi ». */
@@ -47,7 +47,7 @@ export function matchHistory(key, store, catalog) {
  *
  * `historiques` : { 'Epic Games': {...}, GOG: {...}, 'Amazon Luna': {...} }
  */
-export function claimsMade(histories = {}, catalog = {}, { since = 0 } = {}) {
+export function claimsMade(histories = {}, catalog = {}, { since = 0, library = {} } = {}) {
   const out = [];
 
   for (const [plateforme, store] of Object.entries(PLATFORMS)) {
@@ -56,12 +56,28 @@ export function claimsMade(histories = {}, catalog = {}, { since = 0 } = {}) {
       if (!e || !e.ts || e.ts < since) continue;
       if (!ACQUIRED_STATUSES.includes(e.status)) continue;
 
+      /* Deux sources, et l'ordre compte.
+       *
+       * Le catalogue est frais mais purge -- trente jours, puis quatre-vingt-dix.
+       * Le registre (watch/library.js) fige titre et valeur A L'INSTANT de la
+       * reclamation et ne disparait jamais. Il a ete ecrit exactement pour ce
+       * cas, et le bilan ne l'avait jamais lu : passe la purge, les vieilles
+       * reclamations perdaient leur titre et leur prix, c'est-a-dire au moment
+       * ou l'une et l'autre servent le plus.
+       *
+       * Champ par champ, et non objet par objet : un catalogue qui connait le
+       * titre mais pas le prix ne doit pas masquer le prix que le registre a
+       * garde. */
       const known = matchHistory(key, store, catalog);
+      const frozen = matchHistory(key, store, library);
+      const worth = (known && known.worth) || (frozen && frozen.worth) || null;
+
       out.push({
         key,
         store,
-        title: known ? known.title : null,
-        worth: known ? readWorth(known.worth) : null,
+        title: (known && known.title) || (frozen && frozen.title) || null,
+        worth: readWorth(worth),
+        currency: readCurrency(worth),
         ts: e.ts,
         status: e.status,
       });
@@ -71,38 +87,58 @@ export function claimsMade(histories = {}, catalog = {}, { since = 0 } = {}) {
   return out.sort((a, b) => b.ts - a.ts);
 }
 
+/** Arrondi comptable, applique une fois a la fin plutot qu'a chaque addition. */
+function roundTotals(totals) {
+  const out = {};
+  for (const [devise, montant] of Object.entries(totals)) {
+    out[devise] = Math.round(montant * 100) / 100;
+  }
+  return out;
+}
+
 /**
  * Le bilan.
  *
- * `valorisees` compte les recuperations dont on connaissait la valeur : sans ce
- * chiffre, « 48 $ pour 20 jeux » laisserait croire que les 20 ont ete comptes,
- * alors que la moitie sont anterieures a la veille.
+ * `priced` compte les recuperations dont on connaissait la valeur : sans ce
+ * chiffre, « 48 EUR pour 20 jeux » laisserait croire que les 20 ont ete
+ * comptes, alors que la moitie sont anterieures a la veille.
+ *
+ * Les totaux sont rendus PAR DEVISE, et ne sont jamais additionnes entre eux.
+ * Ce n'est pas du purisme : gamerpower publie des dollars, Epic publie la
+ * devise du compte, et faire la somme des deux produirait un nombre qui ne
+ * designe rien. Les convertir demanderait un taux que personne ici ne peut
+ * verifier -- l'ancien code n'essayait meme pas, il collait un $ sur le tout.
  */
 export function tally(rows = []) {
-  let totalWorth = 0;
   let priced = 0;
+  const totals = {};
   const byStore = {};
   const byMonth = {};
 
   for (const l of rows) {
-    if (typeof l.worth === 'number') {
-      totalWorth += l.worth;
+    // Une valeur lisible dont la devise ne l'est pas reste une valeur : elle
+    // compte, sous une devise qui s'affiche sans symbole.
+    const devise = typeof l.worth === 'number' ? (l.currency || UNKNOWN_CURRENCY) : null;
+    if (devise) {
+      totals[devise] = (totals[devise] || 0) + l.worth;
       priced++;
     }
 
-    const m = byStore[l.store] || { count: 0, worth: 0 };
+    const m = byStore[l.store] || { count: 0, totals: {} };
     m.count++;
-    if (typeof l.worth === 'number') m.worth += l.worth;
+    if (devise) m.totals[devise] = (m.totals[devise] || 0) + l.worth;
     byStore[l.store] = m;
 
     const month = new Date(l.ts).toISOString().slice(0, 7);
     byMonth[month] = (byMonth[month] || 0) + 1;
   }
 
+  for (const stats of Object.values(byStore)) stats.totals = roundTotals(stats.totals);
+
   return {
     count: rows.length,
     priced,
-    totalWorth: Math.round(totalWorth * 100) / 100,
+    totals: roundTotals(totals),
     byStore,
     byMonth,
   };
@@ -130,6 +166,7 @@ export function buildExport({
   codes = [],
   histories = {},
   catalog = {},
+  library = {},
   sources = {},
   settings = {},
   filters = {},
@@ -138,7 +175,7 @@ export function buildExport({
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('exporter : "maintenant" est obligatoire');
 
-  const rows = claimsMade(histories, catalog);
+  const rows = claimsMade(histories, catalog, { library });
 
   return {
     exportFormat: EXPORT_FORMAT,

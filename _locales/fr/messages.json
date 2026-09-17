@@ -74,6 +74,15 @@
   "inFuture": {
     "message": "dans $1"
   },
+  "durationDaysHours": {
+    "message": "$1 j $2 h"
+  },
+  "durationHoursMinutes": {
+    "message": "$1 h $2"
+  },
+  "durationMinutes": {
+    "message": "$1 min"
+  },
   "never": {
     "message": "jamais"
   },

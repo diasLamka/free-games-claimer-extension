@@ -81,7 +81,18 @@ export function mapItem(item, now, owned) {
     ? purchase.free_to_keep_ends * 1000
     : null;
 
+  /* Le prix, dans la devise du magasin et non dans la notre.
+   *
+   * GetItems rend les deux : `formatted_original_price` porte le symbole de la
+   * region ("19,99 EUR" depuis la France), `original_price_in_cents` n'en porte
+   * aucun. Ce module composait « $ » + les centimes, ce qui affichait des
+   * dollars a qui voit des euros sur la page. On prend donc la forme deja
+   * formatee quand elle existe, et le nombre nu -- sans symbole invente --
+   * sinon. */
   const originalPrice = Number.parseInt(purchase.original_price_in_cents, 10);
+  const formatted = typeof purchase.formatted_original_price === 'string'
+    ? purchase.formatted_original_price.trim()
+    : '';
 
   return makeOffer({
     source: NAME,
@@ -92,7 +103,8 @@ export function mapItem(item, now, owned) {
     url: path,
     image: item.assets && item.assets.header ? item.assets.header : null,
     end,
-    worth: Number.isFinite(originalPrice) && originalPrice > 0 ? `$${(originalPrice / 100).toFixed(2)}` : null,
+    worth: formatted
+      || (Number.isFinite(originalPrice) && originalPrice > 0 ? (originalPrice / 100).toFixed(2) : null),
     category: item.type === 1 ? 'DLC' : 'Game',
     /* La source ne rend QUE des offres dont best_purchase_option dit
        is_free_to_keep. Le dire explicitement evite que le filtre retombe sur la

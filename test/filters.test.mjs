@@ -14,6 +14,9 @@ import {
   DEFAULT_FILTERS,
   REASONS,
   readWorth,
+  readCurrency,
+  dominantCurrency,
+  UNKNOWN_CURRENCY,
   isExtraContent,
   isKeepable,
   judge,
@@ -265,4 +268,49 @@ test('le defaut est actif : c\'est le seul defaut qui supprime des offres', () =
   assert.equal(DEFAULT_FILTERS.claimOnlyKeepable, true);
   // Et il ne supprime rien qu'on puisse gagner.
   assert.equal(judge(offer({ keepable: true }), {}, opts).claimable, true);
+});
+
+/* --------------------------------------------------------------- devises */
+
+test('la devise est lue dans le montant, sans jamais etre supposee', () => {
+  // Le cas qui a motive tout ceci : Epic publie le prix du COMPTE. Sur un
+  // compte francais, un $ pose devant fait lire des dollars la ou il y a des
+  // euros -- et personne ne peut s'en apercevoir sur le chiffre seul.
+  assert.equal(readCurrency('23,99 \u20AC'), 'EUR');
+  assert.equal(readCurrency('$14.99'), 'USD');
+  assert.equal(readCurrency('\u00A31.50'), 'GBP');
+  assert.equal(readCurrency('1 299,00 EUR'), 'EUR');
+});
+
+test('les marques qui se terminent par $ passent avant le dollar nu', () => {
+  // « R$ 29,90 » lu en dollars, c'est un facteur cinq sur le bilan.
+  assert.equal(readCurrency('R$ 29,90'), 'BRL');
+  assert.equal(readCurrency('CA$ 19.99'), 'CAD');
+  assert.equal(readCurrency('A$ 19.99'), 'AUD');
+  assert.equal(readCurrency('MX$ 199'), 'MXN');
+});
+
+test('une devise illisible rend null plutot qu\'une devise inventee', () => {
+  assert.equal(readCurrency('19.99'), null);
+  assert.equal(readCurrency('N/A'), null);
+  assert.equal(readCurrency(''), null);
+  assert.equal(readCurrency(null), null);
+  assert.equal(readCurrency(19.99), null, 'un nombre nu ne porte aucune devise');
+});
+
+test('la devise dominante sert a libeller le seuil', () => {
+  const lot = [
+    { worth: '23,99 \u20AC' },
+    { worth: '9,99 \u20AC' },
+    { worth: '$14.99' },
+    { worth: null },
+  ];
+  assert.equal(dominantCurrency(lot), 'EUR');
+  assert.equal(dominantCurrency([]), null);
+  assert.equal(dominantCurrency([{ worth: '19.99' }]), null, 'aucune devise lisible, aucune dominante');
+});
+
+test('le marqueur d\'inconnu est distinct de toute devise reelle', () => {
+  assert.equal(UNKNOWN_CURRENCY, '?');
+  assert.equal(readCurrency(UNKNOWN_CURRENCY), null);
 });

@@ -206,11 +206,29 @@ export function isFreeToKeep(el) {
   return total.discountPrice === 0;
 }
 
-/** Le prix d'origine tel qu'Epic le formate, pour l'affichage et le bilan. */
+/**
+ * Le prix d'origine tel qu'Epic le formate, pour l'affichage et le bilan.
+ *
+ * Epic publie le prix DU COMPTE : « 23,99 EUR » sur un compte francais, avec
+ * son `currencyCode` a cote. C'est ce qui rend faux tout symbole choisi par
+ * l'extension -- elle n'a rien a choisir, le montant arrive deja habille.
+ *
+ * Le repli reconstruit le montant a partir des centimes SANS oublier la
+ * devise : un nombre nu serait relu plus tard par quelqu'un qui devrait
+ * deviner, et deviner ici veut dire supposer des dollars.
+ */
 export function originalWorth(el) {
-  const fmt = el && el.price && el.price.totalPrice && el.price.totalPrice.fmtPrice;
+  const total = el && el.price && el.price.totalPrice;
+  const fmt = total && total.fmtPrice;
   const raw = fmt && fmt.originalPrice;
-  return raw && raw !== '0' ? String(raw) : null;
+  if (raw && raw !== '0') return String(raw);
+
+  if (total && typeof total.originalPrice === 'number' && total.originalPrice > 0 && total.currencyCode) {
+    const info = total.currencyInfo;
+    const decimals = info && Number.isFinite(info.decimals) ? info.decimals : 2;
+    return `${(total.originalPrice / 10 ** decimals).toFixed(decimals)} ${total.currencyCode}`;
+  }
+  return null;
 }
 
 /* -------------------------------------------------------------- projection */

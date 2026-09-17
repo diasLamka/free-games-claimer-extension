@@ -48,11 +48,39 @@ export function setLocale(locale) {
   override = LOCALES.includes(locale) ? locale : null;
 }
 
+/** The two-letter base of the browser UI language, or null if unreadable. */
+function browserBase() {
+  const ui = api && api.i18n.getUILanguage ? api.i18n.getUILanguage() : null;
+  if (!ui) return null;
+  return String(ui).toLowerCase().split('-')[0] || null;
+}
+
+/**
+ * The locale to speak, in order of authority: the explicit setting, then the
+ * browser UI language, then the languages the user told the browser they read.
+ *
+ * That third step is not cosmetics. `getUILanguage` answers the language
+ * Chrome's own menus are in, which is not always the reader's: a browser
+ * installed in German by an employer, or in English on a second-hand machine,
+ * used by someone whose `navigator.languages` starts with `fr-FR`. Defaulting
+ * such a reader to English was throwing away the one honest answer available.
+ * A UI language we do ship still wins -- it is the more deliberate signal.
+ */
 export function currentLocale() {
   if (override) return override;
-  const ui = api && api.i18n.getUILanguage ? api.i18n.getUILanguage() : 'en';
-  const base = String(ui || 'en').toLowerCase().split('-')[0];
-  return LOCALES.includes(base) ? base : 'en';
+
+  const base = browserBase();
+  if (base && LOCALES.includes(base)) return base;
+
+  const nav = typeof navigator !== 'undefined' ? navigator : null;
+  const accepted = nav && Array.isArray(nav.languages) && nav.languages.length
+    ? nav.languages
+    : (nav && nav.language ? [nav.language] : []);
+  for (const tag of accepted) {
+    const candidate = String(tag || '').toLowerCase().split('-')[0];
+    if (LOCALES.includes(candidate)) return candidate;
+  }
+  return 'en';
 }
 
 function fromTables(key, locale) {
@@ -73,8 +101,11 @@ export function t(key, ...subs) {
   const locale = currentLocale();
 
   let raw = null;
-  // An override must beat Chrome, which only ever answers in the UI language.
-  if (!override && api) {
+  /* Chrome only ever answers in the UI language, so it is asked only when that
+     language IS the one we resolved. An override beats it, and so does a
+     locale that came from `navigator.languages`: otherwise the tables would say
+     French while `getMessage` kept answering in English, in the same popup. */
+  if (!override && api && browserBase() === locale) {
     const viaChrome = api.i18n.getMessage(key, flat.map(String));
     if (viaChrome) return viaChrome;
   }

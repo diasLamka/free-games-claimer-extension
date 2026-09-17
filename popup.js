@@ -18,7 +18,7 @@
  */
 import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
 import { STORE_LABELS, STORES, normaliseTitle } from './watch/offer.js';
-import { preview, judge, REASONS } from './watch/filters.js';
+import { preview, judge, REASONS, readWorth, dominantCurrency, UNKNOWN_CURRENCY } from './watch/filters.js';
 import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
 import { CLAIMABLE_STORES } from './watch/sources/index.js';
@@ -205,15 +205,18 @@ async function withWorking(job, { immediate = false } = {}) {
 
 const DAY_MS = 86400000;
 
-/** "12 min", "3 h 20", "2 d 4 h" -- never seconds: nobody reopens a popup for them. */
+/* "12 min", "3 h 20", "2 j 4 h" -- never seconds: nobody reopens a popup for
+   them. The units go through the tables like every other piece of text: the
+   day used to be a hardcoded "d", so a French reader was told "2 d 4 h" in an
+   interface that was French everywhere else. */
 function readableDelay(ms) {
   const abs = Math.max(0, ms);
   const d = Math.floor(abs / DAY_MS);
   const h = Math.floor((abs % DAY_MS) / 3600000);
   const m = Math.floor((abs % 3600000) / 60000);
-  if (d) return `${d} d ${h} h`;
-  if (h) return `${h} h ${String(m).padStart(2, '0')}`;
-  return `${m} min`;
+  if (d) return t('durationDaysHours', String(d), String(h));
+  if (h) return t('durationHoursMinutes', String(h), String(m).padStart(2, '0'));
+  return t('durationMinutes', String(m));
 }
 
 function since(instant, now = Date.now()) {
@@ -387,9 +390,13 @@ function matchesQuery(offer) {
 }
 
 function sortOffers(rows, now) {
+  /* readWorth rather than a local parse: stripping everything but digits and
+     dots turns "23,99 EUR" into 2399, so the cheapest French offer sorted
+     above the most expensive one. The watch module already knows both decimal
+     separators, and the filters compare against the same reading. */
   const worthOf = (o) => {
-    const n = Number.parseFloat(String(o.worth || '').replace(/[^\d.]/g, ''));
-    return Number.isFinite(n) ? n : -1;
+    const n = readWorth(o.worth);
+    return typeof n === 'number' ? n : -1;
   };
   const runway = (o) => (o.end == null ? -1 : o.end - now);
 
@@ -1051,7 +1058,7 @@ function renderTally(all) {
   const histories = Object.fromEntries(
     Object.entries(HISTORY_KEYS).map(([label, key]) => [label, get(all, key, {})]),
   );
-  const b = tally(claimsMade(histories, get(all, KEY_CATALOG, {})));
+  const b = tally(claimsMade(histories, get(all, KEY_CATALOG, {}), { library: get(all, KEY_LIBRARY, {}) }));
   const zone = document.getElementById('tally');
   zone.textContent = '';
 
@@ -1067,7 +1074,7 @@ function renderTally(all) {
   // Honest about what it ignores: many claims predate the watcher and never had
   // a known worth.
   if (b.priced) {
-    zone.append(t('tallyValued', String(b.priced), money(b.totalWorth)));
+    zone.append(t('tallyValued', String(b.priced), moneyTotals(b.totals)));
   }
 
   /* Le mois le plus riche et le magasin dominant.
@@ -1097,16 +1104,44 @@ function renderTally(all) {
   for (const [store, stats] of Object.entries(b.byStore).sort((a, c) => c[1].count - a[1].count)) {
     const row = el('div', 'row');
     row.append(el('span', 'label', STORE_LABELS[store] || store));
-    row.append(el('span', 'aside', stats.worth ? `${stats.count} · ${money(stats.worth)}` : String(stats.count)));
+    const somme = moneyTotals(stats.totals);
+    row.append(el('span', 'aside', somme ? `${stats.count} · ${somme}` : String(stats.count)));
     host.append(row);
   }
 }
 
-/* The sources publish worth in US dollars and say so; presenting it in the
-   reader's currency would be a conversion nobody asked for and nobody could
-   check. The number is formatted for the locale, the currency is not. */
-function money(n) {
-  return `$${n.toFixed(2).replace('.', intlLocale().startsWith('fr') ? ',' : '.')}`;
+/* Amounts keep the currency they were published in. No conversion happens
+   anywhere: a rate nobody can check is worse than two totals side by side.
+   What changed is the symbol -- it used to be a hardcoded `$`, which read as
+   dollars on a French account whose Epic prices are all in euros. */
+function money(n, currency) {
+  const loc = intlLocale();
+  if (!currency || currency === UNKNOWN_CURRENCY) {
+    return new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  }
+  try {
+    return new Intl.NumberFormat(loc, { style: 'currency', currency }).format(n);
+  } catch {
+    // An ISO code Intl does not know still beats losing the amount.
+    return `${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${currency}`;
+  }
+}
+
+/** "23,99 € + 14,99 $" -- the biggest first, never summed across currencies. */
+function moneyTotals(totals = {}) {
+  return Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .map(([currency, amount]) => money(amount, currency))
+    .join(' + ');
+}
+
+/** The currency the threshold slider speaks, read off the offers on screen. */
+let seuilDevise = null;
+
+function thresholdCurrency(catalog) {
+  const found = dominantCurrency(Object.values(catalog || {}));
+  if (found) return found;
+  return intlLocale().startsWith('fr') ? 'EUR' : 'USD';
 }
 
 /* ----------------------------------------------------------------- filters */
@@ -1116,8 +1151,9 @@ function renderFilters(all, behaviour) {
   const catalog = get(all, KEY_CATALOG, {});
 
   const threshold = Number.isFinite(filters.minWorth) ? filters.minWorth : 0;
+  seuilDevise = thresholdCurrency(catalog);
   document.getElementById('min-worth').value = String(threshold);
-  document.getElementById('min-worth-value').textContent = threshold > 0 ? money(threshold) : t('noThreshold');
+  document.getElementById('min-worth-value').textContent = threshold > 0 ? money(threshold, seuilDevise) : t('noThreshold');
   document.getElementById('include-dlc').checked = filters.claimExtraContent === true;
   document.getElementById('keepable-only').checked = filters.claimOnlyKeepable !== false;
   document.getElementById('autonomous').checked = behaviour.autonomousClaim !== false;
@@ -1352,7 +1388,7 @@ document.getElementById('claim-all').addEventListener('click', async (e) => {
 
 document.getElementById('min-worth').addEventListener('input', (e) => {
   const v = Number(e.target.value);
-  document.getElementById('min-worth-value').textContent = v > 0 ? money(v) : t('noThreshold');
+  document.getElementById('min-worth-value').textContent = v > 0 ? money(v, seuilDevise) : t('noThreshold');
 });
 document.getElementById('min-worth').addEventListener('change', (e) => writeFilters({ minWorth: Number(e.target.value) }));
 document.getElementById('include-dlc').addEventListener('change', (e) => writeFilters({ claimExtraContent: e.target.checked }));
@@ -1422,6 +1458,7 @@ document.getElementById('export-json').addEventListener('click', async () => {
     codes: get(all, KEY_CODES, []),
     histories: Object.fromEntries(Object.entries(HISTORY_KEYS).map(([l, k]) => [l, get(all, k, {})])),
     catalog: get(all, KEY_CATALOG, {}),
+    library: get(all, KEY_LIBRARY, {}),
     sources: get(all, KEY_SOURCES, {}),
     settings: get(all, KEY_SETTINGS, {}),
     filters: get(all, KEY_FILTERS, {}),
@@ -1435,9 +1472,11 @@ document.getElementById('export-json').addEventListener('click', async () => {
 document.getElementById('export-csv').addEventListener('click', async () => {
   const all = await readAll();
   const histories = Object.fromEntries(Object.entries(HISTORY_KEYS).map(([l, k]) => [l, get(all, k, {})]));
-  const rows = claimsMade(histories, get(all, KEY_CATALOG, {}));
+  const rows = claimsMade(histories, get(all, KEY_CATALOG, {}), { library: get(all, KEY_LIBRARY, {}) });
 
-  const header = ['date', 'title', 'store', 'worth', 'status'];
+  // La devise a sa colonne : une valeur sans devise n'est pas exploitable dans
+  // un tableur, et les deux ne se melangent pas dans la meme cellule.
+  const header = ['date', 'title', 'store', 'worth', 'currency', 'status'];
   const lines = [header.join(',')];
   for (const r of rows) {
     lines.push([
@@ -1445,6 +1484,7 @@ document.getElementById('export-csv').addEventListener('click', async () => {
       r.title || '',
       STORE_LABELS[r.store] || r.store || '',
       r.worth ?? '',
+      r.currency || '',
       r.status || '',
     ].map(csvCell).join(','));
   }
