@@ -1,13 +1,32 @@
   function runEpicPaymentIframeModule() {
     var PLATFORM = 'Epic Payment (iframe)';
-    log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + '.');
+    log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + location.pathname
+      + (IS_EPIC_PCI_FRAME ? ' (prestataire).' : ' (sous-iframe Epic : commande gratuite seulement).'));
 
-    var confirmPatterns = EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i]);
+    /* CE QUE CE MODULE A LE DROIT DE CLIQUER, ET OU.
+     *
+     * Dans l'iframe du prestataire de paiement, le parcours est eprouve depuis
+     * des versions : accord, bibliotheque, commande, continuer.
+     *
+     * Dans une AUTRE sous-iframe d'Epic -- celle ou se termine une commande
+     * gratuite, qui n'a pas d'etape carte bancaire -- la liste se reduit a ce
+     * qui ne peut pas depenser d'argent : "Ajouter a la bibliotheque", puis
+     * l'accord de retractation qui suit. "Valider la commande" en est exclue,
+     * parce que ces iframes-la n'ont pas ete mesurees une par une et qu'un
+     * panier payant en ouvre aussi.
+     *
+     * C'est cette liste, et non l'adresse de l'iframe, qui borne le risque. */
+    var eprouvee = IS_EPIC_PCI_FRAME;
+    var confirmPatterns = eprouvee
+      ? EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i])
+      : EPIC_AGREE_PATTERNS.concat(EPIC_FREE_ORDER_PATTERNS);
     // Le repli non ancre, qui manquait ici alors qu'il avait ete ajoute au
     // parcours de la fiche en 2.13.2. Constate le 2026-09-17 sur "Mindcop" :
     // l'iframe affichait "Ajouter a la bibliotheque", le module ne le trouvait
     // pas, et la commande restait a l'ecran jusqu'a l'expiration des 30 s.
-    var confirmLoose = EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS);
+    var confirmLoose = eprouvee
+      ? EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS)
+      : EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_FREE_ORDER_LOOSE_PATTERNS);
 
     function findConfirm(step) {
       return findActionElement(document, confirmPatterns, { label: 'Iframe paiement (etape ' + (step + 1) + ')' })

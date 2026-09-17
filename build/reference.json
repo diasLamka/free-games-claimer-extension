@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.14.1.js",
-  "sha256": "40D8EE5643103619140428DDB1F802289D5F50175A0543C289DC25E56AC948AB",
-  "octets": 158142,
-  "version": "2.14.1",
-  "motif": "2.14.1 : l'iframe de paiement Epic reconnait enfin son bouton final"
+  "fichier": "reference-v2.15.1.js",
+  "sha256": "7E37D30B753F2B54AF58932E646AD54BEF2B8F1FCF76E4D9456E88876471C7BE",
+  "octets": 161910,
+  "version": "2.15.1",
+  "motif": "2.15.1 : la commande gratuite Epic ne passe pas par le prestataire de paiement"
 }

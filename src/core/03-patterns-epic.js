@@ -20,6 +20,12 @@
   // findShortestActionElement, qui prefere le candidat au libelle le plus
   // court -- le vrai bouton, pas un conteneur qui l'embarque.
   var EPIC_LIBRARY_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i, /place order/i, /valider la commande/i];
+  /* Les SEULS boutons qu'une sous-iframe Epic non-prestataire a le droit de
+   * cliquer. La liste est courte a dessein : "Ajouter a la bibliotheque" ne
+   * peut pas depenser d'argent, "Valider la commande" si -- et cette derniere
+   * reste reservee a l'iframe du prestataire, ou le parcours est eprouve. */
+  var EPIC_FREE_ORDER_PATTERNS = [/^ajouter [a\u00e0] la biblioth[e\u00e8]que$/i, /^add to library$/i];
+  var EPIC_FREE_ORDER_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i];
   var EPIC_AGREE_PATTERNS = [/^j['\u2019]accepte$/i, /^i agree$/i, /^accepter$/i, /^accept$/i];
   // Variante NON ancree, meme raison que EPIC_LIBRARY_LOOSE_PATTERNS : un span
   // invisible dans le bouton fait echouer un motif ^...$. Volontairement plus

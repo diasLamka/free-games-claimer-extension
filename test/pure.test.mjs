@@ -437,3 +437,25 @@ test('l\'accord de retractation a le meme repli, sans attraper son contraire', (
   // c'est delibere : non ancre, il matcherait « Ne pas accepter ».
   assert.ok(!EPIC_AGREE_LOOSE_PATTERNS.some((p) => p.test('Ne pas accepter')));
 });
+
+test('une sous-iframe Epic ne peut pas cliquer ce qui depense de l\'argent', () => {
+  // La garde qui rend sur le correctif du 2026-09-17 : on accepte TOUTES les
+  // iframes d'Epic, parce que l'adresse de celle qui termine une commande
+  // gratuite n'a pas ete mesuree. C'est donc la liste des boutons cliquables,
+  // et non l'adresse, qui borne le risque.
+  const { EPIC_FREE_ORDER_PATTERNS, EPIC_FREE_ORDER_LOOSE_PATTERNS, EPIC_LIBRARY_PATTERNS } = fgc;
+
+  const paye = ['Valider la commande', 'Place order'];
+  for (const libelle of paye) {
+    assert.ok(EPIC_LIBRARY_PATTERNS.some((p) => p.test(libelle)),
+      'la liste eprouvee, elle, porte bien la commande');
+    assert.ok(!EPIC_FREE_ORDER_PATTERNS.some((p) => p.test(libelle)),
+      `une sous-iframe ne doit jamais pouvoir cliquer "${libelle}"`);
+    assert.ok(!EPIC_FREE_ORDER_LOOSE_PATTERNS.some((p) => p.test(libelle)));
+  }
+
+  // Et elle reconnait ce qui ne peut rien couter, span parasite compris.
+  assert.ok(EPIC_FREE_ORDER_PATTERNS.some((p) => p.test('Ajouter a la bibliotheque')));
+  assert.ok(EPIC_FREE_ORDER_LOOSE_PATTERNS.some((p) => p.test('Ajouter a la bibliotheque Chargement')));
+  assert.ok(EPIC_FREE_ORDER_PATTERNS.some((p) => p.test('Add to library')));
+});

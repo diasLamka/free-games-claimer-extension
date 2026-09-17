@@ -4,6 +4,33 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.15.1 -- 2026-09-17
+
+**La commande gratuite Epic ne passe pas par le prestataire de paiement**
+
+Le correctif de la 2.15.0 ne pouvait pas marcher, et voici pourquoi : le module
+qu'il corrigeait ne demarrait jamais.
+
+- `02-frames.js` n'autorisait le moteur que dans la sous-iframe
+  `payment-website-pci`. Or **un total a zero n'a pas d'etape carte bancaire** :
+  la commande gratuite se termine ailleurs. Le module de paiement ne tournait
+  donc pas, la fiche attendait trente secondes une confirmation que personne
+  n'allait produire, et le bouton « Ajouter a la bibliotheque » restait a
+  l'ecran -- exactement ce que montre la capture.
+- Le moteur accepte desormais **toutes les sous-iframes d'Epic**. On ne devine
+  pas l'adresse de la bonne : elle n'a pas ete mesuree, et deux versions ont
+  deja ete perdues a supposer.
+- **C'est ce qu'il a le droit d'y CLIQUER qui borne le risque**, pas l'adresse.
+  Dans une sous-iframe autre que celle du prestataire, la liste se reduit a
+  « Ajouter a la bibliotheque » puis « J'accepte ». « Valider la commande » en
+  est exclue : le premier ne peut pas depenser d'argent, le second si, et ces
+  iframes-la n'ont pas ete mesurees une par une -- un panier payant en ouvre
+  aussi. Un test le fige.
+- Et l'echec porte enfin son diagnostic : **l'inventaire des iframes** de la
+  fiche est ecrit au journal quand la confirmation n'arrive pas. Une ligne
+  comme celle-ci aurait dementi la supposition du premier coup, au lieu de deux
+  versions plus tard.
+
 ## 2.15.0 -- 2026-09-17
 
 **GOG a enfin sa propre source**

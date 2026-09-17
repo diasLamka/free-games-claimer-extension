@@ -115,6 +115,24 @@
   // avoir verifie la possession. La confirmation peut prendre une forme que le
   // guetteur ne connait pas encore -- Epic change ses modales -- mais le bouton
   // "Dans la bibliotheque" qui remplace le bouton d'achat, lui, dit la verite.
+  /* Ce que la fiche voit vraiment comme iframes.
+   *
+   * Ecrit une seule fois, au moment de l'echec, et c'est ce qui manquait le
+   * 2026-09-17 : on a suppose pendant deux versions que la commande gratuite
+   * se terminait chez le prestataire de paiement. Une ligne comme celle-ci
+   * l'aurait dementi du premier coup. */
+  function describeFrames() {
+    try {
+      var frames = Array.prototype.slice.call(document.querySelectorAll('iframe'));
+      if (!frames.length) return 'aucune iframe';
+      return frames.slice(0, 6).map(function (f) {
+        var src = f.getAttribute('src') || '(sans src)';
+        var visible = !!(f.offsetWidth || f.offsetHeight);
+        return src.slice(0, 120) + (visible ? '' : ' [masquee]');
+      }).join(' | ');
+    } catch (e) { return 'inventaire impossible : ' + ((e && e.message) || e); }
+  }
+
   function settleEpicClaim(PLATFORM) {
     return waitForEpicPaymentCompletion().catch(function (err) {
       var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
@@ -122,6 +140,7 @@
         log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
         return null;
       }
+      log(PLATFORM, 'warn', 'Aucune confirmation. Iframes presentes sur la fiche : ' + describeFrames());
       throw err;
     });
   }

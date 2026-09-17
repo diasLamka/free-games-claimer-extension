@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.15.0
+ * FREE GAMES AUTO-CLAIMER -- v2.15.1
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -81,13 +81,32 @@
     microsoftRedeemUrl: 'https://account.microsoft.com/billing/redeem'
   };
 
-  var IS_EPIC_PAYMENT_FRAME = /payment-website-pci/i.test(location.hostname) && location.hostname.endsWith('epicgames.com');
+  var IS_EPIC_HOST = /(^|\.)epicgames\.com$/i.test(location.hostname);
+  var IS_EPIC_PCI_FRAME = /payment-website-pci/i.test(location.hostname) && IS_EPIC_HOST;
 
   // Le script est injecte dans toutes les iframes de la page (publicites,
-  // lecteurs video, widgets) : seule l'iframe de paiement Epic nous interesse.
+  // lecteurs video, widgets) : seules les iframes d'Epic nous interessent.
   var IS_TOP_FRAME = (function () {
     try { return window.top === window.self; } catch (e) { return false; }
   })();
+
+  /* TOUTE sous-iframe d'Epic, et pas seulement celle du prestataire.
+   *
+   * Constate le 2026-09-17 sur "Mindcop" : la commande GRATUITE se termine
+   * dans une iframe qui n'est PAS payment-website-pci -- il n'y a pas d'etape
+   * carte bancaire pour un total a zero. Le module de paiement ne demarrait
+   * donc jamais, la fiche attendait trente secondes une confirmation que
+   * personne n'allait produire, et le bouton restait a l'ecran.
+   *
+   * On ne devine pas l'adresse de cette iframe : on accepte toutes celles
+   * d'Epic, et c'est ce que le module a le droit d'y CLIQUER qui borne le
+   * risque. Voir runEpicPaymentIframeModule : dans une sous-iframe autre que
+   * celle du prestataire, il ne peut cliquer que "Ajouter a la bibliotheque"
+   * puis "J'accepte" -- jamais "Valider la commande". Le premier ne peut pas
+   * depenser d'argent, le second si. */
+  var IS_EPIC_SUBFRAME = !IS_TOP_FRAME && IS_EPIC_HOST && !IS_EPIC_PCI_FRAME;
+  var IS_EPIC_PAYMENT_FRAME = IS_EPIC_PCI_FRAME || IS_EPIC_SUBFRAME;
+
   if (!IS_TOP_FRAME && !IS_EPIC_PAYMENT_FRAME) return;
 
   // Les libelles reels du store sont accentues ("Recuperer", "Dans la
@@ -112,6 +131,12 @@
   // findShortestActionElement, qui prefere le candidat au libelle le plus
   // court -- le vrai bouton, pas un conteneur qui l'embarque.
   var EPIC_LIBRARY_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i, /place order/i, /valider la commande/i];
+  /* Les SEULS boutons qu'une sous-iframe Epic non-prestataire a le droit de
+   * cliquer. La liste est courte a dessein : "Ajouter a la bibliotheque" ne
+   * peut pas depenser d'argent, "Valider la commande" si -- et cette derniere
+   * reste reservee a l'iframe du prestataire, ou le parcours est eprouve. */
+  var EPIC_FREE_ORDER_PATTERNS = [/^ajouter [a\u00e0] la biblioth[e\u00e8]que$/i, /^add to library$/i];
+  var EPIC_FREE_ORDER_LOOSE_PATTERNS = [/ajouter [a\u00e0] la biblioth[e\u00e8]que/i, /add to library/i];
   var EPIC_AGREE_PATTERNS = [/^j['\u2019]accepte$/i, /^i agree$/i, /^accepter$/i, /^accept$/i];
   // Variante NON ancree, meme raison que EPIC_LIBRARY_LOOSE_PATTERNS : un span
   // invisible dans le bouton fait echouer un motif ^...$. Volontairement plus
@@ -905,14 +930,33 @@
 
   function runEpicPaymentIframeModule() {
     var PLATFORM = 'Epic Payment (iframe)';
-    log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + '.');
+    log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + location.pathname
+      + (IS_EPIC_PCI_FRAME ? ' (prestataire).' : ' (sous-iframe Epic : commande gratuite seulement).'));
 
-    var confirmPatterns = EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i]);
+    /* CE QUE CE MODULE A LE DROIT DE CLIQUER, ET OU.
+     *
+     * Dans l'iframe du prestataire de paiement, le parcours est eprouve depuis
+     * des versions : accord, bibliotheque, commande, continuer.
+     *
+     * Dans une AUTRE sous-iframe d'Epic -- celle ou se termine une commande
+     * gratuite, qui n'a pas d'etape carte bancaire -- la liste se reduit a ce
+     * qui ne peut pas depenser d'argent : "Ajouter a la bibliotheque", puis
+     * l'accord de retractation qui suit. "Valider la commande" en est exclue,
+     * parce que ces iframes-la n'ont pas ete mesurees une par une et qu'un
+     * panier payant en ouvre aussi.
+     *
+     * C'est cette liste, et non l'adresse de l'iframe, qui borne le risque. */
+    var eprouvee = IS_EPIC_PCI_FRAME;
+    var confirmPatterns = eprouvee
+      ? EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i])
+      : EPIC_AGREE_PATTERNS.concat(EPIC_FREE_ORDER_PATTERNS);
     // Le repli non ancre, qui manquait ici alors qu'il avait ete ajoute au
     // parcours de la fiche en 2.13.2. Constate le 2026-09-17 sur "Mindcop" :
     // l'iframe affichait "Ajouter a la bibliotheque", le module ne le trouvait
     // pas, et la commande restait a l'ecran jusqu'a l'expiration des 30 s.
-    var confirmLoose = EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS);
+    var confirmLoose = eprouvee
+      ? EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS)
+      : EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_FREE_ORDER_LOOSE_PATTERNS);
 
     function findConfirm(step) {
       return findActionElement(document, confirmPatterns, { label: 'Iframe paiement (etape ' + (step + 1) + ')' })
@@ -1361,6 +1405,24 @@
   // avoir verifie la possession. La confirmation peut prendre une forme que le
   // guetteur ne connait pas encore -- Epic change ses modales -- mais le bouton
   // "Dans la bibliotheque" qui remplace le bouton d'achat, lui, dit la verite.
+  /* Ce que la fiche voit vraiment comme iframes.
+   *
+   * Ecrit une seule fois, au moment de l'echec, et c'est ce qui manquait le
+   * 2026-09-17 : on a suppose pendant deux versions que la commande gratuite
+   * se terminait chez le prestataire de paiement. Une ligne comme celle-ci
+   * l'aurait dementi du premier coup. */
+  function describeFrames() {
+    try {
+      var frames = Array.prototype.slice.call(document.querySelectorAll('iframe'));
+      if (!frames.length) return 'aucune iframe';
+      return frames.slice(0, 6).map(function (f) {
+        var src = f.getAttribute('src') || '(sans src)';
+        var visible = !!(f.offsetWidth || f.offsetHeight);
+        return src.slice(0, 120) + (visible ? '' : ' [masquee]');
+      }).join(' | ');
+    } catch (e) { return 'inventaire impossible : ' + ((e && e.message) || e); }
+  }
+
   function settleEpicClaim(PLATFORM) {
     return waitForEpicPaymentCompletion().catch(function (err) {
       var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
@@ -1368,6 +1430,7 @@
         log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
         return null;
       }
+      log(PLATFORM, 'warn', 'Aucune confirmation. Iframes presentes sur la fiche : ' + describeFrames());
       throw err;
     });
   }
@@ -3022,7 +3085,9 @@
       EPIC_LIBRARY_PATTERNS: EPIC_LIBRARY_PATTERNS,
       EPIC_LIBRARY_LOOSE_PATTERNS: EPIC_LIBRARY_LOOSE_PATTERNS,
       EPIC_AGREE_PATTERNS: EPIC_AGREE_PATTERNS,
-      EPIC_AGREE_LOOSE_PATTERNS: EPIC_AGREE_LOOSE_PATTERNS
+      EPIC_AGREE_LOOSE_PATTERNS: EPIC_AGREE_LOOSE_PATTERNS,
+      EPIC_FREE_ORDER_PATTERNS: EPIC_FREE_ORDER_PATTERNS,
+      EPIC_FREE_ORDER_LOOSE_PATTERNS: EPIC_FREE_ORDER_LOOSE_PATTERNS
     };
   }
 })();
