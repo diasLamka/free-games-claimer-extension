@@ -330,6 +330,54 @@ const ANCRES_GOG = [
   { name: 'lienProduit', selector: 'a[href*="/game/"]', attr: 'href' },
 ];
 
+/* Des URL CANDIDATES, testees et non supposees.
+ *
+ * Une source qui lit du JSON vaut mieux qu'une source qui lit du HTML : le
+ * JSON change quand le service change, le HTML change quand le CSS change. On
+ * ne peut pas savoir depuis un editeur si ces adresses existent encore -- on
+ * peut le demander a un vrai navigateur. Un 404 est une reponse parfaitement
+ * utile : il retire un candidat de la liste.
+ *
+ * Toutes sont sur des hotes que le manifeste autorise deja. Une adresse sur un
+ * sous-domaine non declare echouerait avec le meme message qu'une panne
+ * reseau, ce qui produirait une mesure ambigue -- exactement ce qu'on cherche
+ * a eviter. */
+const CANDIDATS = [
+  'https://www.gog.com/giveaway',
+  'https://www.gog.com/games/ajax/filtered?mediaType=game&price=free&sort=popularity',
+  'https://www.gog.com/en/games?price=free',
+];
+
+async function sonderCandidat(url) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(url, { credentials: 'omit', redirect: 'follow' });
+    const type = r.headers.get('content-type') || '';
+    const corps = await r.text();
+
+    const out = {
+      url,
+      status: r.status,
+      finalUrl: r.url !== url ? r.url : null,
+      type: type.split(';')[0],
+      bytes: corps.length,
+      ms: Math.round(performance.now() - t0),
+    };
+    if (type.includes('json')) {
+      try {
+        const j = JSON.parse(corps);
+        out.topKeys = j && typeof j === 'object' ? Object.keys(j).slice(0, 30) : null;
+      } catch { out.topKeys = ['<json illisible>']; }
+    }
+    // Le mot compte autant que le code : une page 200 qui ne parle pas de
+    // giveaway ne sert a rien non plus.
+    out.giveaway = /giveaway|jeu offert|claim it free/i.test(corps);
+    return out;
+  } catch (e) {
+    return { url, error: String((e && e.message) || e), ms: Math.round(performance.now() - t0) };
+  }
+}
+
 async function lancerSonde() {
   $('sonde-run').disabled = true;
   $('sonde-out').classList.remove('hidden');
@@ -383,6 +431,9 @@ async function lancerSonde() {
       ],
     });
 
+    // Les candidats, en parallele : ce sont trois requetes publiques.
+    out.candidats = await Promise.all(CANDIDATS.map(sonderCandidat));
+
     resultats.sonde = out;
 
     const prime = out.prime || {};
@@ -420,6 +471,14 @@ async function lancerSonde() {
     };
     $('s-prime-structure').textContent = resume(prime);
     $('s-gog-structure').textContent = resume(gog);
+
+    $('s-candidats').textContent = out.candidats
+      .map((c) => {
+        const nom = c.url.replace('https://www.gog.com', '');
+        if (c.error) return `${nom} : echec`;
+        return `${nom} : ${c.status}${c.giveaway ? ' (giveaway)' : ''}`;
+      })
+      .join(' | ');
 
     /* Le verdict ne tranche que ce que la mesure montre.
      *
@@ -515,6 +574,12 @@ function majRapport() {
         l.push(`  -- echantillons ${cle} (${lot.length}) --`);
         for (const e of lot) l.push(`     ${JSON.stringify(e)}`);
       }
+      l.push('');
+    }
+
+    if (r.candidats) {
+      l.push('### adresses candidates');
+      for (const c of r.candidats) l.push(`  ${JSON.stringify(c)}`);
       l.push('');
     }
   }

@@ -58,9 +58,32 @@ function echantillon(el, needles) {
    * C'est ce qui transforme « 3 blocs de donnees embarquees » en « le bloc
    * __NEXT_DATA__ contient le mot giveaway » : la difference entre une mesure
    * qu'il faut relancer et une mesure sur laquelle on peut ecrire du code. */
+  const bas = contenu.toLowerCase();
   const hits = [];
+  const around = {};
   for (const n of needles || []) {
-    if (n && contenu.toLowerCase().includes(String(n).toLowerCase())) hits.push(n);
+    if (!n) continue;
+    const i = bas.indexOf(String(n).toLowerCase());
+    if (i < 0) continue;
+    hits.push(n);
+    /* Le voisinage, pas seulement la presence.
+     *
+     * « le mot giveaway est quelque part dans ce bloc » ne se code pas.
+     * « ...,"giveaway":{"id":123,"product":{...} » se code. C'est la
+     * difference entre une mesure de plus et la fin des mesures. */
+    around[n] = contenu.slice(Math.max(0, i - 120), i + 240);
+  }
+
+  /* Les cles de premier niveau d'un bloc JSON.
+   *
+   * Mesurer un schema plutot que le supposer : si `gogcom-store-state` porte
+   * une cle `giveaway`, on le saura sans avoir a deviner son nom. */
+  let topKeys = null;
+  if ((attrs.type || '').includes('json')) {
+    try {
+      const parsed = JSON.parse(contenu);
+      if (parsed && typeof parsed === 'object') topKeys = Object.keys(parsed).slice(0, 60);
+    } catch { topKeys = ['<json illisible>']; }
   }
 
   return {
@@ -68,6 +91,8 @@ function echantillon(el, needles) {
     attrs,
     chars: contenu.length,
     hits,
+    around,
+    topKeys,
     text: coupe(contenu).slice(0, 120),
     html: html.length > MAX_HTML ? `${html.slice(0, MAX_HTML)}\u2026` : html,
   };

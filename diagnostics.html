@@ -306,6 +306,13 @@
         <code>.giveaway__title</code> en tete -- et rapporte lesquelles repondent.
         On mesure les selecteurs au lieu de les deviner.
       </p>
+      <p>
+        Elle teste aussi trois <b>adresses candidates</b>, sur des hotes que le
+        manifeste autorise deja. Une source qui lit du JSON vaut mieux qu'une
+        source qui lit du HTML : le JSON change quand le service change, le HTML
+        change quand le CSS change. Un 404 est une reponse utile -- il retire un
+        candidat de la liste.
+      </p>
 
       <div class="controls">
         <button id="sonde-run">Lancer la mesure</button>
@@ -320,6 +327,7 @@
           <tr><th>Ancres GOG qui repondent</th><td id="s-gog-ancres">--</td></tr>
           <tr><th>Giveaway annonce dans le texte</th><td id="s-gog-texte">--</td></tr>
           <tr><th>Structure echantillonnee (GOG)</th><td id="s-gog-structure">--</td></tr>
+          <tr><th>Adresses candidates</th><td id="s-candidats">--</td></tr>
         </table>
         <div class="verdict" id="s-verdict"><b>--</b></div>
       </div>
