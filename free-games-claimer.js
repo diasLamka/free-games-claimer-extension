@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.15.1
+ * FREE GAMES AUTO-CLAIMER -- v2.15.2
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -533,10 +533,27 @@
   function handleEpicPostPurchaseModals() {
     var modal1 = findEpicModalByText(EPIC_WITHDRAWAL_HEADING_PATTERN);
     if (modal1) {
-      var agreeBtn = findActionElement(modal1, EPIC_AGREE_PATTERNS, { mustBeEnabled: true });
+      /* Le repli non ancre, ici aussi -- troisieme endroit ou le meme piege
+       * coute une version. Le textContent d'un bouton Epic concatene tous ses
+       * descendants ; un motif en ^...$ echoue des qu'un span s'y glisse.
+       *
+       * Et un repli au niveau du DOCUMENT en dernier recours : le conteneur
+       * deduit du titre ne contient pas forcement les boutons, selon la facon
+       * dont Epic imbrique sa modale. On n'arrive ici que parce que la modale
+       * de retractation est bien presente. */
+      var agreeBtn = findActionElement(modal1, EPIC_AGREE_PATTERNS, { mustBeEnabled: true })
+          || findShortestActionElement(modal1, EPIC_AGREE_LOOSE_PATTERNS)
+          || findShortestActionElement(document, EPIC_AGREE_LOOSE_PATTERNS);
       if (agreeBtn) {
-        log('Epic Games', 'info', 'Popup "droit de retractation" detectee, clic sur "J\'accepte".');
+        log('Epic Games', 'info', 'Popup "droit de retractation" detectee, clic sur "' + (agreeBtn.textContent || '').trim() + '".');
         robustClick(agreeBtn);
+      } else if (!epicWithdrawalReported) {
+        /* Une modale vue sans bouton reconnu est le pire des deux mondes : le
+         * parcours s'arrete, et rien ne dit pourquoi. Une seule fois, sinon
+         * le guetteur ecrit cette ligne chaque seconde pendant trois minutes. */
+        epicWithdrawalReported = true;
+        log('Epic Games', 'warn', 'Popup "droit de retractation" detectee, mais aucun bouton d\'accord reconnu. Boutons visibles : '
+          + (visibleActionLabels(8).join(' | ') || 'aucun'));
       }
     }
 
@@ -558,6 +575,7 @@
 
   // Veille bornee : un balayage des titres chaque seconde a vie sur chaque
   // onglet Epic ouvert etait inutile hors reclamation.
+  var epicWithdrawalReported = false;
   var epicModalWatcherId = 0;
   var epicModalWatcherUntil = 0;
 
@@ -984,7 +1002,12 @@
         return findConfirm(step);
       }, { timeout: budget }).catch(function () { return null; }).then(function (btn) {
         if (!btn) {
-          log(PLATFORM, 'info', 'Aucun bouton de confirmation trouve a l\'etape ' + (step + 1) + ' (deja valide, ou structure differente).');
+          /* Le diagnostic avec, sinon cette ligne ne sert a rien : "aucun
+           * bouton trouve" n'apprend pas quels boutons ETAIENT la, et c'est
+           * exactement l'information qui manque quand Epic change sa modale. */
+          log(PLATFORM, 'info', 'Aucun bouton de confirmation a l\'etape ' + (step + 1)
+            + ' (deja valide, ou structure differente). Boutons visibles : '
+            + (visibleActionLabels(8).join(' | ') || 'aucun'));
           return;
         }
         var btnText = btn.textContent.trim();

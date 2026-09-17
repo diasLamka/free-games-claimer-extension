@@ -54,7 +54,12 @@
         return findConfirm(step);
       }, { timeout: budget }).catch(function () { return null; }).then(function (btn) {
         if (!btn) {
-          log(PLATFORM, 'info', 'Aucun bouton de confirmation trouve a l\'etape ' + (step + 1) + ' (deja valide, ou structure differente).');
+          /* Le diagnostic avec, sinon cette ligne ne sert a rien : "aucun
+           * bouton trouve" n'apprend pas quels boutons ETAIENT la, et c'est
+           * exactement l'information qui manque quand Epic change sa modale. */
+          log(PLATFORM, 'info', 'Aucun bouton de confirmation a l\'etape ' + (step + 1)
+            + ' (deja valide, ou structure differente). Boutons visibles : '
+            + (visibleActionLabels(8).join(' | ') || 'aucun'));
           return;
         }
         var btnText = btn.textContent.trim();

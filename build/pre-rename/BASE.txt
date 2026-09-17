@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
-sha256  : 37D49F75D0EBDB5F2CFB469729C57F824A45BB3F33E7B4E04D1079C688A11FD1
-motif   : 2.15.1 : toute sous-iframe Epic, bornee aux boutons qui ne coutent rien
+sha256  : 7C89EE4F3EF9DE78DD891AF54A7661C1AC4625288C18BD3EC3A159B68599F28C
+motif   : 2.15.2 : accord de retractation
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.15.1.js",
-  "sha256": "7E37D30B753F2B54AF58932E646AD54BEF2B8F1FCF76E4D9456E88876471C7BE",
-  "octets": 161910,
-  "version": "2.15.1",
-  "motif": "2.15.1 : la commande gratuite Epic ne passe pas par le prestataire de paiement"
+  "fichier": "reference-v2.15.2.js",
+  "sha256": "E69E0C8A4020FF743CA01CF13255609477BF268398D6E40750A7B5E58164CAE2",
+  "octets": 163512,
+  "version": "2.15.2",
+  "motif": "2.15.2 : l'accord de retractation, repli non ancre et diagnostic"
 }

@@ -4,6 +4,29 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.15.2 -- 2026-09-17
+
+**L'accord de retractation : le meme piege, au troisieme endroit**
+
+Le clic « Ajouter a la bibliotheque » passe depuis la 2.15.1. C'est la modale
+suivante -- « Informations sur le droit de retractation » -- qui arrete le
+parcours.
+
+- Le guetteur de modales du cadre principal cherchait le bouton d'accord avec
+  des motifs ANCRES en `^...$`, exactement comme l'iframe de paiement avant la
+  2.14.1 et la fiche produit avant la 2.13.2. Le textContent d'un bouton Epic
+  concatene tous ses descendants : un span suffit a faire echouer le motif.
+  Troisieme endroit, meme cause, meme correctif -- avec en plus un repli au
+  niveau du document, le conteneur deduit du titre ne contenant pas forcement
+  les boutons selon la facon dont Epic imbrique sa modale.
+- **Une modale vue sans bouton reconnu se disait enfin.** Le code ne faisait
+  rien du tout dans ce cas : le parcours s'arretait, et aucune ligne n'en
+  donnait la raison. Il ecrit desormais les libelles reellement visibles -- une
+  fois, pas a chaque seconde de la veille de trois minutes.
+- Le module d'iframe fait de meme quand il ne trouve pas son bouton : « aucun
+  bouton trouve » n'apprend pas quels boutons ETAIENT la, et c'est exactement
+  ce qui manque quand Epic change sa modale.
+
 ## 2.15.1 -- 2026-09-17
 
 **La commande gratuite Epic ne passe pas par le prestataire de paiement**
