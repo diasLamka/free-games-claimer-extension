@@ -194,6 +194,15 @@ export const DEFAULT_SETTINGS = Object.freeze({
   reminderHours: 6,
   /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
   watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
+
+  /**
+   * Recopier les codes en attente dans chrome.storage.sync.
+   *
+   * Coupe par defaut, et ce n'est pas de la prudence de facade : la zone sync
+   * traverse le compte du navigateur. Y poser les codes de quelqu'un sans le
+   * lui demander serait prendre une decision a sa place. Voir watch/backup.js.
+   */
+  syncCodes: false,
 });
 
 /**

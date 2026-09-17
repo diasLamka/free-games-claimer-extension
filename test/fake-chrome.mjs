@@ -19,13 +19,20 @@
 
 const QUOTA_LOCAL = 10 * 1024 * 1024;
 
+/* La zone sync est bien plus petite, et elle a DEUX plafonds. Le second --
+   8 Ko par element -- est celui qui compte ici : un lot de codes trop gros
+   n'est pas tronque, il est REJETE. Sans ce plafond dans le faux, un test
+   verrait passer une sauvegarde que Chrome refuserait en silence. */
+const QUOTA_SYNC = 102400;
+const QUOTA_SYNC_PER_ITEM = 8192;
+
 function awaitVerdict(ms) {
   return ms > 0 ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve();
 }
 
 /* ------------------------------------------------------------------ stockage */
 
-function creerZoneStockage(name, { latenceMs = 0, quota = QUOTA_LOCAL, journal }) {
+function creerZoneStockage(name, { latenceMs = 0, quota = QUOTA_LOCAL, quotaParElement = null, journal }) {
   const data = new Map();
   const auditeurs = [];
 
@@ -60,6 +67,17 @@ function creerZoneStockage(name, { latenceMs = 0, quota = QUOTA_LOCAL, journal }
     async set(obj) {
       journal.push({ zone: name, op: 'set', keys: Object.keys(obj) });
       await awaitVerdict(latenceMs);
+
+      if (quotaParElement !== null) {
+        for (const [k, v] of Object.entries(obj)) {
+          const n = k.length + JSON.stringify(v).length;
+          if (n > quotaParElement) {
+            const e = new Error(`QUOTA_BYTES_PER_ITEM quota exceeded (${n} > ${quotaParElement})`);
+            e.name = 'QuotaExceeded';
+            throw e;
+          }
+        }
+      }
 
       const projection = new Map(data);
       for (const [k, v] of Object.entries(obj)) projection.set(k, copie(v));
@@ -202,9 +220,12 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
 
   const local = creerZoneStockage('local', { latenceMs, journal });
   const session = creerZoneStockage('session', { latenceMs, journal });
+  const sync = creerZoneStockage('sync', {
+    latenceMs, journal, quota: QUOTA_SYNC, quotaParElement: QUOTA_SYNC_PER_ITEM,
+  });
   const auditeursChangement = [];
 
-  for (const zone of [local, session]) {
+  for (const zone of [local, session, sync]) {
     zone._auditeurs.push((changements, name) => {
       for (const fn of auditeursChangement) fn(changements, name);
     });
@@ -217,6 +238,7 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
     storage: {
       local,
       session,
+      sync,
       onChanged: { addListener: (fn) => auditeursChangement.push(fn) },
     },
 
@@ -276,10 +298,11 @@ export function fakeChrome({ now = Date.UTC(2026, 7, 27, 12, 0, 0), latenceMs = 
     async installer(reasonText = 'install') { for (const fn of installation) await fn({ reason: reasonText }); },
     /** Ce que le stockage contient reellement, pour inspection. */
     payload(zone = 'local') {
-      const m = zone === 'local' ? local._donnees : session._donnees;
+      const m = zone === 'local' ? local._donnees : zone === 'sync' ? sync._donnees : session._donnees;
       return Object.fromEntries([...m.entries()].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))]));
     },
     tailleStockage(zone = 'local') {
+      if (zone === 'sync') return sync._taille();
       return zone === 'local' ? local._taille() : session._taille();
     },
   };

@@ -217,7 +217,12 @@ export const TABLES = Object.freeze({
     "openJournal": "Watch log",
     "canaryStreak": "$1 failures in a row",
     "canaryAck": "Seen",
-    "canaryHint": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find."
+    "canaryHint": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find.",
+    "syncCodesLabel": "Back up my pending codes",
+    "syncCodesHint": "Copies them to your browser account, so a reinstall gets them back. Nothing else is copied.",
+    "syncCodesState": "$1 code(s) backed up",
+    "syncCodesEmpty": "Nothing backed up yet.",
+    "syncUnavailable": "This browser has no sync storage available."
   },
   "fr": {
     "appName": "Free Games Auto-Claimer",
@@ -434,6 +439,11 @@ export const TABLES = Object.freeze({
     "openJournal": "Journal de la veille",
     "canaryStreak": "$1 échecs d'affilée",
     "canaryAck": "J'ai vu",
-    "canaryHint": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé."
+    "canaryHint": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé.",
+    "syncCodesLabel": "Sauvegarder mes codes en attente",
+    "syncCodesHint": "Les recopie dans votre compte navigateur : une réinstallation les retrouve. Rien d'autre n'est copié.",
+    "syncCodesState": "$1 code(s) sauvegardé(s)",
+    "syncCodesEmpty": "Rien de sauvegardé pour l'instant.",
+    "syncUnavailable": "Ce navigateur n'a pas de stockage synchronisé disponible."
   }
 });

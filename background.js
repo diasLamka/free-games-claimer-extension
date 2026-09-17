@@ -32,7 +32,7 @@
 import { runCycle } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
 import {
-  readState, readKeys, write, KEYS,
+  readState, readKeys, readSettings, write, KEYS,
   rememberNotificationLink, readNotificationLink,
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
@@ -40,6 +40,7 @@ import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
+import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -253,6 +254,34 @@ api.runtime.onStartup.addListener(() => planifier('demarrage'));
 // Une mise a jour efface les alarmes : 'update' compte autant que 'install'.
 api.runtime.onInstalled.addListener(() => planifier('installation'));
 
+/* La sauvegarde des codes.
+ *
+ * Elle est coupee par defaut : la zone sync traverse le compte du navigateur.
+ * Quand elle est active, deux moments comptent et un seul est evident.
+ *
+ * RESTAURER au demarrage et a l'installation, parce que c'est exactement la
+ * ou une reinstallation atterrit : la zone locale est vide, la zone sync a
+ * survecu. Le cas a l'air rare jusqu'au jour ou il arrive, et ce jour-la un
+ * code perdu est un jeu perdu.
+ *
+ * MIROITER a chaque ecriture de la cle du moteur. Le moteur ecrit aussi quand
+ * l'utilisateur reclame a la main, sur une page que la veille n'a jamais vue :
+ * s'accrocher a nos propres cycles raterait precisement ces codes-la. */
+async function restaurerCodes(origine) {
+  const { syncCodes } = await readSettings(api);
+  if (!syncCodes || !hasSync(api)) return;
+
+  const { restored } = await restoreCodes(api);
+  if (restored) record('info', `${restored} code(s) restaure(s) depuis la sauvegarde (${origine})`);
+}
+
+api.runtime.onStartup.addListener(() => {
+  restaurerCodes('demarrage').catch((e) => record('warn', 'restauration des codes impossible', e));
+});
+api.runtime.onInstalled.addListener(() => {
+  restaurerCodes('installation').catch((e) => record('warn', 'restauration des codes impossible', e));
+});
+
 /* Le registre se remplit a l'instant de la reclamation.
  *
  * C'est la SEULE fenetre pendant laquelle l'information existe : le titre, la
@@ -265,6 +294,19 @@ api.runtime.onInstalled.addListener(() => planifier('installation'));
  * une page que la veille n'a jamais vue. */
 api.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
+
+  if (changes[KEY_CODES]) {
+    (async () => {
+      const { syncCodes } = await readSettings(api);
+      if (!syncCodes || !hasSync(api)) return;
+
+      const { mirrored, dropped, ok } = await mirrorCodes(api, changes[KEY_CODES].newValue);
+      // Un lot trop gros n'est pas tronque par le navigateur, il est rejete :
+      // le dire est la difference entre une sauvegarde et une illusion.
+      if (!ok) record('warn', 'sauvegarde des codes refusee par le navigateur');
+      else if (dropped) record('warn', `${dropped} code(s) trop anciens hors sauvegarde, ${mirrored} garde(s)`);
+    })().catch((e) => record('warn', 'sauvegarde des codes impossible', e));
+  }
 
   const lots = Object.entries(changes)
     .filter(([key]) => key.startsWith('FGC_history_'))

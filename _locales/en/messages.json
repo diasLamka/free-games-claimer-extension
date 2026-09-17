@@ -643,5 +643,20 @@
   },
   "canaryHint": {
     "message": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find."
+  },
+  "syncCodesLabel": {
+    "message": "Back up my pending codes"
+  },
+  "syncCodesHint": {
+    "message": "Copies them to your browser account, so a reinstall gets them back. Nothing else is copied."
+  },
+  "syncCodesState": {
+    "message": "$1 code(s) backed up"
+  },
+  "syncCodesEmpty": {
+    "message": "Nothing backed up yet."
+  },
+  "syncUnavailable": {
+    "message": "This browser has no sync storage available."
   }
 }

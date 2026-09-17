@@ -26,6 +26,7 @@ import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
+import { KEY_SYNC_CODES } from './watch/backup.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -1180,6 +1181,29 @@ function thresholdCurrency(catalog) {
   return intlLocale().startsWith('fr') ? 'EUR' : 'USD';
 }
 
+/* ------------------------------------------------------------ code backup */
+
+/* L'etat dit ce qui est REELLEMENT sauvegarde, pas ce qui devrait l'etre.
+   Une sauvegarde qu'on croit faite est pire que pas de sauvegarde : c'est
+   celle sur laquelle on compte le jour de la reinstallation. */
+function renderSyncCodes(behaviour) {
+  const on = behaviour.syncCodes === true;
+  document.getElementById('sync-codes').checked = on;
+
+  const zone = document.getElementById('sync-state');
+  if (!api.storage.sync) {
+    zone.textContent = t('syncUnavailable');
+    return;
+  }
+  if (!on) { zone.textContent = ''; return; }
+
+  api.storage.sync.get(KEY_SYNC_CODES, (raw) => {
+    void api.runtime.lastError;
+    const n = Array.isArray(raw && raw[KEY_SYNC_CODES]) ? raw[KEY_SYNC_CODES].length : 0;
+    zone.textContent = n ? t('syncCodesState', String(n)) : t('syncCodesEmpty');
+  });
+}
+
 /* ----------------------------------------------------------------- filters */
 
 function renderFilters(all, behaviour) {
@@ -1266,6 +1290,7 @@ async function render() {
   renderSources(all, behaviourCache);
   renderPrediction(all);
   renderNotifications(behaviourCache);
+  renderSyncCodes(behaviourCache);
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
   document.getElementById('luna-auto').checked = all.FGC_luna_auto_mode !== false;
@@ -1436,6 +1461,7 @@ document.getElementById('min-worth').addEventListener('change', (e) => writeFilt
 document.getElementById('include-dlc').addEventListener('change', (e) => writeFilters({ claimExtraContent: e.target.checked }));
 document.getElementById('keepable-only').addEventListener('change', (e) => writeFilters({ claimOnlyKeepable: e.target.checked }));
 document.getElementById('autonomous').addEventListener('change', (e) => writeBehaviour({ autonomousClaim: e.target.checked }));
+document.getElementById('sync-codes').addEventListener('change', (e) => writeBehaviour({ syncCodes: e.target.checked }));
 
 document.getElementById('notify-mode').addEventListener('change', (e) => writeBehaviour({ notifyMode: e.target.value }));
 document.getElementById('quiet-on').addEventListener('change', (e) => writeBehaviour({

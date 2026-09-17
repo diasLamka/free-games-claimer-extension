@@ -643,5 +643,20 @@
   },
   "canaryHint": {
     "message": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé."
+  },
+  "syncCodesLabel": {
+    "message": "Sauvegarder mes codes en attente"
+  },
+  "syncCodesHint": {
+    "message": "Les recopie dans votre compte navigateur : une réinstallation les retrouve. Rien d'autre n'est copié."
+  },
+  "syncCodesState": {
+    "message": "$1 code(s) sauvegardé(s)"
+  },
+  "syncCodesEmpty": {
+    "message": "Rien de sauvegardé pour l'instant."
+  },
+  "syncUnavailable": {
+    "message": "Ce navigateur n'a pas de stockage synchronisé disponible."
   }
 }
