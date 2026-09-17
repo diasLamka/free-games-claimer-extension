@@ -89,6 +89,9 @@ export function loadEngine(options = {}) {
     head: fakeElement(),
     body: fakeElement(),
     hidden: false,
+    // updateUiState lit le badge : sans ce lecteur, un test qui traverse le
+    // cadre du dessus casse sur un document trop pauvre.
+    getElementById: () => null,
     visibilityState: 'visible',
     readyState: options.readyState,
   };
@@ -150,7 +153,11 @@ export function loadEngine(options = {}) {
 
   sandbox.window = sandbox;
   sandbox.self = sandbox;
-  sandbox.top = sandbox;
+  /* options.frame : 'top' (defaut), 'sub' (sous-iframe Epic), 'pci'
+   * (prestataire de paiement). C'est la seule facon de tester la sentinelle :
+   * 02-frames.js decide de tout a partir de window.top === window.self, et le
+   * harnais chargeait toujours le moteur en cadre principal. */
+  sandbox.top = (options.frame && options.frame !== 'top') ? { fgcAutreFrame: true } : sandbox;
   sandbox.globalThis = sandbox;
 
   vm.createContext(sandbox);

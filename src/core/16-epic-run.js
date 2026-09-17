@@ -90,6 +90,7 @@
 
           log(PLATFORM, 'info', 'Fiche produit courante identifiee comme jeu gratuit non reclame : ' + currentMatch.title);
           updateUiState('running', 'Epic : ' + currentMatch.title + '...');
+          resetEpicSettleClock();
           return withRetry(function () {
             return claimEpicGame(document, currentMatch.title, PLATFORM);
           }, { label: 'recuperation Epic (' + currentMatch.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
@@ -114,7 +115,19 @@
         }
 
         var successCount = 0;
+
+        /* Une fenetre d'achat ouverte bloque le passage au jeu suivant.
+         *
+         * Le corps de la boucle n'est pas touche, seulement enveloppe : sans
+         * cette garde, processNext cherchait l'ancre du jeu suivant 1,5 s puis
+         * naviguait, ce qui emportait la commande en cours avec la page. */
         function processNext(index) {
+          return Promise.resolve(waitForPurchaseOverlayToClose(PLATFORM)).then(function () {
+            return processNextInner(index);
+          });
+        }
+
+        function processNextInner(index) {
           if (index >= unclaimed.length) {
             updateUiState(successCount > 0 ? 'ok' : 'error', 'Epic : ' + successCount + '/' + unclaimed.length + ' recupere(s)');
             log(PLATFORM, 'info', 'Module Epic Games termine (detection API).');
@@ -134,6 +147,7 @@
               // Si le clic sur la carte provoque un rechargement complet (et
               // non une navigation SPA), la fiche reprendra la reclamation.
               setEpicPendingSlug(game.slug);
+              resetEpicSettleClock();
               return withRetry(function () {
                 return claimEpicGame(anchor, game.title, PLATFORM);
               }, { label: 'recuperation Epic (' + game.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
@@ -177,7 +191,14 @@
       log(PLATFORM, 'info', cards.length + ' jeu(x) gratuit(s) detecte(s) via repli DOM.');
       var successCount2 = 0;
 
+      // Meme garde que processNext : le repli DOM enchaine aussi les jeux.
       function processCard(index) {
+        return Promise.resolve(waitForPurchaseOverlayToClose(PLATFORM)).then(function () {
+          return processCardInner(index);
+        });
+      }
+
+      function processCardInner(index) {
         if (index >= cards.length) {
           updateUiState(successCount2 > 0 ? 'ok' : 'error', 'Epic : ' + successCount2 + '/' + cards.length + ' recupere(s)');
           log(PLATFORM, 'info', 'Module Epic Games termine (repli DOM).');
@@ -196,6 +217,7 @@
 
         log(PLATFORM, 'info', 'Traitement de : ' + title);
         updateUiState('running', 'Epic : ' + title + '...');
+        resetEpicSettleClock();
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);
         }, { label: 'recuperation Epic (' + title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {

@@ -4,6 +4,94 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.16.0 -- 2026-09-17
+
+**Ce qui surveille un achat vit aussi longtemps que l'achat**
+
+Quatrieme retour sur le meme ecran : la modale « Informations sur le droit de
+retractation » reste affichee, son bouton « J'accepte » n'est jamais clique.
+Les trois versions precedentes ont elargi des motifs de libelles. Cette fois la
+console a tranche, et le probleme etait ailleurs. Capture du 2026-09-17 dans
+l'iframe `store.epicgames.com/purchase`, jeu « MindCop » :
+
+```
+27.068  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+28.574  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+30.083  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+30.084  Clic ignore : "Ajouter a la bibliotheque" a deja ete clique 1 fois.
+```
+
+Trois defauts en quatre lignes, et la modale arrive apres.
+
+- **La boucle comptait des PASSES, pas des actions.** Elle rappelait l'etape
+  suivante sans regarder ce que `robustClick` avait rendu : les deux clics
+  REFUSES par l'anti-rafale ont quand meme consomme deux etapes sur trois.
+- **Elle ne regardait jamais si l'ecran avait change.** Meme recherche, meme
+  noeud, meme clic -- le bouton « Ajouter a la bibliotheque » etait encore la,
+  elle le reprenait pour un nouvel ecran.
+- **Elle etait mortelle.** A la troisieme etape le module rendait la main pour
+  de bon, environ trente secondes apres le chargement de l'iframe. La modale de
+  retractation s'affiche apres. Dans une sous-iframe, rien d'autre ne tourne :
+  le guetteur de modales s'y interdisait lui-meme, et le cadre du dessus ne
+  voit pas le contenu d'une iframe. Personne n'a jamais clique « J'accepte ».
+
+Ce qui remplace tout ca :
+
+- **Une sentinelle, pas une boucle.** La frame d'achat est surveillee par une
+  fonction de passe idempotente, appelee par le guetteur qui existait deja --
+  pas un second minuteur. Elle vit tant que la frame montre ou change quelque
+  chose, avec le meme plafond dur de dix minutes.
+- **Une signature d'ecran** (les libelles visibles et le nombre de dialogues)
+  repond a la question que le module ne se posait pas : est-ce que quelque
+  chose a change depuis mon clic ? Tant que non, on attend -- une seule
+  seconde chance apres douze secondes, parce qu'un premier clic peut n'avoir
+  pas pris.
+- **Seules les actions REELLES comptent.** Un clic refuse par l'anti-rafale ne
+  consomme plus rien. Plafond : six actions par frame, la ou le parcours du
+  prestataire en demande quatre.
+- **La liste des boutons autorises n'a pas bouge d'un caractere.** C'est elle,
+  et non l'adresse de l'iframe, qui borne le risque (regle de la 2.15.1) :
+  dans une sous-iframe autre que celle du prestataire, « Valider la commande »
+  reste interdite. Deux tests le figent, dont un qui verifie que la MEME page
+  est bien commandee dans la frame du prestataire -- sinon le premier ne
+  prouverait rien.
+- **Le cadre du dessus attend la sentinelle** au lieu d'echouer sur un budget
+  fixe de trente secondes, tant que sa fenetre d'achat est a l'ecran (plafond
+  150 s, l'onglet pilote en a 300 en tout).
+- **Il ne detruit plus une commande en cours.** `processNext` cherchait la
+  carte du jeu suivant 1,5 s puis naviguait : sur une fiche avec la fenetre
+  d'achat ouverte, cela emportait la modale et la commande avec la page. Le
+  passage au jeu suivant attend desormais la fermeture de la fenetre.
+- **Une modale qui attend se VOIT** : au bout de trente secondes sans
+  changement d'ecran, une notification nomme le bouton a cliquer. Rien n'est
+  jamais enregistre comme « recupere » dans ce cas.
+- **L'arret d'urgence protege enfin la frame d'achat.** `gm-shim.js` ne
+  prechargeait le stockage que dans l'iframe du prestataire :
+  `FGC_kill_switch` y rendait toujours sa valeur par defaut, donc le bouton
+  d'arret ne pouvait pas bloquer un clic dans la frame ou le moteur clique le
+  plus. Aligne sur `02-frames.js`.
+- **Les hotes Epic sont elargis** a `*.epicgames.com` dans les deux manifestes
+  et dans l'en-tete userscript. Aujourd'hui l'iframe d'achat est sur
+  `store.epicgames.com` ; le jour ou Epic la sert d'ailleurs, le moteur n'y
+  existerait pas et aucune ligne ne le dirait.
+- **Deux silences supprimes** : le repli « niveau document » sur le bouton
+  d'accord ne se declenchait que quand une modale avait deja ete reconnue,
+  c'est-a-dire quand on n'en avait pas besoin ; et le temoin qui signale une
+  modale sans bouton reconnu, global et jamais remis a zero, taisait tous les
+  incidents apres le premier de la page.
+- La garde contre deux executions concurrentes passe de 2 a 5 minutes : une
+  reclamation peut desormais durer plus de deux minutes, et la garde se serait
+  perimee au milieu -- le correctif aurait fabrique le bug qu'il corrige.
+
+Note : une fenetre restee ouverte est desormais journalisee comme un echec de
+parcours, donc comptee par le canari de selecteurs. C'est voulu -- une modale
+que le moteur ne sait plus franchir EST une panne de parcours.
+
+Quatorze tests (`test/epic-payment-frame.test.mjs`), dont celui qui reproduit
+exactement le 2026-09-17 : un premier ecran, vingt passes sans effet, puis la
+modale qui arrive tard -- et « J'accepte » qui est clique. Il echoue sur le
+moteur de la 2.15.3.
+
 ## 2.15.3 -- 2026-09-17
 
 **Un clic, c'est un clic**

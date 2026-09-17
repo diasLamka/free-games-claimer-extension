@@ -39,9 +39,14 @@
   var IS_TOP_FRAME = (function () {
     try { return window.top === window.self; } catch (e) { return false; }
   })();
-  var IS_EPIC_PAYMENT_FRAME = /payment-website-pci/i.test(location.hostname)
-    && /epicgames\.com$/i.test(location.hostname);
-  var NEEDS_STORAGE = IS_TOP_FRAME || IS_EPIC_PAYMENT_FRAME;
+  // Aligne sur src/core/02-frames.js, et pas seulement sur l'iframe du
+  // prestataire : depuis la 2.15.1 le moteur clique dans TOUTE sous-iframe
+  // Epic, et la commande gratuite se termine sur store.epicgames.com/purchase.
+  // Sans le prechargement ici, GM_getValue('FGC_kill_switch') y rendait
+  // toujours le defaut -- autrement dit l'arret d'urgence ne protegeait pas la
+  // frame ou le moteur clique le plus.
+  var IS_EPIC_SUBFRAME = !IS_TOP_FRAME && /(^|\.)epicgames\.com$/i.test(location.hostname);
+  var NEEDS_STORAGE = IS_TOP_FRAME || IS_EPIC_SUBFRAME;
 
   if (NEEDS_STORAGE) {
     try {

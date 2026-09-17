@@ -171,15 +171,92 @@
     } catch (e) { return 'inventaire impossible : ' + ((e && e.message) || e); }
   }
 
+  /* L'ECHEANCE EST PAR JEU, PAS PAR TENTATIVE.
+   *
+   * Trente secondes fixes etaient un pari sur la vitesse d'Epic. La sentinelle
+   * de la frame d'achat, elle, travaille tant que la fenetre est a l'ecran :
+   * la fiche declarait donc l'echec pendant que l'achat aboutissait. On attend
+   * desormais tant que la fenetre est ouverte, par tours de 30 s -- et pendant
+   * chaque tour waitForEpicPaymentCompletion continue d'appeler
+   * handleEpicPostPurchaseModals toutes les 500 ms, donc le cadre du dessus
+   * reste actif sur SES modales.
+   *
+   * withRetry rappelle claimEpicGame : l'echeance doit vivre en dehors, sinon
+   * chaque tentative repartirait pour 150 s. */
+  var epicSettleSince = 0;
+  var epicSettleNoticeSent = false;
+
+  function resetEpicSettleClock() {
+    epicSettleSince = 0;
+    epicSettleNoticeSent = false;
+  }
+
   function settleEpicClaim(PLATFORM) {
-    return waitForEpicPaymentCompletion().catch(function (err) {
-      var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
-      if (owned) {
-        log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
-        return null;
-      }
-      log(PLATFORM, 'warn', 'Aucune confirmation. Iframes presentes sur la fiche : ' + describeFrames());
-      throw err;
+    if (!epicSettleSince) epicSettleSince = Date.now();
+
+    function round() {
+      return waitForEpicPaymentCompletion().catch(function (err) {
+        var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+        if (owned) {
+          log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
+          return null;
+        }
+
+        var elapsed = Date.now() - epicSettleSince;
+        var stillOpen = epicPurchaseOverlayOpen();
+
+        if (stillOpen && elapsed < CONFIG.epicPurchaseSettleMaxMs) {
+          log(PLATFORM, 'info', 'Fenetre d\'achat toujours ouverte apres ' + Math.round(elapsed / 1000)
+            + 's : la sentinelle de la frame a la main, on continue d\'attendre.');
+          if (!epicSettleNoticeSent && elapsed >= CONFIG.epicPurchaseStuckNoticeMs) {
+            epicSettleNoticeSent = true;
+            updateUiState('running', 'Epic : fenetre d\'achat ouverte, en attente...');
+            notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic attend une confirmation depuis '
+              + Math.round(elapsed / 1000) + 's. Jetez-y un oeil si elle reste bloquee.');
+          }
+          return round();
+        }
+
+        log(PLATFORM, 'warn', 'Aucune confirmation apres ' + Math.round(elapsed / 1000) + 's. Fenetre d\'achat : '
+          + (stillOpen ? 'TOUJOURS OUVERTE' : 'fermee') + '. Iframes presentes sur la fiche : ' + describeFrames());
+        throw err;
+      });
+    }
+
+    return round();
+  }
+
+  /* Pourquoi on ne passe pas encore au jeu suivant.
+   *
+   * Rend une raison nommee plutot qu'un booleen : une raison se journalise et
+   * se teste. Le cadre du dessus lit SON propre DOM -- #webPurchaseContainer
+   * lui appartient -- donc les deux frames se coordonnent sans messagerie. */
+  function nextGameGateReason() {
+    if (epicPurchaseOverlayOpen()) return 'purchase-open';
+    return null;
+  }
+
+  /* Ne jamais enchainer sur un achat ouvert.
+   *
+   * C'est le seul chemin du code qui pouvait DETRUIRE une commande en cours :
+   * processNext ne cherche l'ancre du jeu suivant que 1,5 s hors /free-games,
+   * puis fait location.assign -- ce qui emporte la fenetre d'achat, la modale
+   * et la commande avec la page. */
+  function waitForPurchaseOverlayToClose(PLATFORM) {
+    if (!nextGameGateReason()) return Promise.resolve(null);
+
+    log(PLATFORM, 'info', 'Une fenetre d\'achat est encore ouverte : on ne passe pas au jeu suivant.');
+    return waitForElement(function () {
+      return nextGameGateReason() ? null : (document.body || document.documentElement);
+    }, { timeout: CONFIG.epicPurchaseSettleMaxMs, interval: 1000 }).then(function () {
+      log(PLATFORM, 'info', 'Fenetre d\'achat refermee : passage au jeu suivant.');
+      return null;
+    }).catch(function () {
+      log(PLATFORM, 'warn', 'Fenetre d\'achat toujours ouverte apres '
+        + Math.round(CONFIG.epicPurchaseSettleMaxMs / 1000) + 's : on passe au suivant. Terminez-la manuellement.');
+      notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic est restee ouverte : terminez-la manuellement.');
+      updateUiState('error', 'Epic : fenetre d\'achat restee ouverte');
+      return null;
     });
   }
 
@@ -187,5 +264,13 @@
   // celui provoque par le clic du script sur une carte : sans garde-fou, deux
   // executions du module se chevauchent et cliquent deux fois sur "Obtenir".
   var epicModuleRunSince = 0;
-  var EPIC_MODULE_RUN_STALE_MS = 120000;
+  /* Cinq minutes, et non deux.
+   *
+   * Cette garde empeche deux executions concurrentes du module Epic (le
+   * guetteur SPA rappelle dispatch toutes les 1,5 s). Depuis que la fiche
+   * attend jusqu'a 150 s la fermeture de la fenetre d'achat, une reclamation
+   * legitime depassait les deux minutes : la garde se perimait toute seule et
+   * une seconde execution demarrait par-dessus la premiere. Le correctif
+   * fabriquait le bug qu'il corrige. */
+  var EPIC_MODULE_RUN_STALE_MS = 5 * 60000;
 

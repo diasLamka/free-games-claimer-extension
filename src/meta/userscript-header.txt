@@ -4,7 +4,7 @@
 // @version      2.7.0
 // @description  Detecte et recupere automatiquement les jeux gratuits sur Epic Games Store, GOG et Amazon Luna (uniquement les pages /claims), avec bouton flottant. Ecrit en syntaxe ES5 (sans template literals) pour eviter tout probleme de linter dans l'editeur Tampermonkey.
 // @author       (a personnaliser)
-// @match        https://store.epicgames.com/*
+// @match        https://*.epicgames.com/*
 // @match        https://www.gog.com/*
 // @match        https://gog.com/*
 // @match        https://luna.amazon.com/claims/*
@@ -25,7 +25,6 @@
 // @match        https://luna.amazon.com.tr/claims/*
 // @include      /^https:\/\/luna\.amazon\.[a-z.]+\/claims(\/|$|\?)/i
 // @match        https://gaming.amazon.com/*
-// @match        https://payment-website-pci.ol.epicgames.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_notification

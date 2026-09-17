@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.15.3
+ * FREE GAMES AUTO-CLAIMER -- v2.16.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -52,6 +52,26 @@
     // Plafond dur de la veille des modales : elle se prolonge tant que la
     // fenetre d'achat est ouverte, jamais au-dela.
     epicModalWatchMaxDurationMs: 10 * 60 * 1000,
+    // Veille de la frame d'achat (la sentinelle). Sa fenetre se reprolonge
+    // tant que la frame MONTRE ou CHANGE quelque chose ; passe ce silence, la
+    // commande est finie, ou perdue, et il n'y a plus rien a y faire.
+    epicPaymentFrameWatchDurationMs: 20000,
+    epicPaymentFrameQuietMs: 20000,
+    // Actions REELLES (clics acceptes par robustClick) autorisees dans une
+    // frame d'achat. Le parcours du prestataire en demande quatre : accord,
+    // bibliotheque, commande, continuer. Six laisse une marge, pas un
+    // blanc-seing.
+    epicPaymentFrameMaxActions: 6,
+    // Deuxieme chance sur le MEME bouton et le MEME ecran : un premier clic
+    // peut n'avoir pas pris. Une seule, et pas avant douze secondes -- au-dela
+    // c'est du martelage, et le 2026-09-17 a montre ce que ca coute.
+    epicPaymentFrameRetrySameMs: 12000,
+    epicPaymentFrameStuckNoticeMs: 30000,
+    // Le cadre du dessus attend tant que SA fenetre d'achat est a l'ecran,
+    // jamais au-dela : un onglet pilote a cinq minutes en tout
+    // (watch/claim.js), et la verification finale doit tenir dans ce budget.
+    epicPurchaseSettleMaxMs: 150000,
+    epicPurchaseStuckNoticeMs: 60000,
     epicFreeGamesApiUrls: [
       'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
       'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR'
@@ -656,6 +676,31 @@
   function handleEpicPostPurchaseModals() {
     var now = Date.now();
     var modal1 = findEpicModalByText(EPIC_WITHDRAWAL_HEADING_PATTERN);
+
+    /* Le repli du dernier recours sort de sa prison.
+     *
+     * Jusqu'ici il vivait DANS le "if (modal1 ...)" : si la modale n'etait pas
+     * reconnue -- titre hors des h1-h6, conteneur sans role="dialog" -- le
+     * repli qui aurait trouve le bouton n'etait jamais evalue. Un repli qui ne
+     * se declenche que quand on n'en a pas besoin.
+     *
+     * Il s'applique desormais aussi sans modale reconnue, mais SOUS GARDE :
+     * uniquement quand une fenetre d'achat est ouverte. Hors de ce contexte,
+     * un bouton "J'accepte" de la page n'a rien a voir avec nous. */
+    if (!modal1 && epicPurchaseOverlayOpen() && now - lastWithdrawalActionAt >= CONFIG.epicModalActionRetryMs) {
+      var accordSeul = findShortestActionElement(document, EPIC_AGREE_LOOSE_PATTERNS);
+      if (accordSeul) {
+        lastWithdrawalActionAt = now;
+        log('Epic Games', 'info', 'Fenetre d\'achat ouverte et bouton d\'accord "'
+          + actionText(accordSeul) + '" visible sans modale reconnue : clic.');
+        robustClick(accordSeul);
+      }
+    }
+
+    // Le temoin de diagnostic est par MODALE, pas par page : global et jamais
+    // remis a faux, il taisait tous les incidents apres le premier.
+    if (!modal1) epicWithdrawalReported = false;
+
     if (modal1 && now - lastWithdrawalActionAt >= CONFIG.epicModalActionRetryMs) {
       /* Le repli non ancre, ici aussi -- troisieme endroit ou le meme piege
        * coute une version. Le textContent d'un bouton Epic concatene tous ses
@@ -707,30 +752,63 @@
   var epicModalWatcherUntil = 0;
   var epicModalWatcherHardStop = 0;
 
+  /* UN SEUL GUETTEUR, ET IL SAIT DANS QUELLE FRAME IL TOURNE.
+   *
+   * La garde "if (IS_EPIC_PAYMENT_FRAME) return" est levee : c'est elle qui
+   * laissait la frame d'achat sans surveillance des que son module a tir
+   * unique avait fini (2026-09-17, "MindCop"). Mais la lever ne suffit pas,
+   * il faut AIGUILLER -- les deux passes ne font pas le meme travail et ne
+   * doivent jamais echanger leurs roles :
+   *
+   *   - handleEpicPostPurchaseModals ne doit JAMAIS tourner dans la frame
+   *     d'achat. findModalContainerFromHeading degenere en "document" quand
+   *     rien de mieux ne matche : dans une frame qui EST la modale, "modale
+   *     trouvee" deviendrait "le mot retractation apparait quelque part", y
+   *     compris dans la mention legale affichee sous le recapitulatif. Son
+   *     repli ultime au niveau du document court-circuiterait la liste des
+   *     boutons autorises, qui vit dans 11-epic-payment.js. Et sa seconde
+   *     branche envoie Echap ou clique une croix : le geste exactement
+   *     contre-indique au milieu d'une commande.
+   *   - epicPaymentFramePass ne doit JAMAIS tourner dans le cadre du dessus,
+   *     ou il cliquerait "Ajouter a la bibliotheque" sur la fiche produit en
+   *     dehors de tout parcours de reclamation. */
+  function epicPostPurchasePass() {
+    return IS_EPIC_PAYMENT_FRAME ? epicPaymentFramePass() : handleEpicPostPurchaseModals();
+  }
+
+  function epicPurchaseStillOnScreen() {
+    return IS_EPIC_PAYMENT_FRAME ? epicPaymentFrameAlive() : epicPurchaseOverlayOpen();
+  }
+
+  function epicModalWatchWindowMs() {
+    return IS_EPIC_PAYMENT_FRAME ? CONFIG.epicPaymentFrameWatchDurationMs : CONFIG.epicModalWatchDurationMs;
+  }
+
+  // Une passe de la veille, sortie du setInterval pour etre testable : le
+  // harnais neutralise setInterval, un guetteur ne se teste pas "en marche".
+  function epicPostPurchaseWatcherTick() {
+    var t = Date.now();
+    if (t < epicModalWatcherHardStop && epicPurchaseStillOnScreen()) {
+      epicModalWatcherUntil = Math.min(t + epicModalWatchWindowMs(), epicModalWatcherHardStop);
+    }
+    if (t > epicModalWatcherUntil) {
+      if (epicModalWatcherId) { clearInterval(epicModalWatcherId); epicModalWatcherId = 0; }
+      log('CORE', 'info', 'Veille de fin d\'achat terminee ('
+        + (IS_EPIC_PAYMENT_FRAME
+            ? 'frame d\'achat, ' + epicPaymentActions + ' action(s), dernier ecran : ' + epicPaymentScreen
+            : 'cadre principal') + ').');
+      return false;
+    }
+    epicPostPurchasePass();
+    return true;
+  }
+
   function startEpicPostPurchaseModalWatcher(durationMs) {
-    if (IS_EPIC_PAYMENT_FRAME) return;
-    var debut = Date.now();
-    epicModalWatcherUntil = debut + (durationMs || CONFIG.epicModalWatchDurationMs);
-    epicModalWatcherHardStop = Math.max(epicModalWatcherHardStop, debut + CONFIG.epicModalWatchMaxDurationMs);
+    var start = Date.now();
+    epicModalWatcherUntil = Math.max(epicModalWatcherUntil, start + (durationMs || epicModalWatchWindowMs()));
+    epicModalWatcherHardStop = Math.max(epicModalWatcherHardStop, start + CONFIG.epicModalWatchMaxDurationMs);
     if (epicModalWatcherId) return;
-    epicModalWatcherId = setInterval(function () {
-      var t = Date.now();
-      // Tant que la fenetre d'achat est OUVERTE, la veille ne s'arrete pas :
-      // c'est precisement le moment ou les popups arrivent, et un achat lent
-      // depassait les trois minutes accordees depuis le debut de la
-      // reclamation -- la veille expirait juste avant la popup a fermer. Le
-      // plafond dur evite la veille perpetuelle sur une fenetre laissee
-      // ouverte sans suite.
-      if (t < epicModalWatcherHardStop && epicPurchaseOverlayOpen()) {
-        epicModalWatcherUntil = Math.min(t + CONFIG.epicModalWatchDurationMs, epicModalWatcherHardStop);
-      }
-      if (t > epicModalWatcherUntil) {
-        clearInterval(epicModalWatcherId);
-        epicModalWatcherId = 0;
-        return;
-      }
-      handleEpicPostPurchaseModals();
-    }, CONFIG.epicPostPurchaseModalPollMs);
+    epicModalWatcherId = setInterval(epicPostPurchaseWatcherTick, CONFIG.epicPostPurchaseModalPollMs);
   }
 
   function isLikelyLoggedOut() {
@@ -1086,89 +1164,220 @@
     } catch (e) { return 1; }
   }
 
-  function runEpicPaymentIframeModule() {
-    var PLATFORM = 'Epic Payment (iframe)';
-    log(PLATFORM, 'info', 'Module iframe de paiement demarre sur ' + location.hostname + location.pathname
-      + (IS_EPIC_PCI_FRAME ? ' (prestataire).' : ' (sous-iframe Epic : commande gratuite seulement).'));
+  /* LA SENTINELLE DE LA FRAME D'ACHAT.
+   *
+   * Ce qui surveille un achat doit vivre aussi longtemps que l'achat, et la ou
+   * l'achat se passe. La version precedente faisait l'inverse : trois etapes,
+   * puis plus rien.
+   *
+   * Capture du 2026-09-17, jeu "MindCop", iframe store.epicgames.com/purchase :
+   *
+   *     27.068  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+   *     28.574  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+   *     30.083  Clic sur le bouton de confirmation : "Ajouter a la bibliotheque"
+   *     30.084  Clic ignore : "Ajouter a la bibliotheque" a deja ete clique 1 fois.
+   *
+   * Trois defauts en trois lignes. La boucle comptait des PASSES et non des
+   * actions : elle rappelait l'etape suivante sans regarder ce que robustClick
+   * avait rendu, donc deux clics REFUSES par l'anti-rafale ont quand meme
+   * consomme deux etapes. Elle ne regardait jamais si l'ecran avait change :
+   * meme recherche, meme noeud, meme clic. Et elle etait mortelle : a la
+   * troisieme etape le module rendait la main, alors que la modale "droit de
+   * retractation" n'etait pas encore affichee. Personne ne l'a jamais cliquee.
+   *
+   * D'ou cette reecriture, en trois idees :
+   *
+   *   - une FONCTION DE PASSE idempotente, appelee par le guetteur qui existe
+   *     deja (06-dom.js) plutot qu'un second setInterval -- c'est aussi ce qui
+   *     la rend testable, le harnais neutralisant setInterval ;
+   *   - une SIGNATURE D'ECRAN, pour repondre a la question que le module ne se
+   *     posait pas : est-ce que quelque chose a change depuis mon clic ?
+   *   - un comptage des ACTIONS REELLES : une tentative n'est consommee que si
+   *     le clic a ete accepte. */
+  var EPIC_PAYMENT_PLATFORM = 'Epic Payment (iframe)';
 
-    /* CE QUE CE MODULE A LE DROIT DE CLIQUER, ET OU.
-     *
-     * Dans l'iframe du prestataire de paiement, le parcours est eprouve depuis
-     * des versions : accord, bibliotheque, commande, continuer.
-     *
-     * Dans une AUTRE sous-iframe d'Epic -- celle ou se termine une commande
-     * gratuite, qui n'a pas d'etape carte bancaire -- la liste se reduit a ce
-     * qui ne peut pas depenser d'argent : "Ajouter a la bibliotheque", puis
-     * l'accord de retractation qui suit. "Valider la commande" en est exclue,
-     * parce que ces iframes-la n'ont pas ete mesurees une par une et qu'un
-     * panier payant en ouvre aussi.
-     *
-     * C'est cette liste, et non l'adresse de l'iframe, qui borne le risque. */
-    var eprouvee = IS_EPIC_PCI_FRAME;
-    var confirmPatterns = eprouvee
+  var epicPaymentStarted = false;
+  var epicPaymentStopped = false;
+  var epicPaymentActions = 0;
+  var epicPaymentSawSomethingAt = 0;
+  var epicPaymentScreen = '';
+  var epicPaymentActionAt = 0;
+  var epicPaymentActionLabel = '';
+  var epicPaymentActionScreen = '';
+  var epicPaymentSameScreenRetries = 0;
+  var epicPaymentPending = null;
+  var epicPaymentNoticeSent = false;
+  var epicPaymentCapReported = false;
+  var epicPaymentWaitReported = {};
+
+  /* CE QUE CE MODULE A LE DROIT DE CLIQUER, ET OU.
+   *
+   * Dans l'iframe du prestataire de paiement, le parcours est eprouve depuis
+   * des versions : accord, bibliotheque, commande, continuer.
+   *
+   * Dans une AUTRE sous-iframe d'Epic -- celle ou se termine une commande
+   * gratuite, qui n'a pas d'etape carte bancaire -- la liste se reduit a ce
+   * qui ne peut pas depenser d'argent : "Ajouter a la bibliotheque", puis
+   * l'accord de retractation qui suit. "Valider la commande" en est exclue,
+   * parce que ces iframes-la n'ont pas ete mesurees une par une et qu'un
+   * panier payant en ouvre aussi.
+   *
+   * C'est cette liste, et non l'adresse de l'iframe, qui borne le risque.
+   * Elle n'a pas bouge d'un caractere depuis la 2.15.1, et deux tests la
+   * figent : la duree de vie de la sentinelle ne l'elargit pas. */
+  function epicPaymentConfirmPatterns() {
+    return IS_EPIC_PCI_FRAME
       ? EPIC_AGREE_PATTERNS.concat(EPIC_LIBRARY_PATTERNS, [/^continue$/i, /^continuer$/i])
       : EPIC_AGREE_PATTERNS.concat(EPIC_FREE_ORDER_PATTERNS);
-    // Le repli non ancre, qui manquait ici alors qu'il avait ete ajoute au
-    // parcours de la fiche en 2.13.2. Constate le 2026-09-17 sur "Mindcop" :
-    // l'iframe affichait "Ajouter a la bibliotheque", le module ne le trouvait
-    // pas, et la commande restait a l'ecran jusqu'a l'expiration des 30 s.
-    var confirmLoose = eprouvee
+  }
+
+  // Le repli non ancre : le textContent d'un bouton Epic concatene tous ses
+  // descendants, un span de lecteur d'ecran suffit a faire echouer un ^...$.
+  function epicPaymentLoosePatterns() {
+    return IS_EPIC_PCI_FRAME
       ? EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_LIBRARY_LOOSE_PATTERNS)
       : EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_FREE_ORDER_LOOSE_PATTERNS);
+  }
 
-    function findConfirm(step) {
-      return findActionElement(document, confirmPatterns, { label: 'Iframe paiement (etape ' + (step + 1) + ')' })
-          || findShortestActionElement(document, confirmLoose);
+  // La signature d'ecran : de quoi reconnaitre "le meme ecran" d'une passe a
+  // l'autre. Les libelles visibles et le nombre de dialogues suffisent, et
+  // c'est exactement ce qu'on veut lire dans le journal quand ca coince.
+  function epicPaymentScreenSignature() {
+    var dialogs = 0;
+    try {
+      dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]').length;
+    } catch (e) {}
+    return visibleActionLabels(8).join(' | ') + ' #' + dialogs;
+  }
+
+  function epicPaymentFindConfirm() {
+    return findActionElement(document, epicPaymentConfirmPatterns())
+        || findShortestActionElement(document, epicPaymentLoosePatterns());
+  }
+
+  // Le filet : une modale qui attend un clic humain doit se VOIR, au lieu
+  // d'echouer en silence pendant que le reste du moteur enchaine.
+  function epicPaymentMaybeWarnStuck(now, text) {
+    if (epicPaymentNoticeSent) return;
+    if (!epicPaymentActionAt || now - epicPaymentActionAt < CONFIG.epicPaymentFrameStuckNoticeMs) return;
+    epicPaymentNoticeSent = true;
+    log(EPIC_PAYMENT_PLATFORM, 'warn', 'La frame d\'achat n\'a pas bouge depuis '
+      + Math.round((now - epicPaymentActionAt) / 1000) + 's alors que "' + text
+      + '" est toujours a l\'ecran. Ecran : ' + epicPaymentScreen);
+    notifyUser('Free Games Claimer -- Epic Games',
+      'Une fenetre Epic attend un clic sur "' + text + '". Terminez-la dans l\'onglet.');
+  }
+
+  // Une passe. Rend true quand elle a REELLEMENT clique quelque chose.
+  function epicPaymentFramePass() {
+    if (epicPaymentStopped) return false;
+    var now = Date.now();
+
+    var challenge = detectSecurityChallenge();
+    if (challenge) {
+      epicPaymentStopped = true;
+      epicPaymentSawSomethingAt = 0;
+      log(EPIC_PAYMENT_PLATFORM, 'warn', 'Defi de securite (' + challenge.type + ') dans la frame d\'achat. Sentinelle arretee.', challenge.detail);
+      notifyUser('Free Games Claimer -- Epic Games', 'Verification de securite dans le paiement : action manuelle requise.');
+      return false;
     }
 
-    function stepLoop(step) {
-      if (step >= 3) return Promise.resolve();
-      var challenge = detectSecurityChallenge();
-      if (challenge) {
-        log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ') dans l\'iframe de paiement. Arret.', challenge.detail);
-        notifyUser('Free Games Claimer -- Epic Games', 'Verification de securite dans le paiement : action manuelle requise.');
-        return Promise.resolve();
-      }
+    var signature = epicPaymentScreenSignature();
+    if (signature !== epicPaymentScreen) {
+      epicPaymentScreen = signature;
+      epicPaymentSawSomethingAt = now;
+      log(EPIC_PAYMENT_PLATFORM, 'info', 'Ecran : ' + signature);
+    }
 
-      /* La PREMIERE etape attend aussi longtemps que la fiche attend sa
-         confirmation. Douze secondes fixes etaient un pari sur la vitesse de
-         chargement du paiement : passe ce delai le module abandonnait, alors
-         que le parcours du dessus, lui, patientait encore dix-huit secondes
-         pour rien. Les etapes suivantes sont breves -- une modale qui suit un
-         clic apparait tout de suite ou pas du tout. */
-      var budget = step === 0 ? CONFIG.epicPaymentCompletionTimeout : 8000;
+    // Le verdict du clic precedent. C'est l'information qui manquait le
+    // 2026-09-17 : le module ne savait pas, et le journal ne disait pas, que
+    // le clic n'avait rien produit.
+    if (epicPaymentPending && now - epicPaymentPending.at >= 1500) {
+      log(EPIC_PAYMENT_PLATFORM, 'info', 'Apres "' + epicPaymentPending.label + '" : '
+        + (signature === epicPaymentPending.before ? 'ecran INCHANGE.' : 'ecran change -> ' + signature));
+      epicPaymentPending = null;
+    }
 
-      return waitForElement(function () {
-        return findConfirm(step);
-      }, { timeout: budget }).catch(function () { return null; }).then(function (btn) {
-        if (!btn) {
-          /* Le diagnostic avec, sinon cette ligne ne sert a rien : "aucun
-           * bouton trouve" n'apprend pas quels boutons ETAIENT la, et c'est
-           * exactement l'information qui manque quand Epic change sa modale. */
-          log(PLATFORM, 'info', 'Aucun bouton de confirmation a l\'etape ' + (step + 1)
-            + ' (deja valide, ou structure differente). Boutons visibles : '
-            + (visibleActionLabels(8).join(' | ') || 'aucun'));
-          return;
+    var btn = epicPaymentFindConfirm();
+    if (!btn) return false;
+
+    // Un bouton connu a l'ecran : la frame est vivante, la veille se prolonge.
+    epicPaymentSawSomethingAt = now;
+    var text = actionText(btn);
+
+    // "Deja clique, et l'ecran n'a pas change" : on attend, on ne consomme
+    // rien. Une seule seconde chance, passe le delai de repos, parce qu'un
+    // premier clic peut n'avoir pas pris.
+    if (text === epicPaymentActionLabel && signature === epicPaymentActionScreen) {
+      var tooSoon = now - epicPaymentActionAt < CONFIG.epicPaymentFrameRetrySameMs;
+      if (epicPaymentSameScreenRetries >= 1 || tooSoon) {
+        if (!epicPaymentWaitReported[text]) {
+          epicPaymentWaitReported[text] = 1;
+          log(EPIC_PAYMENT_PLATFORM, 'info', '"' + text + '" a deja ete clique et l\'ecran n\'a pas change : on laisse la page reagir (aucune tentative consommee).');
         }
-        var btnText = btn.textContent.trim();
-        log(PLATFORM, 'info', 'Clic sur le bouton de confirmation : "' + btnText + '"');
-        robustClick(btn);
-
-        /* On enchaine TOUJOURS, au lieu de s'arreter sur un clic qui n'etait
-           pas un "j'accepte".
-
-           L'ancienne condition supposait que l'accord precedait la commande.
-           La capture du 2026-09-17 montre l'inverse : "Ajouter a la
-           bibliotheque" d'abord, puis la modale "droit de retractation" avec
-           "J'accepte". Le module s'arretait donc juste avant la derniere
-           etape. Enchainer ne risque rien : la boucle est bornee a trois
-           tours et s'arrete d'elle-meme des qu'aucun bouton connu n'apparait
-           plus. */
-        return sleep(1500).then(function () { return stepLoop(step + 1); });
-      });
+        epicPaymentMaybeWarnStuck(now, text);
+        return false;
+      }
+      epicPaymentSameScreenRetries++;
+    } else {
+      epicPaymentSameScreenRetries = 0;
     }
 
-    return stepLoop(0);
+    if (epicPaymentActions >= CONFIG.epicPaymentFrameMaxActions) {
+      if (!epicPaymentCapReported) {
+        epicPaymentCapReported = true;
+        log(EPIC_PAYMENT_PLATFORM, 'warn', 'Plafond de ' + CONFIG.epicPaymentFrameMaxActions
+          + ' actions atteint dans la frame. Dernier ecran : ' + signature);
+      }
+      epicPaymentMaybeWarnStuck(now, text);
+      return false;
+    }
+
+    // LE point de comptage : seul un clic ACCEPTE compte. Un refus de
+    // l'anti-rafale, de l'arret d'urgence ou du garde-caisse ne coute rien.
+    if (!robustClick(btn)) {
+      epicPaymentMaybeWarnStuck(now, text);
+      return false;
+    }
+
+    epicPaymentActions++;
+    epicPaymentActionAt = now;
+    epicPaymentActionLabel = text;
+    epicPaymentActionScreen = signature;
+    epicPaymentPending = { label: text, before: signature, at: now };
+    log(EPIC_PAYMENT_PLATFORM, 'info', 'Action ' + epicPaymentActions + '/' + CONFIG.epicPaymentFrameMaxActions
+      + ' : clic sur "' + text + '". Ecran avant : ' + signature);
+    return true;
+  }
+
+  // La frame montre-t-elle encore quelque chose ? Tant que oui, la veille se
+  // prolonge ; passe ce silence, la commande est finie ou perdue.
+  function epicPaymentFrameAlive() {
+    if (epicPaymentStopped || !epicPaymentSawSomethingAt) return false;
+    return (Date.now() - epicPaymentSawSomethingAt) < CONFIG.epicPaymentFrameQuietMs;
+  }
+
+  function runEpicPaymentIframeModule() {
+    if (epicPaymentStarted) {
+      log(EPIC_PAYMENT_PLATFORM, 'info', 'Sentinelle deja en place dans cette frame : appel ignore.');
+      return Promise.resolve();
+    }
+    epicPaymentStarted = true;
+    epicPaymentSawSomethingAt = Date.now();
+
+    // Le role de la frame ET ce qu'il autorise. La capture du 2026-09-17
+    // disait "sous-iframe Epic : commande gratuite seulement" sans jamais dire
+    // ce que cela laissait cliquer -- c'est pourtant la premiere question
+    // qu'on se pose en lisant un journal.
+    log(EPIC_PAYMENT_PLATFORM, 'info', 'Sentinelle d\'achat sur ' + location.hostname + location.pathname
+      + (IS_EPIC_PCI_FRAME ? ' (prestataire, parcours eprouve).' : ' (sous-iframe Epic : commande gratuite seulement).')
+      + ' Autorise : [' + epicPaymentConfirmPatterns().map(function (p) { return p.source; }).join(', ') + ']'
+      + '. Passe toutes les ' + CONFIG.epicPostPurchaseModalPollMs + 'ms, '
+      + CONFIG.epicPaymentFrameMaxActions + ' actions au plus.');
+
+    epicPaymentFramePass();
+    startEpicPostPurchaseModalWatcher();
+    return Promise.resolve();
   }
 
   var UI_STATE = { status: 'idle', message: 'Pret' };
@@ -1624,15 +1833,92 @@
     } catch (e) { return 'inventaire impossible : ' + ((e && e.message) || e); }
   }
 
+  /* L'ECHEANCE EST PAR JEU, PAS PAR TENTATIVE.
+   *
+   * Trente secondes fixes etaient un pari sur la vitesse d'Epic. La sentinelle
+   * de la frame d'achat, elle, travaille tant que la fenetre est a l'ecran :
+   * la fiche declarait donc l'echec pendant que l'achat aboutissait. On attend
+   * desormais tant que la fenetre est ouverte, par tours de 30 s -- et pendant
+   * chaque tour waitForEpicPaymentCompletion continue d'appeler
+   * handleEpicPostPurchaseModals toutes les 500 ms, donc le cadre du dessus
+   * reste actif sur SES modales.
+   *
+   * withRetry rappelle claimEpicGame : l'echeance doit vivre en dehors, sinon
+   * chaque tentative repartirait pour 150 s. */
+  var epicSettleSince = 0;
+  var epicSettleNoticeSent = false;
+
+  function resetEpicSettleClock() {
+    epicSettleSince = 0;
+    epicSettleNoticeSent = false;
+  }
+
   function settleEpicClaim(PLATFORM) {
-    return waitForEpicPaymentCompletion().catch(function (err) {
-      var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
-      if (owned) {
-        log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
-        return null;
-      }
-      log(PLATFORM, 'warn', 'Aucune confirmation. Iframes presentes sur la fiche : ' + describeFrames());
-      throw err;
+    if (!epicSettleSince) epicSettleSince = Date.now();
+
+    function round() {
+      return waitForEpicPaymentCompletion().catch(function (err) {
+        var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+        if (owned) {
+          log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
+          return null;
+        }
+
+        var elapsed = Date.now() - epicSettleSince;
+        var stillOpen = epicPurchaseOverlayOpen();
+
+        if (stillOpen && elapsed < CONFIG.epicPurchaseSettleMaxMs) {
+          log(PLATFORM, 'info', 'Fenetre d\'achat toujours ouverte apres ' + Math.round(elapsed / 1000)
+            + 's : la sentinelle de la frame a la main, on continue d\'attendre.');
+          if (!epicSettleNoticeSent && elapsed >= CONFIG.epicPurchaseStuckNoticeMs) {
+            epicSettleNoticeSent = true;
+            updateUiState('running', 'Epic : fenetre d\'achat ouverte, en attente...');
+            notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic attend une confirmation depuis '
+              + Math.round(elapsed / 1000) + 's. Jetez-y un oeil si elle reste bloquee.');
+          }
+          return round();
+        }
+
+        log(PLATFORM, 'warn', 'Aucune confirmation apres ' + Math.round(elapsed / 1000) + 's. Fenetre d\'achat : '
+          + (stillOpen ? 'TOUJOURS OUVERTE' : 'fermee') + '. Iframes presentes sur la fiche : ' + describeFrames());
+        throw err;
+      });
+    }
+
+    return round();
+  }
+
+  /* Pourquoi on ne passe pas encore au jeu suivant.
+   *
+   * Rend une raison nommee plutot qu'un booleen : une raison se journalise et
+   * se teste. Le cadre du dessus lit SON propre DOM -- #webPurchaseContainer
+   * lui appartient -- donc les deux frames se coordonnent sans messagerie. */
+  function nextGameGateReason() {
+    if (epicPurchaseOverlayOpen()) return 'purchase-open';
+    return null;
+  }
+
+  /* Ne jamais enchainer sur un achat ouvert.
+   *
+   * C'est le seul chemin du code qui pouvait DETRUIRE une commande en cours :
+   * processNext ne cherche l'ancre du jeu suivant que 1,5 s hors /free-games,
+   * puis fait location.assign -- ce qui emporte la fenetre d'achat, la modale
+   * et la commande avec la page. */
+  function waitForPurchaseOverlayToClose(PLATFORM) {
+    if (!nextGameGateReason()) return Promise.resolve(null);
+
+    log(PLATFORM, 'info', 'Une fenetre d\'achat est encore ouverte : on ne passe pas au jeu suivant.');
+    return waitForElement(function () {
+      return nextGameGateReason() ? null : (document.body || document.documentElement);
+    }, { timeout: CONFIG.epicPurchaseSettleMaxMs, interval: 1000 }).then(function () {
+      log(PLATFORM, 'info', 'Fenetre d\'achat refermee : passage au jeu suivant.');
+      return null;
+    }).catch(function () {
+      log(PLATFORM, 'warn', 'Fenetre d\'achat toujours ouverte apres '
+        + Math.round(CONFIG.epicPurchaseSettleMaxMs / 1000) + 's : on passe au suivant. Terminez-la manuellement.');
+      notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic est restee ouverte : terminez-la manuellement.');
+      updateUiState('error', 'Epic : fenetre d\'achat restee ouverte');
+      return null;
     });
   }
 
@@ -1640,7 +1926,15 @@
   // celui provoque par le clic du script sur une carte : sans garde-fou, deux
   // executions du module se chevauchent et cliquent deux fois sur "Obtenir".
   var epicModuleRunSince = 0;
-  var EPIC_MODULE_RUN_STALE_MS = 120000;
+  /* Cinq minutes, et non deux.
+   *
+   * Cette garde empeche deux executions concurrentes du module Epic (le
+   * guetteur SPA rappelle dispatch toutes les 1,5 s). Depuis que la fiche
+   * attend jusqu'a 150 s la fermeture de la fenetre d'achat, une reclamation
+   * legitime depassait les deux minutes : la garde se perimait toute seule et
+   * une seconde execution demarrait par-dessus la premiere. Le correctif
+   * fabriquait le bug qu'il corrige. */
+  var EPIC_MODULE_RUN_STALE_MS = 5 * 60000;
 
   function runEpicGamesModule() {
     var PLATFORM = 'Epic Games';
@@ -1734,6 +2028,7 @@
 
           log(PLATFORM, 'info', 'Fiche produit courante identifiee comme jeu gratuit non reclame : ' + currentMatch.title);
           updateUiState('running', 'Epic : ' + currentMatch.title + '...');
+          resetEpicSettleClock();
           return withRetry(function () {
             return claimEpicGame(document, currentMatch.title, PLATFORM);
           }, { label: 'recuperation Epic (' + currentMatch.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
@@ -1758,7 +2053,19 @@
         }
 
         var successCount = 0;
+
+        /* Une fenetre d'achat ouverte bloque le passage au jeu suivant.
+         *
+         * Le corps de la boucle n'est pas touche, seulement enveloppe : sans
+         * cette garde, processNext cherchait l'ancre du jeu suivant 1,5 s puis
+         * naviguait, ce qui emportait la commande en cours avec la page. */
         function processNext(index) {
+          return Promise.resolve(waitForPurchaseOverlayToClose(PLATFORM)).then(function () {
+            return processNextInner(index);
+          });
+        }
+
+        function processNextInner(index) {
           if (index >= unclaimed.length) {
             updateUiState(successCount > 0 ? 'ok' : 'error', 'Epic : ' + successCount + '/' + unclaimed.length + ' recupere(s)');
             log(PLATFORM, 'info', 'Module Epic Games termine (detection API).');
@@ -1778,6 +2085,7 @@
               // Si le clic sur la carte provoque un rechargement complet (et
               // non une navigation SPA), la fiche reprendra la reclamation.
               setEpicPendingSlug(game.slug);
+              resetEpicSettleClock();
               return withRetry(function () {
                 return claimEpicGame(anchor, game.title, PLATFORM);
               }, { label: 'recuperation Epic (' + game.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
@@ -1821,7 +2129,14 @@
       log(PLATFORM, 'info', cards.length + ' jeu(x) gratuit(s) detecte(s) via repli DOM.');
       var successCount2 = 0;
 
+      // Meme garde que processNext : le repli DOM enchaine aussi les jeux.
       function processCard(index) {
+        return Promise.resolve(waitForPurchaseOverlayToClose(PLATFORM)).then(function () {
+          return processCardInner(index);
+        });
+      }
+
+      function processCardInner(index) {
         if (index >= cards.length) {
           updateUiState(successCount2 > 0 ? 'ok' : 'error', 'Epic : ' + successCount2 + '/' + cards.length + ' recupere(s)');
           log(PLATFORM, 'info', 'Module Epic Games termine (repli DOM).');
@@ -1840,6 +2155,7 @@
 
         log(PLATFORM, 'info', 'Traitement de : ' + title);
         updateUiState('running', 'Epic : ' + title + '...');
+        resetEpicSettleClock();
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);
         }, { label: 'recuperation Epic (' + title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
@@ -3280,6 +3596,22 @@
       findActionElement: findActionElement,
       findShortestActionElement: findShortestActionElement,
       epicPurchaseOverlayOpen: epicPurchaseOverlayOpen,
+      epicPaymentFramePass: epicPaymentFramePass,
+      epicPaymentFrameAlive: epicPaymentFrameAlive,
+      epicPaymentScreenSignature: epicPaymentScreenSignature,
+      epicPostPurchaseWatcherTick: epicPostPurchaseWatcherTick,
+      handleEpicPostPurchaseModals: handleEpicPostPurchaseModals,
+      startEpicPostPurchaseModalWatcher: startEpicPostPurchaseModalWatcher,
+      nextGameGateReason: nextGameGateReason,
+      epicPaymentFrameState: function () {
+        return {
+          actions: epicPaymentActions,
+          screen: epicPaymentScreen,
+          alive: epicPaymentFrameAlive(),
+          stopped: epicPaymentStopped,
+          noticeSent: epicPaymentNoticeSent
+        };
+      },
       CONFIG: CONFIG,
       emergencyStopped: emergencyStopped,
       checkoutGuardApplies: checkoutGuardApplies,

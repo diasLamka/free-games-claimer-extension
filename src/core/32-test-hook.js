@@ -34,6 +34,22 @@
       findActionElement: findActionElement,
       findShortestActionElement: findShortestActionElement,
       epicPurchaseOverlayOpen: epicPurchaseOverlayOpen,
+      epicPaymentFramePass: epicPaymentFramePass,
+      epicPaymentFrameAlive: epicPaymentFrameAlive,
+      epicPaymentScreenSignature: epicPaymentScreenSignature,
+      epicPostPurchaseWatcherTick: epicPostPurchaseWatcherTick,
+      handleEpicPostPurchaseModals: handleEpicPostPurchaseModals,
+      startEpicPostPurchaseModalWatcher: startEpicPostPurchaseModalWatcher,
+      nextGameGateReason: nextGameGateReason,
+      epicPaymentFrameState: function () {
+        return {
+          actions: epicPaymentActions,
+          screen: epicPaymentScreen,
+          alive: epicPaymentFrameAlive(),
+          stopped: epicPaymentStopped,
+          noticeSent: epicPaymentNoticeSent
+        };
+      },
       CONFIG: CONFIG,
       emergencyStopped: emergencyStopped,
       checkoutGuardApplies: checkoutGuardApplies,

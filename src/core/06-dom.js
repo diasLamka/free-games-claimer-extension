@@ -366,6 +366,31 @@
   function handleEpicPostPurchaseModals() {
     var now = Date.now();
     var modal1 = findEpicModalByText(EPIC_WITHDRAWAL_HEADING_PATTERN);
+
+    /* Le repli du dernier recours sort de sa prison.
+     *
+     * Jusqu'ici il vivait DANS le "if (modal1 ...)" : si la modale n'etait pas
+     * reconnue -- titre hors des h1-h6, conteneur sans role="dialog" -- le
+     * repli qui aurait trouve le bouton n'etait jamais evalue. Un repli qui ne
+     * se declenche que quand on n'en a pas besoin.
+     *
+     * Il s'applique desormais aussi sans modale reconnue, mais SOUS GARDE :
+     * uniquement quand une fenetre d'achat est ouverte. Hors de ce contexte,
+     * un bouton "J'accepte" de la page n'a rien a voir avec nous. */
+    if (!modal1 && epicPurchaseOverlayOpen() && now - lastWithdrawalActionAt >= CONFIG.epicModalActionRetryMs) {
+      var accordSeul = findShortestActionElement(document, EPIC_AGREE_LOOSE_PATTERNS);
+      if (accordSeul) {
+        lastWithdrawalActionAt = now;
+        log('Epic Games', 'info', 'Fenetre d\'achat ouverte et bouton d\'accord "'
+          + actionText(accordSeul) + '" visible sans modale reconnue : clic.');
+        robustClick(accordSeul);
+      }
+    }
+
+    // Le temoin de diagnostic est par MODALE, pas par page : global et jamais
+    // remis a faux, il taisait tous les incidents apres le premier.
+    if (!modal1) epicWithdrawalReported = false;
+
     if (modal1 && now - lastWithdrawalActionAt >= CONFIG.epicModalActionRetryMs) {
       /* Le repli non ancre, ici aussi -- troisieme endroit ou le meme piege
        * coute une version. Le textContent d'un bouton Epic concatene tous ses
@@ -417,29 +442,62 @@
   var epicModalWatcherUntil = 0;
   var epicModalWatcherHardStop = 0;
 
+  /* UN SEUL GUETTEUR, ET IL SAIT DANS QUELLE FRAME IL TOURNE.
+   *
+   * La garde "if (IS_EPIC_PAYMENT_FRAME) return" est levee : c'est elle qui
+   * laissait la frame d'achat sans surveillance des que son module a tir
+   * unique avait fini (2026-09-17, "MindCop"). Mais la lever ne suffit pas,
+   * il faut AIGUILLER -- les deux passes ne font pas le meme travail et ne
+   * doivent jamais echanger leurs roles :
+   *
+   *   - handleEpicPostPurchaseModals ne doit JAMAIS tourner dans la frame
+   *     d'achat. findModalContainerFromHeading degenere en "document" quand
+   *     rien de mieux ne matche : dans une frame qui EST la modale, "modale
+   *     trouvee" deviendrait "le mot retractation apparait quelque part", y
+   *     compris dans la mention legale affichee sous le recapitulatif. Son
+   *     repli ultime au niveau du document court-circuiterait la liste des
+   *     boutons autorises, qui vit dans 11-epic-payment.js. Et sa seconde
+   *     branche envoie Echap ou clique une croix : le geste exactement
+   *     contre-indique au milieu d'une commande.
+   *   - epicPaymentFramePass ne doit JAMAIS tourner dans le cadre du dessus,
+   *     ou il cliquerait "Ajouter a la bibliotheque" sur la fiche produit en
+   *     dehors de tout parcours de reclamation. */
+  function epicPostPurchasePass() {
+    return IS_EPIC_PAYMENT_FRAME ? epicPaymentFramePass() : handleEpicPostPurchaseModals();
+  }
+
+  function epicPurchaseStillOnScreen() {
+    return IS_EPIC_PAYMENT_FRAME ? epicPaymentFrameAlive() : epicPurchaseOverlayOpen();
+  }
+
+  function epicModalWatchWindowMs() {
+    return IS_EPIC_PAYMENT_FRAME ? CONFIG.epicPaymentFrameWatchDurationMs : CONFIG.epicModalWatchDurationMs;
+  }
+
+  // Une passe de la veille, sortie du setInterval pour etre testable : le
+  // harnais neutralise setInterval, un guetteur ne se teste pas "en marche".
+  function epicPostPurchaseWatcherTick() {
+    var t = Date.now();
+    if (t < epicModalWatcherHardStop && epicPurchaseStillOnScreen()) {
+      epicModalWatcherUntil = Math.min(t + epicModalWatchWindowMs(), epicModalWatcherHardStop);
+    }
+    if (t > epicModalWatcherUntil) {
+      if (epicModalWatcherId) { clearInterval(epicModalWatcherId); epicModalWatcherId = 0; }
+      log('CORE', 'info', 'Veille de fin d\'achat terminee ('
+        + (IS_EPIC_PAYMENT_FRAME
+            ? 'frame d\'achat, ' + epicPaymentActions + ' action(s), dernier ecran : ' + epicPaymentScreen
+            : 'cadre principal') + ').');
+      return false;
+    }
+    epicPostPurchasePass();
+    return true;
+  }
+
   function startEpicPostPurchaseModalWatcher(durationMs) {
-    if (IS_EPIC_PAYMENT_FRAME) return;
-    var debut = Date.now();
-    epicModalWatcherUntil = debut + (durationMs || CONFIG.epicModalWatchDurationMs);
-    epicModalWatcherHardStop = Math.max(epicModalWatcherHardStop, debut + CONFIG.epicModalWatchMaxDurationMs);
+    var start = Date.now();
+    epicModalWatcherUntil = Math.max(epicModalWatcherUntil, start + (durationMs || epicModalWatchWindowMs()));
+    epicModalWatcherHardStop = Math.max(epicModalWatcherHardStop, start + CONFIG.epicModalWatchMaxDurationMs);
     if (epicModalWatcherId) return;
-    epicModalWatcherId = setInterval(function () {
-      var t = Date.now();
-      // Tant que la fenetre d'achat est OUVERTE, la veille ne s'arrete pas :
-      // c'est precisement le moment ou les popups arrivent, et un achat lent
-      // depassait les trois minutes accordees depuis le debut de la
-      // reclamation -- la veille expirait juste avant la popup a fermer. Le
-      // plafond dur evite la veille perpetuelle sur une fenetre laissee
-      // ouverte sans suite.
-      if (t < epicModalWatcherHardStop && epicPurchaseOverlayOpen()) {
-        epicModalWatcherUntil = Math.min(t + CONFIG.epicModalWatchDurationMs, epicModalWatcherHardStop);
-      }
-      if (t > epicModalWatcherUntil) {
-        clearInterval(epicModalWatcherId);
-        epicModalWatcherId = 0;
-        return;
-      }
-      handleEpicPostPurchaseModals();
-    }, CONFIG.epicPostPurchaseModalPollMs);
+    epicModalWatcherId = setInterval(epicPostPurchaseWatcherTick, CONFIG.epicPostPurchaseModalPollMs);
   }
 

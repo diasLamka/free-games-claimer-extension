@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.15.3",
+  "version": "2.16.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -13,7 +13,7 @@
     "alarms"
   ],
   "host_permissions": [
-    "https://store.epicgames.com/*",
+    "https://*.epicgames.com/*",
     "https://www.gog.com/*",
     "https://gog.com/*",
     "https://luna.amazon.com/claims/*",
@@ -33,7 +33,6 @@
     "https://luna.amazon.pl/claims/*",
     "https://luna.amazon.com.tr/claims/*",
     "https://gaming.amazon.com/*",
-    "https://payment-website-pci.ol.epicgames.com/*",
     "https://store-site-backend-static.ak.epicgames.com/*",
     "https://store-site-backend-static-ipv4.ak.epicgames.com/*",
     "https://www.gamerpower.com/*",
@@ -47,7 +46,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://store.epicgames.com/*",
+        "https://*.epicgames.com/*",
         "https://www.gog.com/*",
         "https://gog.com/*",
         "https://luna.amazon.com/claims/*",
@@ -66,8 +65,7 @@
         "https://luna.amazon.se/claims/*",
         "https://luna.amazon.pl/claims/*",
         "https://luna.amazon.com.tr/claims/*",
-        "https://gaming.amazon.com/*",
-        "https://payment-website-pci.ol.epicgames.com/*"
+        "https://gaming.amazon.com/*"
       ],
       "js": [
         "gm-shim.js",

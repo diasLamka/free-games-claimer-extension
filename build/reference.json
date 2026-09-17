@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.15.3.js",
-  "sha256": "19C7F3983D52B79440F239B8023F80419EFBE09A4950C373F07C0ACF652F0D51",
-  "octets": 172685,
-  "version": "2.15.3",
-  "motif": "2.15.3 : un clic = un clic, fin des rafales et du reclic sur fenetre ouverte"
+  "fichier": "reference-v2.16.0.js",
+  "sha256": "C1062F405D34F3BF088102FC9CF882F4E4992E3EB8D60C1976EE1DB52080FEAC",
+  "octets": 188513,
+  "version": "2.16.0",
+  "motif": "2.16.0 : sentinelle d'iframe bornee, actions reelles comptees, le cadre du dessus attend l'achat"
 }

@@ -23,6 +23,26 @@
     // Plafond dur de la veille des modales : elle se prolonge tant que la
     // fenetre d'achat est ouverte, jamais au-dela.
     epicModalWatchMaxDurationMs: 10 * 60 * 1000,
+    // Veille de la frame d'achat (la sentinelle). Sa fenetre se reprolonge
+    // tant que la frame MONTRE ou CHANGE quelque chose ; passe ce silence, la
+    // commande est finie, ou perdue, et il n'y a plus rien a y faire.
+    epicPaymentFrameWatchDurationMs: 20000,
+    epicPaymentFrameQuietMs: 20000,
+    // Actions REELLES (clics acceptes par robustClick) autorisees dans une
+    // frame d'achat. Le parcours du prestataire en demande quatre : accord,
+    // bibliotheque, commande, continuer. Six laisse une marge, pas un
+    // blanc-seing.
+    epicPaymentFrameMaxActions: 6,
+    // Deuxieme chance sur le MEME bouton et le MEME ecran : un premier clic
+    // peut n'avoir pas pris. Une seule, et pas avant douze secondes -- au-dela
+    // c'est du martelage, et le 2026-09-17 a montre ce que ca coute.
+    epicPaymentFrameRetrySameMs: 12000,
+    epicPaymentFrameStuckNoticeMs: 30000,
+    // Le cadre du dessus attend tant que SA fenetre d'achat est a l'ecran,
+    // jamais au-dela : un onglet pilote a cinq minutes en tout
+    // (watch/claim.js), et la verification finale doit tenir dans ce budget.
+    epicPurchaseSettleMaxMs: 150000,
+    epicPurchaseStuckNoticeMs: 60000,
     epicFreeGamesApiUrls: [
       'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
       'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR'
