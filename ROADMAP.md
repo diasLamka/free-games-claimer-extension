@@ -10,9 +10,10 @@ le travail en vagues V0 a V7. Six vagues et demie sont livrees ; ce qui suit
 est ce qu'il en reste, plus ce que les corrections des dernieres versions ont
 fait apparaitre.
 
-Les deux premieres entrees attendent une MESURE, pas du code, et
-`diagnostics.html` sait maintenant la prendre : section V6-V7, avec le reseau
-de la machine ou l'extension tourne.
+La premiere entree attend une derniere MESURE, pas du code, et
+`diagnostics.html` sait la prendre : section V6-V7, avec le reseau de la
+machine ou l'extension tourne. Les constats deja pris sont dans
+`docs/superpowers/specs/2026-09-17-v6-v7-constats.md`.
 
 Une regle du design vaut aussi ici, et c'est la plus utile : **une hypothese se
 mesure avant de s'ecrire** (§13). Chaque entree dit donc ce qu'il faut
@@ -28,8 +29,8 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
 | V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
-| V6 | Sources HTML, mode repli | **mecanisme livre** en 2.14.0 (`watch/offscreen.js`) ; aucune source ne s'en sert encore |
-| V7 | Elargissement | **rien** -- trois magasins reclamables, un quatrieme seulement detecte |
+| V6 | Sources HTML, mode repli | **repli livre** (`sentinel.html`), **lecture HTML livree** (`watch/offscreen.js`) ; il manque une source qui s'en serve |
+| V7 | Elargissement | **Prime Gaming mesure et ferme** le 2026-09-17 ; trois magasins reclamables, un quatrieme seulement detecte |
 
 ---
 
@@ -51,60 +52,43 @@ dans `CHANGELOG.md` :
 
 L'integration continue tourne aussi : `npm run check` a chaque push.
 
+## Livre depuis
+
+- **Le mode repli sentinelle** (design §10). Apres trois echecs consecutifs
+  d'une source, `sentinel.html` la reessaie sur une horloge fiable, en passant
+  outre le recul qui l'endort des heures -- le seul pouvoir du repli, et il ne
+  vaut que pendant qu'un humain regarde. Il ne devient jamais le mode par
+  defaut : son battement perime en trois minutes, et rien de ce qu'il laisse ne
+  suspend la veille ordinaire.
+- **Prime Gaming : mesure, et ferme.** Voir la table « hors perimetre ».
+
 ---
 
-## 1. Prime Gaming
+## 1. Une source GOG en propre
 
-**Le trou le moins cher a combler -- si le domaine vit encore.**
-
-*Pourquoi maintenant.* `gaming.amazon.com` figure dans `host_permissions` et
-dans les `matches` du content script, et le moteur refuse de s'y executer
-(`src/core/25-luna-entry.js:28`), au motif que ce serait l'ancien domaine
-retire lors du passage a Luna. Le design releve le meme trou (§1). L'interet :
-les offres Prime arrivent souvent sous forme de CODE a echanger chez GOG, et le
-module d'echange existe deja (`src/core/26-gog-redeem-dom.js`,
-`src/core/27-gog-redeem-run.js`), file d'attente comprise.
-
-*La mesure existe maintenant, il faut la lancer.* `diagnostics.html`, section
-V6-V7, lit `gaming.amazon.com` avec votre reseau et rend son rapport. Le
-commentaire du moteur affirme que le domaine est mort ; personne ne l'a
-reverifie. S'il est vrai, cette entree tombe -- ce qui est aussi un resultat.
-S'il est faux, le module Luna se rebranche dessus.
-
-*Fini quand.* Une offre Prime apparait dans le popup sans qu'aucun onglet soit
-ouvert, est reclamee seule, et le code qui en sort part dans la file d'echange.
-
-## 2. Une source GOG en propre
-
-**Le mecanisme est la ; il lui manque des selecteurs mesures.**
+**Le mecanisme est la ; il manque un dernier constat.**
 
 *Pourquoi maintenant.* Trois sources de decouverte, et gamerpower porte a lui
 seul GOG et tout ce qui n'est ni Epic ni Steam. Sa disparition est le premier
-risque du design (§15). Depuis la 2.14.0, `watch/offscreen.js` sait lire une
-page HTML depuis le service worker et rendre des extraits bruts qu'une fonction
-pure transforme en offres.
+risque du design (§15).
 
-*Ce qu'il reste.* Savoir ce que la page d'accueil GOG expose reellement. La
-section V6-V7 de `diagnostics.html` cherche les ancres que le moteur connait
-deja -- `.giveaway__title` en tete, qui n'est pas une supposition -- et
-rapporte lesquelles repondent. Ecrire des selecteurs sans les avoir vus est
-precisement ce que ce fichier interdit.
+*Ce que la mesure du 2026-09-17 a montre* (voir
+`docs/superpowers/specs/2026-09-17-v6-v7-constats.md`) : la page d'accueil GOG
+est **rendue cote serveur** -- 953 Ko, vingt-quatre liens produit des le HTML
+brut -- contrairement a Epic, mesure entierement cote client en V0-3. Elle est
+donc lisible par une source HTML, et le document offscreen sait deja la lire.
+
+*Ce qu'il reste a trancher.* Aucun element ne porte de classe `giveaway`, ce
+qui peut vouloir dire deux choses tres differentes : le selecteur a change, ou
+aucun giveaway ne tournait ce jour-la -- et c'est l'explication la plus
+economique. Trois blocs de donnees embarquees existent ; la mesure suivante dit
+lequel porte le giveaway, ce qui permet d'ecrire une source qui le trouvera le
+jour ou il y en aura un, au lieu d'attendre qu'il y en ait un pour l'ecrire.
 
 *Fini quand.* Couper gamerpower (hors ligne simule) laisse la veille voir les
 offres GOG, et le popup dit pourquoi elle est passee en repli.
 
-## 3. Le mode repli sentinelle
-
-*Pourquoi.* Le §10 du design : apres trois echecs consecutifs d'une source, un
-onglet dedie reprend la decouverte avec un contexte persistant, en affichant en
-clair que le repli est actif et pourquoi. Le document offscreen couvre le cas
-ou la source repond mal ; la sentinelle couvre celui ou le service worker
-lui-meme ne suffit plus.
-
-*Fini quand.* Couper une source trois fois de suite bascule la veille en repli,
-et la remettre en ligne la fait revenir seule.
-
-## 4. Les quatre autres vues de l'onglet dedie
+## 2. Les quatre autres vues de l'onglet dedie
 
 *Pourquoi.* Le popup porte a l'etroit dans 328 px ce que le design reserve a un
 onglet dedie (§9) : veille par source, offres, historique filtrable, reglages
@@ -115,7 +99,7 @@ si le popup devient trop dense.
 elle ne touche a aucun magasin. C'est aussi la moins urgente -- le popup fait
 le travail aujourd'hui.
 
-## 5. Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension
+## 3. Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension
 
 *Pourquoi.* La 2.14.0 ecarte ce que l'extension a elle-meme reclame. Elle ne
 sait rien de ce que l'utilisateur possedait avant elle : ces ouvertures-la
@@ -139,4 +123,5 @@ que ce soit ecrit une fois pour toutes.
 | La veille dans le userscript | Tampermonkey n'a pas d'execution de fond. Le userscript garde la reclamation sur page ouverte, et rien de plus (design §3). |
 | Un service commun entre utilisateurs | Non-objectif du design : aucune mise en commun de donnees, aucune dependance a un serveur propre. |
 | Contourner un captcha ou une limite de debit | Non-objectif. Un defi de securite rend la main a l'humain et remonte l'onglet dans sa fenetre (2.13.4). |
+| Prime Gaming (`gaming.amazon.com`) | **Mesure le 2026-09-17** : le domaine repond, mais sert l'application Luna -- titre « Amazon Luna Cloud Gaming », aucune mention de Prime Gaming, aucun bloc de donnees embarquees. Le commentaire du moteur disait vrai, et les reclamations Prime vivent deja sous `luna.amazon.*/claims`, que l'extension couvre. |
 | Predire QUEL jeu sera offert | La seule question posee par l'ordonnanceur est « quand regarder » (design §2). |

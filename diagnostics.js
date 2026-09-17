@@ -357,7 +357,12 @@ async function lancerSonde() {
       samples: [
         { name: 'offres', selector: '[data-a-target], [class*="offer"], [class*="Offer"]', limit: 6 },
         { name: 'liens', selector: 'a[href*="claim"], a[href*="luna"], a[href*="/dp/"]', limit: 6 },
-        { name: 'donneesEmbarquees', selector: 'script[type="application/json"], script[id]', limit: 4 },
+        {
+          name: 'donneesEmbarquees',
+          selector: 'script[type="application/json"], script[id], script[data-state]',
+          limit: 6,
+          needles: ['prime gaming', 'claim', 'offer'],
+        },
       ],
     });
 
@@ -366,9 +371,15 @@ async function lancerSonde() {
       queries: ANCRES_GOG,
       patterns: [{ name: 'motGiveaway', source: 'giveaway|jeu offert|claim it free' }],
       samples: [
-        { name: 'giveaway', selector: '[class*="giveaway"], [id*="giveaway"]', limit: 6 },
+        { name: 'giveaway', selector: '[class*="giveaway"], [id*="giveaway"], [class*="Giveaway"]', limit: 6 },
         { name: 'liensJeu', selector: 'a[href*="/game/"]', limit: 4 },
-        { name: 'donneesEmbarquees', selector: 'script[type="application/json"], script[id]', limit: 4 },
+        {
+          name: 'donneesEmbarquees',
+          selector: 'script[type="application/json"], script[id], script[data-state]',
+          limit: 6,
+          // La question a mille euros : lequel de ces blocs porte le giveaway ?
+          needles: ['giveaway', 'jeu offert', 'claim it free'],
+        },
       ],
     });
 
@@ -390,7 +401,14 @@ async function lancerSonde() {
     $('s-gog-ancres').textContent = gog.ok
       ? ANCRES_GOG.map((a) => `${a.selector} : ${(gog.results[a.name] || []).length}`).join(' | ')
       : '--';
-    $('s-gog-texte').textContent = gog.ok ? (gog.matches.motGiveaway ? 'oui' : 'non') : '--';
+    /* Deux faits differents, et ils n'appellent pas le meme code : un mot
+       AFFICHE veut dire que la page rend le giveaway, un mot present seulement
+       dans la source veut dire qu'il voyage en JSON et qu'il faut lire ce
+       JSON. La premiere version confondait les deux. */
+    $('s-gog-texte').textContent = gog.ok
+      ? `${gog.matches.motGiveaway ? 'oui, affiche' : 'non'}`
+        + ` / source : ${gog.matchesRaw && gog.matchesRaw.motGiveaway ? 'oui' : 'non'}`
+      : '--';
 
     /* Ce que la structure montre, en une ligne lisible. Le detail complet part
        dans le rapport : c'est lui qu'on relit pour ecrire le selecteur. */
@@ -489,7 +507,8 @@ function majRapport() {
         l.push(`  ${cle} : ${lot.length}`);
       }
       for (const [cle, vrai] of Object.entries(mesure.matches || {})) {
-        l.push(`  texte ${cle} : ${vrai ? 'present' : 'absent'}`);
+        const brut = mesure.matchesRaw && mesure.matchesRaw[cle];
+        l.push(`  ${cle} : rendu ${vrai ? 'oui' : 'non'}, source ${brut ? 'oui' : 'non'}`);
       }
       // Les echantillons en dernier : c'est la partie qu'on relit ligne a ligne.
       for (const [cle, lot] of Object.entries(mesure.samples || {})) {

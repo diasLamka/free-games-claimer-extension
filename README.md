@@ -95,6 +95,7 @@ est declare `"type": "module"`.
 | `canary.js` | compte les echecs de selecteur : un magasin qui a bouge le dit |
 | `backup.js` | les codes en attente, recopies dans la zone synchronisee |
 | `offscreen.js` | lire une page HTML depuis un contexte qui n'a pas de DOM |
+| `sentinel.js` | quand proposer le repli, et comment il rend la main tout seul |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -136,12 +137,13 @@ test/
   fake-chrome.mjs           faux chrome.* : storage, alarms, notifications
   fixtures/                 captures reelles des deux API
   *.test.mjs                tests unitaires (node --test)
-docs/superpowers/specs/     design de la veille et constats V0
+docs/superpowers/specs/     design de la veille, constats V0 et V6-V7
 .github/workflows/          npm run check a chaque push
 gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
 journal.html / journal.js   le journal de la veille, 500 entrees persistees
+sentinel.html / sentinel.js le mode repli : reessayer une source en panne, sous surveillance
 offscreen-html.html / .js   lecture de HTML pour le service worker, qui n'a pas de DOM
 diagnostics.html / .js      mesures V0-2, V0-3 et V6-V7
 manifest.json               Chrome / Edge

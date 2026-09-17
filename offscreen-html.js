@@ -44,17 +44,31 @@ function valeur(el, attr, base) {
 }
 
 /** Ce qu'un element a d'identifiant, sans recopier la page entiere. */
-function echantillon(el) {
+function echantillon(el, needles) {
   const attrs = {};
-  for (const nom of ['id', 'class', 'href', 'data-a-target', 'aria-label']) {
+  for (const nom of ['id', 'class', 'href', 'type', 'data-a-target', 'aria-label']) {
     const v = el.getAttribute && el.getAttribute(nom);
     if (v) attrs[nom] = coupe(v);
   }
   const html = String(el.outerHTML || '');
+  const contenu = String(el.textContent || '');
+
+  /* Ce que l'element contient VRAIMENT, mot par mot.
+   *
+   * C'est ce qui transforme « 3 blocs de donnees embarquees » en « le bloc
+   * __NEXT_DATA__ contient le mot giveaway » : la difference entre une mesure
+   * qu'il faut relancer et une mesure sur laquelle on peut ecrire du code. */
+  const hits = [];
+  for (const n of needles || []) {
+    if (n && contenu.toLowerCase().includes(String(n).toLowerCase())) hits.push(n);
+  }
+
   return {
     tag: String(el.tagName || '').toLowerCase(),
     attrs,
-    text: coupe(el.textContent).slice(0, 120),
+    chars: contenu.length,
+    hits,
+    text: coupe(contenu).slice(0, 120),
     html: html.length > MAX_HTML ? `${html.slice(0, MAX_HTML)}\u2026` : html,
   };
 }
@@ -99,20 +113,36 @@ async function lire({ url, queries, patterns, samples, timeoutMs }) {
       try {
         structure[sp.name] = Array.from(doc.querySelectorAll(sp.selector))
           .slice(0, Math.min(sp.limit || MAX_SAMPLES, MAX_SAMPLES))
-          .map(echantillon);
+          .map((el) => echantillon(el, sp.needles));
       } catch {
         structure[sp.name] = [];
       }
     }
 
-    const texte = doc.body ? doc.body.textContent || '' : '';
+    /* Le texte RENDU, sans les scripts.
+     *
+     * `body.textContent` inclut le contenu des balises script : chercher un
+     * mot dedans confond « la page l'affiche » et « la page le transporte dans
+     * du JSON ». La premiere mesure a rendu « giveaway : oui » sans qu'on
+     * puisse savoir laquelle des deux etait vraie -- et les deux n'appellent
+     * pas le meme code. On mesure donc les deux separement. */
+    const clone = doc.body ? doc.body.cloneNode(true) : null;
+    if (clone) {
+      for (const mort of clone.querySelectorAll('script, style, noscript, template')) mort.remove();
+    }
+    const texte = clone ? clone.textContent || '' : '';
+
     const matches = {};
+    const matchesRaw = {};
     for (const p of patterns || []) {
       if (!p || !p.name || !p.source) continue;
       try {
-        matches[p.name] = new RegExp(p.source, p.flags || 'i').test(texte);
+        const re = new RegExp(p.source, p.flags || 'i');
+        matches[p.name] = re.test(texte);
+        matchesRaw[p.name] = re.test(html);
       } catch {
         matches[p.name] = false;
+        matchesRaw[p.name] = false;
       }
     }
 
@@ -124,6 +154,7 @@ async function lire({ url, queries, patterns, samples, timeoutMs }) {
       results,
       samples: structure,
       matches,
+      matchesRaw,
       ms: Math.round(performance.now() - debut),
     };
   } catch (e) {
