@@ -1548,6 +1548,13 @@ document.getElementById('resume').addEventListener('click', async () => {
   await load();
 });
 
+/* --- the watch log, on its own page: 500 lines do not fit in 328 px */
+
+document.getElementById('open-journal').addEventListener('click', (e) => {
+  e.preventDefault();
+  openTab(api.runtime.getURL('journal.html'));
+});
+
 /* --- diagnostics stays in the foreground during its measurements */
 
 document.getElementById('open-diagnostics').addEventListener('click', (e) => {

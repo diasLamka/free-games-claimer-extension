@@ -38,6 +38,7 @@ import {
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
+import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -56,11 +57,29 @@ let cycleRunning = null;
 
 /* ------------------------------------------------------------------ journal */
 
+/* Les ecritures du journal sont mises a la queue leu leu.
+ *
+ * `record()` est appele partout et sans await -- il doit rester synchrone pour
+ * l'appelant. Mais deux ecritures lancees en parallele font chacune leur
+ * lire-modifier-ecrire sur le meme tableau, et la seconde ecrase la premiere :
+ * l'entree perdue serait justement celle qui explique la suivante. La chaine
+ * ci-dessous les serialise dans l'instance, et il n'y a jamais qu'une instance
+ * de service worker a la fois.
+ *
+ * Un echec d'ecriture ne remonte pas : le journal sert a diagnostiquer le
+ * reste, il n'a pas a faire tomber ce qu'il observe. */
+let journalQueue = Promise.resolve();
+
 function record(niveau, message, details) {
   const prefix = '[FGC][veille]';
   if (niveau === 'error') console.error(prefix, message, details ?? '');
   else if (niveau === 'warn') console.warn(prefix, message, details ?? '');
   else console.log(prefix, message, details ?? '');
+
+  // La console d'un service worker meurt avec lui, trente secondes apres le
+  // dernier evenement. Ce qui suit est la seule trace qui survit a la nuit.
+  const entry = makeEntry({ level: niveau, message, details, ts: Date.now() });
+  journalQueue = journalQueue.then(() => appendTo(api, entry)).catch(() => {});
 }
 
 /* ------------------------------------------------------------------ alarmes */
@@ -447,6 +466,19 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'purge impossible', e);
         sendResponse({ dropped: 0 });
       });
+    return true;
+  }
+
+  /* Vider passe par le worker, comme tout le reste : c'est lui qui ecrit le
+     journal, et un effacement lance depuis une page pendant qu'il ecrit
+     perdrait les entrees des deux cotes. */
+  if (msg.type === 'fgc-journal-clear') {
+    (async () => {
+      await new Promise((resolve) => { journalQueue = journalQueue.then(resolve, resolve); });
+      await clearJournal(api);
+      record('info', 'journal efface a la demande');
+      sendResponse({ cleared: true });
+    })().catch((e) => sendResponse({ cleared: false, error: String((e && e.message) || e) }));
     return true;
   }
 

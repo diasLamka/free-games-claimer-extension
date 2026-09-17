@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Free Games Auto-Claimer</title>
+<style>
+  /* Memes jetons que popup.html, pour que la page n'ait pas l'air d'ailleurs.
+     Le sombre est la base, le clair une surcharge -- « systeme » retire la
+     surcharge et laisse la media query gagner. */
+  :root {
+    --ink:    #14101F;
+    --ink-2:  #1E1830;
+    --ink-3:  #262038;
+    --line:   #2E2745;
+    --paper:  #EDE9F5;
+    --mute:   #9A90B8;
+    --amber:  #FFB454;
+    --jade:   #56D6A0;
+    --rose:   #FF6B81;
+
+    --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono:    "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink:    #FBFAFE;
+      --ink-2:  #F2EFF9;
+      --ink-3:  #E8E3F3;
+      --line:   #DCD5EC;
+      --paper:  #1B1528;
+      --mute:   #6E6488;
+      --amber:  #B96A00;
+      --jade:   #12805B;
+      --rose:   #D62B47;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink:    #FBFAFE;
+    --ink-2:  #F2EFF9;
+    --ink-3:  #E8E3F3;
+    --line:   #DCD5EC;
+    --paper:  #1B1528;
+    --mute:   #6E6488;
+    --amber:  #B96A00;
+    --jade:   #12805B;
+    --rose:   #D62B47;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 20px 40px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 13px/1.5 var(--body);
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  h1 { font: 600 19px/1.2 var(--display); margin: 0; letter-spacing: .02em; }
+  .sub { color: var(--mute); font-size: 12px; margin: 0 0 18px; max-width: 70ch; }
+
+  .counts { display: flex; gap: 10px; margin-left: auto; font-size: 12px; }
+  .counts b { font-weight: 600; }
+  .counts .warn b { color: var(--amber); }
+  .counts .error b { color: var(--rose); }
+
+  .bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 10px; margin-bottom: 14px;
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 8px;
+  }
+
+  input[type="search"], select, button {
+    font: inherit; color: var(--paper);
+    background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px;
+  }
+  input[type="search"] { flex: 1 1 200px; min-width: 160px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--amber); }
+  button.danger:hover { border-color: var(--rose); color: var(--rose); }
+  .spacer { flex: 1 1 auto; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  th {
+    text-align: left; font: 600 11px/1 var(--body); text-transform: uppercase;
+    letter-spacing: .06em; color: var(--mute);
+    padding: 0 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:hover td { background: var(--ink-2); }
+
+  td.when { white-space: nowrap; color: var(--mute); width: 1%; }
+  td.level { width: 1%; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+  tr.warn td.level { color: var(--amber); }
+  tr.error td.level { color: var(--rose); }
+  tr.info td.level { color: var(--jade); }
+  td.what { word-break: break-word; }
+  .details { display: block; color: var(--mute); margin-top: 3px; white-space: pre-wrap; }
+
+  .empty { color: var(--mute); padding: 28px 10px; text-align: center; }
+  .note { color: var(--mute); font-size: 11px; margin-top: 16px; max-width: 70ch; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 data-i18n="journalTitle"></h1>
+      <div class="counts">
+        <span class="info"><b id="count-info">0</b> <span data-i18n="journalInfo"></span></span>
+        <span class="warn"><b id="count-warn">0</b> <span data-i18n="journalWarn"></span></span>
+        <span class="error"><b id="count-error">0</b> <span data-i18n="journalError"></span></span>
+      </div>
+    </header>
+    <p class="sub" data-i18n="journalSub"></p>
+
+    <div class="bar">
+      <select id="level">
+        <option value="" data-i18n="journalLevelAll"></option>
+        <option value="warn" data-i18n="journalLevelWarn"></option>
+        <option value="error" data-i18n="journalLevelError"></option>
+      </select>
+      <input type="search" id="search" data-i18n-attr="placeholder:journalSearch">
+      <span class="spacer"></span>
+      <button id="refresh" data-i18n="journalRefresh"></button>
+      <button id="copy" data-i18n="journalCopy"></button>
+      <button id="download" data-i18n="journalDownload"></button>
+      <button id="clear" class="danger" data-i18n="journalClear"></button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="journalWhen"></th>
+          <th data-i18n="journalLevel"></th>
+          <th data-i18n="journalWhat"></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <p class="empty" id="empty" hidden></p>
+    <p class="note" data-i18n="journalNote"></p>
+  </div>
+
+  <script src="journal.js" type="module"></script>
+</body>
+</html>

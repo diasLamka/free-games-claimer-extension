@@ -565,5 +565,71 @@
   },
   "tallyMainStore": {
     "message": "mostly $1"
+  },
+  "journalTitle": {
+    "message": "Watch log"
+  },
+  "journalSub": {
+    "message": "The last 500 things the watcher did, kept across restarts. A service worker takes its console with it when it stops, so this is the only trace that survives the night."
+  },
+  "journalInfo": {
+    "message": "info"
+  },
+  "journalWarn": {
+    "message": "warnings"
+  },
+  "journalError": {
+    "message": "errors"
+  },
+  "journalLevelAll": {
+    "message": "Everything"
+  },
+  "journalLevelWarn": {
+    "message": "Warnings and errors"
+  },
+  "journalLevelError": {
+    "message": "Errors only"
+  },
+  "journalSearch": {
+    "message": "Search"
+  },
+  "journalRefresh": {
+    "message": "Refresh"
+  },
+  "journalCopy": {
+    "message": "Copy"
+  },
+  "journalCopied": {
+    "message": "Copied"
+  },
+  "journalCopyFailed": {
+    "message": "Copy refused"
+  },
+  "journalDownload": {
+    "message": "Download"
+  },
+  "journalClear": {
+    "message": "Clear"
+  },
+  "journalWhen": {
+    "message": "When"
+  },
+  "journalLevel": {
+    "message": "Level"
+  },
+  "journalWhat": {
+    "message": "What happened"
+  },
+  "journalEmpty": {
+    "message": "Nothing logged yet. The watcher writes here on every wake-up."
+  },
+  "journalNoMatch": {
+    "message": "No entry matches this filter."
+  },
+  "journalNote": {
+    "message": "Attach the downloaded file to a bug report: it reads in the order things happened."
+  },
+  "openJournal": {
+    "message": "Watch log"
   }
 }

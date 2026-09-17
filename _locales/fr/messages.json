@@ -565,5 +565,71 @@
   },
   "tallyMainStore": {
     "message": "surtout $1"
+  },
+  "journalTitle": {
+    "message": "Journal de la veille"
+  },
+  "journalSub": {
+    "message": "Les 500 dernières choses que la veille a faites, gardées d'un redémarrage à l'autre. Un service worker emporte sa console en s'arrêtant : c'est la seule trace qui survit à la nuit."
+  },
+  "journalInfo": {
+    "message": "infos"
+  },
+  "journalWarn": {
+    "message": "alertes"
+  },
+  "journalError": {
+    "message": "erreurs"
+  },
+  "journalLevelAll": {
+    "message": "Tout"
+  },
+  "journalLevelWarn": {
+    "message": "Alertes et erreurs"
+  },
+  "journalLevelError": {
+    "message": "Erreurs seulement"
+  },
+  "journalSearch": {
+    "message": "Rechercher"
+  },
+  "journalRefresh": {
+    "message": "Rafraîchir"
+  },
+  "journalCopy": {
+    "message": "Copier"
+  },
+  "journalCopied": {
+    "message": "Copié"
+  },
+  "journalCopyFailed": {
+    "message": "Copie refusée"
+  },
+  "journalDownload": {
+    "message": "Télécharger"
+  },
+  "journalClear": {
+    "message": "Vider"
+  },
+  "journalWhen": {
+    "message": "Quand"
+  },
+  "journalLevel": {
+    "message": "Niveau"
+  },
+  "journalWhat": {
+    "message": "Ce qui s'est passé"
+  },
+  "journalEmpty": {
+    "message": "Rien pour l'instant. La veille écrit ici à chaque réveil."
+  },
+  "journalNoMatch": {
+    "message": "Aucune entrée ne correspond à ce filtre."
+  },
+  "journalNote": {
+    "message": "Joignez le fichier téléchargé à un rapport de bug : il se lit dans le sens où les choses se sont produites."
+  },
+  "openJournal": {
+    "message": "Journal de la veille"
   }
 }
