@@ -21,6 +21,7 @@ import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
    les deux laisserait un magasin marque casse pour une reclamation qui, elle,
    n'a jamais ete enregistree. */
 import { KEY_CANARY } from './canary.js';
+import { KEY_LIBRARY } from './library.js';
 
 export const PREFIX = 'veille:';
 
@@ -251,7 +252,7 @@ export async function readState(chrome) {
 export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
-    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY,
+    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY,
   ]);
   return {
     catalog: raw[KEYS.OFFERS] || {},
@@ -263,6 +264,7 @@ export async function readContext(chrome) {
     filters: raw[KEYS.FILTERS] || {},
     cadence: raw[KEYS.CADENCE] || [],
     canary: raw[KEY_CANARY] || {},
+    library: raw[KEY_LIBRARY] || {},
   };
 }
 

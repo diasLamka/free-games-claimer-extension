@@ -16,6 +16,8 @@ import {
   enrich,
   integrateHistory,
   ownedTitles,
+  ownedKeys,
+  ownedKeyFor,
   entries,
   ACQUIRED,
   PLATFORM_STORES,
@@ -218,4 +220,31 @@ test('entries rend le registre du plus recent au plus ancien', () => {
 
 test('les trois plateformes du moteur sont couvertes', () => {
   assert.deepEqual(Object.keys(PLATFORM_STORES).sort(), ['Amazon Luna', 'Epic Games', 'GOG']);
+});
+
+/* ------------------------------------------------------ cles d'acquisition */
+
+test('les cles d\'acquisition portent le magasin, pas seulement le titre', () => {
+  // Posseder un titre sur Epic ne le donne pas sur GOG, et la copie GOG vaut
+  // d'etre prise : confondre les deux ferait rater de vraies offres.
+  const registre = {
+    'epic:cardpocalypse': { store: 'epic', id: 'cardpocalypse', title: 'Cardpocalypse', status: 'claimed', ts: 1 },
+    'gog:autre': { store: 'gog', id: 'autre', title: 'Autre Jeu', status: 'redeemed', ts: 2 },
+  };
+  const cles = ownedKeys(registre, (t) => String(t).toLowerCase().trim());
+
+  assert.ok(cles.has(ownedKeyFor('epic', 'cardpocalypse')));
+  assert.ok(!cles.has(ownedKeyFor('gog', 'cardpocalypse')), 'un magasin ne repond pas pour un autre');
+  assert.equal(cles.size, 2);
+});
+
+test('une entree sans titre ou sans magasin n\'entre pas dans les cles', () => {
+  const cles = ownedKeys({
+    a: { store: 'epic', title: null, status: 'claimed', ts: 1 },
+    b: { store: null, title: 'Sans magasin', status: 'claimed', ts: 1 },
+    c: { store: 'epic', title: 'Rate', status: 'failed', ts: 1 },
+  }, (t) => String(t).toLowerCase().trim());
+
+  assert.equal(cles.size, 0);
+  assert.equal(ownedKeys(null, (t) => t).size, 0);
 });

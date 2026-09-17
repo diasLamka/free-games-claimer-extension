@@ -314,3 +314,35 @@ test('le marqueur d\'inconnu est distinct de toute devise reelle', () => {
   assert.equal(UNKNOWN_CURRENCY, '?');
   assert.equal(readCurrency(UNKNOWN_CURRENCY), null);
 });
+
+/* ---------------------------------------------------------- deja acquis */
+
+test('un jeu deja dans la bibliotheque ne fait pas rouvrir d\'onglet', () => {
+  // Une offre qui revient sous une autre cle -- une autre source, un giveaway
+  // rejoue -- coutait un onglet et un jeton du plafond horaire pour un jeu
+  // qu'on possede.
+  const deja = new Set(['epic|cardpocalypse']);
+  const o = offer({ title: 'Cardpocalypse', store: STORES.EPIC });
+
+  assert.equal(judge(o, {}, { ...opts, owned: deja }).reason, REASONS.ALREADY_OWNED);
+  assert.equal(judge(o, {}, opts).claimable, true, 'sans registre, rien ne change');
+});
+
+test('posseder un titre sur un magasin ne l\'ecarte pas sur un autre', () => {
+  // La copie GOG d'un jeu possede sur Epic vaut d'etre prise.
+  const deja = new Set(['epic|cardpocalypse']);
+  const surGog = offer({ title: 'Cardpocalypse', store: STORES.GOG });
+  assert.equal(judge(surGog, {}, { ...opts, owned: deja }).claimable, true);
+});
+
+test('l\'apercu compte les deja-acquis comme un motif d\'ecart a part', () => {
+  const deja = new Set(['epic|cardpocalypse']);
+  const lot = [
+    offer({ title: 'Cardpocalypse', store: STORES.EPIC }),
+    offer({ title: 'Autre jeu', store: STORES.EPIC }),
+  ];
+  const vu = preview(lot, {}, { ...opts, owned: deja });
+
+  assert.equal(vu.claimableCount, 1);
+  assert.equal(vu.byReason[REASONS.ALREADY_OWNED], 1);
+});

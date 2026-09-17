@@ -185,6 +185,30 @@ export function ownedTitles(library, normalise) {
   return out;
 }
 
+/**
+ * Les cles « magasin|titre normalise » de ce qui est deja acquis.
+ *
+ * Le filtre de reclamation s'en sert pour ne pas rouvrir un onglet sur un jeu
+ * qu'on possede. Le MAGASIN fait partie de la cle, et ce n'est pas un detail :
+ * posseder un titre sur Epic ne le donne pas sur GOG, et la copie GOG vaut
+ * d'etre prise. Confondre les deux ferait rater de vraies offres.
+ */
+export function ownedKeys(library, normalise) {
+  const out = new Set();
+  for (const e of Object.values(library || {})) {
+    if (!e || !e.title || !e.store) continue;
+    if (e.status && !ACQUIRED.includes(e.status)) continue;
+    const titre = normalise(e.title);
+    if (titre) out.add(`${e.store}|${titre}`);
+  }
+  return out;
+}
+
+/** La cle que `ownedKeys` produit, pour une offre. */
+export function ownedKeyFor(store, normalisedTitle) {
+  return `${store}|${normalisedTitle}`;
+}
+
 /** Le registre, du plus recent au plus ancien. */
 export function entries(library) {
   return Object.values(library || {}).sort((a, b) => b.ts - a.ts);

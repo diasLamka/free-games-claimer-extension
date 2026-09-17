@@ -16,7 +16,7 @@
  *      "nouveau". Le second se recalcule et double ; le premier est persiste.
  */
 import { integrate, purgeExpired, openOffers } from './catalog.js';
-import { STATES, STORE_LABELS, isExpired, byUrgency } from './offer.js';
+import { STATES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
 import {
   schedule,
   afterSuccess,
@@ -25,6 +25,7 @@ import {
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
+import { ownedKeys } from './library.js';
 import { split } from './filters.js';
 import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched,
@@ -445,6 +446,7 @@ export async function runCycle({
         watchedStores: ctx.settings.watchedStores,
         cadence,
         canary: ctx.canary,
+        library: ctx.library,
         maxReclamations,
         record,
       });
@@ -499,7 +501,7 @@ export async function runCycle({
  * jeu deja reclame ne sert a rien, et chez certains magasins cela consomme un
  * quota.
  */
-export function claimCandidates(catalog, filters, { claimableStores, watchedStores, now }) {
+export function claimCandidates(catalog, filters, { claimableStores, watchedStores, now, owned = null }) {
   const openList = Object.values(catalog || {}).filter((o) => {
     if (!o) return false;
     if (FINAL_VERDICTS.includes(o.verdict)) return false;
@@ -548,6 +550,7 @@ export function claimCandidates(catalog, filters, { claimableStores, watchedStor
 
   const { claimableCount, dropped } = split(openList, filters, {
     supportedStores: autorises,
+    owned,
   });
   return { candidates: byUrgency(claimableCount, now), dropped };
 }
@@ -568,6 +571,7 @@ export async function claimWhatCanBe({
   watchedStores,
   cadence,
   canary = {},
+  library = null,
   maxReclamations,
   record = () => {},
 }) {
@@ -576,8 +580,12 @@ export async function claimWhatCanBe({
   let canaryNext = canary;
   const claims = [];
 
+  /* Ce que l'extension possede deja, pour ne pas rouvrir un onglet dessus.
+     Construit une fois par cycle, pas une fois par offre. */
+  const owned = library ? ownedKeys(library, normaliseTitle) : null;
+
   const { candidates, dropped } = claimCandidates(next, filters, {
-    claimableStores, watchedStores, now,
+    claimableStores, watchedStores, now, owned,
   });
   if (dropped.length) {
     record('info', `${dropped.length} offre(s) ecartee(s) par les filtres`, {

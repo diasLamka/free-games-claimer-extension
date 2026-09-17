@@ -18,6 +18,7 @@
  * Module pur : aucune API d'extension, aucune horloge.
  */
 import { STORES, normaliseTitle } from './offer.js';
+import { ownedKeyFor } from './library.js';
 
 export const DEFAULT_FILTERS = Object.freeze({
   /**
@@ -58,6 +59,7 @@ export const REASONS = Object.freeze({
   BELOW_THRESHOLD: 'valeur inferieure au seuil',
   NO_WORTH: 'valeur inconnue',
   NOTHING_TO_KEEP: 'gratuit en permanence, rien a garder',
+  ALREADY_OWNED: 'deja dans la bibliotheque',
   EXTRA_CONTENT: 'contenu additionnel',
   TITLE_EXCLUDED: 'titre exclu',
   NO_DESTINATION: 'aucune page a ouvrir',
@@ -246,7 +248,7 @@ export function isKeepable(offer) {
  * ailleurs reste au catalogue et reste notifiee : elle n'est simplement pas
  * reclamee toute seule.
  */
-export function judge(offer, filters = {}, { supportedStores = [] } = {}) {
+export function judge(offer, filters = {}, { supportedStores = [], owned = null } = {}) {
   const f = { ...DEFAULT_FILTERS, ...filters };
   const deny = (reason) => ({ claimable: false, reason });
 
@@ -274,6 +276,20 @@ export function judge(offer, filters = {}, { supportedStores = [] } = {}) {
   }
 
   const title = offer.normalisedTitle || normaliseTitle(offer.title);
+
+  /* Deja dans la bibliotheque : on n'ouvre pas.
+   *
+   * Le registre sait ce que l'extension a reclame, et jusqu'ici personne ne le
+   * lui demandait avant d'agir. Une offre qui revient sous une autre cle --
+   * une autre source, un giveaway rejoue -- faisait rouvrir un onglet et
+   * consommait un jeton du plafond horaire, c'est-a-dire precisement la
+   * ressource qui protege le compte, pour un jeu qu'on possede.
+   *
+   * Sans registre (`owned` a null), rien ne change : ne pas savoir n'est pas
+   * une raison de refuser. */
+  if (owned && owned.has(ownedKeyFor(offer.store, title))) {
+    return deny(REASONS.ALREADY_OWNED);
+  }
   for (const excludedTitle of f.excludedTitles || []) {
     const reason = normaliseTitle(excludedTitle);
     if (reason && title.includes(reason)) return deny(REASONS.TITLE_EXCLUDED);

@@ -542,6 +542,9 @@
   "dropNothingToKeep": {
     "message": "free anyway, nothing to claim"
   },
+  "dropAlreadyOwned": {
+    "message": "already yours"
+  },
   "dropExtra": {
     "message": "DLC or loot"
   },

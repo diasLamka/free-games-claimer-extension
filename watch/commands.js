@@ -12,6 +12,7 @@
 import { readKeys, write, writeCycle, normaliseSettings, KEYS } from './storage.js';
 import { claimWhatCanBe, KEY_STOP } from './cycle.js';
 import { KEY_CANARY } from './canary.js';
+import { KEY_LIBRARY } from './library.js';
 import { STATES, isExpired } from './offer.js';
 import { MAX_PER_HOUR } from './claim.js';
 
@@ -35,7 +36,7 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     return { claimed: 0, left: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY]);
   const settings = normaliseSettings(raw[KEYS.SETTINGS]);
 
   const { catalog, cadence, claims, canary } = await claimWhatCanBe({
@@ -53,6 +54,9 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
        magasin casse l'est aussi quand c'est l'utilisateur qui clique, et
        c'est meme le moment ou il regarde. */
     canary: raw[KEY_CANARY] || {},
+    /* Et le meme registre : rouvrir un onglet sur un jeu deja possede coute un
+       jeton du plafond horaire, que ce soit un cycle ou un clic qui l'ouvre. */
+    library: raw[KEY_LIBRARY] || {},
     maxReclamations: MAX_PER_HOUR,
     record,
   });

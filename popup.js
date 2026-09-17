@@ -24,7 +24,7 @@ import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
 import { CLAIMABLE_STORES } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
 
-import { KEY_LIBRARY, ownedTitles } from './watch/library.js';
+import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
@@ -108,6 +108,7 @@ const DROP_KEYS = {
   [REASONS.BELOW_THRESHOLD]: 'dropBelow',
   [REASONS.NO_WORTH]: 'dropNoWorth',
   [REASONS.NOTHING_TO_KEEP]: 'dropNothingToKeep',
+  [REASONS.ALREADY_OWNED]: 'dropAlreadyOwned',
   [REASONS.EXTRA_CONTENT]: 'dropExtra',
   [REASONS.TITLE_EXCLUDED]: 'dropExcluded',
   [REASONS.NO_DESTINATION]: 'dropNoPage',
@@ -1197,7 +1198,12 @@ function renderFilters(all, behaviour) {
   // discover afterwards what they suppressed.
   const now = Date.now();
   const open = openOffers(catalog, behaviour, now).map(({ offer }) => offer);
-  const seen = preview(open, filters, { supportedStores: CLAIMABLE_STORES });
+  // Le meme registre que le cycle, sinon l'apercu promet des reclamations que
+  // la veille ecartera -- et c'est l'apercu qu'on regarde pour decider.
+  const seen = preview(open, filters, {
+    supportedStores: CLAIMABLE_STORES,
+    owned: ownedKeys(get(all, KEY_LIBRARY, {}), normaliseTitle),
+  });
   document.getElementById('filters-preview').textContent = open.length
     ? t('filtersPreview', String(open.length), String(seen.claimableCount), String(seen.dropped))
     : t('filtersPreviewNone');
