@@ -355,3 +355,40 @@ test('sans modale, le parcours qui marche est inchange', () => {
   assert.equal(fgc.epicPaymentFramePass(), true);
   assert.equal(clics(ajouter), 1);
 });
+
+/* ------------------------------------- le journal ne crie pas pour rien */
+
+test('un reclic voue au refus n\'est meme pas tente', () => {
+  const { fgc, sandbox } = sousIframe();
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  ecran(sandbox, [ajouter]);
+
+  assert.equal(fgc.epicPaymentFramePass(), true);
+  assert.equal(clics(ajouter), 1);
+
+  /* L'ecran bouge (une modale s'ouvre ailleurs) mais le meme bouton est
+     toujours la : la passe suivante le retrouvait et se faisait refuser par
+     l'anti-rafale -- un refus sans consequence, mais une ligne de journal a
+     chaque fois, que chrome://extensions compte comme une erreur. */
+  ecran(sandbox, [ajouter, bouton('Chargement...')]);
+  for (let i = 0; i < 5; i++) assert.equal(fgc.epicPaymentFramePass(), false);
+
+  assert.equal(clics(ajouter), 1);
+  assert.equal(fgc.epicPaymentFrameState().actions, 1);
+});
+
+test('passe le delai de repos, un vrai second essai reste possible', () => {
+  const { fgc, sandbox } = sousIframe();
+  /* Le repos a zero : on verifie que le frein est bien le DELAI, et pas un
+     verrou definitif -- un premier clic peut n'avoir pas pris. */
+  fgc.CONFIG.clickCooldownMs = 0;
+  fgc.CONFIG.epicPaymentFrameRetrySameMs = 0;
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  ecran(sandbox, [ajouter]);
+
+  fgc.epicPaymentFramePass();
+  ecran(sandbox, [ajouter, bouton('Chargement...')]);
+  fgc.epicPaymentFramePass();
+
+  assert.equal(fgc.epicPaymentFrameState().actions, 2);
+});

@@ -118,7 +118,12 @@
       // remplir la console au rythme des sondes.
       if (journal && !journal.warned) {
         journal.warned = true;
-        log('CORE', 'warn', 'Clic ignore : "' + (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '" a deja ete clique ' + journal.count + ' fois. On laisse la page reagir.');
+        // 'info', pas 'warn' : un reclic refuse est le fonctionnement NORMAL
+        // de l'anti-rafale, pas une anomalie. Chrome compte chaque
+        // console.warn d'un script de contenu comme une erreur dans
+        // chrome://extensions -- une ligne de bon fonctionnement n'a rien a y
+        // faire, et noie celles qui comptent.
+        log('CORE', 'info', 'Clic ignore : "' + (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '" a deja ete clique ' + journal.count + ' fois. On laisse la page reagir.');
       }
       return false;
     }
@@ -223,7 +228,10 @@
       if (!(ACTION_WARN_SEEN[label] > now - ACTION_WARN_EVERY_MS)) {
         ACTION_WARN_SEEN[label] = now;
         var sources = patterns.map(function (p) { return p.source; }).join(', ');
-        log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+        // 'info' : ce message est emis PENDANT une attente, donc tant que le
+        // bouton n'est pas encore apparu. C'est un temoin de recherche, pas
+        // un echec -- l'echec, lui, est journalise quand l'attente expire.
+        log('CORE', 'info', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
       }
     }
     return found;

@@ -4,6 +4,37 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.16.2 -- 2026-09-17
+
+**La reclamation passe ; le journal arrete de crier**
+
+La 2.16.1 fait aboutir la reclamation. Restait ce que Chrome affichait dans
+`chrome://extensions` : des « erreurs » qui n'en sont pas. Chrome compte tout
+`console.warn` d'un script de contenu comme une erreur, et deux lignes du
+moteur sont ecrites en fonctionnement NORMAL.
+
+- **« Clic ignore : ... a deja ete clique N fois » passe en info.** Un reclic
+  refuse est l'anti-rafale qui fait son travail, pas une anomalie.
+- **« findActionElement(...) : aucun element visible ne correspond » passe en
+  info.** Ce message est emis PENDANT une attente, tant que le bouton n'est
+  pas apparu : c'est un temoin de recherche. L'echec, lui, reste journalise
+  quand l'attente expire, avec les libelles reellement visibles.
+- **Et surtout, la tentative inutile disparait.** Le garde-fou de la
+  sentinelle ne couvrait que « meme libelle ET meme ecran ». Or l'ecran bouge
+  souvent juste apres un clic -- une modale s'ouvre : la sonde repassait a la
+  seconde suivante, retrouvait le meme bouton et se faisait refuser. La
+  sentinelle respecte desormais en amont le meme delai de repos que
+  `robustClick`, donc elle ne propose plus un clic dont elle sait qu'il sera
+  refuse. Le filet de securite, lui, reste consulte : ne pas cliquer n'est pas
+  une raison de ne pas voir un ecran bloque.
+
+Les avertissements qui restent en signalent de vrais : plafond d'actions
+atteint, modale empilee, ecran fige, defi de securite, confirmation absente.
+
+Deux tests de plus : cinq passes apres un clic ne produisent aucune tentative
+supplementaire, et le frein reste bien un DELAI -- passe le repos, un second
+essai reste possible, parce qu'un premier clic peut n'avoir pas pris.
+
 ## 2.16.1 -- 2026-09-17
 
 **Ce qu'un humain ne peut pas cliquer, le moteur ne le clique pas**

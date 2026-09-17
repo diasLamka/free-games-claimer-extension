@@ -212,6 +212,23 @@
     epicPaymentSawSomethingAt = now;
     var text = actionText(btn);
 
+    /* Le meme libelle, trop tot : on ne PROPOSE meme pas le clic.
+     *
+     * Le garde-fou du dessous ne couvre que "meme libelle ET meme ecran". Or
+     * l'ecran bouge souvent juste apres un clic (une modale s'ouvre) : la
+     * sonde repassait alors a la seconde suivante, retrouvait le meme bouton,
+     * et se faisait refuser par l'anti-rafale de robustClick. Refus sans
+     * consequence, mais une ligne de journal a chaque fois -- et Chrome les
+     * compte comme des erreurs. On respecte donc le meme delai de repos que
+     * robustClick, en amont. */
+    if (text === epicPaymentActionLabel && epicPaymentActionAt
+        && now - epicPaymentActionAt < CONFIG.clickCooldownMs) {
+      // Ne pas cliquer n'est pas une raison de ne pas VOIR : le filet reste
+      // consulte, sinon un ecran bloque ne se signalerait jamais.
+      epicPaymentMaybeWarnStuck(now, text);
+      return false;
+    }
+
     // "Deja clique, et l'ecran n'a pas change" : on attend, on ne consomme
     // rien. Une seule seconde chance, passe le delai de repos, parce qu'un
     // premier clic peut n'avoir pas pris.

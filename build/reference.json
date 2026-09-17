@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.16.1.js",
-  "sha256": "5BBF7E8D24CA82FCB8ED81B43643B27386D5BE20391EFB95255E3ABFAA368D8B",
-  "octets": 192144,
-  "version": "2.16.1",
-  "motif": "2.16.1 : la sentinelle cherche dans la modale du dessus, jamais derriere"
+  "fichier": "reference-v2.16.2.js",
+  "sha256": "4AAAFA4C73A1FDB9F920D89DA718FB56BB5E255CE3EF3C75188B35FAFEC4F9A2",
+  "octets": 193651,
+  "version": "2.16.2",
+  "motif": "2.16.2 : le journal n'ecrit plus en warn ce qui est du fonctionnement normal"
 }

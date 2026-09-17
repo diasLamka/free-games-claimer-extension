@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.16.1
+ * FREE GAMES AUTO-CLAIMER -- v2.16.2
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -428,7 +428,12 @@
       // remplir la console au rythme des sondes.
       if (journal && !journal.warned) {
         journal.warned = true;
-        log('CORE', 'warn', 'Clic ignore : "' + (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '" a deja ete clique ' + journal.count + ' fois. On laisse la page reagir.');
+        // 'info', pas 'warn' : un reclic refuse est le fonctionnement NORMAL
+        // de l'anti-rafale, pas une anomalie. Chrome compte chaque
+        // console.warn d'un script de contenu comme une erreur dans
+        // chrome://extensions -- une ligne de bon fonctionnement n'a rien a y
+        // faire, et noie celles qui comptent.
+        log('CORE', 'info', 'Clic ignore : "' + (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '" a deja ete clique ' + journal.count + ' fois. On laisse la page reagir.');
       }
       return false;
     }
@@ -533,7 +538,10 @@
       if (!(ACTION_WARN_SEEN[label] > now - ACTION_WARN_EVERY_MS)) {
         ACTION_WARN_SEEN[label] = now;
         var sources = patterns.map(function (p) { return p.source; }).join(', ');
-        log('CORE', 'warn', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
+        // 'info' : ce message est emis PENDANT une attente, donc tant que le
+        // bouton n'est pas encore apparu. C'est un temoin de recherche, pas
+        // un echec -- l'echec, lui, est journalise quand l'attente expire.
+        log('CORE', 'info', 'findActionElement("' + label + '") : aucun element visible ne correspond a [' + sources + ']');
       }
     }
     return found;
@@ -1377,6 +1385,23 @@
     // Un bouton connu a l'ecran : la frame est vivante, la veille se prolonge.
     epicPaymentSawSomethingAt = now;
     var text = actionText(btn);
+
+    /* Le meme libelle, trop tot : on ne PROPOSE meme pas le clic.
+     *
+     * Le garde-fou du dessous ne couvre que "meme libelle ET meme ecran". Or
+     * l'ecran bouge souvent juste apres un clic (une modale s'ouvre) : la
+     * sonde repassait alors a la seconde suivante, retrouvait le meme bouton,
+     * et se faisait refuser par l'anti-rafale de robustClick. Refus sans
+     * consequence, mais une ligne de journal a chaque fois -- et Chrome les
+     * compte comme des erreurs. On respecte donc le meme delai de repos que
+     * robustClick, en amont. */
+    if (text === epicPaymentActionLabel && epicPaymentActionAt
+        && now - epicPaymentActionAt < CONFIG.clickCooldownMs) {
+      // Ne pas cliquer n'est pas une raison de ne pas VOIR : le filet reste
+      // consulte, sinon un ecran bloque ne se signalerait jamais.
+      epicPaymentMaybeWarnStuck(now, text);
+      return false;
+    }
 
     // "Deja clique, et l'ecran n'a pas change" : on attend, on ne consomme
     // rien. Une seule seconde chance, passe le delai de repos, parce qu'un
