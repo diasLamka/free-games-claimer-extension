@@ -270,3 +270,88 @@ test('une fenetre d\'achat ouverte bloque le passage au jeu suivant', () => {
   sandbox.document.querySelector = () => null;
   assert.equal(fgc.nextGameGateReason(), null);
 });
+
+/* ------------------------- ce qui est derriere une modale est hors de portee */
+
+/* Une modale Epic : elle porte ses propres boutons, et le bouton de la page
+   reste dans le document derriere elle -- exactement comme le 2026-09-17. */
+function modale(boutons, texte = 'Informations sur le droit de retractation. En selectionnant J\'accepte, vous donnez votre consentement...') {
+  return {
+    offsetWidth: 520,
+    offsetHeight: 300,
+    getClientRects: () => [{}],
+    textContent: texte,
+    querySelectorAll: () => boutons,
+    querySelector: () => null,
+  };
+}
+
+test('modale ouverte : c\'est "J\'accepte" qui est clique, pas le bouton du dessous', () => {
+  const { fgc, sandbox } = sousIframe();
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  const annuler = bouton('Annuler');
+  const accepte = bouton('J\'accepte');
+  /* Le document contient les trois -- c'est ce que montrait la ligne
+     "Ecran avant : Ajouter à la bibliothèque | Annuler | J'accepte #3". */
+  ecran(sandbox, [ajouter, annuler, accepte], { dialogues: [modale([annuler, accepte])] });
+
+  assert.equal(fgc.epicPaymentFramePass(), true);
+  assert.equal(clics(accepte), 1);
+  assert.equal(clics(ajouter), 0, 'le bouton derriere la modale a ete clique');
+  assert.equal(clics(annuler), 0);
+});
+
+test('le bouton derriere la modale ne recoit jamais rien, meme apres vingt passes', () => {
+  const { fgc, sandbox } = sousIframe();
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  const accepte = bouton('J\'accepte');
+  ecran(sandbox, [ajouter, accepte], { dialogues: [modale([accepte])] });
+
+  for (let i = 0; i < 20; i++) fgc.epicPaymentFramePass();
+
+  /* Le 2026-09-17, ces vingt passes auraient produit six clics sur "Ajouter
+     a la bibliotheque" et six modales empilees. */
+  assert.equal(clics(ajouter), 0);
+  assert.equal(clics(accepte), 1);
+});
+
+test('une modale sans bouton autorise ne fait RIEN cliquer', () => {
+  const { fgc, sandbox } = sousIframe();
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  const annuler = bouton('Annuler');
+  const savoirPlus = bouton('En savoir plus');
+  ecran(sandbox, [ajouter, annuler, savoirPlus], { dialogues: [modale([annuler, savoirPlus])] });
+
+  /* On attend : pas de repli vers le document. C'est ce repli-la qui empilait
+     les modales -- le filet des 30 s se chargera de prevenir. */
+  assert.equal(fgc.epicPaymentFramePass(), false);
+  assert.equal(clics(ajouter), 0);
+  assert.equal(clics(annuler), 0);
+  assert.equal(fgc.epicPaymentFrameState().actions, 0);
+});
+
+test('deux modales identiques empilees donnent la MEME signature', () => {
+  const { fgc, sandbox } = sousIframe();
+  const accepte = bouton('J\'accepte');
+  const annuler = bouton('Annuler');
+
+  ecran(sandbox, [annuler, accepte], { dialogues: [modale([annuler, accepte])] });
+  const une = fgc.epicPaymentScreenSignature();
+
+  ecran(sandbox, [annuler, accepte], { dialogues: [modale([annuler, accepte]), modale([annuler, accepte])] });
+  const deux = fgc.epicPaymentScreenSignature();
+
+  /* La signature comptait les dialogues : un empilement passait pour un ecran
+     NEUF, le frein "deja clique, ecran inchange" ne se declenchait jamais, et
+     les six actions y passaient. */
+  assert.equal(deux, une);
+});
+
+test('sans modale, le parcours qui marche est inchange', () => {
+  const { fgc, sandbox } = sousIframe();
+  const ajouter = bouton('Ajouter à la bibliothèque');
+  ecran(sandbox, [ajouter]);
+
+  assert.equal(fgc.epicPaymentFramePass(), true);
+  assert.equal(clics(ajouter), 1);
+});

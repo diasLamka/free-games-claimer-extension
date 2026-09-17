@@ -41,6 +41,7 @@
   var epicPaymentSameScreenRetries = 0;
   var epicPaymentPending = null;
   var epicPaymentNoticeSent = false;
+  var epicPaymentStackReported = false;
   var epicPaymentCapReported = false;
   var epicPaymentWaitReported = {};
 
@@ -73,20 +74,82 @@
       : EPIC_AGREE_LOOSE_PATTERNS.concat(EPIC_FREE_ORDER_LOOSE_PATTERNS);
   }
 
-  // La signature d'ecran : de quoi reconnaitre "le meme ecran" d'une passe a
-  // l'autre. Les libelles visibles et le nombre de dialogues suffisent, et
-  // c'est exactement ce qu'on veut lire dans le journal quand ca coince.
-  function epicPaymentScreenSignature() {
-    var dialogs = 0;
+  /* LA MODALE DU DESSUS, ET CE QU'ELLE COUVRE.
+   *
+   * Regle generale : ce qu'un humain ne peut pas cliquer, le moteur ne le
+   * clique pas. Une modale ouverte capture l'interaction ; tout ce qui est
+   * derriere est hors de portee, meme si querySelectorAll le trouve.
+   *
+   * Sans cette regle, capture du 2026-09-17T22:29 :
+   *
+   *     Action 4/6 : clic sur "Ajouter a la bibliotheque".
+   *     Ecran avant : Ajouter a la bibliotheque | Annuler | J'accepte #3
+   *
+   * "J'accepte" etait a l'ecran -- il est dans la ligne -- et la sentinelle
+   * cliquait le bouton de la page DERRIERE la modale. findActionElement rend
+   * le premier candidat dans l'ordre du DOM : l'ordre du document gagne,
+   * jamais l'ordre des motifs. Et chaque clic empilait une modale de plus,
+   * #3 puis #4, #5, #6, jusqu'a epuiser le plafond d'actions. */
+  function epicPaymentTopDialog() {
     try {
-      dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]').length;
-    } catch (e) {}
-    return visibleActionLabels(8).join(' | ') + ' #' + dialogs;
+      var dialogs = Array.prototype.slice.call(
+        document.querySelectorAll('[role="dialog"], [aria-modal="true"]')
+      ).filter(function (d) {
+        return !!(d.offsetWidth || d.offsetHeight || (d.getClientRects && d.getClientRects().length));
+      });
+      // La derniere dans l'ordre du DOM : les portails React s'ajoutent a la
+      // fin du body, donc la derniere est celle du dessus.
+      return dialogs.length ? dialogs[dialogs.length - 1] : null;
+    } catch (e) {
+      return null;
+    }
   }
 
+  function epicPaymentVisibleDialogCount() {
+    try {
+      return Array.prototype.slice.call(
+        document.querySelectorAll('[role="dialog"], [aria-modal="true"]')
+      ).filter(function (d) {
+        return !!(d.offsetWidth || d.offsetHeight || (d.getClientRects && d.getClientRects().length));
+      }).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /* La signature d'ecran : de quoi reconnaitre "le meme ecran" d'une passe a
+   * l'autre.
+   *
+   * Elle comptait les dialogues ouverts. C'etait une mauvaise mesure : chaque
+   * modale empilee faisait passer un ecran identique pour un ecran NEUF, donc
+   * le frein "deja clique, ecran inchange" ne se declenchait jamais. La
+   * signature porte desormais sur la modale du dessus -- ses libelles et la
+   * taille de son texte -- ou, a defaut de modale, sur les libelles visibles.
+   * Deux modales identiques empilees rendent alors la meme signature. */
+  function epicPaymentScreenSignature() {
+    var dialog = epicPaymentTopDialog();
+    if (!dialog) return visibleActionLabels(8).join(' | ');
+
+    var labels = [];
+    try {
+      labels = collectActionElements(dialog, [/./]).slice(0, 8).map(actionText);
+    } catch (e) {}
+    var size = 0;
+    try { size = ((dialog.textContent || '').replace(/\s+/g, ' ').trim()).length; } catch (e) {}
+    return 'modale[' + labels.join(' | ') + '] ~' + size;
+  }
+
+  /* Le bouton a cliquer, cherche LA OU IL EST ATTEIGNABLE.
+   *
+   * Quand une modale est ouverte, on ne cherche que dedans -- et on ne
+   * retombe PAS sur le document si elle ne porte aucun bouton autorise :
+   * c'est precisement ce repli qui a empile six modales. Dans ce cas on
+   * attend, et le filet des 30 s previent. */
   function epicPaymentFindConfirm() {
-    return findActionElement(document, epicPaymentConfirmPatterns())
-        || findShortestActionElement(document, epicPaymentLoosePatterns());
+    var dialog = epicPaymentTopDialog();
+    var root = dialog || document;
+    return findActionElement(root, epicPaymentConfirmPatterns())
+        || findShortestActionElement(root, epicPaymentLoosePatterns());
   }
 
   // Le filet : une modale qui attend un clic humain doit se VOIR, au lieu
@@ -127,6 +190,16 @@
     // 2026-09-17 : le module ne savait pas, et le journal ne disait pas, que
     // le clic n'avait rien produit.
     if (epicPaymentPending && now - epicPaymentPending.at >= 1500) {
+      // Une modale de PLUS apres un clic est le symptome d'un bouton clique
+      // derriere une modale. Une ligne, une seule : c'est ce qu'on veut lire
+      // en tete de capture si cela se reproduit sous une autre forme.
+      var stacked = epicPaymentVisibleDialogCount();
+      if (!epicPaymentStackReported && stacked > epicPaymentPending.dialogs) {
+        epicPaymentStackReported = true;
+        log(EPIC_PAYMENT_PLATFORM, 'warn', 'Le clic sur "' + epicPaymentPending.label
+          + '" a EMPILE une modale (' + epicPaymentPending.dialogs + ' -> ' + stacked
+          + '). Un bouton hors de la modale du dessus a ete atteint : a signaler.');
+      }
       log(EPIC_PAYMENT_PLATFORM, 'info', 'Apres "' + epicPaymentPending.label + '" : '
         + (signature === epicPaymentPending.before ? 'ecran INCHANGE.' : 'ecran change -> ' + signature));
       epicPaymentPending = null;
@@ -178,7 +251,7 @@
     epicPaymentActionAt = now;
     epicPaymentActionLabel = text;
     epicPaymentActionScreen = signature;
-    epicPaymentPending = { label: text, before: signature, at: now };
+    epicPaymentPending = { label: text, before: signature, at: now, dialogs: epicPaymentVisibleDialogCount() };
     log(EPIC_PAYMENT_PLATFORM, 'info', 'Action ' + epicPaymentActions + '/' + CONFIG.epicPaymentFrameMaxActions
       + ' : clic sur "' + text + '". Ecran avant : ' + signature);
     return true;

@@ -4,6 +4,52 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.16.1 -- 2026-09-17
+
+**Ce qu'un humain ne peut pas cliquer, le moteur ne le clique pas**
+
+La 2.16.0 a rendu la sentinelle durable, et son journal a livre le defaut
+suivant du premier coup. Capture du 2026-09-17T22:29, frame d'achat :
+
+```
+Action 4/6 : clic sur "Ajouter a la bibliotheque".
+Ecran avant : Ajouter a la bibliotheque | Annuler | J'accepte #3
+Apres "Ajouter a la bibliotheque" : ecran change -> ... #4
+Action 5/6 : clic sur "Ajouter a la bibliotheque".  Ecran avant : ... #4
+Action 6/6 : ...   Plafond de 6 actions atteint. Dernier ecran : ... #6
+```
+
+« J'accepte » etait a l'ecran -- il est dans la ligne -- et la sentinelle
+cliquait le bouton de la page DERRIERE la modale.
+
+- **Le bouton se cherche desormais dans la modale du dessus**, jamais
+  derriere. `findActionElement` rend le premier candidat dans l'ordre du DOM :
+  le bouton de la page vient avant celui de la modale, donc l'ordre du
+  document gagnait, et l'ordre des motifs ne servait a rien. Une modale
+  ouverte capture l'interaction : ce qui est dessous est hors de portee d'un
+  humain, donc hors de portee du moteur.
+- **Pas de repli vers le document quand une modale est ouverte.** Si la modale
+  ne porte aucun bouton autorise, on attend. C'est ce repli qui a empile six
+  modales : chaque clic sur le bouton du dessous en rouvrait une.
+- **La signature d'ecran ne compte plus les dialogues.** Elle portait le
+  nombre de modales ouvertes : chaque empilement faisait passer un ecran
+  identique pour un ecran NEUF, le frein « deja clique, ecran inchange » ne se
+  declenchait jamais, et les six actions y passaient. Elle porte maintenant
+  sur la modale du dessus -- ses libelles et la taille de son texte -- donc
+  deux modales identiques empilees rendent la meme signature.
+- **Un empilement se dit.** Quand le nombre de modales visibles augmente apres
+  un clic, une ligne unique le signale : c'est le symptome d'un bouton atteint
+  hors de la modale du dessus.
+
+Rien d'autre ne bouge : la liste des boutons autorises, le comptage des
+actions reelles, le plafond, le filet et l'aiguillage des frames sont
+inchanges. C'est un correctif de CIBLAGE, pas de politique.
+
+Cinq tests de plus, dont quatre echouent sur la 2.16.0 : le bouton du dessous
+ne recoit rien meme apres vingt passes, une modale sans bouton autorise ne
+fait rien cliquer, et deux modales empilees rendent la meme signature. Le
+cinquieme verifie que le parcours sans modale, lui, n'a pas bouge.
+
 ## 2.16.0 -- 2026-09-17
 
 **Ce qui surveille un achat vit aussi longtemps que l'achat**

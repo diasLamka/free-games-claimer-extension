@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.16.0.js",
-  "sha256": "C1062F405D34F3BF088102FC9CF882F4E4992E3EB8D60C1976EE1DB52080FEAC",
-  "octets": 188513,
-  "version": "2.16.0",
-  "motif": "2.16.0 : sentinelle d'iframe bornee, actions reelles comptees, le cadre du dessus attend l'achat"
+  "fichier": "reference-v2.16.1.js",
+  "sha256": "5BBF7E8D24CA82FCB8ED81B43643B27386D5BE20391EFB95255E3ABFAA368D8B",
+  "octets": 192144,
+  "version": "2.16.1",
+  "motif": "2.16.1 : la sentinelle cherche dans la modale du dessus, jamais derriere"
 }

@@ -37,6 +37,8 @@
       epicPaymentFramePass: epicPaymentFramePass,
       epicPaymentFrameAlive: epicPaymentFrameAlive,
       epicPaymentScreenSignature: epicPaymentScreenSignature,
+      epicPaymentFindConfirm: epicPaymentFindConfirm,
+      epicPaymentTopDialog: epicPaymentTopDialog,
       epicPostPurchaseWatcherTick: epicPostPurchaseWatcherTick,
       handleEpicPostPurchaseModals: handleEpicPostPurchaseModals,
       startEpicPostPurchaseModalWatcher: startEpicPostPurchaseModalWatcher,
