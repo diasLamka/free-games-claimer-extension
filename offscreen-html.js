@@ -15,6 +15,16 @@ const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chro
 const MAX_ROWS = 200;
 const MAX_TEXT = 300;
 
+/* Echantillons de structure : combien, et jusqu'ou.
+ *
+ * Ils existent pour une raison precise : compter les elements qui repondent a
+ * un selecteur dit SI la page a change, pas EN QUOI. Une mesure qui rend « 0 »
+ * oblige a en relancer une autre avec d'autres selecteurs, et ainsi de suite.
+ * Un echantillon de structure permet d'ecrire le bon selecteur du premier
+ * coup, ce qui est tout l'interet de mesurer. */
+const MAX_SAMPLES = 8;
+const MAX_HTML = 400;
+
 function coupe(texte) {
   const t = String(texte || '').replace(/\s+/g, ' ').trim();
   return t.length > MAX_TEXT ? t.slice(0, MAX_TEXT) : t;
@@ -33,7 +43,23 @@ function valeur(el, attr, base) {
   try { return new URL(brut, base).href; } catch { return coupe(brut); }
 }
 
-async function lire({ url, queries, patterns, timeoutMs }) {
+/** Ce qu'un element a d'identifiant, sans recopier la page entiere. */
+function echantillon(el) {
+  const attrs = {};
+  for (const nom of ['id', 'class', 'href', 'data-a-target', 'aria-label']) {
+    const v = el.getAttribute && el.getAttribute(nom);
+    if (v) attrs[nom] = coupe(v);
+  }
+  const html = String(el.outerHTML || '');
+  return {
+    tag: String(el.tagName || '').toLowerCase(),
+    attrs,
+    text: coupe(el.textContent).slice(0, 120),
+    html: html.length > MAX_HTML ? `${html.slice(0, MAX_HTML)}\u2026` : html,
+  };
+}
+
+async function lire({ url, queries, patterns, samples, timeoutMs }) {
   const debut = performance.now();
   const controle = new AbortController();
   const minuterie = setTimeout(() => controle.abort(), timeoutMs || 20000);
@@ -64,6 +90,21 @@ async function lire({ url, queries, patterns, timeoutMs }) {
       }));
     }
 
+    /* Les echantillons de structure. Le selecteur peut etre volontairement
+       large -- [class*="giveaway"] -- puisqu'on cherche ce qui existe, pas ce
+       qu'on croit deja savoir. */
+    const structure = {};
+    for (const sp of samples || []) {
+      if (!sp || !sp.name || !sp.selector) continue;
+      try {
+        structure[sp.name] = Array.from(doc.querySelectorAll(sp.selector))
+          .slice(0, Math.min(sp.limit || MAX_SAMPLES, MAX_SAMPLES))
+          .map(echantillon);
+      } catch {
+        structure[sp.name] = [];
+      }
+    }
+
     const texte = doc.body ? doc.body.textContent || '' : '';
     const matches = {};
     for (const p of patterns || []) {
@@ -81,6 +122,7 @@ async function lire({ url, queries, patterns, timeoutMs }) {
       bytes: html.length,
       title: coupe(doc.title).slice(0, 120),
       results,
+      samples: structure,
       matches,
       ms: Math.round(performance.now() - debut),
     };

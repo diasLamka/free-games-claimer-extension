@@ -351,12 +351,25 @@ async function lancerSonde() {
         { name: 'motPrime', source: 'prime gaming' },
         { name: 'motReclamer', source: 'claim|r[e\u00e9]clamer|obtenir' },
       ],
+      /* La structure, pas seulement le compte. Un « 0 » obligerait a relancer
+         une mesure par hypothese ; un echantillon permet d'ecrire le bon
+         selecteur du premier coup. */
+      samples: [
+        { name: 'offres', selector: '[data-a-target], [class*="offer"], [class*="Offer"]', limit: 6 },
+        { name: 'liens', selector: 'a[href*="claim"], a[href*="luna"], a[href*="/dp/"]', limit: 6 },
+        { name: 'donneesEmbarquees', selector: 'script[type="application/json"], script[id]', limit: 4 },
+      ],
     });
 
     out.gog = await queryHtml(api, {
       url: 'https://www.gog.com/',
       queries: ANCRES_GOG,
       patterns: [{ name: 'motGiveaway', source: 'giveaway|jeu offert|claim it free' }],
+      samples: [
+        { name: 'giveaway', selector: '[class*="giveaway"], [id*="giveaway"]', limit: 6 },
+        { name: 'liensJeu', selector: 'a[href*="/game/"]', limit: 4 },
+        { name: 'donneesEmbarquees', selector: 'script[type="application/json"], script[id]', limit: 4 },
+      ],
     });
 
     resultats.sonde = out;
@@ -379,13 +392,34 @@ async function lancerSonde() {
       : '--';
     $('s-gog-texte').textContent = gog.ok ? (gog.matches.motGiveaway ? 'oui' : 'non') : '--';
 
-    /* Le verdict ne tranche que ce que la mesure montre. Une page vide n'est
-       pas la preuve qu'un domaine est mort : elle peut etre rendue cote
-       client, comme l'etait store.epicgames.com en V0-3. */
+    /* Ce que la structure montre, en une ligne lisible. Le detail complet part
+       dans le rapport : c'est lui qu'on relit pour ecrire le selecteur. */
+    const resume = (r) => {
+      if (!r || !r.ok || !r.samples) return '--';
+      return Object.entries(r.samples)
+        .map(([nom, lot]) => `${nom} : ${lot.length}`)
+        .join(' | ');
+    };
+    $('s-prime-structure').textContent = resume(prime);
+    $('s-gog-structure').textContent = resume(gog);
+
+    /* Le verdict ne tranche que ce que la mesure montre.
+     *
+     * Trois etats, pas deux, et la distinction n'est pas academique : une
+     * LECTURE QUI ECHOUE ne dit rien du tout, tandis qu'une lecture qui
+     * reussit sans rien trouver dit quelque chose. Confondre les deux ferait
+     * conclure « page rendue cote client » a qui est simplement hors ligne --
+     * et cette conclusion, recopiee dans ROADMAP.md, orienterait le code
+     * suivant dans la mauvaise direction. */
     const primeVivant = prime.ok && prime.status === 200 && prime.bytes > 2000;
     const gogAncre = gog.ok && ANCRES_GOG.some((a) => (gog.results[a.name] || []).length > 0);
 
-    if (primeVivant && gogAncre) {
+    if (!prime.ok && !gog.ok) {
+      verdict($('s-verdict'), 'ko', 'Les deux lectures ont echoue',
+        'Aucune des deux pages n\'a pu etre lue : ' + (prime.error || gog.error) + '. '
+        + 'Ce n\'est pas un resultat sur les magasins -- c\'est un probleme de reseau, de '
+        + 'host_permissions, ou d\'extension rechargee a moitie. Rien a conclure avant de relancer.');
+    } else if (primeVivant && gogAncre) {
       verdict($('s-verdict'), 'ok', 'Les deux entrees sont mesurables',
         'gaming.amazon.com repond et la page GOG expose des ancres exploitables. '
         + 'Coller le rapport dans ROADMAP.md : les deux entrees peuvent passer a l\'ecriture.');
@@ -393,11 +427,12 @@ async function lancerSonde() {
       verdict($('s-verdict'), 'warn', 'Une seule des deux',
         (primeVivant ? 'gaming.amazon.com repond' : 'GOG expose des ancres')
         + ', l\'autre non. Le detail ci-dessus dit laquelle, et le rapport le garde.');
-    } else {
-      verdict($('s-verdict'), 'ko', 'Rien d\'exploitable dans le HTML brut',
-        'Les deux pages sont probablement rendues cote client, comme l\'etait '
-        + 'store.epicgames.com en V0-3. Ce n\'est pas une fin de non-recevoir : cela veut dire '
-        + 'qu\'il faut viser une API JSON plutot que le HTML, et la mesure suivante est de la trouver.');
+    } else if (prime.ok || gog.ok) {
+      verdict($('s-verdict'), 'warn', 'Lues, mais rien d\'exploitable dans le HTML brut',
+        'La ou la lecture a abouti, aucune ancre ne repond : la page est probablement rendue '
+        + 'cote client, comme l\'etait store.epicgames.com en V0-3. Ce n\'est pas une fin de '
+        + 'non-recevoir -- cela veut dire qu\'il faut viser une API JSON plutot que le HTML, et '
+        + 'les echantillons « donneesEmbarquees » du rapport disent si elle est deja dans la page.');
     }
     $('sonde-state').textContent = 'termine';
   } catch (e) {
@@ -442,9 +477,27 @@ function majRapport() {
   if (resultats.sonde) {
     const r = resultats.sonde;
     l.push('## V6-V7 -- ce qu\'il reste a mesurer');
-    l.push(`gaming.amazon.com          : ${JSON.stringify(r.prime)}`);
-    l.push(`gog.com                    : ${JSON.stringify(r.gog)}`);
-    l.push('');
+    for (const [nom, mesure] of [['gaming.amazon.com', r.prime], ['gog.com', r.gog]]) {
+      l.push(`### ${nom}`);
+      if (!mesure || !mesure.ok) {
+        l.push(`echec : ${(mesure && mesure.error) || 'inconnu'}`);
+        l.push('');
+        continue;
+      }
+      l.push(`HTTP ${mesure.status}, ${mesure.bytes} octets, titre « ${mesure.title} », ${mesure.ms} ms`);
+      for (const [cle, lot] of Object.entries(mesure.results || {})) {
+        l.push(`  ${cle} : ${lot.length}`);
+      }
+      for (const [cle, vrai] of Object.entries(mesure.matches || {})) {
+        l.push(`  texte ${cle} : ${vrai ? 'present' : 'absent'}`);
+      }
+      // Les echantillons en dernier : c'est la partie qu'on relit ligne a ligne.
+      for (const [cle, lot] of Object.entries(mesure.samples || {})) {
+        l.push(`  -- echantillons ${cle} (${lot.length}) --`);
+        for (const e of lot) l.push(`     ${JSON.stringify(e)}`);
+      }
+      l.push('');
+    }
   }
 
   $('report').value = l.join('\n');

@@ -97,10 +97,16 @@ export async function closeDocument(chrome) {
  * chercher dans le texte rendu. Elles voyagent en pieces detachees parce
  * qu'une RegExp ne traverse pas `sendMessage`.
  *
+ * `samples` : [{ name, selector, limit }] -- des echantillons de STRUCTURE :
+ * balise, attributs identifiants, debut du HTML. Ils servent a une mesure, pas
+ * a une source. Compter les elements qui repondent a un selecteur dit si la
+ * page a change, jamais en quoi : sans echantillon, il faut relancer une
+ * mesure par hypothese, et on finit par deviner de toute facon.
+ *
  * Rend toujours un objet, jamais une exception : une source muette doit se
  * lire comme une source muette, pas faire tomber le cycle qui l'interroge.
  */
-export async function queryHtml(chrome, { url, queries = [], patterns = [], timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export async function queryHtml(chrome, { url, queries = [], patterns = [], samples = [], timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   if (!hasOffscreen(chrome)) return { ok: false, error: 'offscreen indisponible sur cette plateforme' };
   if (!url) return { ok: false, error: 'aucune URL' };
 
@@ -113,6 +119,7 @@ export async function queryHtml(chrome, { url, queries = [], patterns = [], time
       url,
       queries,
       patterns,
+      samples,
       timeoutMs,
     });
     if (!reponse) return { ok: false, error: 'aucune reponse du document offscreen' };
