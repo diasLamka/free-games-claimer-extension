@@ -1,0 +1,7 @@
+{
+  "fichier": "reference-v2.13.4.js",
+  "sha256": "632527DDBFED11AD6AAB20008493AB264DB78388CBD0F936BA79FF22F0B6ACC4",
+  "octets": 155570,
+  "version": "2.13.4",
+  "motif": "v2.13.4 : demarrage quand load est deja passe (Firefox), detection du defi Cloudflare"
+}

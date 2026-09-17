@@ -1,0 +1,199 @@
+// ==UserScript==
+// @name         Free Games Auto-Claimer (Epic / GOG / Amazon Luna)
+// @namespace    https://local.userscripts/free-games-claimer
+// @version      2.7.0
+// @description  Detecte et recupere automatiquement les jeux gratuits sur Epic Games Store, GOG et Amazon Luna (uniquement les pages /claims), avec bouton flottant. Ecrit en syntaxe ES5 (sans template literals) pour eviter tout probleme de linter dans l'editeur Tampermonkey.
+// @author       (a personnaliser)
+// @match        https://store.epicgames.com/*
+// @match        https://www.gog.com/*
+// @match        https://gog.com/*
+// @match        https://luna.amazon.com/claims/*
+// @match        https://luna.amazon.fr/claims/*
+// @match        https://luna.amazon.de/claims/*
+// @match        https://luna.amazon.co.uk/claims/*
+// @match        https://luna.amazon.it/claims/*
+// @match        https://luna.amazon.es/claims/*
+// @match        https://luna.amazon.ca/claims/*
+// @match        https://luna.amazon.com.au/claims/*
+// @match        https://luna.amazon.co.jp/claims/*
+// @match        https://luna.amazon.in/claims/*
+// @match        https://luna.amazon.com.mx/claims/*
+// @match        https://luna.amazon.com.br/claims/*
+// @match        https://luna.amazon.nl/claims/*
+// @match        https://luna.amazon.se/claims/*
+// @match        https://luna.amazon.pl/claims/*
+// @match        https://luna.amazon.com.tr/claims/*
+// @include      /^https:\/\/luna\.amazon\.[a-z.]+\/claims(\/|$|\?)/i
+// @match        https://gaming.amazon.com/*
+// @match        https://payment-website-pci.ol.epicgames.com/*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_notification
+// @grant        GM_registerMenuCommand
+// @grant        GM_addStyle
+// @grant        GM_xmlhttpRequest
+// @grant        GM_setClipboard
+// @grant        GM_openInTab
+// @connect      store-site-backend-static.ak.epicgames.com
+// @connect      store-site-backend-static-ipv4.ak.epicgames.com
+// @run-at       document-idle
+// ==/UserScript==
+
+/*
+ * =============================================================================
+ * FREE GAMES AUTO-CLAIMER -- v2.7.0
+ * =============================================================================
+ * NOUVEAUTES v2.7.0 :
+ *  - Modules GOG (giveaway) : les motifs etaient restes sans accents, donc
+ *    "Recuperer", "Dans la bibliotheque", "deja possede" ne matchaient jamais
+ *    l'interface francaise. Corrige (meme classe de bug que v2.5.0).
+ *  - Module Steam retire : il n'avait aucun @match (code jamais execute) et
+ *    Steam ne propose pas de jeux a reclamer au sens Epic/Luna.
+ *  - La veille des modales de fin d'achat Epic ne tourne plus indefiniment :
+ *    elle demarre a la reclamation et s'arrete d'elle-meme au bout de 3 min.
+ *  - Le script sort immediatement des iframes tierces (seule l'iframe de
+ *    paiement Epic est traitee) : plus d'executions paralleles inutiles.
+ *  - Verification apres reclamation Epic : si le bouton "Obtenir" est encore
+ *    visible 2,5 s apres, rien n'est enregistre comme "reclame" (le jeu sera
+ *    retente) au lieu d'etre perdu pour la semaine.
+ *  - Les codes a echanger memorisent leur date limite (affichee par Amazon) ;
+ *    elle apparait dans les notifications et dans "Voir les codes en attente".
+ *  - Amazon Luna : les offres de contenu en jeu (offer-list-IN_GAME_LOOT) sont
+ *    traitees comme les jeux (CONFIG.lunaClaimDlc pour desactiver).
+ *  - Menu "Voir l'historique de cette plateforme".
+ *
+ * CORRECTIF v2.6.0 (relances systematiques) :
+ *  - Le mode auto repartait a chaque retour sur l'onglet (visibilitychange),
+ *    a chaque chargement de page et a chaque changement d'URL interne. Un
+ *    delai de repos persistant (stockage Tampermonkey, partage entre onglets)
+ *    encadre desormais les verifications automatiques :
+ *      * 30 min apres une verification (CONFIG.autoCooldownMs),
+ *      * 6 h quand il n'y a plus rien a reclamer (CONFIG.autoIdleCooldownMs),
+ *      * 15 min apres un echec, pour ne pas marteler (autoFailureCooldownMs).
+ *    Les actions manuelles (bouton Claim, commandes de menu) ignorent ce delai
+ *    et le remettent a zero.
+ *  - Le surveillant de navigation interne ne reagit plus qu'a un changement de
+ *    CHEMIN : Epic et Amazon reecrivent en permanence la query (suivi, ?lang=),
+ *    ce qui relancait un cycle complet toutes les 1,5 s.
+ *  - Menu "Relancer maintenant (ignorer le delai)" et etat du delai visible
+ *    dans la console au demarrage.
+ *
+ * CORRECTIF v2.5.0 (etapes finales : "captcha" a tort, boutons non cliques) :
+ *  - detectSecurityChallenge ne retenait que le src des iframes : Epic charge
+ *    en permanence une iframe hCaptcha/Arkose INVISIBLE, donc chaque clic
+ *    finissait en "Defi de securite detecte" alors qu'il suffisait de cliquer.
+ *    Seuls un cadre de defi VISIBLE (> 50 px, non masque) ou un champ de code
+ *    a usage unique VISIBLE comptent desormais comme defi.
+ *  - Les libelles reels du store sont accentues : "Ajouter a la bibliotheque",
+ *    "droit de retractation", "Le lanceur Epic Games est-il installe ?",
+ *    "Recuperer" (modale Code promo GOG). Les motifs ASCII de v2.4.0 ne
+ *    matchaient aucun de ces boutons : l'enchainement s'arretait juste avant
+ *    la fin. Tous les motifs tolerent maintenant accents et apostrophe typo.
+ *  - Modale GOG "Code promo" : le bouton "Recuperer" est reconnu comme
+ *    confirmation finale, "Annuler" reste ignore.
+ *
+ * NOUVEAUTES v2.4.0 (Amazon Luna automatique + echange des codes GOG) :
+ *  - Le module Luna demarre tout seul au chargement d'une page
+ *    luna.amazon.<tld>/claims/... (toggle "Auto Luna : ON/OFF" dans le widget et
+ *    dans le menu Tampermonkey). Sans session Amazon : simple notification.
+ *  - Les libelles francais accentues ("Recuperer le jeu", "Obtenir le jeu",
+ *    "Recupere", "bibliotheque") sont reconnus ; les motifs sans accent de
+ *    v2.2.0 ne trouvaient aucun bouton sur l'interface francaise.
+ *  - Les attributs stables de la page (data-a-target : offer-list-FGWP_FULL,
+ *    item-card, FGWPOffer, buy-box, buy-box_call-to-action,
+ *    DescriptionItemDetails, LinkAccountButton, ClaimStateClaimCodeContent,
+ *    sign-in-button) sont utilises en priorite, le texte en repli.
+ *  - La plateforme de destination est deduite du suffixe du slug de l'offre
+ *    (/claims/<slug>-<epic|gog|aga|legacy|...>/dp/amzn1.pg.item...) et du
+ *    texte "X pour PC sur <magasin>." de la fiche :
+ *      * Legacy Games : ignore (jamais reclame) ;
+ *      * Epic / Amazon Games / comptes relies : reclamation directe ;
+ *      * GOG : le code affiche par Amazon est copie dans le presse-papiers,
+ *        mis en attente (stockage Tampermonkey), puis echange automatiquement
+ *        sur gog.com/redeem (voir ci-dessous) ;
+ *      * Microsoft Store / Xbox : code copie dans le presse-papiers +
+ *        notification (clic = ouverture de account.microsoft.com/billing/
+ *        redeem) : a coller manuellement.
+ *  - Parcours par offre : la page liste construit une file (sessionStorage)
+ *    et le script visite chaque fiche l'une apres l'autre (une offre par
+ *    chargement de page), clique "Obtenir le jeu", gere l'etape "Complete
+ *    Claim", detecte "Associer un compte" (offre passee + notification), puis
+ *    revient a la liste avec un resume. Reconnexion Amazon demandee : arret,
+ *    la file reprend au prochain chargement de /claims apres connexion.
+ *  - Nouveau module GOG "redeem" : sur gog.com/redeem, chaque code en attente
+ *    est saisi dans #codeInput, "Continuer" puis "Utiliser le code" sont
+ *    cliques, le resultat est lu (ajoute a la bibliotheque / code deja
+ *    utilise / code invalide). Le reCAPTCHA invisible de la page ne bloque
+ *    pas ; un captcha VISIBLE arrete le script (validation manuelle, puis
+ *    reprise). A la fin de la serie Luna, gog.com/redeem s'ouvre dans un
+ *    nouvel onglet si des codes GOG sont en attente.
+ *  - Nouveaux @grant : GM_setClipboard (copie des codes), GM_openInTab
+ *    (ouverture de la page d'echange). Menu : voir les codes en attente,
+ *    oublier tous les codes en attente (irreversible), echanger les codes GOG
+ *    maintenant, vider la file Luna en cours, basculer le mode auto Luna.
+ *  - Revue : lot Luna remis a zero en fin de serie et fiche visitee hors
+ *    serie traitee sans toucher a la file ; "Associer un compte" n'est
+ *    retenu que s'il apparait APRES le clic (la fiche l'affiche deja avant) ;
+ *    pour GOG/Microsoft un succes attend 6 s l'affichage du code ; textes
+ *    compares noeud par noeud (textContent concatene sans espace) ; sur
+ *    gog.com/redeem la route interne /redeem/<code> ne relance pas le module,
+ *    "Code non trouve." est reconnu, un code refuse n'est pas reessaye et un
+ *    captcha ne compte pas comme essai.
+ *
+ * CORRECTIF v2.3.0 (erreur 404 Epic en mode automatique) :
+ *  - L'API freeGamesPromotions renvoie parfois un productSlug herite du type
+ *    "cardpocalypse/home". Le script construisait alors
+ *    store.epicgames.com/p/cardpocalypse/home, qu'Epic redirige vers
+ *    www.epicgames.com/site/p/... -> 404. Le slug est desormais resolu en
+ *    priorite depuis offerMappings / catalogNs.mappings, puis productSlug
+ *    nettoye (suffixe "/home" retire), et urlSlug en dernier recours ; les
+ *    hash d'offre (32 hex, ex. jeux mystere) sont ignores car ils menent a
+ *    la page /not-found.
+ *  - Epic a supprime le prefixe de langue dans le chemin (/fr/free-games
+ *    repond 301 vers /free-games?lang=fr). Toutes les URL sont construites
+ *    sur ce nouveau schema (CONFIG.epicStoreOrigin + ?lang=CONFIG.epicLang).
+ *  - Les bundles sont ouverts via /bundles/<slug>, les jeux/add-ons via
+ *    /p/<slug>. extractEpicSlug reconnait les deux formes et tolere
+ *    ?lang=xx, l'ancien prefixe /fr/ et le suffixe /home.
+ *  - Seules les promos actives maintenant (fenetre de dates + prix remise a
+ *    0) sont retenues : les jeux "Bientot disponible" ne sont plus comptes
+ *    comme reclamables.
+ *  - Sur /free-games le script attend le rendu des cartes (page rendue cote
+ *    client) avant de conclure qu'une carte est absente et de rediriger.
+ *  - Atterrissage sur store.epicgames.com/not-found apres une redirection du
+ *    script : le slug fautif est marque "bad_url" (7 jours), plus aucune
+ *    redirection vers lui, retour automatique sur /free-games.
+ *  - Sur une fiche produit d'un jeu gratuit non reclame, le mode auto lance
+ *    la reclamation sur place au lieu de renvoyer vers /free-games (evite le
+ *    ping-pong entre les deux pages).
+ *  - Repli DOM realigne sur le libelle actuel des cartes ("Gratuit jusqu'au
+ *    ..." / "Free until ...") en excluant "Bientot disponible" et les
+ *    free-to-play "Jeu de base".
+ *  - Motifs de boutons tolerants aux accents ("Recuperer", "Dans la
+ *    bibliotheque") via des echappements \u00e9 / \u00e8.
+ *  - La commande de menu "Effacer l'historique" utilisait la cle
+ *    FGC_history_<hostname> alors que l'historique est stocke sous
+ *    FGC_history_<nom de plateforme> : elle n'effacait rien. Corrige.
+ *  - Garde anti-reentrance du module Epic (120 s) : le watcher SPA relancait
+ *    le module pendant une reclamation en cours (double clic sur "Obtenir").
+ *  - Marqueur de reprise FGC_epic_pending_slug horodate (5 min), efface des
+ *    que la reclamation se termine dans le meme document, et jamais utilise
+ *    pour degrader une entree deja "claimed" : arrivee sur la fiche visee ->
+ *    reclamation sur place ; arrivee sur /not-found -> slug bloque.
+ *  - Le rejet interne 'STOP' (arret volontaire deja journalise) n'est plus
+ *    affiche comme "Erreur : undefined" dans le widget.
+ *
+ * CORRECTIF v2.2.0 : les @match Amazon Luna sont desormais restreints au
+ * chemin /claims/* (ex. luna.amazon.fr/claims/home) au lieu de tout le
+ * domaine. Le script (et donc le widget flottant) ne se charge plus du tout
+ * sur les pages de jeu / bibliotheque / accueil Luna, uniquement sur les
+ * pages de reclamation des jeux gratuits.
+ *
+ * CORRECTIF v2.1.0 : plus aucun template literal (backtick) dans tout le
+ * fichier. Toutes les chaines interpolees ont ete reecrites en concatenation
+ * classique ('a' + b + 'c'), pour eliminer definitivement l'erreur de
+ * parsing affichee par le linter integre de certaines versions de
+ * Tampermonkey, qui ne reconnait pas la syntaxe ES6 des template literals.
+ * =============================================================================
+ */
+

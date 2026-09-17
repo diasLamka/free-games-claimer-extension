@@ -1,0 +1,560 @@
+{
+  "appName": {
+    "message": "Free Games Auto-Claimer"
+  },
+  "appDesc": {
+    "message": "Trouve les jeux gratuits sur Epic Games Store, GOG, Amazon Luna et Steam, et les récupère pour vous."
+  },
+  "workingLabel": {
+    "message": "Vérification"
+  },
+  "tabsLabel": {
+    "message": "Vues"
+  },
+  "tabGames": {
+    "message": "Jeux"
+  },
+  "tabCodes": {
+    "message": "Codes"
+  },
+  "tabSettings": {
+    "message": "Réglages"
+  },
+  "searchPlaceholder": {
+    "message": "Titre ou magasin"
+  },
+  "sortLabel": {
+    "message": "Trier par"
+  },
+  "sortEnding": {
+    "message": "Fin la plus proche"
+  },
+  "sortAdded": {
+    "message": "Plus récentes"
+  },
+  "sortWorth": {
+    "message": "Valeur décroissante"
+  },
+  "sortStore": {
+    "message": "Par magasin"
+  },
+  "freeNow": {
+    "message": "Gratuit maintenant"
+  },
+  "claimAll": {
+    "message": "Tout récupérer"
+  },
+  "comingUp": {
+    "message": "Bientôt"
+  },
+  "alreadyClaimed": {
+    "message": "Déjà récupéré"
+  },
+  "seeAll": {
+    "message": "Tout voir"
+  },
+  "seeLess": {
+    "message": "Réduire"
+  },
+  "codesToRedeem": {
+    "message": "Codes à échanger"
+  },
+  "statusNeverRan": {
+    "message": "La veille n’a pas encore tourné."
+  },
+  "statusChecked": {
+    "message": "Vérifié $1"
+  },
+  "statusNext": {
+    "message": "prochaine $1"
+  },
+  "ago": {
+    "message": "il y a $1"
+  },
+  "inFuture": {
+    "message": "dans $1"
+  },
+  "never": {
+    "message": "jamais"
+  },
+  "checkNow": {
+    "message": "Vérifier maintenant"
+  },
+  "checking": {
+    "message": "Vérification…"
+  },
+  "emptyGames": {
+    "message": "Rien de gratuit repéré. La veille regarde toute seule et vous préviendra."
+  },
+  "emptyGamesFiltered": {
+    "message": "Aucune offre ne correspond à cette recherche."
+  },
+  "emptyCodes": {
+    "message": "Rien à échanger. Les codes GOG et Microsoft obtenus sur Luna apparaîtront ici, avec leur date limite."
+  },
+  "emptyLog": {
+    "message": "Rien de récupéré pour l’instant."
+  },
+  "emptySources": {
+    "message": "Aucune source interrogée pour l’instant."
+  },
+  "noEndDate": {
+    "message": "fin inconnue"
+  },
+  "alreadyOwned": {
+    "message": "possédé"
+  },
+  "openOfferTitle": {
+    "message": "Ouvrir la page de l’offre"
+  },
+  "pinTitle": {
+    "message": "Garder en tête de liste"
+  },
+  "unpinTitle": {
+    "message": "Ne plus garder en tête"
+  },
+  "alsoFreeOn": {
+    "message": "aussi sur $1"
+  },
+  "upcomingUnannounced": {
+    "message": "Titre pas encore annoncé"
+  },
+  "summary": {
+    "message": "Bilan"
+  },
+  "tallyNone": {
+    "message": "Rien de récupéré pour l’instant."
+  },
+  "tallyOne": {
+    "message": "$1 jeu récupéré"
+  },
+  "tallyMany": {
+    "message": "$1 jeux récupérés"
+  },
+  "tallyValued": {
+    "message": ", dont $1 à prix connu : $2"
+  },
+  "claimForMe": {
+    "message": "Récupérer sans moi"
+  },
+  "autonomousLabel": {
+    "message": "Récupérer sans moi"
+  },
+  "autonomousHint": {
+    "message": "Ouvre un onglet de fond et prend l’offre"
+  },
+  "minWorthLabel": {
+    "message": "Ne récupérer qu’au-dessus de"
+  },
+  "noThreshold": {
+    "message": "aucun seuil"
+  },
+  "includeDlcLabel": {
+    "message": "Inclure les DLC et le butin"
+  },
+  "includeDlcHint": {
+    "message": "Quatre fois plus nombreux que les jeux"
+  },
+  "filtersPreview": {
+    "message": "Sur $1 offres en cours : $2 récupérables sans vous, $3 à voir vous-même."
+  },
+  "filtersPreviewNone": {
+    "message": "Aucune offre en cours pour l’instant."
+  },
+  "stores": {
+    "message": "Magasins"
+  },
+  "moreStores": {
+    "message": "Autres magasins"
+  },
+  "moreStoresCount": {
+    "message": "$1 activés"
+  },
+  "moreStoresHint": {
+    "message": "Surveillés et notifiés, jamais récupérés pour vous : aucun module de réclamation n’existe pour ceux-là."
+  },
+  "storeReady": {
+    "message": "prêt"
+  },
+  "storeReadyCount": {
+    "message": "prêt, $1 récupérés"
+  },
+  "storePaused": {
+    "message": "en pause $1"
+  },
+  "storeAutoOff": {
+    "message": "auto désactivé"
+  },
+  "storeDetectOnly": {
+    "message": "détecté seulement"
+  },
+  "storeOff": {
+    "message": "désactivé"
+  },
+  "watch": {
+    "message": "Veille de fond"
+  },
+  "floorLabel": {
+    "message": "Vérifications minimum par jour"
+  },
+  "watchNote": {
+    "message": "Seulement tant que Chrome est ouvert. Une alarme ne réveille pas l’ordinateur."
+  },
+  "predictionTitle": {
+    "message": "Prochaines 24 heures"
+  },
+  "predictionLearning": {
+    "message": "La prédiction apprend encore : il lui faut quelques offres par source."
+  },
+  "predictionPeak": {
+    "message": "pic vers $1"
+  },
+  "predictionNothing": {
+    "message": "rien attendu d’ici demain"
+  },
+  "predictionBandTitle": {
+    "message": "Prochaines 24 heures. Plus une barre est claire, plus cette source a l’habitude de lâcher à cette heure-là."
+  },
+  "now": {
+    "message": "maintenant"
+  },
+  "plus24h": {
+    "message": "+24 h"
+  },
+  "notifications": {
+    "message": "Notifications"
+  },
+  "notifyModeLabel": {
+    "message": "Me prévenir"
+  },
+  "notifyEvery": {
+    "message": "À chaque offre"
+  },
+  "notifyDigest": {
+    "message": "Un résumé par jour"
+  },
+  "notifyOff": {
+    "message": "Jamais"
+  },
+  "quietLabel": {
+    "message": "Heures calmes"
+  },
+  "quietHint": {
+    "message": "Retenues, pas supprimées : elles arrivent après"
+  },
+  "quietFrom": {
+    "message": "De"
+  },
+  "quietTo": {
+    "message": "à"
+  },
+  "reminderLabel": {
+    "message": "Me rappeler avant la fin, en heures :"
+  },
+  "reminderOff": {
+    "message": "désactivé"
+  },
+  "onPagesIOpen": {
+    "message": "Sur les pages que j’ouvre"
+  },
+  "epicAutoLabel": {
+    "message": "Epic : rotation hebdomadaire"
+  },
+  "lunaAutoLabel": {
+    "message": "Luna : réclamation sur la page"
+  },
+  "lunaDlcLabel": {
+    "message": "Luna : contenu en jeu"
+  },
+  "openEpic": {
+    "message": "Ouvrir Epic"
+  },
+  "openLuna": {
+    "message": "Ouvrir Luna"
+  },
+  "appearance": {
+    "message": "Apparence"
+  },
+  "themeLabel": {
+    "message": "Thème"
+  },
+  "themeSystem": {
+    "message": "Système"
+  },
+  "themeDark": {
+    "message": "Sombre"
+  },
+  "themeLight": {
+    "message": "Clair"
+  },
+  "languageLabel": {
+    "message": "Langue"
+  },
+  "languageAuto": {
+    "message": "Langue du navigateur"
+  },
+  "hideOwnedLabel": {
+    "message": "Masquer les jeux que je possède déjà"
+  },
+  "backup": {
+    "message": "Sauvegarde"
+  },
+  "exportJson": {
+    "message": "Exporter en JSON"
+  },
+  "exportCsv": {
+    "message": "Exporter en CSV"
+  },
+  "import": {
+    "message": "Importer"
+  },
+  "exported": {
+    "message": "$1 code(s) et $2 récupération(s) exportés."
+  },
+  "exportedCsv": {
+    "message": "$1 ligne(s) exportées."
+  },
+  "importNotOurs": {
+    "message": "Ce fichier n’est pas un export de l’extension."
+  },
+  "importRestored": {
+    "message": "$1 code(s) restauré(s), réglages repris."
+  },
+  "importNoNew": {
+    "message": "Aucun code nouveau ; réglages repris."
+  },
+  "importFailed": {
+    "message": "Import impossible : $1"
+  },
+  "backupHint": {
+    "message": "Les codes en attente ne se reconstruisent pas : un code perdu est un jeu perdu."
+  },
+  "shortcutsTitle": {
+    "message": "Clavier"
+  },
+  "shortcutsBody": {
+    "message": "1 2 3 changent d’onglet. / place le curseur dans la recherche. Entrée ouvre le premier jeu. Échap efface la recherche."
+  },
+  "undo": {
+    "message": "Annuler"
+  },
+  "undoRemovedCode": {
+    "message": "Code de $1 retiré."
+  },
+  "copy": {
+    "message": "Copier"
+  },
+  "copied": {
+    "message": "Copié"
+  },
+  "redeemOnGog": {
+    "message": "Échanger sur GOG"
+  },
+  "openRedeemPage": {
+    "message": "Ouvrir la page d’échange"
+  },
+  "remove": {
+    "message": "Retirer"
+  },
+  "untitledGame": {
+    "message": "Jeu sans titre"
+  },
+  "deadlineBefore": {
+    "message": "À utiliser avant le $1"
+  },
+  "deadlineExpired": {
+    "message": "Expiré depuis le $1"
+  },
+  "deadlineLastDay": {
+    "message": "Dernier jour : $1"
+  },
+  "deadlineDaysLeft": {
+    "message": "$1 jours restants, avant le $2"
+  },
+  "claimAllDone": {
+    "message": "Terminé : $1 récupérées, $2 vous restent."
+  },
+  "footPaused": {
+    "message": "La réclamation se repose entre deux passages, pour ne pas relancer à chaque page."
+  },
+  "footIdle": {
+    "message": "Ouvrez un magasin : la réclamation démarre seule."
+  },
+  "diagnostics": {
+    "message": "Diagnostic"
+  },
+  "verdictClaimed": {
+    "message": "récupéré"
+  },
+  "verdictRedeemed": {
+    "message": "ajouté à GOG"
+  },
+  "verdictAlreadyRedeemed": {
+    "message": "code déjà utilisé"
+  },
+  "verdictCodePending": {
+    "message": "code à échanger"
+  },
+  "verdictCodeCopied": {
+    "message": "code copié"
+  },
+  "verdictNeedsLink": {
+    "message": "compte à associer"
+  },
+  "verdictNeedsLogin": {
+    "message": "connexion requise"
+  },
+  "verdictChallenge": {
+    "message": "à valider vous-même"
+  },
+  "verdictSkipped": {
+    "message": "ignoré"
+  },
+  "verdictBadUrl": {
+    "message": "page introuvable"
+  },
+  "verdictFailed": {
+    "message": "échec"
+  },
+  "verdictExpired": {
+    "message": "offre terminée"
+  },
+  "verdictUpcoming": {
+    "message": "pas encore ouverte"
+  },
+  "verdictUndetermined": {
+    "message": "incertain, laissé tel quel"
+  },
+  "verdictQuota": {
+    "message": "limite du magasin atteinte"
+  },
+  "reasonAlreadyOwned": {
+    "message": "déjà possédé"
+  },
+  "reasonAlreadyClaimed": {
+    "message": "déjà récupéré"
+  },
+  "reasonStop": {
+    "message": "interrompu"
+  },
+  "notifyOneTitle": {
+    "message": "Gratuit : $1"
+  },
+  "notifyDigestTitle": {
+    "message": "$1 jeux gratuits vous attendent"
+  },
+  "notifyEndingTitle": {
+    "message": "Bientôt fini : $1"
+  },
+  "notifyEndingBody": {
+    "message": "$1 pour le prendre."
+  },
+  "notifyOneStore": {
+    "message": "Gratuit sur $1"
+  },
+  "notifyManyTitle": {
+    "message": "$1 jeux gratuits repérés"
+  },
+  "notifyManyBody": {
+    "message": "$1, et $2 autre(s)"
+  },
+  "notifyClaimedOne": {
+    "message": "Jeu récupéré"
+  },
+  "notifyClaimedMany": {
+    "message": "$1 jeux récupérés"
+  },
+  "notifyChallengeTitle": {
+    "message": "Une offre attend votre validation"
+  },
+  "notifyChallengeBody": {
+    "message": "Un défi de sécurité bloque la réclamation. L'onglet est resté ouvert."
+  },
+  "keepableOnlyLabel": {
+    "message": "Seulement ce qu'il y a à garder"
+  },
+  "keepableOnlyHint": {
+    "message": "Ignore le free-to-play et les cadeaux permanents : il n'y a rien à réclamer"
+  },
+  "emergency": {
+    "message": "Arrêt d'urgence"
+  },
+  "emergencyHint": {
+    "message": "Arrête tout clic et tout onglet de fond, d'un coup. Rien n'est perdu : le catalogue et vos codes restent en place."
+  },
+  "stopAll": {
+    "message": "Tout arrêter"
+  },
+  "stoppedBanner": {
+    "message": "Arrêtée. L'extension ne clique plus nulle part."
+  },
+  "resume": {
+    "message": "Reprendre"
+  },
+  "waitingOnYou": {
+    "message": "Vous attendent"
+  },
+  "horizonUnknown": {
+    "message": "Fin inconnue"
+  },
+  "horizonToday": {
+    "message": "Finit aujourd'hui"
+  },
+  "horizonWeek": {
+    "message": "Cette semaine"
+  },
+  "horizonLater": {
+    "message": "Plus tard"
+  },
+  "changedSome": {
+    "message": "$1 nouvelles depuis votre dernier passage"
+  },
+  "changedNone": {
+    "message": "Rien de neuf. Vérifié $1."
+  },
+  "alreadyYours": {
+    "message": "à vous sur $1 depuis $2"
+  },
+  "dropUnsupported": {
+    "message": "pas de module — à ouvrir vous-même"
+  },
+  "dropUnknownStore": {
+    "message": "magasin non identifié"
+  },
+  "dropDisabled": {
+    "message": "magasin désactivé"
+  },
+  "dropBelow": {
+    "message": "sous votre seuil"
+  },
+  "dropNoWorth": {
+    "message": "prix inconnu"
+  },
+  "dropNothingToKeep": {
+    "message": "gratuit de toute façon, rien à prendre"
+  },
+  "dropExtra": {
+    "message": "DLC ou butin"
+  },
+  "dropExcluded": {
+    "message": "titre sur votre liste noire"
+  },
+  "dropNoPage": {
+    "message": "aucune page à ouvrir"
+  },
+  "neverThis": {
+    "message": "Pas intéressé — ne jamais réclamer ce titre"
+  },
+  "undoNever": {
+    "message": "$1 ne sera plus réclamé."
+  },
+  "retryNow": {
+    "message": "Réessayer"
+  },
+  "tallyBestMonth": {
+    "message": "meilleur mois : $1 avec $2"
+  },
+  "tallyMainStore": {
+    "message": "surtout $1"
+  }
+}

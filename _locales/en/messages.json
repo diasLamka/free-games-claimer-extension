@@ -1,0 +1,560 @@
+{
+  "appName": {
+    "message": "Free Games Auto-Claimer"
+  },
+  "appDesc": {
+    "message": "Finds free games on Epic Games Store, GOG, Amazon Luna and Steam, and claims them for you."
+  },
+  "workingLabel": {
+    "message": "Checking"
+  },
+  "tabsLabel": {
+    "message": "Views"
+  },
+  "tabGames": {
+    "message": "Games"
+  },
+  "tabCodes": {
+    "message": "Codes"
+  },
+  "tabSettings": {
+    "message": "Settings"
+  },
+  "searchPlaceholder": {
+    "message": "Search title or store"
+  },
+  "sortLabel": {
+    "message": "Sort by"
+  },
+  "sortEnding": {
+    "message": "Ending soonest"
+  },
+  "sortAdded": {
+    "message": "Newest first"
+  },
+  "sortWorth": {
+    "message": "Highest worth"
+  },
+  "sortStore": {
+    "message": "By store"
+  },
+  "freeNow": {
+    "message": "Free now"
+  },
+  "claimAll": {
+    "message": "Claim all"
+  },
+  "comingUp": {
+    "message": "Coming up"
+  },
+  "alreadyClaimed": {
+    "message": "Already claimed"
+  },
+  "seeAll": {
+    "message": "See all"
+  },
+  "seeLess": {
+    "message": "See less"
+  },
+  "codesToRedeem": {
+    "message": "Codes to redeem"
+  },
+  "statusNeverRan": {
+    "message": "The watcher has not run yet."
+  },
+  "statusChecked": {
+    "message": "Checked $1"
+  },
+  "statusNext": {
+    "message": "next $1"
+  },
+  "ago": {
+    "message": "$1 ago"
+  },
+  "inFuture": {
+    "message": "in $1"
+  },
+  "never": {
+    "message": "never"
+  },
+  "checkNow": {
+    "message": "Check now"
+  },
+  "checking": {
+    "message": "Checking..."
+  },
+  "emptyGames": {
+    "message": "Nothing free spotted. The watcher looks on its own and will tell you."
+  },
+  "emptyGamesFiltered": {
+    "message": "No offer matches this search."
+  },
+  "emptyCodes": {
+    "message": "Nothing to redeem. GOG and Microsoft codes obtained on Luna land here, with their deadline."
+  },
+  "emptyLog": {
+    "message": "Nothing claimed yet."
+  },
+  "emptySources": {
+    "message": "No source queried yet."
+  },
+  "noEndDate": {
+    "message": "no end date"
+  },
+  "alreadyOwned": {
+    "message": "owned"
+  },
+  "openOfferTitle": {
+    "message": "Open the offer page"
+  },
+  "pinTitle": {
+    "message": "Keep at the top"
+  },
+  "unpinTitle": {
+    "message": "Stop keeping at the top"
+  },
+  "alsoFreeOn": {
+    "message": "also on $1"
+  },
+  "upcomingUnannounced": {
+    "message": "Title not announced yet"
+  },
+  "summary": {
+    "message": "Summary"
+  },
+  "tallyNone": {
+    "message": "Nothing claimed yet."
+  },
+  "tallyOne": {
+    "message": "$1 game claimed"
+  },
+  "tallyMany": {
+    "message": "$1 games claimed"
+  },
+  "tallyValued": {
+    "message": ", $1 with a known price: $2"
+  },
+  "claimForMe": {
+    "message": "Claim without me"
+  },
+  "autonomousLabel": {
+    "message": "Claim without me"
+  },
+  "autonomousHint": {
+    "message": "Opens a background tab and takes the offer"
+  },
+  "minWorthLabel": {
+    "message": "Only claim above"
+  },
+  "noThreshold": {
+    "message": "no threshold"
+  },
+  "includeDlcLabel": {
+    "message": "Include DLC and loot"
+  },
+  "includeDlcHint": {
+    "message": "Four times more numerous than games"
+  },
+  "filtersPreview": {
+    "message": "Of $1 open offers: $2 claimable without you, $3 to handle yourself."
+  },
+  "filtersPreviewNone": {
+    "message": "No open offer right now."
+  },
+  "stores": {
+    "message": "Stores"
+  },
+  "moreStores": {
+    "message": "Other stores"
+  },
+  "moreStoresCount": {
+    "message": "$1 on"
+  },
+  "moreStoresHint": {
+    "message": "Watched and notified, never claimed for you: no claim module exists for these."
+  },
+  "storeReady": {
+    "message": "ready"
+  },
+  "storeReadyCount": {
+    "message": "ready, $1 claimed"
+  },
+  "storePaused": {
+    "message": "paused $1"
+  },
+  "storeAutoOff": {
+    "message": "auto off"
+  },
+  "storeDetectOnly": {
+    "message": "detected only"
+  },
+  "storeOff": {
+    "message": "off"
+  },
+  "watch": {
+    "message": "Background watch"
+  },
+  "floorLabel": {
+    "message": "Minimum checks per day"
+  },
+  "watchNote": {
+    "message": "Only while Chrome is open. An alarm does not wake the computer."
+  },
+  "predictionTitle": {
+    "message": "Next 24 hours"
+  },
+  "predictionLearning": {
+    "message": "Still learning: it needs a few offers per source."
+  },
+  "predictionPeak": {
+    "message": "peak around $1"
+  },
+  "predictionNothing": {
+    "message": "nothing expected before tomorrow"
+  },
+  "predictionBandTitle": {
+    "message": "Next 24 hours. The brighter a bar, the more often this source drops at that hour."
+  },
+  "now": {
+    "message": "now"
+  },
+  "plus24h": {
+    "message": "+24 h"
+  },
+  "notifications": {
+    "message": "Notifications"
+  },
+  "notifyModeLabel": {
+    "message": "Tell me"
+  },
+  "notifyEvery": {
+    "message": "Every offer"
+  },
+  "notifyDigest": {
+    "message": "One daily digest"
+  },
+  "notifyOff": {
+    "message": "Never"
+  },
+  "quietLabel": {
+    "message": "Quiet hours"
+  },
+  "quietHint": {
+    "message": "Held back, not dropped: they arrive afterwards"
+  },
+  "quietFrom": {
+    "message": "From"
+  },
+  "quietTo": {
+    "message": "to"
+  },
+  "reminderLabel": {
+    "message": "Remind me before an offer ends, hours:"
+  },
+  "reminderOff": {
+    "message": "off"
+  },
+  "onPagesIOpen": {
+    "message": "On pages I open"
+  },
+  "epicAutoLabel": {
+    "message": "Epic: weekly rotation"
+  },
+  "lunaAutoLabel": {
+    "message": "Luna: claim on the page"
+  },
+  "lunaDlcLabel": {
+    "message": "Luna: in-game content"
+  },
+  "openEpic": {
+    "message": "Open Epic"
+  },
+  "openLuna": {
+    "message": "Open Luna"
+  },
+  "appearance": {
+    "message": "Appearance"
+  },
+  "themeLabel": {
+    "message": "Theme"
+  },
+  "themeSystem": {
+    "message": "System"
+  },
+  "themeDark": {
+    "message": "Dark"
+  },
+  "themeLight": {
+    "message": "Light"
+  },
+  "languageLabel": {
+    "message": "Language"
+  },
+  "languageAuto": {
+    "message": "Browser language"
+  },
+  "hideOwnedLabel": {
+    "message": "Hide games I already own"
+  },
+  "backup": {
+    "message": "Backup"
+  },
+  "exportJson": {
+    "message": "Export JSON"
+  },
+  "exportCsv": {
+    "message": "Export CSV"
+  },
+  "import": {
+    "message": "Import"
+  },
+  "exported": {
+    "message": "$1 code(s) and $2 claim(s) exported."
+  },
+  "exportedCsv": {
+    "message": "$1 row(s) exported."
+  },
+  "importNotOurs": {
+    "message": "That file is not an export of this extension."
+  },
+  "importRestored": {
+    "message": "$1 code(s) restored, settings applied."
+  },
+  "importNoNew": {
+    "message": "No new code; settings applied."
+  },
+  "importFailed": {
+    "message": "Import failed: $1"
+  },
+  "backupHint": {
+    "message": "Pending codes cannot be rebuilt: a lost code is a lost game."
+  },
+  "shortcutsTitle": {
+    "message": "Keyboard"
+  },
+  "shortcutsBody": {
+    "message": "1 2 3 switch tabs. / focuses the search box. Enter opens the first game. Escape clears the search."
+  },
+  "undo": {
+    "message": "Undo"
+  },
+  "undoRemovedCode": {
+    "message": "Code for $1 removed."
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "redeemOnGog": {
+    "message": "Redeem on GOG"
+  },
+  "openRedeemPage": {
+    "message": "Open the redeem page"
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "untitledGame": {
+    "message": "Untitled game"
+  },
+  "deadlineBefore": {
+    "message": "Use before $1"
+  },
+  "deadlineExpired": {
+    "message": "Expired since $1"
+  },
+  "deadlineLastDay": {
+    "message": "Last day: $1"
+  },
+  "deadlineDaysLeft": {
+    "message": "$1 days left, before $2"
+  },
+  "claimAllDone": {
+    "message": "Done: $1 claimed, $2 left for you."
+  },
+  "footPaused": {
+    "message": "Claiming rests between passes, so it does not restart on every page."
+  },
+  "footIdle": {
+    "message": "Open a store: claiming starts on its own."
+  },
+  "diagnostics": {
+    "message": "Diagnostics"
+  },
+  "verdictClaimed": {
+    "message": "claimed"
+  },
+  "verdictRedeemed": {
+    "message": "added to GOG"
+  },
+  "verdictAlreadyRedeemed": {
+    "message": "code already used"
+  },
+  "verdictCodePending": {
+    "message": "code to redeem"
+  },
+  "verdictCodeCopied": {
+    "message": "code copied"
+  },
+  "verdictNeedsLink": {
+    "message": "account to link"
+  },
+  "verdictNeedsLogin": {
+    "message": "sign-in needed"
+  },
+  "verdictChallenge": {
+    "message": "confirm it yourself"
+  },
+  "verdictSkipped": {
+    "message": "skipped"
+  },
+  "verdictBadUrl": {
+    "message": "page not found"
+  },
+  "verdictFailed": {
+    "message": "failed"
+  },
+  "verdictExpired": {
+    "message": "offer over"
+  },
+  "verdictUpcoming": {
+    "message": "not open yet"
+  },
+  "verdictUndetermined": {
+    "message": "unclear, left alone"
+  },
+  "verdictQuota": {
+    "message": "store limit reached"
+  },
+  "reasonAlreadyOwned": {
+    "message": "already owned"
+  },
+  "reasonAlreadyClaimed": {
+    "message": "already claimed"
+  },
+  "reasonStop": {
+    "message": "interrupted"
+  },
+  "notifyOneTitle": {
+    "message": "Free: $1"
+  },
+  "notifyDigestTitle": {
+    "message": "$1 free games waiting"
+  },
+  "notifyEndingTitle": {
+    "message": "Ends soon: $1"
+  },
+  "notifyEndingBody": {
+    "message": "$1 left to take it."
+  },
+  "notifyOneStore": {
+    "message": "Free on $1"
+  },
+  "notifyManyTitle": {
+    "message": "$1 free games spotted"
+  },
+  "notifyManyBody": {
+    "message": "$1, and $2 more"
+  },
+  "notifyClaimedOne": {
+    "message": "Game claimed"
+  },
+  "notifyClaimedMany": {
+    "message": "$1 games claimed"
+  },
+  "notifyChallengeTitle": {
+    "message": "One offer needs you"
+  },
+  "notifyChallengeBody": {
+    "message": "A security challenge is blocking the claim. The tab has been left open."
+  },
+  "keepableOnlyLabel": {
+    "message": "Only games with something to keep"
+  },
+  "keepableOnlyHint": {
+    "message": "Skips free-to-play and permanent freebies: there is nothing to claim"
+  },
+  "emergency": {
+    "message": "Emergency stop"
+  },
+  "emergencyHint": {
+    "message": "Stops every click and every background tab, at once. Nothing is lost: the catalogue and your codes stay put."
+  },
+  "stopAll": {
+    "message": "Stop everything"
+  },
+  "stoppedBanner": {
+    "message": "Stopped. The extension is not clicking anything."
+  },
+  "resume": {
+    "message": "Resume"
+  },
+  "waitingOnYou": {
+    "message": "Waiting on you"
+  },
+  "horizonUnknown": {
+    "message": "No end date"
+  },
+  "horizonToday": {
+    "message": "Ends today"
+  },
+  "horizonWeek": {
+    "message": "This week"
+  },
+  "horizonLater": {
+    "message": "Later"
+  },
+  "changedSome": {
+    "message": "$1 new since you last looked"
+  },
+  "changedNone": {
+    "message": "Nothing new. Checked $1."
+  },
+  "alreadyYours": {
+    "message": "yours on $1 since $2"
+  },
+  "dropUnsupported": {
+    "message": "no claim module — open it yourself"
+  },
+  "dropUnknownStore": {
+    "message": "store not identified"
+  },
+  "dropDisabled": {
+    "message": "store switched off"
+  },
+  "dropBelow": {
+    "message": "below your threshold"
+  },
+  "dropNoWorth": {
+    "message": "price unknown"
+  },
+  "dropNothingToKeep": {
+    "message": "free anyway, nothing to claim"
+  },
+  "dropExtra": {
+    "message": "DLC or loot"
+  },
+  "dropExcluded": {
+    "message": "title on your never list"
+  },
+  "dropNoPage": {
+    "message": "no page to open"
+  },
+  "neverThis": {
+    "message": "Not interested — never claim this title"
+  },
+  "undoNever": {
+    "message": "Never claiming $1."
+  },
+  "retryNow": {
+    "message": "Retry"
+  },
+  "tallyBestMonth": {
+    "message": "best month: $1 with $2"
+  },
+  "tallyMainStore": {
+    "message": "mostly $1"
+  }
+}

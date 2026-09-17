@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Free Games Auto-Claimer -- Diagnostic</title>
+<style>
+  :root {
+    --ink:    #14101F;
+    --ink-2:  #1E1830;
+    --ink-3:  #262038;
+    --line:   #2E2745;
+    --paper:  #EDE9F5;
+    --mute:   #9A90B8;
+    --amber:  #FFB454;
+    --amber-d:#FF8A3D;
+    --jade:   #56D6A0;
+    --rose:   #FF6B81;
+
+    --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono:    "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 64px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 0 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  header img { width: 30px; height: 30px; border-radius: 8px; }
+  .wordmark {
+    font-family: var(--display);
+    font-size: 19px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .wordmark small {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .16em;
+    color: var(--amber);
+    margin-top: 4px;
+  }
+  .version { margin-left: auto; color: var(--mute); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .note {
+    margin: 20px 0 0;
+    padding: 12px 14px;
+    background: var(--ink-2);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 6px 6px 0;
+    color: var(--mute);
+  }
+  .note strong { color: var(--paper); }
+
+  section {
+    margin-top: 28px;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .head h2 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  .state { margin-left: auto; font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
+
+  .body { padding: 16px 18px 18px; }
+  .body p { margin: 0 0 14px; color: var(--mute); }
+  .body p.lead { color: var(--paper); }
+
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+
+  button {
+    font-family: var(--display);
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--amber), var(--amber-d));
+    border: 0;
+    border-radius: 7px;
+    padding: 9px 16px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  button.ghost {
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid var(--line);
+  }
+
+  select {
+    background: var(--ink-3);
+    color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 8px 10px;
+    font-family: var(--body);
+    font-size: 13px;
+  }
+
+  .bar { height: 4px; background: var(--ink-3); border-radius: 999px; overflow: hidden; margin: 16px 0 4px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--amber); transition: width .3s linear; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+  th { color: var(--mute); font-weight: 400; width: 46%; }
+  td { font-family: var(--mono); font-size: 13px; }
+  tr:last-child th, tr:last-child td { border-bottom: 0; }
+
+  .verdict {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 7px;
+    background: var(--ink-3);
+    border-left: 3px solid var(--mute);
+  }
+  .verdict.ok   { border-left-color: var(--jade); }
+  .verdict.ko   { border-left-color: var(--rose); }
+  .verdict.warn { border-left-color: var(--amber); }
+  .verdict b { display: block; margin-bottom: 3px; }
+
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img src="icon48.png" alt="">
+    <div class="wordmark">Free Games Auto-Claimer<small>Diagnostic</small></div>
+    <div class="version" id="version"></div>
+  </header>
+
+  <p class="note">
+    <strong>Cet onglet doit rester visible.</strong> Il pilote les mesures ; s'il passe
+    lui-meme en arriere-plan, Chrome ralentit ses minuteurs et les resultats ne
+    veulent plus rien dire. Laissez-le au premier plan pendant la mesure.
+  </p>
+
+  <!-- ------------------------------------------------------------ V0-2 -->
+  <section>
+    <div class="head">
+      <span class="tag">V0-2</span>
+      <h2>Onglet de fond sous throttling</h2>
+      <span class="state" id="throttle-state">non mesure</span>
+    </div>
+    <div class="body">
+      <p class="lead">
+        Ouvre un onglet en arriere-plan, y rejoue la cadence exacte d'une
+        reclamation Epic, puis continue a battre la seconde pendant six minutes.
+      </p>
+      <p>
+        Chrome bride les minuteurs a une seconde dans un onglet cache, puis a un
+        reveil par minute au-dela de cinq minutes de masquage. La question est de
+        savoir si une reclamation tient dans ce budget. Le mode automatique du
+        moteur est mis en pause le temps de la mesure, puis retabli.
+      </p>
+
+      <div class="controls">
+        <button id="throttle-run">Lancer la mesure</button>
+        <select id="throttle-duration">
+          <option value="360000" selected>6 minutes -- franchit le seuil des 5 min</option>
+          <option value="120000">2 minutes -- controle rapide</option>
+        </select>
+        <select id="throttle-target">
+          <option value="https://store.epicgames.com/robots.txt" selected>Epic -- avec le moteur dans l'onglet</option>
+          <option value="https://www.gamerpower.com/robots.txt">Agregateur -- sans le moteur dans l'onglet</option>
+        </select>
+        <button class="ghost" id="throttle-stop" disabled>Arreter</button>
+      </div>
+      <p style="margin:12px 0 0">
+        La premiere mesure a donne une cadence de 1500 ms apres cinq minutes, soit
+        exactement la periode du <code>setInterval</code> de surveillance SPA du
+        moteur (<code>CONFIG.pollInterval</code>). Chrome alignant les minuteurs des
+        onglets d'arriere-plan, la seconde cible -- couverte par les permissions
+        mais absente des <code>content_scripts</code>, donc sans moteur -- permet de
+        savoir si la cadence observee etait la sienne ou la notre.
+      </p>
+
+      <div class="bar"><i id="throttle-bar"></i></div>
+
+      <div id="throttle-out" class="hidden">
+        <table>
+          <tr><th>Visibilite constatee dans l'onglet</th><td id="r-visibility">--</td></tr>
+          <tr><th>Sequence de reclamation simulee</th><td id="r-claim">--</td></tr>
+          <tr><th>Cadence avant 5 min (mediane)</th><td id="r-before">--</td></tr>
+          <tr><th>Cadence apres 5 min (mediane)</th><td id="r-after">--</td></tr>
+          <tr><th>Battements recus</th><td id="r-ticks">--</td></tr>
+        </table>
+        <div class="verdict" id="r-verdict"><b>--</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ V0-3 -->
+  <section>
+    <div class="head">
+      <span class="tag">V0-3</span>
+      <h2>Document offscreen</h2>
+      <span class="state" id="offscreen-state">non mesure</span>
+    </div>
+    <div class="body">
+      <p class="lead">
+        Verifie qu'une page invisible de l'extension peut interroger un magasin
+        et analyser sa reponse HTML.
+      </p>
+      <p>
+        Un service worker MV3 n'a pas de <code>DOMParser</code> : sans cette voie,
+        toute source qui exige de lire du HTML (Indiegala, itch.io, une fiche
+        Steam) devient inaccessible a la veille automatique.
+      </p>
+
+      <div class="controls">
+        <button id="offscreen-run">Lancer la mesure</button>
+      </div>
+
+      <div id="offscreen-out" class="hidden">
+        <table>
+          <tr><th>DOMParser disponible</th><td id="o-domparser">--</td></tr>
+          <tr><th>API agregateur (JSON)</th><td id="o-api">--</td></tr>
+          <tr><th>Page de magasin (HTML)</th><td id="o-html">--</td></tr>
+          <tr><th>Liens produit trouves dans le HTML</th><td id="o-links">--</td></tr>
+          <tr><th>Libelles de rotation dans le HTML brut</th><td id="o-rotation">--</td></tr>
+        </table>
+        <div class="verdict" id="o-verdict"><b>--</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- rapport -->
+  <section>
+    <div class="head">
+      <h2>Rapport</h2>
+      <span class="state" id="report-state"></span>
+    </div>
+    <div class="body">
+      <p>A coller dans <code>docs/superpowers/specs/2026-08-27-v0-constats.md</code>.</p>
+      <div class="controls" style="margin-bottom:12px">
+        <button class="ghost" id="report-copy">Copier</button>
+      </div>
+      <textarea id="report" readonly placeholder="Les resultats apparaitront ici au fil des mesures."></textarea>
+    </div>
+  </section>
+
+</div>
+<script src="diagnostics.js"></script>
+</body>
+</html>

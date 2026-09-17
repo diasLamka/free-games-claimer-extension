@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "default_locale": "en",
+  "name": "__MSG_appName__",
+  "version": "2.13.4",
+  "description": "__MSG_appDesc__",
+  "permissions": [
+    "storage",
+    "notifications",
+    "clipboardWrite",
+    "scripting",
+    "offscreen",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://store.epicgames.com/*",
+    "https://www.gog.com/*",
+    "https://gog.com/*",
+    "https://luna.amazon.com/claims/*",
+    "https://luna.amazon.fr/claims/*",
+    "https://luna.amazon.de/claims/*",
+    "https://luna.amazon.co.uk/claims/*",
+    "https://luna.amazon.it/claims/*",
+    "https://luna.amazon.es/claims/*",
+    "https://luna.amazon.ca/claims/*",
+    "https://luna.amazon.com.au/claims/*",
+    "https://luna.amazon.co.jp/claims/*",
+    "https://luna.amazon.in/claims/*",
+    "https://luna.amazon.com.mx/claims/*",
+    "https://luna.amazon.com.br/claims/*",
+    "https://luna.amazon.nl/claims/*",
+    "https://luna.amazon.se/claims/*",
+    "https://luna.amazon.pl/claims/*",
+    "https://luna.amazon.com.tr/claims/*",
+    "https://gaming.amazon.com/*",
+    "https://payment-website-pci.ol.epicgames.com/*",
+    "https://store-site-backend-static.ak.epicgames.com/*",
+    "https://store-site-backend-static-ipv4.ak.epicgames.com/*",
+    "https://www.gamerpower.com/*",
+    "https://store.steampowered.com/*",
+    "https://api.steampowered.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://store.epicgames.com/*",
+        "https://www.gog.com/*",
+        "https://gog.com/*",
+        "https://luna.amazon.com/claims/*",
+        "https://luna.amazon.fr/claims/*",
+        "https://luna.amazon.de/claims/*",
+        "https://luna.amazon.co.uk/claims/*",
+        "https://luna.amazon.it/claims/*",
+        "https://luna.amazon.es/claims/*",
+        "https://luna.amazon.ca/claims/*",
+        "https://luna.amazon.com.au/claims/*",
+        "https://luna.amazon.co.jp/claims/*",
+        "https://luna.amazon.in/claims/*",
+        "https://luna.amazon.com.mx/claims/*",
+        "https://luna.amazon.com.br/claims/*",
+        "https://luna.amazon.nl/claims/*",
+        "https://luna.amazon.se/claims/*",
+        "https://luna.amazon.pl/claims/*",
+        "https://luna.amazon.com.tr/claims/*",
+        "https://gaming.amazon.com/*",
+        "https://payment-website-pci.ol.epicgames.com/*"
+      ],
+      "js": [
+        "gm-shim.js",
+        "free-games-claimer.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_title": "__MSG_appName__",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

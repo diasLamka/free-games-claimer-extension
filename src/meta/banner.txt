@@ -1,0 +1,26 @@
+/*
+ * =============================================================================
+ * FREE GAMES AUTO-CLAIMER -- v2.7.0
+ * =============================================================================
+ * FICHIER GENERE -- ne pas editer a la main.
+ *
+ *   source      src/core/*.js, concatenes dans l'ordre des noms de fichier
+ *   generation  node build/build.mjs
+ *   controle    node build/build.mjs --verify
+ *   historique  CHANGELOG.md
+ *
+ * Tous les modules partagent une seule portee : l'IIFE est ouverte par
+ * 00-prologue.js et fermee par 99-epilogue.js. Un module n'est donc pas un
+ * script valide isolement, et l'ordre des noms est significatif.
+ *
+ * Trois contraintes, verifiees a chaque build parce que les trois ont deja
+ * casse le script en production :
+ *   - ASCII pur : les libelles accentues passent par des echappements \uXXXX
+ *     (v2.3.0, v2.5.0 et v2.7.0 ont chacune corrige un motif non accentue
+ *     qui ne matchait plus rien sur l'interface francaise) ;
+ *   - aucun template literal : le linter integre de Tampermonkey ne les lit
+ *     pas (v2.1.0) ;
+ *   - fins de ligne CRLF.
+ * =============================================================================
+ */
+

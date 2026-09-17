@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Free Games Auto-Claimer</title>
+<style>
+  /* Dark is the product's own look, so it is the base. Light is an override,
+     and "system" simply removes the override and lets the media query win. */
+  :root {
+    --ink:    #14101F;
+    --ink-2:  #1E1830;
+    --ink-3:  #262038;
+    --line:   #2E2745;
+    --rail:   #0E0A18;
+    --paper:  #EDE9F5;
+    --mute:   #9A90B8;
+    --amber:  #FFB454;
+    --amber-d:#FF8A3D;
+    --jade:   #56D6A0;
+    --rose:   #FF6B81;
+
+    --epic:   #E4DDF5;
+    --gog:    #A567FF;
+    --steam:  #66C0F4;
+    --amazon: #00C2FF;
+
+    --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono:    "Cascadia Mono", "Consolas", ui-monospace, monospace;
+
+    --pad: 14px;
+    --gap: 8px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink:    #FBFAFE;
+      --ink-2:  #F2EFF9;
+      --ink-3:  #E8E3F3;
+      --line:   #DCD5EC;
+      --rail:   #E2DCEF;
+      --paper:  #1B1528;
+      --mute:   #6E6488;
+      --amber:  #B96A00;
+      --amber-d:#A85400;
+      --jade:   #12805B;
+      --rose:   #D62B47;
+      --epic:   #3D3459;
+      --gog:    #7A32E0;
+      --steam:  #1B7FB8;
+      --amazon: #0079A8;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink:    #FBFAFE;
+    --ink-2:  #F2EFF9;
+    --ink-3:  #E8E3F3;
+    --line:   #DCD5EC;
+    --rail:   #E2DCEF;
+    --paper:  #1B1528;
+    --mute:   #6E6488;
+    --amber:  #B96A00;
+    --amber-d:#A85400;
+    --jade:   #12805B;
+    --rose:   #D62B47;
+    --epic:   #3D3459;
+    --gog:    #7A32E0;
+    --steam:  #1B7FB8;
+    --amazon: #0079A8;
+  }
+
+  body[data-density="compact"] { --pad: 10px; --gap: 5px; }
+
+  * { box-sizing: border-box; }
+
+  /* Tout element porteur de `hidden` doit disparaitre, meme si sa classe lui
+     donne un display. Sans cette regle, `.undo { display: flex }` gagne contre
+     l'attribut, et la barre « Annuler » restait visible en permanence -- pour
+     une action que personne n'avait faite. */
+  [hidden] { display: none !important; }
+
+  html, body {
+    margin: 0;
+    width: 328px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--body);
+    font-size: 13px;
+  }
+
+  body {
+    max-height: 560px;
+    overflow-y: auto;
+    /* Nothing in this popup is meant to scroll sideways. When something
+       overflows it is a layout bug, and hiding it keeps the bug from also
+       stealing a scrollbar's width from every row. */
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  /* ------------------------------------------------------------- header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px var(--pad) 10px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: var(--ink);
+    z-index: 3;
+  }
+
+  header img { width: 22px; height: 22px; border-radius: 6px; }
+
+  .wordmark {
+    font-family: var(--display);
+    font-size: 15px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .version { margin-left: auto; color: var(--mute); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  /* ------------------------------------------------------------ sections */
+  section { padding: var(--pad); border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+
+  h2 {
+    margin: 0 0 10px;
+    font-family: var(--display);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--mute);
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+
+  h2 .count { color: var(--amber); font-variant-numeric: tabular-nums; }
+  h2 .side {
+    margin-left: auto;
+    letter-spacing: 0;
+    text-transform: none;
+    font-family: var(--body);
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  p { margin: 0; }
+  .empty { color: var(--mute); font-size: 12px; line-height: 1.5; }
+  .hint { color: var(--mute); font-size: 11px; line-height: 1.5; display: block; }
+  .ko { color: var(--rose); }
+  .ok { color: var(--jade); }
+  .wait { color: var(--amber); }
+
+  /* Arret d'urgence actif : impossible a manquer, et impossible a confondre
+     avec un etat normal. C'est le seul endroit du popup ou le rouge remplit
+     une bande entiere. */
+  .stopped {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px var(--pad);
+    background: color-mix(in srgb, var(--rose) 16%, transparent);
+    border-bottom: 1px solid var(--rose);
+    color: var(--rose);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .stopped button { margin-left: auto; font-weight: 400; }
+
+  /* --------------------------------------------------- status + progress */
+  .status {
+    padding: 8px var(--pad);
+    font-size: 11.5px;
+    color: var(--mute);
+    border-bottom: 1px solid var(--line);
+  }
+  .status b { color: var(--paper); font-weight: 600; }
+
+  /* Not a spinner: the same fuse that runs along a card, but travelling. */
+  .working {
+    height: 2px;
+    background: var(--rail);
+    overflow: hidden;
+    position: relative;
+  }
+  .working[hidden] { display: none; }
+  .working::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 38%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    animation: fuse-run 1.05s cubic-bezier(.55, .1, .45, .9) infinite;
+  }
+  @keyframes fuse-run {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(300%); }
+  }
+
+  /* --------------------------------------------------------------- tabs */
+  .tabs { display: flex; padding: 0 var(--pad); border-bottom: 1px solid var(--line); position: sticky; top: 46px; background: var(--ink); z-index: 2; }
+  .tab {
+    appearance: none;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--mute);
+    font: inherit;
+    font-size: 12px;
+    padding: 9px 11px;
+    cursor: pointer;
+  }
+  .tab:hover { color: var(--paper); }
+  .tab .n { color: var(--amber); font-variant-numeric: tabular-nums; margin-left: 4px; }
+  .tab[aria-selected="true"] { color: var(--paper); border-bottom-color: var(--amber); }
+  .tab:focus-visible { outline: 2px solid var(--amber); outline-offset: -3px; }
+
+  .pane.enter { animation: shutter .18s ease-out; }
+  @keyframes shutter {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* ------------------------------------------------------------ controls */
+  input[type="search"], select {
+    appearance: none;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--paper);
+    font: inherit;
+    font-size: 12px;
+    padding: 6px 8px;
+    min-width: 0;
+  }
+  input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
+  select { padding-right: 22px; cursor: pointer; }
+  input[type="search"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
+
+  .toolbar { display: flex; gap: 6px; padding: 9px var(--pad); border-bottom: 1px solid var(--line); }
+  .toolbar input[type="search"] { flex: 1; }
+  .toolbar select { flex: none; max-width: 41%; }
+
+  button {
+    appearance: none;
+    font: inherit;
+    cursor: pointer;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--ink-2);
+    color: var(--paper);
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  button:hover { border-color: var(--mute); }
+  button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  button.primary {
+    background: linear-gradient(180deg, var(--amber), var(--amber-d));
+    border-color: transparent;
+    color: #1A1206;
+    font-weight: 600;
+  }
+  button.link {
+    background: none;
+    border: 0;
+    color: var(--mute);
+    padding: 4px 6px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  button.link:hover { color: var(--paper); }
+
+  .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .actions button { flex: 1; min-width: 92px; }
+
+  /* --------------------------------------- signature: the depleting ring */
+  /* A free offer is free for a while. The artwork carries its own countdown,
+     so the card needs no separate full-width bar -- one row less, and the
+     eye lands on the game rather than on a gauge. */
+  .game {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    align-items: center;
+    padding: 6px 7px;
+    margin-bottom: 2px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: inherit;
+  }
+  .game:hover { background: var(--ink-2); border-color: var(--line); }
+
+  .art { position: relative; width: 40px; height: 40px; flex: none; }
+  .art > img, .art > .letter {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    background: var(--ink-3);
+    object-fit: cover;
+    display: block;
+  }
+  .art > .letter {
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-size: 18px;
+    color: var(--mute);
+  }
+
+  .ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 10px;
+    padding: 2px;
+    pointer-events: none;
+    /* Pas de `from` : un conic-gradient CSS demarre deja a midi et tourne dans
+       le sens des aiguilles. Un `from -90deg` ajoute par habitude du canvas
+       faisait partir l'arc a 9 h, et une offre a 3 % montrait sa marque sur le
+       bord gauche au lieu du sommet. */
+    background: conic-gradient(var(--tier) calc(var(--p) * 1%), var(--rail) 0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+  }
+  .ring.calm { --tier: var(--mute); }
+  .ring.warm { --tier: var(--amber); }
+  .ring.hot  { --tier: var(--rose); }
+
+  /* Unknown end: a dashed ring, never an empty one. The scheduler puts these
+     offers at the FRONT of the queue -- a date we do not know is not a distant
+     one -- and the eye must read the same urgency. */
+  .ring.unknown {
+    background: repeating-conic-gradient(var(--amber) 0 5deg, transparent 5deg 11deg);
+  }
+
+  .game-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .game-title { font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+  .store-tag {
+    font-family: var(--display);
+    font-size: 9.5px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--tag, var(--mute));
+    flex: none;
+  }
+  .store-tag.epic   { --tag: var(--epic); }
+  .store-tag.gog    { --tag: var(--gog); }
+  .store-tag.steam  { --tag: var(--steam); }
+  .store-tag.amazon { --tag: var(--amazon); }
+
+  .worth { font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; flex: none; }
+
+  /* The countdown reads as a chip, and its colour is the whole message.
+     Digits, not words: "3 h 40" is checkable, "soon" is not. */
+  .left {
+    margin-left: auto;
+    flex: none;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: var(--mute);
+    background: color-mix(in srgb, var(--mute) 12%, transparent);
+    white-space: nowrap;
+  }
+  .left.warm { color: var(--amber); background: color-mix(in srgb, var(--amber) 16%, transparent); }
+  .left.hot  { color: var(--rose);  background: color-mix(in srgb, var(--rose) 18%, transparent); font-weight: 600; }
+  .left.unknown { color: var(--amber); background: none; border: 1px dashed color-mix(in srgb, var(--amber) 55%, transparent); }
+
+  /* Under an hour, the chip breathes. One accessory, on the one card that
+     deserves it. */
+  .left.hot.final { animation: breathe 1.9s ease-in-out infinite; }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rose) 45%, transparent); }
+    50%      { box-shadow: 0 0 0 4px color-mix(in srgb, var(--rose) 0%, transparent); }
+  }
+
+  /* Separateur d'echeance : une ligne de reperes dans une liste de quarante
+     offres. Discret par construction -- il structure, il ne se lit pas. */
+  .horizon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 5px;
+    font-family: var(--display);
+    font-size: 9.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .horizon::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    order: 1;
+  }
+  .horizon .n { order: 2; font-variant-numeric: tabular-nums; }
+
+  /* Nouveau depuis la derniere ouverture. Une marque, pas une couleur de fond :
+     a la troisieme ouverture de la journee, on veut voir ce qui a bouge sans
+     que la liste change d'aspect. */
+  .game.fresh { position: relative; }
+  .game.fresh::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--amber);
+  }
+
+  .changed { font-size: 11px; color: var(--mute); margin: -4px 0 8px; }
+
+  .worth.own { color: var(--jade); }
+
+  /* Le motif d'ecart, sous la ligne de meta : pourquoi cette offre ne sera pas
+     prise pour vous. */
+  .why {
+    font-size: 10px;
+    color: var(--mute);
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pin {
+    flex: none;
+    background: none;
+    border: 0;
+    padding: 2px 4px;
+    color: var(--mute);
+    font-size: 12px;
+    opacity: 0;
+    border-radius: 5px;
+  }
+  .game:hover .pin, .pin.on, .pin:focus-visible { opacity: 1; }
+  .pin.on { color: var(--amber); }
+
+  /* ---------------------------------------------------------- plain rows */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 5px 0;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font-size: 12px;
+    min-width: 0;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: none; }
+  .row .mini {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    border-radius: 4px;
+    object-fit: cover;
+    background: var(--ink-3);
+    opacity: .85;
+  }
+  .row .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .row .aside {
+    flex: none;
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--mute);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .row .aside.hi { color: var(--amber); }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--jade); }
+  .dot.paused { background: var(--amber); }
+  .dot.off { background: var(--line); }
+
+  /* --------------------------------------------------------------- log */
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 12px; min-width: 0; }
+  .log time { color: var(--mute); font-size: 10.5px; flex: none; font-variant-numeric: tabular-nums; width: 68px; }
+  .log .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .log .st { flex: none; margin-left: auto; font-size: 11px; }
+
+  /* ------------------------------------------------- signature: tickets */
+  .ticket {
+    position: relative;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    border-radius: 4px 10px 10px 4px;
+    padding: 10px 11px 10px 16px;
+    margin-bottom: 7px;
+    animation: rise .32s cubic-bezier(.2, .7, .3, 1) backwards;
+  }
+  /* Side notches: this is not a card, it is a detachable coupon. */
+  .ticket::before,
+  .ticket::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: translateY(-50%);
+  }
+  .ticket::before { left: -6px; }
+  .ticket::after  { right: -6px; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .ticket-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 7px; min-width: 0; }
+  .ticket-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ticket-head .store-tag { margin-left: auto; }
+
+  .code-row { display: flex; gap: 6px; align-items: center; }
+  .code {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--rail);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    user-select: all;
+  }
+  .copy { flex: none; }
+  .copy.done { color: var(--jade); border-color: var(--jade); }
+  .deadline { margin-top: 7px; font-size: 11px; color: var(--mute); }
+  .deadline.urgent { color: var(--rose); }
+
+  /* ------------------------------------------------------------ toggles */
+  .toggle { display: flex; align-items: center; gap: 9px; padding: 5px 0; cursor: pointer; }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch {
+    flex: none;
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--rail);
+    border: 1px solid var(--line);
+    position: relative;
+    transition: background .16s, border-color .16s;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--mute);
+    transition: transform .16s, background .16s;
+  }
+  .toggle input:checked + .switch { background: color-mix(in srgb, var(--amber) 30%, transparent); border-color: var(--amber); }
+  .toggle input:checked + .switch::after { transform: translateX(14px); background: var(--amber); }
+  .toggle input:focus-visible + .switch { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .toggle-label { font-size: 12px; line-height: 1.35; }
+  .toggle-label small { display: block; color: var(--mute); font-size: 10.5px; }
+
+  /* --------------------------------------------------------- checkboxes */
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 3px 0; cursor: pointer; min-width: 0; }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .box {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    background: var(--rail);
+    position: relative;
+  }
+  .check input:checked + .box { background: var(--amber); border-color: var(--amber); }
+  .check input:checked + .box::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid #1A1206;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .check input:focus-visible + .box { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .check span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* -------------------------------------------------------------- range */
+  .range { display: block; padding: 7px 0 2px; }
+  .range-label { display: block; font-size: 12px; margin-bottom: 5px; }
+  .range-label b { color: var(--amber); font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--rail);
+    margin: 6px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: 0;
+    cursor: pointer;
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
+
+  .field { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+  .field select { margin-left: auto; }
+  .field .pair { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+  input[type="time"] {
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--paper);
+    font: inherit;
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+
+  /* ------------------------------------------------------------ details */
+  details { border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+  details:first-of-type { border-top: 0; }
+  summary {
+    cursor: pointer;
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--paper);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid var(--mute);
+    border-bottom: 1.5px solid var(--mute);
+    transform: rotate(-45deg);
+    transition: transform .16s;
+    flex: none;
+  }
+  details[open] > summary::before { transform: rotate(45deg); }
+  summary .aside { margin-left: auto; color: var(--mute); font-size: 11px; }
+  summary:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
+  details > *:not(summary):last-child { padding-bottom: 8px; }
+
+  /* --------------------------------------------------------- prediction */
+  .pred { margin-bottom: 9px; }
+  .pred-name {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--mute);
+    margin-bottom: 4px;
+  }
+  .pred-name .peak { margin-left: auto; color: var(--amber); }
+  .pred-band { display: flex; gap: 1px; height: 16px; align-items: flex-end; }
+  .pred-band i {
+    flex: 1;
+    background: var(--amber);
+    border-radius: 1px;
+    height: 100%;
+    min-width: 0;
+  }
+  .pred-band i.mark { box-shadow: inset 0 -14px 0 0 color-mix(in srgb, var(--paper) 22%, transparent); }
+  .pred-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--mute); margin-top: 3px; }
+
+  /* -------------------------------------------------------------- meter */
+  .meter { height: 4px; border-radius: 3px; background: var(--rail); overflow: hidden; margin: 6px 0 4px; }
+  .meter i { display: block; height: 100%; background: var(--mute); border-radius: 3px; }
+  .meter i.high { background: var(--rose); }
+
+  /* ------------------------------------------------------------ onboard */
+  .onboard {
+    margin: var(--pad) var(--pad) 0;
+    padding: 11px 12px;
+    border: 1px solid var(--amber);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--amber) 9%, transparent);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .onboard h3 { margin: 0 0 5px; font-size: 12px; font-family: var(--display); letter-spacing: .04em; }
+
+  /* --------------------------------------------------------------- undo */
+  .undo {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px var(--pad);
+    background: var(--ink-3);
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    z-index: 4;
+  }
+  .undo button { margin-left: auto; }
+
+  /* ------------------------------------------------------------- footer */
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px var(--pad);
+    border-top: 1px solid var(--line);
+  }
+  footer .grow { flex: 1; min-width: 0; }
+  footer a { color: var(--mute); font-size: 11px; text-decoration: none; border-bottom: 1px solid transparent; }
+  footer a:hover { color: var(--amber); border-bottom-color: var(--amber); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticket, .pane.enter, .left.hot.final { animation: none; }
+    * { transition: none !important; }
+    /* The indicator stays visible but stops running: a half-filled bar says
+       "working" without moving. */
+    .working::after {
+      animation: none;
+      transform: none;
+      width: 45%;
+      background: var(--amber);
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <img src="icon128.png" alt="">
+    <span class="wordmark">Free Games</span>
+    <span class="version" id="version"></span>
+  </header>
+
+  <div class="stopped" id="stopped-banner" hidden>
+    <span data-i18n="stoppedBanner"></span>
+    <button id="resume" data-i18n="resume"></button>
+  </div>
+
+  <p class="status" id="status"></p>
+  <div class="working" id="working" role="status" data-i18n-attr="aria-label:workingLabel" hidden></div>
+
+  <nav class="tabs" role="tablist" data-i18n-attr="aria-label:tabsLabel">
+    <button class="tab" role="tab" id="tab-games" aria-controls="pane-games" aria-selected="true"><span data-i18n="tabGames"></span><span class="n" id="n-games"></span></button>
+    <button class="tab" role="tab" id="tab-codes" aria-controls="pane-codes" aria-selected="false"><span data-i18n="tabCodes"></span><span class="n" id="n-codes"></span></button>
+    <button class="tab" role="tab" id="tab-settings" aria-controls="pane-settings" aria-selected="false" data-i18n="tabSettings"></button>
+  </nav>
+
+  <!-- ------------------------------------------------------------ games -->
+  <div class="pane" id="pane-games" role="tabpanel" aria-labelledby="tab-games">
+    <div class="toolbar">
+      <input type="search" id="search" data-i18n-attr="placeholder:searchPlaceholder,aria-label:searchPlaceholder">
+      <select id="sort" data-i18n-attr="aria-label:sortLabel">
+        <option value="ending" data-i18n="sortEnding"></option>
+        <option value="added" data-i18n="sortAdded"></option>
+        <option value="worth" data-i18n="sortWorth"></option>
+        <option value="store" data-i18n="sortStore"></option>
+      </select>
+    </div>
+
+    <section id="waiting-section" hidden>
+      <h2><span data-i18n="waitingOnYou"></span><span class="count" id="waiting-count"></span></h2>
+      <div id="waiting"></div>
+    </section>
+
+    <section>
+      <h2 data-i18n="freeNow"></h2>
+      <p class="changed" id="changed" hidden></p>
+      <div id="games"></div>
+      <div class="actions" id="claim-all-row" hidden>
+        <button id="claim-all" data-i18n="claimAll"></button>
+      </div>
+    </section>
+
+    <section id="upcoming-section">
+      <h2 data-i18n="comingUp"></h2>
+      <div id="upcoming"></div>
+    </section>
+
+    <section>
+      <h2><span data-i18n="alreadyClaimed"></span><button class="link side" id="show-all-log" data-i18n="seeAll"></button></h2>
+      <ul class="log" id="log"></ul>
+    </section>
+  </div>
+
+  <!-- ------------------------------------------------------------ codes -->
+  <div class="pane" id="pane-codes" role="tabpanel" aria-labelledby="tab-codes" hidden>
+    <section>
+      <h2><span data-i18n="codesToRedeem"></span><span class="count" id="codes-count"></span></h2>
+      <div id="codes"></div>
+    </section>
+  </div>
+
+  <!-- --------------------------------------------------------- settings -->
+  <div class="pane" id="pane-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <section>
+      <h2 data-i18n="summary"></h2>
+      <p class="tally" id="tally"></p>
+      <p class="hint" id="tally-extra"></p>
+      <div id="tally-stores"></div>
+    </section>
+
+    <section>
+      <h2 data-i18n="claimForMe"></h2>
+      <label class="toggle">
+        <input type="checkbox" id="autonomous">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="autonomousLabel"></span><small data-i18n="autonomousHint"></small></span>
+      </label>
+      <label class="range">
+        <span class="range-label"><span data-i18n="minWorthLabel"></span> <b id="min-worth-value"></b></span>
+        <input type="range" id="min-worth" min="0" max="30" step="1" value="0">
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="include-dlc">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="includeDlcLabel"></span><small data-i18n="includeDlcHint"></small></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="keepable-only">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="keepableOnlyLabel"></span><small data-i18n="keepableOnlyHint"></small></span>
+      </label>
+      <p class="hint" id="filters-preview"></p>
+    </section>
+
+    <section>
+      <h2 data-i18n="stores"></h2>
+      <div id="stores"></div>
+      <details id="more-stores">
+        <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
+        <p class="hint" data-i18n="moreStoresHint"></p>
+        <div class="checks" id="extra-stores"></div>
+      </details>
+    </section>
+
+    <section>
+      <h2 data-i18n="watch"></h2>
+      <div id="sources"></div>
+      <label class="range">
+        <span class="range-label"><span data-i18n="floorLabel"></span> <b id="floor-value">3</b></span>
+        <input type="range" id="floor" min="1" max="24" step="1" value="3">
+      </label>
+      <div class="actions">
+        <button class="primary" id="check-now" data-i18n="checkNow"></button>
+      </div>
+      <p class="hint" data-i18n="watchNote"></p>
+
+      <details>
+        <summary data-i18n="predictionTitle"></summary>
+        <div id="prediction"></div>
+      </details>
+    </section>
+
+    <section>
+      <h2 data-i18n="notifications"></h2>
+      <div class="field">
+        <span data-i18n="notifyModeLabel"></span>
+        <select id="notify-mode">
+          <option value="every" data-i18n="notifyEvery"></option>
+          <option value="digest" data-i18n="notifyDigest"></option>
+          <option value="off" data-i18n="notifyOff"></option>
+        </select>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="quiet-on">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="quietLabel"></span><small data-i18n="quietHint"></small></span>
+      </label>
+      <div class="field" id="quiet-range">
+        <span data-i18n="quietFrom"></span>
+        <span class="pair">
+          <input type="time" id="quiet-start" value="23:00">
+          <span data-i18n="quietTo"></span>
+          <input type="time" id="quiet-end" value="08:00">
+        </span>
+      </div>
+      <label class="range">
+        <span class="range-label"><span data-i18n="reminderLabel"></span> <b id="reminder-value">6</b></span>
+        <input type="range" id="reminder" min="0" max="24" step="1" value="6">
+      </label>
+    </section>
+
+    <section>
+      <h2 data-i18n="onPagesIOpen"></h2>
+      <label class="toggle">
+        <input type="checkbox" id="epic-auto">
+        <span class="switch"></span>
+        <span class="toggle-label" data-i18n="epicAutoLabel"></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="luna-auto">
+        <span class="switch"></span>
+        <span class="toggle-label" data-i18n="lunaAutoLabel"></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="luna-dlc">
+        <span class="switch"></span>
+        <span class="toggle-label" data-i18n="lunaDlcLabel"></span>
+      </label>
+      <div class="actions">
+        <button id="open-epic" data-i18n="openEpic"></button>
+        <button id="open-luna" data-i18n="openLuna"></button>
+      </div>
+    </section>
+
+    <section>
+      <h2 data-i18n="appearance"></h2>
+      <div class="field">
+        <span data-i18n="themeLabel"></span>
+        <select id="theme">
+          <option value="system" data-i18n="themeSystem"></option>
+          <option value="dark" data-i18n="themeDark"></option>
+          <option value="light" data-i18n="themeLight"></option>
+        </select>
+      </div>
+      <div class="field">
+        <span data-i18n="languageLabel"></span>
+        <select id="language">
+          <option value="auto" data-i18n="languageAuto"></option>
+          <option value="en">English</option>
+          <option value="fr">Francais</option>
+        </select>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="hide-owned">
+        <span class="switch"></span>
+        <span class="toggle-label" data-i18n="hideOwnedLabel"></span>
+      </label>
+    </section>
+
+    <section>
+      <h2 data-i18n="emergency"></h2>
+      <p class="hint" data-i18n="emergencyHint"></p>
+      <div class="actions">
+        <button id="stop-all" data-i18n="stopAll"></button>
+      </div>
+    </section>
+
+    <section>
+      <h2 data-i18n="backup"></h2>
+      <div class="actions">
+        <button id="export-json" data-i18n="exportJson"></button>
+        <button id="export-csv" data-i18n="exportCsv"></button>
+      </div>
+      <div class="actions">
+        <button id="import" data-i18n="import"></button>
+      </div>
+      <p class="hint" id="backup-state"></p>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+
+      <details>
+        <summary data-i18n="shortcutsTitle"></summary>
+        <p class="hint" data-i18n="shortcutsBody"></p>
+      </details>
+    </section>
+  </div>
+
+  <div class="undo" id="undo" hidden>
+    <span id="undo-text"></span>
+    <button id="undo-do" data-i18n="undo"></button>
+  </div>
+
+  <footer>
+    <span class="hint grow" id="foot"></span>
+    <a id="open-diagnostics" href="#" data-i18n="diagnostics"></a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

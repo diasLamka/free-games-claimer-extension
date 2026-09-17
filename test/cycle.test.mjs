@@ -1,0 +1,599 @@
+/* Tests du cycle de veille, joues de bout en bout contre un faux chrome.
+ *
+ * Chaque test reproduit un mode d'echec identifie a la conception, pas un
+ * appel de fonction : c'est ce qui separe un test utile d'un test decoratif.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { fakeChrome } from './fake-chrome.mjs';
+import { runCycle, toNotify, composeAnnouncement, CREDIBLE_LIST_RATIO } from '../watch/cycle.js';
+import { KEYS, readState, checkSchema, SCHEMA, withLease } from '../watch/storage.js';
+import { makeOffer, STORES } from '../watch/offer.js';
+import { reportVerdict as signalerReclamation } from '../watch/claim.js';
+
+const T = Date.UTC(2026, 7, 27, 12, 0, 0);
+const HOUR = 3600000;
+const DAY = 24 * HOUR;
+
+/** Une source de test : rend ce qu'on lui dit, sans reseau. */
+function sourceFactice(name, reponses, options = {}) {
+  let i = 0;
+  return {
+    name,
+    completeList: options.completeList !== false,
+    minIntervalMs: options.minIntervalMs || 0,
+    appels: 0,
+    async discover() {
+      this.appels++;
+      const r = reponses[Math.min(i, reponses.length - 1)];
+      i++;
+      return typeof r === 'function' ? r() : r;
+    },
+  };
+}
+
+const offer = (title, extra = {}) => makeOffer({
+  source: 'test',
+  store: STORES.EPIC,
+  storeId: title.toLowerCase().replace(/\W+/g, '-'),
+  title,
+  url: `https://store.epicgames.com/p/${title.toLowerCase()}`,
+  ...extra,
+});
+
+const response = (offers) => ({ offers, dropped: [], errors: [] });
+
+async function contexteDeTest(sourcesObj, opts = {}) {
+  const faux = fakeChrome({ now: T, ...opts });
+  const notifications = [];
+  const badges = [];
+  const journal = [];
+
+  // Une source doit etre activee dans les reglages pour etre interrogee : le
+  // test configure l'extension comme le ferait l'interface.
+  await faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: Object.keys(sourcesObj) },
+  });
+
+  return {
+    faux,
+    notifications,
+    badges,
+    journal,
+    async cycle(now, extra = {}) {
+      return runCycle({
+        chrome: faux.chrome,
+        now,
+        sources: sourcesObj,
+        notify: async (n) => { notifications.push(n); },
+        updateBadge: async (n) => { badges.push(n); },
+        record: (niveau, message) => journal.push(`${niveau}: ${message}`),
+        ...extra,
+      });
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ amorcage */
+
+test('le premier cycle remplit le catalogue sans notifier une seule fois', async () => {
+  // Vingt notifications a l'installation, dont des offres publiees il y a des
+  // annees, et l'utilisateur coupe les notifications pour toujours. Cette
+  // erreur-la ne se rattrape pas.
+  const src = sourceFactice('test', [response([offer('Jeu A'), offer('Jeu B'), offer('Jeu C')])]);
+  const c = await contexteDeTest({ test: src });
+
+  const r = await c.cycle(T);
+
+  assert.equal(r.boot, true);
+  assert.equal(c.notifications.length, 0, 'des notifications ont ete envoyees a l\'amorcage');
+
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  assert.equal(Object.keys(catalog).length, 3);
+  for (const o of Object.values(catalog)) {
+    assert.equal(o.notifiedAt, T, 'une offre d\'amorcage n\'a pas ete marquee annoncee');
+  }
+
+  const state = await readState(c.faux.chrome);
+  assert.equal(state.booted, true);
+});
+
+test('apres l\'amorcage, une offre vraiment nouvelle est annoncee', async () => {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu B')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  assert.equal(c.notifications.length, 0);
+
+  await c.cycle(T + DAY, { force: true });
+  assert.equal(c.notifications.length, 1);
+  // Le nom du jeu est dans le titre depuis la V4 : une notification tronque son
+  // corps bien avant son titre.
+  const dit = `${c.notifications[0].title} ${c.notifications[0].text}`;
+  assert.match(dit, /Jeu B/);
+  assert.doesNotMatch(dit, /Jeu A/, 'une offre deja connue a ete re-annoncee');
+});
+
+/* --------------------------------------------------------- non-duplication */
+
+test('rejouer le meme cycle n\'annonce pas deux fois la meme offre', async () => {
+  // C'est la propriete qui rend le systeme sur : le verrou n'empeche pas la
+  // double execution, l'idempotence si.
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu B')]),
+    response([offer('Jeu A'), offer('Jeu B')]),
+    response([offer('Jeu A'), offer('Jeu B')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  await c.cycle(T + DAY, { force: true });
+  await c.cycle(T + 2 * DAY, { force: true });
+  await c.cycle(T + 3 * DAY, { force: true });
+
+  assert.equal(c.notifications.length, 1, `${c.notifications.length} notifications pour une seule offre`);
+});
+
+test('la notification repose sur notifieLe, pas sur le resultat du cycle', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T);
+
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  const entryPairs = Object.values(catalog);
+  assert.equal(toNotify(catalog).length, 0);
+
+  // On simule une entree ecrite mais jamais annoncee -- exactement ce que
+  // laisse une mort du service worker entre l'ecriture et la notification.
+  const catalogKey = entryPairs[0].catalogKey;
+  catalog[catalogKey] = { ...entryPairs[0], notifiedAt: null };
+  assert.equal(toNotify(catalog).length, 1, 'une offre non annoncee doit etre reprise');
+});
+
+/* ------------------------------------------------- garde sur la liste complete */
+
+test('une liste effondree est traitee comme partielle, pas comme des disparitions', async () => {
+  // Une panne de deux cycles chez la source effacerait sinon la moitie du
+  // catalogue : le mecanisme cense rattraper les offres retirees deviendrait
+  // celui qui les detruit.
+  const vingt = Array.from({ length: 20 }, (_, i) => offer(`Jeu ${i}`, { end: 'N/A' }));
+  const trois = vingt.slice(0, 3);
+
+  const src = sourceFactice('test', [response(vingt), response(trois)]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  const r = await c.cycle(T + DAY, { force: true });
+
+  assert.ok(r.anomalies.length >= 1, 'l\'effondrement n\'a pas ete signale');
+  assert.match(r.anomalies[0], /partielle/);
+
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  const enObservation = Object.values(catalog).filter((o) => o.missingSince);
+  assert.equal(enObservation.length, 0, 'des offres ont ete mises en observation a tort');
+});
+
+test('une reponse vide est toujours traitee comme partielle', async () => {
+  const dix = Array.from({ length: 10 }, (_, i) => offer(`Jeu ${i}`, { end: 'N/A' }));
+  const src = sourceFactice('test', [response(dix), response([])]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  const r = await c.cycle(T + DAY, { force: true });
+
+  assert.ok(r.anomalies.length >= 1);
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  assert.equal(Object.keys(catalog).length, 10, 'le catalogue a ete ampute');
+});
+
+test('une baisse credible reste une liste complete', async () => {
+  const dix = Array.from({ length: 10 }, (_, i) => offer(`Jeu ${i}`, { end: 'N/A' }));
+  const sept = dix.slice(0, 7); // au-dessus du ratio
+  const src = sourceFactice('test', [response(dix), response(sept)]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  const r = await c.cycle(T + DAY, { force: true });
+
+  assert.equal(r.anomalies.length, 0, `anomalies inattendues : ${r.anomalies}`);
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  const enObservation = Object.values(catalog).filter((o) => o.missingSince);
+  assert.equal(enObservation.length, 3, 'les trois offres absentes auraient du passer en observation');
+});
+
+test('le ratio de credibilite est celui documente', () => {
+  assert.equal(CREDIBLE_LIST_RATIO, 0.5);
+});
+
+/* --------------------------------------------------------------- echecs */
+
+test('un echec de source est compte et n\'abime pas le catalogue', async () => {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    { offers: [], dropped: [], errors: ['HTTP 503'] },
+  ]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  await c.cycle(T + DAY, { force: true });
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  assert.equal(sources.test.consecutiveFailures, 1);
+  assert.match(sources.test.lastError, /503/);
+
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  assert.equal(Object.keys(catalog).length, 1, 'le catalogue a souffert d\'un echec de source');
+});
+
+test('une coupure reseau ne compte pas comme un echec de la source', async () => {
+  // Sinon une nuit sans wifi gele la veille six heures, exactement au moment ou
+  // l'utilisateur rouvre son portable.
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    { offers: [], dropped: [], errors: ['Failed to fetch'] },
+  ]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  await c.cycle(T + DAY, { force: true, offline: () => true });
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  assert.ok(!sources.test.consecutiveFailures, 'un echec a ete compte alors qu\'on etait hors ligne');
+});
+
+test('une source qui jette n\'arrete pas le cycle', async () => {
+  const casse = {
+    name: 'casse',
+    completeList: true,
+    async discover() { throw new Error('boum'); },
+  };
+  const bonne = sourceFactice('bonne', [response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ casse, bonne });
+
+  const r = await c.cycle(T, { force: true });
+  assert.deepEqual(r.queried.sort(), ['bonne', 'casse']);
+
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  assert.equal(Object.keys(catalog).length, 1, 'la source valide n\'a pas ete integree');
+});
+
+/* --------------------------------------------------------------- le verrou */
+
+test('deux cycles simultanes : un seul travaille', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ test: src }, { latenceMs: 2 });
+
+  const [a, b] = await Promise.all([c.cycle(T, { force: true }), c.cycle(T, { force: true })]);
+  const ignores = [a, b].filter((r) => r.ignore).length;
+
+  assert.equal(ignores, 1, 'les deux cycles ont travaille, ou aucun');
+});
+
+test('un verrou Web disponible est prefere au bail', async () => {
+  let demande = 0;
+  const webLocks = {
+    async request(name, options, fn) {
+      demande++;
+      return fn({ name: name });
+    },
+  };
+  const src = sourceFactice('test', [response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T, { force: true, webLocks });
+  assert.equal(demande, 1, 'le verrou Web n\'a pas ete utilise');
+});
+
+test('avecVerrou rend la main sans executer quand le verrou est pris', async () => {
+  const faux = fakeChrome({ now: T });
+  let executions = 0;
+  const job = async () => { executions++; return 'fait'; };
+
+  const premier = await withLease(faux.chrome, 'x', async () => {
+    // Pendant que le premier tient le bail, un second essaie.
+    const second = await withLease(faux.chrome, 'x', job, { now: T });
+    assert.equal(second.acquired, false);
+    return job();
+  }, { now: T });
+
+  assert.equal(premier.acquired, true);
+  assert.equal(executions, 1);
+});
+
+/* --------------------------------------------------------------- schema */
+
+test('un schema plus recent que le code arrete la veille au lieu de planter', async () => {
+  const faux = fakeChrome({ now: T });
+  await faux.chrome.storage.local.set({ [KEYS.SCHEMA]: 999 });
+
+  const r = await runCycle({
+    chrome: faux.chrome,
+    now: T,
+    sources: { test: sourceFactice('test', [response([offer('Jeu A')])]) },
+  });
+
+  assert.equal(r.stopped, true);
+  assert.match(r.reason, /version 999/);
+});
+
+test('verifierSchema initialise puis se tait', async () => {
+  const faux = fakeChrome({ now: T });
+  assert.equal((await checkSchema(faux.chrome)).state, SCHEMA.INITIALISED);
+  assert.equal((await checkSchema(faux.chrome)).state, SCHEMA.OK);
+});
+
+/* ------------------------------------------------------------ observabilite */
+
+test('le cycle laisse de quoi se debugger sans console', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T, { force: true });
+
+  const state = await readState(c.faux.chrome);
+  assert.equal(state.lastCycle, T);
+  assert.ok(state.nextCycle === null || typeof state.nextCycle === 'number');
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  assert.equal(sources.test.lastSuccess, T);
+  assert.equal(sources.test.lastError, null);
+  assert.equal(sources.test.lastSize, 1);
+});
+
+test('le badge est mis a jour meme quand rien n\'est notifie', async () => {
+  // C'est le canal de repli : quand les notifications sont coupees au niveau du
+  // systeme, chrome.notifications.create reussit sans rien afficher.
+  const src = sourceFactice('test', [response([offer('Jeu A'), offer('Jeu B')])]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T);
+  assert.equal(c.notifications.length, 0, 'amorcage');
+  assert.equal(c.badges.length, 1);
+  assert.equal(c.badges[0], 2);
+});
+
+test('les notifications se taisent quand le reglage les coupe', async () => {
+  const src = sourceFactice('test', [response([offer('A')]), response([offer('A'), offer('B')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T);
+  await c.faux.chrome.storage.local.set({ [KEYS.SETTINGS]: { notifications: false } });
+  await c.cycle(T + DAY, { force: true });
+
+  assert.equal(c.notifications.length, 0);
+});
+
+/* --------------------------------------------------------------- annonces */
+
+test('composeAnnouncement reste lisible quand cinq offres tombent ensemble', () => {
+  // Une seule offre : le TITRE porte le nom du jeu, le corps porte le magasin.
+  // C'est l'inverse de ce que faisait la V2, et c'est mieux : sur Windows, une
+  // notification tronque son corps bien avant son titre.
+  const une = composeAnnouncement([offer('Solo')]);
+  assert.match(une.title, /Solo/);
+  assert.ok(une.text.length > 0, 'le corps doit nommer le magasin');
+  // Les textes viennent de _locales : une cle brute a l'ecran est un bug.
+  assert.ok(!/^notify[A-Z]/.test(une.title), `cle non traduite : ${une.title}`);
+  assert.ok(!/^notify[A-Z]/.test(une.text), `cle non traduite : ${une.text}`);
+
+  const cinq = composeAnnouncement(['A', 'B', 'C', 'D', 'E'].map((t) => offer(t)));
+  assert.match(cinq.title, /5/);
+  assert.match(cinq.text, /A, B, C/);
+  assert.match(cinq.text, /2/, 'le compte des offres non citees');
+});
+
+/* ------------------------------------------------------------- lacunes */
+
+test('une longue absence laisse une trace exploitable par la prediction', async () => {
+  // Sans ce journal, la couche B apprendra le rythme de nos propres sondages
+  // au lieu de celui du magasin.
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T, { force: true });
+  await c.cycle(T + 3 * DAY, { force: true });
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  assert.ok(Array.isArray(sources.test.gaps), 'aucune lacune enregistree');
+  assert.equal(sources.test.gaps.length, 1);
+  assert.equal(sources.test.gaps[0].start, T);
+  assert.equal(sources.test.gaps[0].end, T + 3 * DAY);
+});
+
+/* ------------------------------------------------- fenetres annoncees */
+
+test('instantsDeFenetres accepte les deux formes stockees', async () => {
+  const { windowInstants } = await import('../watch/cycle.js');
+  // Les versions anterieures ne rangeaient que l'instant ; on ne casse pas un
+  // etat deja ecrit sur la machine de l'utilisateur.
+  assert.deepEqual(windowInstants([T, T + 1000]), [T, T + 1000]);
+  assert.deepEqual(windowInstants([{ title: 'X', start: T }]), [T]);
+  assert.deepEqual(windowInstants([{ title: 'X', start: T }, T + 5]), [T, T + 5]);
+  assert.deepEqual(windowInstants([null, {}, 'texte']), []);
+  assert.deepEqual(windowInstants(undefined), []);
+});
+
+test('les fenetres annoncees sont conservees entieres, pas reduites a des instants', async () => {
+  const src = {
+    name: 'test',
+    completeList: true,
+    async discover() {
+      return {
+        offers: [offer('Jeu A')],
+        dropped: [],
+        errors: [],
+        nextWindows: [{ title: 'Jeu Futur', image: 'https://x.test/i.jpg', start: T + 3 * DAY, end: T + 10 * DAY }],
+      };
+    },
+  };
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T, { force: true });
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  const f = sources.test.announcedWindows[0];
+  assert.equal(f.title, 'Jeu Futur', 'le titre a ete perdu : le popup ne pourrait rien montrer');
+  assert.equal(f.image, 'https://x.test/i.jpg');
+  assert.equal(f.start, T + 3 * DAY);
+});
+
+/* ------------------------------------------------ reclamation autonome */
+
+/** Equipe un faux chrome d'onglets qui jouent un verdict donne. */
+function avecOnglets(faux, verdict) {
+  const ouverts = [];
+  let id = 200;
+  faux.chrome.tabs = {
+    async create({ url }) {
+      const monId = id++;
+      ouverts.push({ id: monId, url });
+      setTimeout(() => signalerReclamation(monId, 'fgc-pret', { url }), 2);
+      return { id: monId };
+    },
+    async get(i) { return { id: i, url: ouverts.find((o) => o.id === i).url, status: 'complete' }; },
+    async remove() {},
+    async sendMessage(i) {
+      setTimeout(() => signalerReclamation(i, 'fgc-verdict', { verdict }), 2);
+      return { recu: true };
+    },
+    onUpdated: { addListener() {}, removeListener() {} },
+  };
+  return ouverts;
+}
+
+test('une offre qui passe les filtres est reclamee, et son verdict est garde', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A', { worth: '$9.99', category: 'Game' })])]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'claimed');
+
+  await c.cycle(T, {
+    force: true,
+    claimableStores: [STORES.EPIC],
+  });
+
+  assert.equal(ouverts.length, 1, 'aucun onglet de reclamation ouvert');
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+  const entry = Object.values(catalog)[0];
+  assert.equal(entry.verdict, 'claimed');
+  assert.equal(entry.state, 'resolved', 'un verdict definitif doit clore l\'offre');
+  assert.equal(entry.attempts, 1);
+});
+
+test('un magasin hors perimetre de reclamation n\'ouvre aucun onglet', async () => {
+  // C'est le cas de Steam : detecte, affiche, jamais clique.
+  const jeuSteam = makeOffer({
+    source: 'test', store: STORES.STEAM, storeId: '5004030',
+    title: 'Un jeu Steam', url: 'https://store.steampowered.com/app/5004030/',
+    worth: '$10.99', category: 'Game',
+  });
+  const src = sourceFactice('test', [response([jeuSteam])]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'claimed');
+
+  await c.cycle(T, { force: true, claimableStores: [STORES.EPIC, STORES.GOG] });
+
+  assert.equal(ouverts.length, 0, 'un onglet a ete ouvert sur un magasin en detection seule');
+  const entry = Object.values(c.faux.payload()[KEYS.OFFERS])[0];
+  assert.equal(entry.verdict, null, 'un verdict a ete pose sans reclamation');
+});
+
+test('les filtres ecartent avant la reclamation, pas apres', async () => {
+  const dlc = offer('Un DLC', { worth: '$1.99', category: 'DLC' });
+  const src = sourceFactice('test', [response([dlc])]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'claimed');
+
+  await c.cycle(T, { force: true, claimableStores: [STORES.EPIC] });
+  assert.equal(ouverts.length, 0, 'un DLC a ete reclame malgre le filtre par defaut');
+});
+
+test('le plafond de reclamations par cycle est respecte', async () => {
+  const dix = Array.from({ length: 10 }, (_, i) => offer(`Jeu ${i}`, { worth: '$5.99', category: 'Game' }));
+  const src = sourceFactice('test', [response(dix)]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'claimed');
+
+  await c.cycle(T, { force: true, claimableStores: [STORES.EPIC], maxReclamations: 3 });
+  assert.equal(ouverts.length, 3, `${ouverts.length} onglets ouverts pour un plafond de 3`);
+});
+
+test('la reclamation autonome se coupe par reglage', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A', { worth: '$9.99', category: 'Game' })])]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'claimed');
+
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'], autonomousClaim: false },
+  });
+  await c.cycle(T, { force: true, claimableStores: [STORES.EPIC] });
+  assert.equal(ouverts.length, 0, 'la reclamation a tourne malgre le reglage');
+});
+
+test('un defi de securite ne rouvre pas d\'onglet au cycle suivant', async () => {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A', { worth: '$9.99', category: 'Game' })]),
+    response([offer('Jeu A', { worth: '$9.99', category: 'Game' })]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+  const ouverts = avecOnglets(c.faux, 'challenge');
+
+  await c.cycle(T, { force: true, claimableStores: [STORES.EPIC] });
+  assert.equal(ouverts.length, 1);
+  const entry = Object.values(c.faux.payload()[KEYS.OFFERS])[0];
+  assert.equal(entry.verdict, 'challenge');
+  assert.equal(typeof entry.nextAttemptAt, 'number', 'un defi doit poser un recul');
+
+  await c.cycle(T + 60000, { force: true, claimableStores: [STORES.EPIC] });
+  assert.equal(ouverts.length, 1, 'un second onglet de defi a ete ouvert une minute apres');
+});
+
+/* ---------------------------------------------- la couche apprenante */
+
+test('seules les offres NOUVELLES nourrissent la prediction', async () => {
+  // Une offre deja connue, revue a chaque cycle, gonflerait la case de nos
+  // propres heures de sondage : exactement le biais que la conception combat.
+  const meme = response([offer('Jeu A', { start: T - 3600000 })]);
+  const src = sourceFactice('test', [meme, meme, meme]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T, { force: true });
+  const apres1 = c.faux.payload()['veille:stats'].test.observations;
+
+  await c.cycle(T + DAY, { force: true });
+  await c.cycle(T + 2 * DAY, { force: true });
+  const apres3 = c.faux.payload()['veille:stats'].test.observations;
+
+  assert.equal(apres1, 1);
+  assert.equal(apres3, 1, `${apres3} observations pour une seule offre vue trois fois`);
+});
+
+test('la prediction credite la date publiee par la source', async () => {
+  const drop = Date.parse('2026-08-27T15:00:00Z');
+  const src = sourceFactice('test', [response([offer('Jeu A', { start: drop })])]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(drop + 5 * HOUR, { force: true });
+
+  const stats = c.faux.payload()['veille:stats'].test;
+  assert.ok(stats.cells['4-15'], 'la case du drop n\'a pas ete creditee');
+  assert.equal(stats.cells['4-20'], undefined, 'l\'heure du sondage a ete creditee');
+});
+
+/* ---------------------------------------------------- respect du plan */
+
+test('sans forcage, une source qui vient de tourner n\'est pas reinterrogee', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A')]), response([offer('Jeu A')])]);
+  const c = await contexteDeTest({ test: src });
+
+  await c.cycle(T, { force: true });
+  const appelsApresPremier = src.appels;
+
+  const r = await c.cycle(T + 60000);
+  assert.equal(src.appels, appelsApresPremier, 'la source a ete reinterrogee trop tot');
+  assert.deepEqual(r.queried, []);
+});

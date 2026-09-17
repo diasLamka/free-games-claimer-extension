@@ -1,0 +1,81 @@
+/* Le registre des sources de decouverte.
+ *
+ * Chaque source expose la meme forme : un nom, une fonction decouvrir(), et
+ * les contraintes qu'elle impose a l'ordonnanceur. Ajouter une source, c'est
+ * ajouter une entree ici -- rien d'autre dans la veille ne les connait
+ * nommement.
+ */
+import * as epic from './epic.js';
+import * as gamerpower from './gamerpower.js';
+import * as steam from './steam.js';
+import { STORES } from '../offer.js';
+
+/**
+ * Magasins pour lesquels un module de RECLAMATION existe, et dans lesquels
+ * l'extension a donc le droit de cliquer toute seule.
+ *
+ * Steam n'y figure pas et n'y figurera pas : son contrat d'abonnement interdit
+ * explicitement les scripts pour interagir avec ses services, avec resiliation
+ * sans preavis. Il est detecte, affiche, mis a un clic -- jamais clique.
+ *
+ * itch.io n'y figure pas non plus, et n'est meme pas une source : le formulaire
+ * qui porte le lien de reclamation gratuite porte AUSSI le champ de prix et les
+ * boutons Stripe et PayPal. C'est le seul magasin ou un selecteur un peu large
+ * demarre un paiement dans un onglet invisible. Ecarte du perimetre.
+ */
+export const CLAIMABLE_STORES = Object.freeze([
+  STORES.EPIC,
+  STORES.GOG,
+  STORES.AMAZON,
+]);
+
+/** Magasins detectes et affiches, mais jamais reclames automatiquement. */
+export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM]);
+
+export const SOURCES = Object.freeze({
+  [epic.NAME]: Object.freeze({
+    name: epic.NAME,
+    libelle: 'API Epic Games',
+    discover: epic.discover,
+    /**
+     * L'API rend la totalite des promotions en cours : une offre absente de la
+     * reponse a reellement disparu.
+     */
+    completeList: true,
+    /** Rien ne met cette API en cache : on peut la lire a l'instant du drop. */
+    minIntervalMs: 60 * 1000,
+  }),
+
+  [gamerpower.NAME]: Object.freeze({
+    name: gamerpower.NAME,
+    libelle: 'GamerPower',
+    discover: gamerpower.discover,
+    completeList: true,
+    /**
+     * Le CDN sert la reponse avec Cache-Control: max-age=600. Interroger plus
+     * souvent relit le meme cache : cout reel, gain nul, et impossible a
+     * distinguer d'un vrai fonctionnement en observant le trafic.
+     */
+    minIntervalMs: 10 * 60 * 1000,
+  }),
+
+  [steam.NAME]: Object.freeze({
+    name: steam.NAME,
+    libelle: 'Steam',
+    discover: steam.discover,
+    /**
+     * La recherche rend la totalite des promotions a -100 % : une offre absente
+     * a reellement disparu. Mais elles sont rares -- une seule au 2026-08-27 --
+     * donc une liste vide est un resultat normal, pas un effondrement.
+     */
+    completeList: true,
+    /** Deux requetes par cycle, sur des endpoints publics : on reste poli. */
+    minIntervalMs: 30 * 60 * 1000,
+    /** Detection seule : voir MAGASINS_RECLAMABLES. */
+    autoClaim: false,
+  }),
+});
+
+export const NAMES = Object.freeze(Object.keys(SOURCES));
+
+export { epic, gamerpower, steam };

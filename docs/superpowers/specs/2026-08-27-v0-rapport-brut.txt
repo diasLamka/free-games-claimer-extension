@@ -1,0 +1,15 @@
+Diagnostic du 2026-08-27 09:09 -- extension v2.7.1
+Navigateur : Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36
+
+## V0-2 -- onglet de fond sous throttling
+URL sondee                 : https://store.epicgames.com/robots.txt
+Visibilite dans l'onglet   : hidden
+Sequence de reclamation    : 23178 ms (18663 ms sans bridage)
+Cadence avant 5 min        : 1988.1000000238419 ms (mediane)
+Cadence apres 5 min        : 1500 ms (mediane)
+Battements                 : 181 sur 360 s
+
+## V0-3 -- document offscreen
+DOMParser                  : disponible
+API agregateur             : {"status":200,"count":20,"ms":84}
+Page de magasin            : {"status":200,"octets":1462487,"titre":"Obtenez un jeu gratuit chaque semaine | Epic Games Store","liensProduit":83,"ms":574}

@@ -1,0 +1,322 @@
+/* La couche de stockage de la veille.
+ *
+ * Trois regles, chacune payee par un bug connu :
+ *
+ *  1. ESPACES DE NOMS DISJOINTS. Les cles de la veille commencent par "veille:".
+ *     Aucune ne touche aux cles FGC_* du moteur. Un code GOG perdu est un jeu
+ *     perdu, et le moteur precharge ses cles a chaque injection de page.
+ *
+ *  2. UNE SEULE ECRITURE PAR TRANSITION. chrome.storage n'a pas de transaction,
+ *     mais un set() est atomique sur toutes les cles qu'on lui passe. Ecrire le
+ *     catalogue puis l'etat en deux set() ouvre une fenetre ou le service worker
+ *     peut mourir entre les deux ; les ecrire ensemble la ferme.
+ *
+ *  3. LE VERROU NE GARANTIT RIEN, L'IDEMPOTENCE SI. Voir avecVerrou.
+ */
+
+import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
+
+export const PREFIX = 'veille:';
+
+export const KEYS = Object.freeze({
+  SCHEMA: 'veille:schema',
+  OFFERS: 'veille:offres',
+  SOURCES: 'veille:sources',
+  STATS: 'veille:stats',
+  SETTINGS: 'veille:reglages',
+  SCHEDULES: 'veille:calendriers',
+  STATE: 'veille:etat',
+  LEASE: 'veille:bail',
+  FILTERS: 'veille:filtres',
+  CADENCE: 'veille:cadence-reclamation',
+  /** id de notification -> URL a ouvrir au clic. Session : rien a garder. */
+  NOTIFICATION_LINKS: 'veille:liens-notifications',
+});
+
+/**
+ * Version du schema que ce code sait lire et ecrire.
+ *
+ * 1 -> 2 : les champs persistes passent du francais a l'anglais. Voir
+ *          watch/migrate.js pour ce qui bouge et ce qui ne bouge pas.
+ */
+export const SCHEMA_VERSION = 2;
+
+/* ---------------------------------------------------------------- lecture */
+
+/** Lit un jeu de cles. Rend un objet, meme si tout est absent. */
+export async function readKeys(chrome, keys) {
+  const list = Array.isArray(keys) ? keys : [keys];
+  return chrome.storage.local.get(list);
+}
+
+/**
+ * Ecrit en UNE seule transition. Passer toutes les cles liees ensemble, jamais
+ * en plusieurs appels : c'est la seule atomicite que la plateforme offre.
+ */
+export async function write(chrome, obj) {
+  return chrome.storage.local.set(obj);
+}
+
+/* ------------------------------------------------------------- schema */
+
+export const SCHEMA = Object.freeze({
+  OK: 'ok',
+  INITIALISED: 'initialise',
+  TOO_RECENT: 'trop_recent',
+  MIGRATED: 'migre',
+});
+
+/**
+ * Verifie le schema avant tout usage.
+ *
+ * Un schema plus recent que le code signifie que l'utilisateur a installe une
+ * version anterieure par-dessus une plus recente. Dans ce cas la veille ne
+ * demarre pas : mieux vaut un etat lisible dans le popup qu'un plantage
+ * silencieux dans le service worker.
+ */
+export async function checkSchema(chrome) {
+  const { [KEYS.SCHEMA]: current } = await readKeys(chrome, KEYS.SCHEMA);
+
+  if (current === undefined) {
+    await write(chrome, { [KEYS.SCHEMA]: SCHEMA_VERSION });
+    return { state: SCHEMA.INITIALISED, version: SCHEMA_VERSION };
+  }
+  if (current > SCHEMA_VERSION) {
+    return {
+      state: SCHEMA.TOO_RECENT,
+      version: current,
+      message: `donnees de veille en version ${current}, ce code lit la version ${SCHEMA_VERSION}`,
+    };
+  }
+  if (current < SCHEMA_VERSION) {
+    const stored = await readKeys(chrome, MIGRATED_KEYS);
+    const { patch, changed } = buildV2Patch(stored);
+
+    /* Le correctif ET le numero de version dans le MEME set(). En deux appels,
+       une mort du service worker entre les deux laisserait des donnees migrees
+       marquees version 1 -- la migration se rejouerait, renommerait des champs
+       deja anglais en... eux-memes, ce qui est inoffensif, ou bien s'appliquerait
+       a une forme intermediaire, ce qui ne l'est pas. */
+    await write(chrome, { ...patch, [KEYS.SCHEMA]: SCHEMA_VERSION });
+    return { state: SCHEMA.MIGRATED, from: current, version: SCHEMA_VERSION, changed };
+  }
+  return { state: SCHEMA.OK, version: current };
+}
+
+/* ------------------------------------------------------------------ verrou */
+
+/** Duree au bout de laquelle un bail abandonne est considere comme perime. */
+export const LEASE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Execute `travail` en exclusion mutuelle, si possible.
+ *
+ * Deux mecanismes, dans cet ordre :
+ *
+ *   1. L'API Web Locks quand la plateforme la fournit. C'est un vrai verrou :
+ *      il serialise tous les contextes de l'origine et se libere tout seul si
+ *      le service worker meurt en le tenant.
+ *
+ *   2. Sinon, un bail horodate. Il faut le dire clairement : ce n'est PAS un
+ *      verrou correct. Sa surete repose sur une relecture apres ecriture, et
+ *      deux appelants qui relisent chacun avant que l'autre n'ecrive passent
+ *      tous les deux. Mesure de la sonde du 2026-08-27 : dix chevauchements
+ *      sur vingt-cinq essais sans temporisation.
+ *
+ * La vraie garantie n'est donc pas le verrou, c'est l'IDEMPOTENCE du travail :
+ * integrer() rend zero nouveaute sur une seconde passe, et la notification est
+ * conditionnee par un champ persiste, pas par le resultat du cycle. Le verrou
+ * evite du travail inutile ; il n'evite pas la double execution.
+ *
+ * Rend { acquis: false } sans rien executer quand le verrou est deja pris.
+ */
+export async function withLease(chrome, name, job, { now, ttlMs = LEASE_TTL_MS, webLocks } = {}) {
+  const locks = webLocks
+    ?? (typeof navigator !== 'undefined' && navigator.locks ? navigator.locks : null);
+
+  if (locks && typeof locks.request === 'function') {
+    return locks.request(name, { ifAvailable: true }, async (lock) => {
+      if (!lock) return { acquired: false };
+      return { acquired: true, worth: await job() };
+    });
+  }
+
+  const zone = chrome.storage.session || chrome.storage.local;
+  // L'identifiant doit etre unique par TENTATIVE, pas par instant : deux
+  // reveils simultanes au meme horodatage ecrivaient le meme identifiant, se
+  // relisaient tous les deux avec succes, et passaient tous les deux.
+  const ident = `${now}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const { [KEYS.LEASE]: existingList } = await zone.get(KEYS.LEASE);
+  if (existingList && existingList.expire > now) return { acquired: false };
+
+  await zone.set({ [KEYS.LEASE]: { id: ident, takenAt: now, expire: now + ttlMs } });
+
+  // Relecture : le dernier ecrivain gagne, les autres se retirent.
+  const { [KEYS.LEASE]: reread } = await zone.get(KEYS.LEASE);
+  if (!reread || reread.id !== ident) return { acquired: false };
+
+  try {
+    return { acquired: true, worth: await job() };
+  } finally {
+    const { [KEYS.LEASE]: more } = await zone.get(KEYS.LEASE);
+    if (more && more.id === ident) await zone.remove(KEYS.LEASE);
+  }
+}
+
+/* --------------------------------------------------------------- reglages */
+
+/**
+ * Les reglages que le service worker lit. Source unique : le popup les importe
+ * plutot que d'en tenir sa propre copie, sinon un defaut change d'un cote
+ * seulement, et l'interface montre autre chose que ce qui s'applique.
+ */
+export const DEFAULT_SETTINGS = Object.freeze({
+  floorPerDay: 3,
+  overrides: {},
+  activeSources: ['epic-api', 'gamerpower'],
+  autonomousClaim: true,
+
+  /** 'every' | 'digest' | 'off'. Voir watch/notify-policy.js. */
+  notifyMode: 'every',
+  /** 'unseen' | 'endingToday' | 'off'. */
+  badgeMode: 'unseen',
+  /** Plage ou les annonces sont DIFFEREES, jamais supprimees. */
+  quiet: Object.freeze({ on: false, start: '23:00', end: '08:00' }),
+  /** Heures avant la fin d'une offre pour un second signal. 0 coupe. */
+  reminderHours: 6,
+  /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
+  watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
+});
+
+/**
+ * Applique les defauts et traduit les reglages des versions anterieures.
+ *
+ * Une seule fonction, appelee par readSettings ET par readContext. Elle
+ * l'etait en deux endroits : la traduction n'y etait qu'une fois, et le cycle
+ * -- qui passe par readContext -- continuait de notifier un utilisateur qui
+ * avait coupe les notifications.
+ */
+export function normaliseSettings(raw) {
+  const settings = { ...DEFAULT_SETTINGS, ...(raw || {}) };
+
+  /* Jusqu'a la 2.10, couper les notifications s'ecrivait `notifications: false`.
+     Le reglage est devenu un mode a trois valeurs, et sans cette traduction un
+     utilisateur qui les avait coupees les verrait revenir apres la mise a jour.
+     Une preference perdue en silence est une trahison silencieuse. */
+  if (raw && raw.notifications === false && raw.notifyMode === undefined) {
+    settings.notifyMode = 'off';
+  }
+
+  return settings;
+}
+
+export async function readSettings(chrome) {
+  const { [KEYS.SETTINGS]: r } = await readKeys(chrome, KEYS.SETTINGS);
+  return normaliseSettings(r);
+}
+
+/* ------------------------------------------------------------------- etat */
+
+export const DEFAULT_STATE = Object.freeze({
+  /**
+   * Faux tant que le premier cycle n'a pas eu lieu.
+   *
+   * Le premier cycle remplit le catalogue SANS notifier : l'agregateur rend une
+   * vingtaine d'offres deja en cours, dont certaines publiees il y a des
+   * annees. Vingt notifications a l'installation, c'est l'utilisateur qui coupe
+   * les notifications pour toujours -- et cette erreur-la ne se rattrape pas.
+   */
+  booted: false,
+  lastCycle: null,
+  nextCycle: null,
+  lastError: null,
+  unseen: 0,
+});
+
+export async function readState(chrome) {
+  const { [KEYS.STATE]: e } = await readKeys(chrome, KEYS.STATE);
+  return { ...DEFAULT_STATE, ...(e || {}) };
+}
+
+/* --------------------------------------------------------------- lecture globale */
+
+/** Lit d'un coup tout ce qu'un cycle a besoin de connaitre. */
+export async function readContext(chrome) {
+  const raw = await readKeys(chrome, [
+    KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
+    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE,
+  ]);
+  return {
+    catalog: raw[KEYS.OFFERS] || {},
+    sources: raw[KEYS.SOURCES] || {},
+    settings: normaliseSettings(raw[KEYS.SETTINGS]),
+    schedules: raw[KEYS.SCHEDULES] || {},
+    state: { ...DEFAULT_STATE, ...(raw[KEYS.STATE] || {}) },
+    stats: raw[KEYS.STATS] || {},
+    filters: raw[KEYS.FILTERS] || {},
+    cadence: raw[KEYS.CADENCE] || [],
+  };
+}
+
+/**
+ * Ecrit le resultat d'un cycle en UNE transition.
+ *
+ * Le catalogue est ecrit AVANT toute notification, jamais apres : entre les
+ * deux, le service worker peut mourir. On prefere perdre une notification
+ * qu'en envoyer deux, et le champ notifieLe rend la reprise possible.
+ */
+export async function writeCycle(chrome, { catalog, sources, state, stats, cadence }) {
+  const obj = {};
+  if (catalog !== undefined) obj[KEYS.OFFERS] = catalog;
+  if (sources !== undefined) obj[KEYS.SOURCES] = sources;
+  if (state !== undefined) obj[KEYS.STATE] = state;
+  if (stats !== undefined) obj[KEYS.STATS] = stats;
+  if (cadence !== undefined) obj[KEYS.CADENCE] = cadence;
+  return write(chrome, obj);
+}
+
+/* ------------------------------------------------------ notifications */
+
+/** Au plus, liens gardes en memoire. Au-dela, les plus vieux sont oublies. */
+const MAX_LINKS = 30;
+
+/**
+ * Retient ou mene une notification.
+ *
+ * Sans cela, cliquer une notification ouvrait la page de diagnostic : le
+ * service worker avait perdu la memoire entre l'envoi et le clic, qui peut
+ * survenir des heures plus tard.
+ */
+export async function rememberNotificationLink(chrome, id, url) {
+  if (!id || !url) return;
+  const zone = chrome.storage.session || chrome.storage.local;
+  const { [KEYS.NOTIFICATION_LINKS]: links } = await zone.get(KEYS.NOTIFICATION_LINKS);
+  const following = { ...(links || {}), [id]: url };
+
+  const keys = Object.keys(following);
+  if (keys.length > MAX_LINKS) for (const k of keys.slice(0, keys.length - MAX_LINKS)) delete following[k];
+
+  await zone.set({ [KEYS.NOTIFICATION_LINKS]: following });
+}
+
+export async function readNotificationLink(chrome, id) {
+  const zone = chrome.storage.session || chrome.storage.local;
+  const { [KEYS.NOTIFICATION_LINKS]: links } = await zone.get(KEYS.NOTIFICATION_LINKS);
+  return (links && links[id]) || null;
+}
+
+/* ------------------------------------------------------------------ mesure */
+
+/** Occupation reelle, comptee comme Chromium la compte. */
+export async function usedSize(chrome) {
+  const everything = await chrome.storage.local.get(null);
+  let total = 0;
+  const byKey = {};
+  for (const [k, v] of Object.entries(everything)) {
+    const n = k.length + JSON.stringify(v).length;
+    byKey[k] = n;
+    total += n;
+  }
+  return { total, byKey };
+}

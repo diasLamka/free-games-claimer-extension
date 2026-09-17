@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC06B"/>
+      <stop offset="1" stop-color="#FF8A3D"/>
+    </linearGradient>
+    <mask id="notch">
+      <rect width="128" height="128" fill="#000"/>
+      <rect x="23.7" y="39" width="80.6" height="49.9" rx="9.6" fill="#fff"/>
+      <circle cx="23.7" cy="64" r="10.9" fill="#000"/>
+      <circle cx="104.3" cy="64" r="10.9" fill="#000"/>
+    </mask>
+  </defs>
+  <rect x="2.5" y="2.5" width="123" height="123" rx="28.8" fill="url(#amber)"/>
+  <rect width="128" height="128" fill="#181128" mask="url(#notch)"/>
+  <line x1="77.4" y1="44" x2="77.4" y2="84" stroke="url(#amber)" stroke-width="5.1"
+        stroke-dasharray="7.2 5.3" stroke-linecap="butt"/>
+</svg>
