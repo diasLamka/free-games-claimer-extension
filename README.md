@@ -3,6 +3,8 @@
 Recuperation automatique des jeux gratuits sur Epic Games Store, GOG et Amazon
 Luna. L'extension et le userscript Tampermonkey partagent le meme moteur.
 
+Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
+
 ## Le moteur est genere
 
 `free-games-claimer.js` et `../free-games-claimer.user.js` **ne s'editent pas a
@@ -130,6 +132,7 @@ test/
   fixtures/                 captures reelles des deux API
   *.test.mjs                tests unitaires (node --test)
 docs/superpowers/specs/     design de la veille et constats V0
+.github/workflows/          npm run check a chaque push
 gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
@@ -137,6 +140,7 @@ diagnostics.html / .js      mesures V0-2 et V0-3
 manifest.json               Chrome / Edge
 manifest.firefox.json       Firefox
 CHANGELOG.md                historique du moteur
+ROADMAP.md                  ce qui n'est pas encore fait, et pourquoi
 ```
 
 ## Installation

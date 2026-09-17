@@ -1,0 +1,30 @@
+# Ce que la relecture d'un diff ne voit pas.
+#
+# `npm run check` fait trois choses, et la premiere est la seule qui compte
+# ici : elle reconstruit le moteur a partir de src/core et compare le SHA256 au
+# temoin fige de build/reference.json. Une divergence involontaire est
+# invisible a l'oeil nu -- d'ou ce workflow.
+#
+# Aucune dependance a installer : package.json n'en declare aucune, il n'y a
+# donc ni lockfile ni `npm ci`. Node 22, la version sur laquelle le projet est
+# developpe ; `node --test "test/*.test.mjs"` demande que Node developpe le
+# motif lui-meme, ce qu'il ne fait qu'a partir de la 21.
+name: check
+
+# Sur toutes les branches, et pas sur les pull requests : elles vivent dans ce
+# depot, la branche est donc deja passee au check. Deux fois le meme travail
+# n'apprend rien.
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
