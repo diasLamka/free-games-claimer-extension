@@ -76,6 +76,7 @@
   function watchLunaClaimOutcome(buyBox, timeout, store, linkBefore) {
     var started = Date.now();
     var completeClicked = false;
+    var completeBlocked = false;
     var successSince = 0;
     return new Promise(function (resolve, reject) {
       function tick() {
@@ -92,15 +93,22 @@
           var linkEl = findLunaLinkAccountElement();
           if (linkEl && linkEl !== linkBefore) { resolve({ type: 'needs_link' }); return; }
 
-          if (!completeClicked) {
+          if (!completeClicked && !completeBlocked) {
             var root = lunaModalRoot() || buyBox || document;
             var completeBtn = findActionElement(root, LUNA_COMPLETE_PATTERNS, { mustBeEnabled: true });
             if (completeBtn) {
-              completeClicked = true;
-              log('Amazon Luna', 'info', 'Etape intermediaire "' + completeBtn.textContent.trim() + '" detectee, clic.');
-              completeBtn.click();
-              setTimeout(tick, 1200);
-              return;
+              log('Amazon Luna', 'info', 'Etape intermediaire "' + actionText(completeBtn) + '" detectee, clic.');
+              /* Le drapeau ne se pose QUE si le clic a eu lieu : un clic
+                 refuse ne doit pas faire croire que l'etape a ete franchie.
+                 Et on ne reessaie pas a chaque battement -- l'anti-rafale
+                 refuserait sans rien apporter, en remplissant le journal. */
+              if (robustClick(completeBtn)) {
+                completeClicked = true;
+                setTimeout(tick, 1200);
+                return;
+              }
+              completeBlocked = true;
+              log('Amazon Luna', 'warn', 'Etape intermediaire non cliquee (clic refuse) : l\'observation continue sans elle.');
             }
           }
 

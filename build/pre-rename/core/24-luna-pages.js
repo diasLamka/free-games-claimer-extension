@@ -1,4 +1,14 @@
   function runLunaDetailPage(PLATFORM) {
+    /* L'arret d'urgence coupe la SERIE, pas seulement le clic. Sans ce
+       controle, chaque fiche verrait son clic refuse puis naviguerait vers la
+       suivante : une serie qui continue en echouant n'est pas un arret. La
+       file est conservee telle quelle, pour pouvoir reprendre. */
+    if (emergencyStopped()) {
+      log(PLATFORM, 'error', 'Arret d\'urgence actif : la serie Luna s\'arrete ici (la file est conservee).');
+      updateUiState('error', 'Luna : arret d\'urgence actif');
+      return Promise.resolve();
+    }
+
     var offerUrl = location.href.split('?')[0];
     var offerId = extractLunaOfferId(location.href) || offerUrl;
     var queue = getLunaQueue();
@@ -38,7 +48,22 @@
         return proceed('Luna : fiche illisible (' + title + ')');
       }
 
+      /* Le bouton est trouve par son ATTRIBUT, et c'est ce qui rend la
+         verification de libelle indispensable : "buy-box_call-to-action" est
+         le nom d'un emplacement, pas d'une action. Le jour ou Amazon y rend
+         "S'abonner a Luna+" ou "Acheter 19,99 EUR", rien ne l'arretait -- le
+         garde-caisse, lui, s'efface sur les magasins eprouves (PROVEN_HOSTS).
+         On applique donc ici la regle d'Epic : c'est la LISTE DES LIBELLES
+         AUTORISES qui borne le risque, pas le selecteur qui a designe le
+         bouton. */
       var cta = buyBox.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(buyBox, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true });
+      if (cta && !lunaClaimLabelAllowed(cta)) {
+        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"');
+        if (partOfSeries) bumpLunaBatch('failed');
+        log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
+          + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
+        return proceed('Luna : libelle inattendu (' + title + ')');
+      }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
         if (LUNA_CLAIMED_TEXT.test(boxText)) {
@@ -59,12 +84,20 @@
       }
 
       updateUiState('running', 'Luna : ' + title + ' (' + label + ')...');
-      log(PLATFORM, 'info', 'Clic sur "' + cta.textContent.trim() + '" pour "' + title + '".');
-      // Clic direct (pas de sequence d'evenements synthetiques imitant une
-      // interaction humaine) : le but est de declencher l'action pour vous,
-      // pas de tromper une detection anti-bot.
+      log(PLATFORM, 'info', 'Clic sur "' + actionText(cta) + '" pour "' + title + '".');
+      /* Par robustClick, comme Epic.
+         L'ancien commentaire justifiait le clic direct par une posture -- ne
+         pas imiter un humain. Elle ne tient plus : robustClick n'est pas un
+         deguisement, c'est le GOULOT ou vivent l'arret d'urgence, le refus des
+         libelles payants et l'anti-rafale. Tant que ce parcours l'evitait, le
+         bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
-      cta.click();
+      if (!robustClick(cta)) {
+        recordLunaFailure(offerId, 'clic refuse par les garde-fous');
+        if (partOfSeries) bumpLunaBatch('failed');
+        log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
+        return proceed('Luna : clic refuse (' + title + ')');
+      }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
         handleLunaClaimOutcome(PLATFORM, offerId, title, store, outcome);
@@ -143,10 +176,34 @@
 
       function claimInternal(index) {
         if (index >= internal.length) return Promise.resolve();
+        if (emergencyStopped()) {
+          log(PLATFORM, 'error', 'Arret d\'urgence actif : ' + (internal.length - index) + ' offre(s) directe(s) non traitee(s).');
+          updateUiState('error', 'Luna : arret d\'urgence actif');
+          return Promise.resolve();
+        }
         var o = internal[index];
         updateUiState('running', 'Luna : ' + o.title + '...');
+
+        /* Un echec ne doit pas arreter le lot : on le compte et on passe a
+           l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
+        function skipInternal(reason, detail) {
+          recordLunaFailure(o.id, reason);
+          bumpLunaBatch('failed');
+          log(PLATFORM, 'warn', detail);
+          return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax).then(function () { return claimInternal(index + 1); });
+        }
+
+        /* Meme regle que sur la fiche : la carte a ete trouvee par un
+           attribut, c'est son LIBELLE qui autorise le clic. */
+        if (!lunaClaimLabelAllowed(o.button)) {
+          return skipInternal('libelle inattendu sur la carte : "' + actionText(o.button) + '"',
+            'Bouton de carte non reconnu pour "' + o.title + '" : "' + actionText(o.button) + '". Rien n\'est clique.');
+        }
         log(PLATFORM, 'info', 'Reclamation directe sur la liste : ' + o.title);
-        o.button.click();
+        if (!robustClick(o.button)) {
+          return skipInternal('clic refuse par les garde-fous',
+            'Clic refuse pour "' + o.title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
+        }
         return waitForElement(function () {
           if (isLunaReauthVisible()) throw new Error('MANUAL_LOGIN_REQUIRED');
           var text = spacedText(o.card);

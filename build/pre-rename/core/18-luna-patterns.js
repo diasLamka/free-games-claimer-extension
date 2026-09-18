@@ -17,6 +17,26 @@
   //   [data-a-target="DescriptionItemDetails"] "Right and Down pour PC sur GOG.com."
 
   var LUNA_CLAIM_PATTERNS = [/^claim( game| the game)?$/i, /^r[e\u00e9]cup[e\u00e9]rer( le jeu)?$/i, /^get( the)? game$/i, /^obtenir( le jeu)?$/i, /^get$/i];
+  /* Variantes NON ancrees : le textContent d'un bouton concatene tous ses
+     descendants, et un span de lecteur d'ecran suffit a faire echouer un
+     motif en ^...$. Meme lecon qu'Epic, trois fois payee. */
+  var LUNA_CLAIM_LOOSE_PATTERNS = [/r[e\u00e9]cup[e\u00e9]rer/i, /\bobtenir\b/i, /\bclaim\b/i, /get (the )?game/i];
+
+  /* CE QUE LE MODULE LUNA A LE DROIT DE CLIQUER.
+   *
+   * Le pendant de epicPaymentConfirmPatterns : une autorisation, pas une
+   * recherche. Un bouton trouve par son attribut doit encore dire, par son
+   * libelle, qu'il reclame quelque chose de gratuit. */
+  function lunaClaimLabelAllowed(el) {
+    if (!el) return false;
+    var text = actionText(el);
+    if (!text) return false;
+    if (looksPaid(text)) return false;
+    var ok = LUNA_CLAIM_PATTERNS.some(function (p) { return p.test(text); })
+          || LUNA_CLAIM_LOOSE_PATTERNS.some(function (p) { return p.test(text); });
+    return ok;
+  }
+
   var LUNA_COMPLETE_PATTERNS = [/^complete claim$/i, /^terminer( la r[e\u00e9]clamation)?$/i, /^finaliser/i, /^continuer$/i, /^continue$/i, /^confirm(er)?$/i];
   var LUNA_LINK_ACCOUNT_PATTERNS = [/associer (un|votre|mon|le) compte/i, /link (game |your |a )?account/i, /lier (un|votre|mon|le) compte/i];
   var LUNA_CLAIMED_TEXT = /\bclaimed\b|\bcollected\b|r[e\u00e9]cup[e\u00e9]r[e\u00e9]e?(?![a-z\u00e0-\u00ff])|successfully|\bsuccess\b|succ[e\u00e8]s(?![a-z\u00e0-\u00ff])|in your library|dans votre biblioth[e\u00e8]que|ajout[e\u00e9]e? [a\u00e0] votre|d[e\u00e9]j[a\u00e0] (r[e\u00e9]cup[e\u00e9]r[e\u00e9]|obtenu|r[e\u00e9]clam[e\u00e9])/i;

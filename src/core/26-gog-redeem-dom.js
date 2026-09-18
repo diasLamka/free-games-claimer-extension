@@ -48,6 +48,26 @@
   var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|code utilis[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
   var GOG_REDEEM_CONFIRM_PATTERNS = [/^r[e\u00e9]cup[e\u00e9]rer$/i, /utiliser (le|ce|mon) code/i, /^utiliser$/i, /^redeem$/i, /redeem (the |this )?code/i, /ajouter [a\u00e0] (ma|la|votre) biblioth/i, /add to (my |your )?(account|library)/i, /^obtenir$/i, /^get it$/i, /^confirmer$/i, /^confirm$/i];
 
+  /* CE QUE L'ECHANGE GOG A LE DROIT DE CLIQUER.
+   *
+   * Le pendant de lunaClaimLabelAllowed : [type="submit"] designe un
+   * EMPLACEMENT dans un formulaire, pas une action. C'est le libelle qui dit
+   * ce que le bouton fait, et lui seul qui autorise le clic.
+   *
+   * Un bouton muet (icone seule, aucun texte) reste accepte : il a ete
+   * designe par le formulaire de #codeInput, et il n'annonce rien de payant.
+   * On refuse ce qui est ECRIT et suspect, pas ce qui se tait. */
+  var GOG_SUBMIT_PATTERNS = [/^continuer$/i, /^continue$/i, /^valider$/i, /^validate$/i, /^suivant$/i, /^next$/i, /^envoyer$/i, /^submit$/i, /^ok$/i, /^activer$/i, /^activate$/i];
+
+  function gogSubmitLabelAllowed(el) {
+    if (!el) return false;
+    var text = actionText(el) || String(el.value || '').replace(/\s+/g, ' ').trim();
+    if (looksPaid(text)) return false;
+    if (!text) return true;
+    return GOG_SUBMIT_PATTERNS.some(function (p) { return p.test(text); })
+      || GOG_REDEEM_CONFIRM_PATTERNS.some(function (p) { return p.test(text); });
+  }
+
   function gogRedeemRoot(form) {
     return (form && (form.closest('[class*="redeem" i], section, main') || form.parentElement)) || document.querySelector('[class*="redeem" i]') || document;
   }

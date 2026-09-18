@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.17.0
+ * FREE GAMES AUTO-CLAIMER -- v2.18.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -414,7 +414,27 @@
     return (Date.now() - seen.last) < CONFIG.clickCooldownMs;
   }
 
-  function robustClick(el) {
+  /* Un libelle qui annonce une DEPENSE.
+   *
+   * Complement du garde-caisse, et non son doublon : celui-la regarde la
+   * structure (champ de montant, bouton d'un prestataire) et s'efface sur les
+   * magasins eprouves, ou le parcours gratuit passe legitimement par un panier
+   * a zero. Celui-ci regarde ce qui est ECRIT sur le bouton, et vaut partout.
+   *
+   * Il existe parce qu'un bouton Luna est trouve par son attribut
+   * "data-a-target", jamais par son texte : le jour ou Amazon rend
+   * " S'abonner a Luna+ " ou " Acheter 19,99 EUR " dans la meme buy-box, rien
+   * ne l'arretait. Les mots de panier en sont volontairement absents : Epic
+   * fait cliquer "Ajouter au panier" sur un total a zero.
+   */
+  var PAID_LABEL = /\bacheter\b|\bbuy\b|\bpayer\b|\bpay now\b|\bs['\u2019]abonner\b|\bsubscribe\b|\babonnement\b|\bpr[e\u00e9]commander\b|\bpre-?order\b|\bupgrade\b|\d[\d\s.,]*\s*[\u20ac$\u00a3]|[\u20ac$\u00a3]\s*\d/i;
+
+  function looksPaid(text) {
+    return PAID_LABEL.test(String(text || ''));
+  }
+
+  function robustClick(el, options) {
+    options = options || {};
     if (!el) return false;
 
     if (emergencyStopped()) {
@@ -422,7 +442,22 @@
       return false;
     }
 
-    if (isRepeatClick(el)) {
+    /* Le libelle prime sur l'attribut qui a servi a trouver le bouton. Un
+       "Acheter 19,99 EUR" ne se clique jamais, quel que soit le selecteur qui
+       l'a designe et quel que soit l'hote. */
+    if (looksPaid(actionText(el))) {
+      log('CORE', 'error', 'Clic REFUSE : ce libelle annonce une depense.', {
+        text: actionText(el).slice(0, 60)
+      });
+      return false;
+    }
+
+    /* "allowRepeat" : une SECONDE action, voulue, sur le meme noeud -- le cas
+       de l'echange GOG, ou le bouton d'envoi peut etre relabellise en bouton
+       de confirmation au lieu d'etre remplace. L'arret d'urgence, le
+       garde-caisse et le refus des libelles payants, eux, s'appliquent
+       toujours : ce n'est pas une porte de sortie, c'est une exception nommee. */
+    if (!options.allowRepeat && isRepeatClick(el)) {
       var journal = clickHistoryFor(el);
       // Une seule ligne par bouton : l'avertissement doit rester lisible, pas
       // remplir la console au rythme des sondes.
@@ -507,7 +542,9 @@
   // plusieurs descendants, ce qui donne des blancs multiples dans textContent.
   // Un motif ancre en ^...$ echouait dessus alors que le bouton etait le bon.
   function actionText(el) {
-    return (el.textContent || '').replace(/\s+/g, ' ').trim();
+    /* Tolerant a l'absence de noeud : cette fonction sert autant a decider
+       qu'a journaliser, et un message d'erreur ne doit pas lever une erreur. */
+    return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim();
   }
 
   function findActionElement(root, patterns, options) {
@@ -2341,6 +2378,26 @@
   //   [data-a-target="DescriptionItemDetails"] "Right and Down pour PC sur GOG.com."
 
   var LUNA_CLAIM_PATTERNS = [/^claim( game| the game)?$/i, /^r[e\u00e9]cup[e\u00e9]rer( le jeu)?$/i, /^get( the)? game$/i, /^obtenir( le jeu)?$/i, /^get$/i];
+  /* Variantes NON ancrees : le textContent d'un bouton concatene tous ses
+     descendants, et un span de lecteur d'ecran suffit a faire echouer un
+     motif en ^...$. Meme lecon qu'Epic, trois fois payee. */
+  var LUNA_CLAIM_LOOSE_PATTERNS = [/r[e\u00e9]cup[e\u00e9]rer/i, /\bobtenir\b/i, /\bclaim\b/i, /get (the )?game/i];
+
+  /* CE QUE LE MODULE LUNA A LE DROIT DE CLIQUER.
+   *
+   * Le pendant de epicPaymentConfirmPatterns : une autorisation, pas une
+   * recherche. Un bouton trouve par son attribut doit encore dire, par son
+   * libelle, qu'il reclame quelque chose de gratuit. */
+  function lunaClaimLabelAllowed(el) {
+    if (!el) return false;
+    var text = actionText(el);
+    if (!text) return false;
+    if (looksPaid(text)) return false;
+    var ok = LUNA_CLAIM_PATTERNS.some(function (p) { return p.test(text); })
+          || LUNA_CLAIM_LOOSE_PATTERNS.some(function (p) { return p.test(text); });
+    return ok;
+  }
+
   var LUNA_COMPLETE_PATTERNS = [/^complete claim$/i, /^terminer( la r[e\u00e9]clamation)?$/i, /^finaliser/i, /^continuer$/i, /^continue$/i, /^confirm(er)?$/i];
   var LUNA_LINK_ACCOUNT_PATTERNS = [/associer (un|votre|mon|le) compte/i, /link (game |your |a )?account/i, /lier (un|votre|mon|le) compte/i];
   var LUNA_CLAIMED_TEXT = /\bclaimed\b|\bcollected\b|r[e\u00e9]cup[e\u00e9]r[e\u00e9]e?(?![a-z\u00e0-\u00ff])|successfully|\bsuccess\b|succ[e\u00e8]s(?![a-z\u00e0-\u00ff])|in your library|dans votre biblioth[e\u00e8]que|ajout[e\u00e9]e? [a\u00e0] votre|d[e\u00e9]j[a\u00e0] (r[e\u00e9]cup[e\u00e9]r[e\u00e9]|obtenu|r[e\u00e9]clam[e\u00e9])/i;
@@ -2654,6 +2711,7 @@
   function watchLunaClaimOutcome(buyBox, timeout, store, linkBefore) {
     var started = Date.now();
     var completeClicked = false;
+    var completeBlocked = false;
     var successSince = 0;
     return new Promise(function (resolve, reject) {
       function tick() {
@@ -2670,15 +2728,22 @@
           var linkEl = findLunaLinkAccountElement();
           if (linkEl && linkEl !== linkBefore) { resolve({ type: 'needs_link' }); return; }
 
-          if (!completeClicked) {
+          if (!completeClicked && !completeBlocked) {
             var root = lunaModalRoot() || buyBox || document;
             var completeBtn = findActionElement(root, LUNA_COMPLETE_PATTERNS, { mustBeEnabled: true });
             if (completeBtn) {
-              completeClicked = true;
-              log('Amazon Luna', 'info', 'Etape intermediaire "' + completeBtn.textContent.trim() + '" detectee, clic.');
-              completeBtn.click();
-              setTimeout(tick, 1200);
-              return;
+              log('Amazon Luna', 'info', 'Etape intermediaire "' + actionText(completeBtn) + '" detectee, clic.');
+              /* Le drapeau ne se pose QUE si le clic a eu lieu : un clic
+                 refuse ne doit pas faire croire que l'etape a ete franchie.
+                 Et on ne reessaie pas a chaque battement -- l'anti-rafale
+                 refuserait sans rien apporter, en remplissant le journal. */
+              if (robustClick(completeBtn)) {
+                completeClicked = true;
+                setTimeout(tick, 1200);
+                return;
+              }
+              completeBlocked = true;
+              log('Amazon Luna', 'warn', 'Etape intermediaire non cliquee (clic refuse) : l\'observation continue sans elle.');
             }
           }
 
@@ -2847,6 +2912,16 @@
   }
 
   function runLunaDetailPage(PLATFORM) {
+    /* L'arret d'urgence coupe la SERIE, pas seulement le clic. Sans ce
+       controle, chaque fiche verrait son clic refuse puis naviguerait vers la
+       suivante : une serie qui continue en echouant n'est pas un arret. La
+       file est conservee telle quelle, pour pouvoir reprendre. */
+    if (emergencyStopped()) {
+      log(PLATFORM, 'error', 'Arret d\'urgence actif : la serie Luna s\'arrete ici (la file est conservee).');
+      updateUiState('error', 'Luna : arret d\'urgence actif');
+      return Promise.resolve();
+    }
+
     var offerUrl = location.href.split('?')[0];
     var offerId = extractLunaOfferId(location.href) || offerUrl;
     var queue = getLunaQueue();
@@ -2886,7 +2961,22 @@
         return proceed('Luna : fiche illisible (' + title + ')');
       }
 
+      /* Le bouton est trouve par son ATTRIBUT, et c'est ce qui rend la
+         verification de libelle indispensable : "buy-box_call-to-action" est
+         le nom d'un emplacement, pas d'une action. Le jour ou Amazon y rend
+         "S'abonner a Luna+" ou "Acheter 19,99 EUR", rien ne l'arretait -- le
+         garde-caisse, lui, s'efface sur les magasins eprouves (PROVEN_HOSTS).
+         On applique donc ici la regle d'Epic : c'est la LISTE DES LIBELLES
+         AUTORISES qui borne le risque, pas le selecteur qui a designe le
+         bouton. */
       var cta = buyBox.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(buyBox, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true });
+      if (cta && !lunaClaimLabelAllowed(cta)) {
+        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"');
+        if (partOfSeries) bumpLunaBatch('failed');
+        log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
+          + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
+        return proceed('Luna : libelle inattendu (' + title + ')');
+      }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
         if (LUNA_CLAIMED_TEXT.test(boxText)) {
@@ -2907,12 +2997,20 @@
       }
 
       updateUiState('running', 'Luna : ' + title + ' (' + label + ')...');
-      log(PLATFORM, 'info', 'Clic sur "' + cta.textContent.trim() + '" pour "' + title + '".');
-      // Clic direct (pas de sequence d'evenements synthetiques imitant une
-      // interaction humaine) : le but est de declencher l'action pour vous,
-      // pas de tromper une detection anti-bot.
+      log(PLATFORM, 'info', 'Clic sur "' + actionText(cta) + '" pour "' + title + '".');
+      /* Par robustClick, comme Epic.
+         L'ancien commentaire justifiait le clic direct par une posture -- ne
+         pas imiter un humain. Elle ne tient plus : robustClick n'est pas un
+         deguisement, c'est le GOULOT ou vivent l'arret d'urgence, le refus des
+         libelles payants et l'anti-rafale. Tant que ce parcours l'evitait, le
+         bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
-      cta.click();
+      if (!robustClick(cta)) {
+        recordLunaFailure(offerId, 'clic refuse par les garde-fous');
+        if (partOfSeries) bumpLunaBatch('failed');
+        log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
+        return proceed('Luna : clic refuse (' + title + ')');
+      }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
         handleLunaClaimOutcome(PLATFORM, offerId, title, store, outcome);
@@ -2991,10 +3089,34 @@
 
       function claimInternal(index) {
         if (index >= internal.length) return Promise.resolve();
+        if (emergencyStopped()) {
+          log(PLATFORM, 'error', 'Arret d\'urgence actif : ' + (internal.length - index) + ' offre(s) directe(s) non traitee(s).');
+          updateUiState('error', 'Luna : arret d\'urgence actif');
+          return Promise.resolve();
+        }
         var o = internal[index];
         updateUiState('running', 'Luna : ' + o.title + '...');
+
+        /* Un echec ne doit pas arreter le lot : on le compte et on passe a
+           l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
+        function skipInternal(reason, detail) {
+          recordLunaFailure(o.id, reason);
+          bumpLunaBatch('failed');
+          log(PLATFORM, 'warn', detail);
+          return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax).then(function () { return claimInternal(index + 1); });
+        }
+
+        /* Meme regle que sur la fiche : la carte a ete trouvee par un
+           attribut, c'est son LIBELLE qui autorise le clic. */
+        if (!lunaClaimLabelAllowed(o.button)) {
+          return skipInternal('libelle inattendu sur la carte : "' + actionText(o.button) + '"',
+            'Bouton de carte non reconnu pour "' + o.title + '" : "' + actionText(o.button) + '". Rien n\'est clique.');
+        }
         log(PLATFORM, 'info', 'Reclamation directe sur la liste : ' + o.title);
-        o.button.click();
+        if (!robustClick(o.button)) {
+          return skipInternal('clic refuse par les garde-fous',
+            'Clic refuse pour "' + o.title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
+        }
         return waitForElement(function () {
           if (isLunaReauthVisible()) throw new Error('MANUAL_LOGIN_REQUIRED');
           var text = spacedText(o.card);
@@ -3153,6 +3275,26 @@
   var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|code utilis[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
   var GOG_REDEEM_CONFIRM_PATTERNS = [/^r[e\u00e9]cup[e\u00e9]rer$/i, /utiliser (le|ce|mon) code/i, /^utiliser$/i, /^redeem$/i, /redeem (the |this )?code/i, /ajouter [a\u00e0] (ma|la|votre) biblioth/i, /add to (my |your )?(account|library)/i, /^obtenir$/i, /^get it$/i, /^confirmer$/i, /^confirm$/i];
 
+  /* CE QUE L'ECHANGE GOG A LE DROIT DE CLIQUER.
+   *
+   * Le pendant de lunaClaimLabelAllowed : [type="submit"] designe un
+   * EMPLACEMENT dans un formulaire, pas une action. C'est le libelle qui dit
+   * ce que le bouton fait, et lui seul qui autorise le clic.
+   *
+   * Un bouton muet (icone seule, aucun texte) reste accepte : il a ete
+   * designe par le formulaire de #codeInput, et il n'annonce rien de payant.
+   * On refuse ce qui est ECRIT et suspect, pas ce qui se tait. */
+  var GOG_SUBMIT_PATTERNS = [/^continuer$/i, /^continue$/i, /^valider$/i, /^validate$/i, /^suivant$/i, /^next$/i, /^envoyer$/i, /^submit$/i, /^ok$/i, /^activer$/i, /^activate$/i];
+
+  function gogSubmitLabelAllowed(el) {
+    if (!el) return false;
+    var text = actionText(el) || String(el.value || '').replace(/\s+/g, ' ').trim();
+    if (looksPaid(text)) return false;
+    if (!text) return true;
+    return GOG_SUBMIT_PATTERNS.some(function (p) { return p.test(text); })
+      || GOG_REDEEM_CONFIRM_PATTERNS.some(function (p) { return p.test(text); });
+  }
+
   function gogRedeemRoot(form) {
     return (form && (form.closest('[class*="redeem" i], section, main') || form.parentElement)) || document.querySelector('[class*="redeem" i]') || document;
   }
@@ -3268,13 +3410,45 @@
       updatePendingRedeemCode(entry.code, { attempts: (entry.attempts || 0) + 1, lastTry: Date.now() });
       return sleep(600);
     }).then(function () {
-      log(PLATFORM, 'info', 'Code saisi, clic sur "' + (submit.textContent || submit.value || 'Continuer').trim() + '".');
-      submit.click();
+      var submitLabel = (actionText(submit) || String(submit.value || '').trim() || 'Continuer');
+      /* Un refus AVANT le clic ne brule pas d'essai : le code n'a pas ete
+         soumis. L'essai compte plus haut est donc rendu. */
+      function giveAttemptBack(detail, uiMsg) {
+        updatePendingRedeemCode(entry.code, { attempts: entry.attempts || 0 });
+        log(PLATFORM, 'error', detail);
+        updateUiState('error', uiMsg);
+        return Promise.reject('STOP');
+      }
+      if (!gogSubmitLabelAllowed(submit)) {
+        return giveAttemptBack('Bouton d\'envoi non reconnu sur ' + location.href + ' : "' + submitLabel
+          + '". Rien n\'est clique, le code reste en attente.', 'GOG : bouton d\'envoi non reconnu');
+      }
+      log(PLATFORM, 'info', 'Code saisi, clic sur "' + submitLabel + '".');
+      if (!robustClick(submit)) {
+        return giveAttemptBack('Clic refuse sur le bouton d\'envoi GOG (arret d\'urgence, libelle payant ou reclic).',
+          'GOG : clic refuse');
+      }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, false);
     }).then(function (outcome) {
       if (outcome.type !== 'confirm') return outcome;
-      log(PLATFORM, 'info', 'Jeu reconnu par GOG, clic sur "' + (outcome.button.textContent || '').trim() + '" pour l\'ajouter a la bibliotheque.');
-      outcome.button.click();
+      var confirmLabel = actionText(outcome.button) || 'confirmation';
+      if (!gogSubmitLabelAllowed(outcome.button)) {
+        log(PLATFORM, 'error', 'Bouton de confirmation GOG non reconnu : "' + confirmLabel + '". Rien n\'est clique.');
+        return { type: 'timeout', detail: 'confirmation non reconnue : ' + confirmLabel };
+      }
+      log(PLATFORM, 'info', 'Jeu reconnu par GOG, clic sur "' + confirmLabel + '" pour l\'ajouter a la bibliotheque.');
+      /* allowRepeat : GOG peut RELABELLISER le bouton d'envoi au lieu d'en
+         monter un second -- le repli de watchGogRedeemOutcome, qui ecarte
+         explicitement originalSubmit, dit que le cas a deja ete rencontre. La
+         confirmation arrive environ 1,5 s apres l'envoi, donc sous les 4 s de
+         repos de l'anti-rafale : sans cette exception nommee, le clic serait
+         refuse, l'echange finirait en timeout et UN CODE SERAIT BRULE pour
+         rien. L'arret d'urgence et le refus des libelles payants, eux,
+         s'appliquent toujours. */
+      if (!robustClick(outcome.button, { allowRepeat: true })) {
+        log(PLATFORM, 'error', 'Clic de confirmation refuse (arret d\'urgence ou libelle payant).');
+        return { type: 'timeout', detail: 'clic de confirmation refuse' };
+      }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, true);
     }).then(function (outcome) {
       var remaining;
@@ -3690,6 +3864,9 @@
       formatDelay: formatDelay,
       classifyGogWarning: classifyGogWarning,
       isCheckoutButton: isCheckoutButton,
+      looksPaid: looksPaid,
+      lunaClaimLabelAllowed: lunaClaimLabelAllowed,
+      gogSubmitLabelAllowed: gogSubmitLabelAllowed,
       robustClick: robustClick,
       findActionElement: findActionElement,
       findShortestActionElement: findShortestActionElement,
@@ -3717,6 +3894,9 @@
       checkoutGuardApplies: checkoutGuardApplies,
       detectSecurityChallenge: detectSecurityChallenge,
       LUNA_CLAIM_PATTERNS: LUNA_CLAIM_PATTERNS,
+      LUNA_CLAIM_LOOSE_PATTERNS: LUNA_CLAIM_LOOSE_PATTERNS,
+      LUNA_COMPLETE_PATTERNS: LUNA_COMPLETE_PATTERNS,
+      GOG_SUBMIT_PATTERNS: GOG_SUBMIT_PATTERNS,
       LUNA_CLAIMED_TEXT: LUNA_CLAIMED_TEXT,
       GOG_REDEEM_SUCCESS_TEXT: GOG_REDEEM_SUCCESS_TEXT,
       GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,

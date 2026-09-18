@@ -4,6 +4,81 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.18.0 -- 2026-09-18
+
+**Ce qui est ECRIT sur le bouton decide, pas le selecteur qui l'a trouve**
+
+Tout ce que la 2.15.3 -> 2.16.2 a construit pour Epic -- arret d'urgence,
+refus des libelles payants, anti-rafale, un clic = un clic -- vit dans
+`robustClick`. Or Luna et l'echange GOG appelaient `el.click()` en direct :
+sur ces parcours, le bouton d'arret d'urgence ne bloquait rien.
+
+### Le vrai manque n'etait pas robustClick
+
+- **Le moteur cliquait un bouton Luna sans jamais lire ce qui est ecrit
+  dessus.** La fiche d'une offre clique `[data-a-target="buy-box_call-to-action"]`,
+  un selecteur d'ATTRIBUT : « buy-box_call-to-action » est le nom d'un
+  emplacement, pas d'une action. La liste de motifs n'etait qu'un repli du
+  `||`, jamais consultee quand l'attribut avait deja trouve quelque chose. Le
+  jour ou Amazon y rend « S'abonner a Luna+ » ou « Acheter 19,99 EUR », rien ne
+  l'arretait -- et surtout pas le garde-caisse, qui s'efface sur `amazon.*`
+  comme sur `epicgames.com` et `gog.com` (PROVEN_HOSTS, a raison : le parcours
+  gratuit de ces trois magasins passe legitimement par un panier a zero).
+- **Un libelle payant est desormais refuse partout, quel que soit l'hote.**
+  `looksPaid()` refuse en tete de `robustClick` ce qui annonce une depense :
+  « Acheter », « Buy », « S'abonner », « Precommander », ou simplement un
+  montant suivi d'un symbole monetaire. C'est la derniere ligne, celle qui
+  tient meme si un appelant oublie sa liste d'autorisation.
+- **Deux listes d'autorisation par libelle**, sur le modele de celle d'Epic :
+  `lunaClaimLabelAllowed()` pour les cartes et les fiches Luna,
+  `gogSubmitLabelAllowed()` pour `gog.com/redeem`. Un bouton trouve par son
+  attribut doit encore DIRE qu'il reclame quelque chose de gratuit.
+- **Les variantes non ancrees, pour la troisieme fois.** Le `textContent` d'un
+  bouton concatene tous ses descendants : un span de lecteur d'ecran suffit a
+  faire echouer un motif en `^...$`. Luna a maintenant ses motifs larges,
+  comme Epic depuis la 2.16.1.
+
+### L'arret d'urgence coupe enfin la serie
+
+- Les cinq clics directs passent par `robustClick` -- et **lisent son retour**.
+  Brancher sans lire aurait rejoue le bug de la 2.16.0 : un clic refuse
+  consommant une etape en silence. Un clic refuse ne fait plus avancer aucun
+  compteur, et il se journalise.
+- **Le bouton d'arret d'urgence arrete la serie, pas seulement le clic.** Sans
+  cela, chaque fiche Luna aurait vu son clic refuse puis aurait navigue vers la
+  suivante : une serie qui continue en echouant n'est pas un arret. La file est
+  conservee, pour pouvoir reprendre.
+- L'etape intermediaire « Complete Claim » ne se declare plus franchie quand
+  son clic a ete refuse -- et elle ne se represente pas a chaque battement,
+  pour ne pas remplir le journal de refus previsibles.
+
+### Un code GOG ne se brule pas
+
+- **La confirmation `/redeem` est le seul site ou un refus coute quelque
+  chose** : un code echange est un code perdu. GOG peut RELABELLISER le bouton
+  d'envoi au lieu d'en monter un second -- le repli de `watchGogRedeemOutcome`,
+  qui ecarte explicitement `originalSubmit`, dit que le cas a deja ete
+  rencontre. La confirmation arrive environ 1,5 s apres l'envoi, donc sous les
+  4 s de repos de l'anti-rafale : le clic aurait ete refuse, l'echange aurait
+  fini en `timeout`, et le code aurait ete brule pour rien. D'ou
+  `{ allowRepeat: true }`, une exception NOMMEE qui ne leve que l'anti-rafale :
+  l'arret d'urgence et le refus des libelles payants s'appliquent toujours.
+- **Un refus AVANT l'envoi ne brule pas d'essai** : le code n'a pas ete soumis,
+  l'essai compte plus haut lui est rendu.
+
+### Mesure
+
+`test/label-guard.test.mjs` (11 tests). Celui qui compte : **un CTA Luna
+intitule « Acheter 19,99 EUR » n'est jamais clique** -- il echoue sur le moteur
+d'avant. Avec lui : dix offres donnent bien dix clics (l'anti-rafale memorise
+par noeud), `allowRepeat` ne leve ni l'arret d'urgence ni le refus des libelles
+payants, et un `<input type="submit">` est lu par son `value`.
+
+Ces tests portent sur les points de DECISION (les deux listes d'autorisation et
+`robustClick`), pas sur le parcours de page : aucune capture DOM de Luna ni de
+`gog.com/redeem` n'existe, et en fabriquer une prouverait surtout que la
+fabrication est fidele a elle-meme.
+
 ## 2.17.0 -- 2026-09-18
 
 **Les jeux de la semaine derniere s'en vont, et tout s'affiche en euros**

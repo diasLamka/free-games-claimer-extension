@@ -59,13 +59,45 @@
       updatePendingRedeemCode(entry.code, { attempts: (entry.attempts || 0) + 1, lastTry: Date.now() });
       return sleep(600);
     }).then(function () {
-      log(PLATFORM, 'info', 'Code saisi, clic sur "' + (submit.textContent || submit.value || 'Continuer').trim() + '".');
-      submit.click();
+      var submitLabel = (actionText(submit) || String(submit.value || '').trim() || 'Continuer');
+      /* Un refus AVANT le clic ne brule pas d'essai : le code n'a pas ete
+         soumis. L'essai compte plus haut est donc rendu. */
+      function giveAttemptBack(detail, uiMsg) {
+        updatePendingRedeemCode(entry.code, { attempts: entry.attempts || 0 });
+        log(PLATFORM, 'error', detail);
+        updateUiState('error', uiMsg);
+        return Promise.reject('STOP');
+      }
+      if (!gogSubmitLabelAllowed(submit)) {
+        return giveAttemptBack('Bouton d\'envoi non reconnu sur ' + location.href + ' : "' + submitLabel
+          + '". Rien n\'est clique, le code reste en attente.', 'GOG : bouton d\'envoi non reconnu');
+      }
+      log(PLATFORM, 'info', 'Code saisi, clic sur "' + submitLabel + '".');
+      if (!robustClick(submit)) {
+        return giveAttemptBack('Clic refuse sur le bouton d\'envoi GOG (arret d\'urgence, libelle payant ou reclic).',
+          'GOG : clic refuse');
+      }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, false);
     }).then(function (outcome) {
       if (outcome.type !== 'confirm') return outcome;
-      log(PLATFORM, 'info', 'Jeu reconnu par GOG, clic sur "' + (outcome.button.textContent || '').trim() + '" pour l\'ajouter a la bibliotheque.');
-      outcome.button.click();
+      var confirmLabel = actionText(outcome.button) || 'confirmation';
+      if (!gogSubmitLabelAllowed(outcome.button)) {
+        log(PLATFORM, 'error', 'Bouton de confirmation GOG non reconnu : "' + confirmLabel + '". Rien n\'est clique.');
+        return { type: 'timeout', detail: 'confirmation non reconnue : ' + confirmLabel };
+      }
+      log(PLATFORM, 'info', 'Jeu reconnu par GOG, clic sur "' + confirmLabel + '" pour l\'ajouter a la bibliotheque.');
+      /* allowRepeat : GOG peut RELABELLISER le bouton d'envoi au lieu d'en
+         monter un second -- le repli de watchGogRedeemOutcome, qui ecarte
+         explicitement originalSubmit, dit que le cas a deja ete rencontre. La
+         confirmation arrive environ 1,5 s apres l'envoi, donc sous les 4 s de
+         repos de l'anti-rafale : sans cette exception nommee, le clic serait
+         refuse, l'echange finirait en timeout et UN CODE SERAIT BRULE pour
+         rien. L'arret d'urgence et le refus des libelles payants, eux,
+         s'appliquent toujours. */
+      if (!robustClick(outcome.button, { allowRepeat: true })) {
+        log(PLATFORM, 'error', 'Clic de confirmation refuse (arret d\'urgence ou libelle payant).');
+        return { type: 'timeout', detail: 'clic de confirmation refuse' };
+      }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, true);
     }).then(function (outcome) {
       var remaining;

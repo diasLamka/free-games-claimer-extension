@@ -104,7 +104,27 @@
     return (Date.now() - seen.last) < CONFIG.clickCooldownMs;
   }
 
-  function robustClick(el) {
+  /* Un libelle qui annonce une DEPENSE.
+   *
+   * Complement du garde-caisse, et non son doublon : celui-la regarde la
+   * structure (champ de montant, bouton d'un prestataire) et s'efface sur les
+   * magasins eprouves, ou le parcours gratuit passe legitimement par un panier
+   * a zero. Celui-ci regarde ce qui est ECRIT sur le bouton, et vaut partout.
+   *
+   * Il existe parce qu'un bouton Luna est trouve par son attribut
+   * "data-a-target", jamais par son texte : le jour ou Amazon rend
+   * " S'abonner a Luna+ " ou " Acheter 19,99 EUR " dans la meme buy-box, rien
+   * ne l'arretait. Les mots de panier en sont volontairement absents : Epic
+   * fait cliquer "Ajouter au panier" sur un total a zero.
+   */
+  var PAID_LABEL = /\bacheter\b|\bbuy\b|\bpayer\b|\bpay now\b|\bs['\u2019]abonner\b|\bsubscribe\b|\babonnement\b|\bpr[e\u00e9]commander\b|\bpre-?order\b|\bupgrade\b|\d[\d\s.,]*\s*[\u20ac$\u00a3]|[\u20ac$\u00a3]\s*\d/i;
+
+  function looksPaid(text) {
+    return PAID_LABEL.test(String(text || ''));
+  }
+
+  function robustClick(el, options) {
+    options = options || {};
     if (!el) return false;
 
     if (emergencyStopped()) {
@@ -112,7 +132,22 @@
       return false;
     }
 
-    if (isRepeatClick(el)) {
+    /* Le libelle prime sur l'attribut qui a servi a trouver le bouton. Un
+       "Acheter 19,99 EUR" ne se clique jamais, quel que soit le selecteur qui
+       l'a designe et quel que soit l'hote. */
+    if (looksPaid(actionText(el))) {
+      log('CORE', 'error', 'Clic REFUSE : ce libelle annonce une depense.', {
+        text: actionText(el).slice(0, 60)
+      });
+      return false;
+    }
+
+    /* "allowRepeat" : une SECONDE action, voulue, sur le meme noeud -- le cas
+       de l'echange GOG, ou le bouton d'envoi peut etre relabellise en bouton
+       de confirmation au lieu d'etre remplace. L'arret d'urgence, le
+       garde-caisse et le refus des libelles payants, eux, s'appliquent
+       toujours : ce n'est pas une porte de sortie, c'est une exception nommee. */
+    if (!options.allowRepeat && isRepeatClick(el)) {
       var journal = clickHistoryFor(el);
       // Une seule ligne par bouton : l'avertissement doit rester lisible, pas
       // remplir la console au rythme des sondes.
@@ -197,7 +232,9 @@
   // plusieurs descendants, ce qui donne des blancs multiples dans textContent.
   // Un motif ancre en ^...$ echouait dessus alors que le bouton etait le bon.
   function actionText(el) {
-    return (el.textContent || '').replace(/\s+/g, ' ').trim();
+    /* Tolerant a l'absence de noeud : cette fonction sert autant a decider
+       qu'a journaliser, et un message d'erreur ne doit pas lever une erreur. */
+    return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim();
   }
 
   function findActionElement(root, patterns, options) {
