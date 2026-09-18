@@ -305,6 +305,12 @@
   "languageAuto": {
     "message": "Langue du navigateur"
   },
+  "countryLabel": {
+    "message": "Pays de la boutique"
+  },
+  "countryHint": {
+    "message": "Epic sert ses prix et ses dates dans ce pays. GOG et GamerPower n'acceptent aucun pays : ce reglage ne les change pas. La devise affichee suit ce choix."
+  },
   "hideOwnedLabel": {
     "message": "Masquer les jeux que je possède déjà"
   },

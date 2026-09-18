@@ -27,6 +27,7 @@ import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { ownedKeys } from './library.js';
 import { refreshRates } from './rates.js';
+import { currencyFor } from './locale.js';
 import { split } from './filters.js';
 import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched,
@@ -260,7 +261,15 @@ export async function runCycle({
 
       let r;
       try {
-        r = await source.discover({ fetch: fetchImpl, now });
+        /* Le pays et la langue ne concernent qu'Epic -- seul magasin a exposer
+           ces parametres. Les autres sources les ignorent, et c'est plus sain
+           que de leur inventer une option qu'elles n'honoreraient pas. */
+        r = await source.discover({
+          fetch: fetchImpl,
+          now,
+          country: ctx.locale && ctx.locale.country,
+          lang: ctx.locale && ctx.locale.lang,
+        });
       } catch (e) {
         r = { offers: [], errors: [(e && e.message) || String(e)] };
       }
@@ -398,7 +407,12 @@ export async function runCycle({
        dollars. Une panne de taux ne fait jamais echouer un cycle : le pire
        qu'elle produise est un montant affiche dans sa devise d'origine. */
     const rateRun = await refreshRates({
-      now, stored: ctx.rates, fetch: fetchImpl, record,
+      now,
+      stored: ctx.rates,
+      fetch: fetchImpl,
+      record,
+      // La devise visee suit le pays choisi, au lieu d'etre l'euro en dur.
+      base: currencyFor(ctx.locale && ctx.locale.country),
     });
 
     // Persister AVANT de notifier. Une mort du worker entre les deux coute une

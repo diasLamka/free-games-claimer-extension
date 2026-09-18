@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.19.1
+ * FREE GAMES AUTO-CLAIMER -- v2.20.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -72,13 +72,19 @@
     // (watch/claim.js), et la verification finale doit tenir dans ce budget.
     epicPurchaseSettleMaxMs: 150000,
     epicPurchaseStuckNoticeMs: 60000,
-    epicFreeGamesApiUrls: [
-      'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
-      'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR'
+    // Les deux hotes de l'API, SANS parametres : le pays et la langue sont
+    // desormais un reglage (getEpicApiUrls), plus une URL figee recopiee ici et
+    // dans watch/sources/epic.js. Le second hote est la voie IPv4 pure.
+    epicApiHosts: [
+      'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions',
+      'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions'
     ],
     // Nouveau schema d'URL Epic : plus de prefixe de langue dans le chemin,
     // la langue passe en parametre ?lang=xx (mettre '' pour laisser Epic choisir).
     epicStoreOrigin: 'https://store.epicgames.com',
+    // Defauts CABLES, et ils comptent : en userscript il n'y a pas de popup
+    // pour ecrire ces cles, et le moteur doit savoir quoi faire sans stockage.
+    epicCountry: 'FR',
     epicLang: 'fr',
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.
@@ -1001,9 +1007,44 @@
     return s;
   }
 
+  /* PAYS ET LANGUE DE LA BOUTIQUE.
+   *
+   * Lus dans le stockage, avec les defauts cables de CONFIG. Le popup les
+   * ecrit, la veille les relit dans le meme espace (watch/storage.js), et le
+   * moteur ici : un seul reglage, trois lecteurs, aucune recopie.
+   *
+   * La lecture est SYNCHRONE (GM_getValue) parce qu'elle sert a construire une
+   * URL au moment de l'appel -- d'ou le prechargement de ces deux cles dans
+   * ENGINE_KEYS (gm-shim.js). En userscript, GM_getValue est natif et rend le
+   * defaut cable tant que rien n'a ete ecrit.
+   *
+   * La forme est verifiee plutot que la valeur : un code a deux lettres passe,
+   * le reste retombe sur le defaut. Le moteur n'a pas besoin de la table des
+   * pays -- c'est le popup qui borne le choix (watch/locale.js). */
+  function getEpicCountry() {
+    var raw = String(GM_getValue('FGC_epic_country', CONFIG.epicCountry) || '').trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(raw) ? raw : CONFIG.epicCountry;
+  }
+
+  function getEpicLang() {
+    var raw = String(GM_getValue('FGC_epic_lang', CONFIG.epicLang) || '').trim().toLowerCase();
+    return /^[a-z]{2}$/.test(raw) ? raw : CONFIG.epicLang;
+  }
+
+  function getEpicApiUrls() {
+    var country = getEpicCountry();
+    var locale = getEpicLang() + '-' + country;
+    return CONFIG.epicApiHosts.map(function (host) {
+      return host + '?locale=' + encodeURIComponent(locale)
+        + '&country=' + encodeURIComponent(country)
+        + '&allowCountries=' + encodeURIComponent(country);
+    });
+  }
+
   function epicStoreUrl(path) {
     var url = CONFIG.epicStoreOrigin + path;
-    if (CONFIG.epicLang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(CONFIG.epicLang);
+    var lang = getEpicLang();
+    if (lang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(lang);
     return url;
   }
 
@@ -1614,7 +1655,7 @@
   }
 
   function fetchCurrentEpicFreebies() {
-    var urls = CONFIG.epicFreeGamesApiUrls.slice();
+    var urls = getEpicApiUrls();
     var lastErr = null;
 
     function tryNext(index) {
@@ -3841,6 +3882,9 @@
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
       epicStoreUrl: epicStoreUrl,
+      getEpicCountry: getEpicCountry,
+      getEpicLang: getEpicLang,
+      getEpicApiUrls: getEpicApiUrls,
       buildEpicUrl: buildEpicUrl,
       isEpicNotFoundPage: isEpicNotFoundPage,
       platformNameForHost: platformNameForHost,

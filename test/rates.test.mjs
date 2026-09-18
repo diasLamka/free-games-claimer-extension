@@ -13,7 +13,7 @@ import {
   parseRates,
   shouldRefresh,
   tooOld,
-  toEuros,
+  toBase,
   refreshRates,
   REFRESH_AFTER_MS,
   TRUST_FOR_MS,
@@ -53,37 +53,37 @@ test('une reponse illisible est refusee, jamais devinee', () => {
 
 test('un montant en dollars devient des euros', () => {
   // 19,99 $ a 1,08 $ pour un euro : environ 18,51 euros.
-  const euros = toEuros(19.99, 'USD', tauxConnu(), T);
+  const euros = toBase(19.99, 'USD', tauxConnu(), T);
   assert.ok(Math.abs(euros - 18.5093) < 0.001, String(euros));
 });
 
 test('un montant deja en euros n\'est jamais touche', () => {
-  assert.equal(toEuros(23.99, 'EUR', tauxConnu(), T), 23.99);
+  assert.equal(toBase(23.99, 'EUR', tauxConnu(), T), 23.99);
   /* Meme sans aucun taux : l'euro n'a pas besoin d'etre converti en euro. */
-  assert.equal(toEuros(23.99, 'EUR', null, T), 23.99);
+  assert.equal(toBase(23.99, 'EUR', null, T), 23.99);
 });
 
 test('sans taux, on ne convertit pas -- on ne devine pas', () => {
-  assert.equal(toEuros(19.99, 'USD', null, T), null);
-  assert.equal(toEuros(19.99, 'USD', { rates: {} }, T), null);
+  assert.equal(toBase(19.99, 'USD', null, T), null);
+  assert.equal(toBase(19.99, 'USD', { rates: {} }, T), null);
   /* Une devise que la BCE ne publie pas : idem, silence plutot qu'invention. */
-  assert.equal(toEuros(19.99, 'JPY', tauxConnu(), T), null);
+  assert.equal(toBase(19.99, 'JPY', tauxConnu(), T), null);
 });
 
 test('un taux trop vieux cesse de servir', () => {
   const vieux = tauxConnu();
-  assert.ok(Number.isFinite(toEuros(10, 'USD', vieux, T + TRUST_FOR_MS - 1000)));
+  assert.ok(Number.isFinite(toBase(10, 'USD', vieux, T + TRUST_FOR_MS - 1000)));
   /* Un taux de la semaine derniere reste un ordre de grandeur honnete ; un
      taux d'il y a six mois n'en est plus un. Le montant redevient alors
      visiblement en dollars, plutot qu'en euros faux. */
-  assert.equal(toEuros(10, 'USD', vieux, T + TRUST_FOR_MS), null);
+  assert.equal(toBase(10, 'USD', vieux, T + TRUST_FOR_MS), null);
   assert.ok(tooOld(vieux, T + TRUST_FOR_MS));
 });
 
 test('un montant illisible ne produit pas un euro', () => {
-  assert.equal(toEuros(NaN, 'USD', tauxConnu(), T), null);
-  assert.equal(toEuros(null, 'USD', tauxConnu(), T), null);
-  assert.equal(toEuros(10, null, tauxConnu(), T), null);
+  assert.equal(toBase(NaN, 'USD', tauxConnu(), T), null);
+  assert.equal(toBase(null, 'USD', tauxConnu(), T), null);
+  assert.equal(toBase(10, null, tauxConnu(), T), null);
 });
 
 /* ------------------------------------------------------ rafraichissement */

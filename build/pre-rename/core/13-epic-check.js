@@ -1,5 +1,5 @@
   function fetchCurrentEpicFreebies() {
-    var urls = CONFIG.epicFreeGamesApiUrls.slice();
+    var urls = getEpicApiUrls();
     var lastErr = null;
 
     function tryNext(index) {

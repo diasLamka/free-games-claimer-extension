@@ -21,7 +21,8 @@ import { STORE_LABELS, STORES, normaliseTitle } from './watch/offer.js';
 import {
   preview, judge, REASONS, readWorth, readCurrency, UNKNOWN_CURRENCY,
 } from './watch/filters.js';
-import { KEY_RATES, toEuros } from './watch/rates.js';
+import { KEY_RATES, toBase, baseOf } from './watch/rates.js';
+import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from './watch/locale.js';
 import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
 import { CLAIMABLE_STORES } from './watch/sources/index.js';
@@ -147,6 +148,7 @@ const KEYS_READ = [
   KEY_STATE, KEY_SOURCES, KEY_SETTINGS, KEY_CATALOG, KEY_FILTERS, KEY_STATS, KEY_UI, KEY_STOP, KEY_LIBRARY,
   KEY_RATES,
   KEY_CANARY,
+  KEY_COUNTRY, KEY_LANG,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -1216,13 +1218,18 @@ function money(n, currency) {
 function worthLabel(raw, now) {
   const original = String(raw);
   const currency = readCurrency(raw);
-  if (!currency || currency === 'EUR') return { text: original, approx: false, title: '' };
+  /* La devise VISEE est celle de la table de taux, pas celle du reglage : une
+     table encore dans l'ancienne base ne sait pas convertir vers la nouvelle,
+     et afficher une devise qu'on n'a pas su calculer serait un chiffre
+     invente. Le cycle suivant rebase la table (`refreshRates`). */
+  const target = baseOf(ratesCache);
+  if (!currency || currency === target) return { text: original, approx: false, title: '' };
 
-  const euros = toEuros(readWorth(raw), currency, ratesCache, now);
-  if (euros === null) return { text: original, approx: false, title: '' };
+  const converted = toBase(readWorth(raw), currency, ratesCache, now);
+  if (converted === null) return { text: original, approx: false, title: '' };
 
   return {
-    text: `\u2248 ${money(euros, 'EUR')}`,
+    text: `\u2248 ${money(converted, target)}`,
     approx: true,
     title: t('approxFrom', original, (ratesCache && ratesCache.date) || '?'),
   };
@@ -1237,24 +1244,25 @@ function worthLabel(raw, now) {
  * pas pu etre converti garde sa devise, a cote, plutot que de disparaitre.
  */
 function moneyTotals(totals = {}, now = Date.now()) {
+  const target = baseOf(ratesCache);
   const entries = Object.entries(totals);
-  if (!entries.length) return money(0, 'EUR');
+  if (!entries.length) return money(0, target);
 
   let sum = 0;
   let converted = false;
-  let anyEuro = false;
+  let anyNative = false;
   const untouched = [];
 
   for (const [currency, amount] of entries) {
-    if (currency === 'EUR') { sum += amount; anyEuro = true; continue; }
-    const euros = toEuros(amount, currency, ratesCache, now);
-    if (euros === null) { untouched.push(money(amount, currency)); continue; }
-    sum += euros;
+    if (currency === target) { sum += amount; anyNative = true; continue; }
+    const inBase = toBase(amount, currency, ratesCache, now);
+    if (inBase === null) { untouched.push(money(amount, currency)); continue; }
+    sum += inBase;
     converted = true;
   }
 
-  if (!converted && !anyEuro) return untouched.join(' + ');
-  const head = (converted ? '\u2248 ' : '') + money(sum, 'EUR');
+  if (!converted && !anyNative) return untouched.join(' + ');
+  const head = (converted ? '\u2248 ' : '') + money(sum, target);
   return untouched.length ? [head, ...untouched].join(' + ') : head;
 }
 
@@ -1275,7 +1283,10 @@ let seuilDevise = null;
  * taux dans un module pur, et de le faire entrer dans ses tests.
  */
 function thresholdCurrency() {
-  return 'EUR';
+  /* Le curseur, lui, parle la devise du PAYS choisi et non celle de la table :
+     c'est le seuil de l'utilisateur, pas une conversion. Il prend donc effet
+     des le changement de pays, sans attendre un cycle. */
+  return currencyFor(localeCache.country);
 }
 
 /* ------------------------------------------------------------ code backup */
@@ -1355,6 +1366,19 @@ function applyLook() {
   document.getElementById('sort').value = ui.sort;
 }
 
+/* Le selecteur de pays est rempli DEPUIS la table : une liste recopiee dans
+   le HTML finirait par proposer un pays que la veille refuse. */
+function fillCountries() {
+  const select = document.getElementById('epic-country');
+  if (!select || select.options.length) return;
+  for (const [code, info] of Object.entries(COUNTRIES)) {
+    const option = document.createElement('option');
+    option.value = code;
+    option.textContent = `${info.label} (${info.currency})`;
+    select.append(option);
+  }
+}
+
 /* -------------------------------------------------------------------- load */
 
 let behaviourCache = { ...DEFAULT_BEHAVIOUR };
@@ -1362,6 +1386,10 @@ let behaviourCache = { ...DEFAULT_BEHAVIOUR };
 /* Le taux du jour, pose par le cycle de veille (watch/rates.js). Null tant
    qu'aucun cycle n'a tourne : les montants restent alors dans leur devise. */
 let ratesCache = null;
+
+/* Le pays et la langue choisis. Defaut cable : l'extension doit savoir quoi
+   faire avant toute lecture de stockage. */
+let localeCache = { country: normaliseCountry(null), lang: normaliseLang(null, null) };
 
 async function load() {
   return withWorking(render);
@@ -1373,6 +1401,10 @@ async function render() {
   ui = { ...DEFAULT_UI, ...get(all, KEY_UI, {}) };
   behaviourCache = { ...DEFAULT_BEHAVIOUR, ...get(all, KEY_SETTINGS, {}) };
   ratesCache = get(all, KEY_RATES, null);
+  localeCache = {
+    country: normaliseCountry(all[KEY_COUNTRY]),
+    lang: normaliseLang(all[KEY_LANG], all[KEY_COUNTRY]),
+  };
 
   setLocale(ui.language === 'auto' ? null : ui.language);
   translateDocument();
@@ -1398,6 +1430,7 @@ async function render() {
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
   document.getElementById('luna-auto').checked = all.FGC_luna_auto_mode !== false;
   document.getElementById('luna-dlc').checked = all.FGC_luna_claim_dlc !== false;
+  document.getElementById('epic-country').value = localeCache.country;
 
   const state = get(all, KEY_STATE, {});
 
@@ -1528,6 +1561,15 @@ document.getElementById('search').addEventListener('input', async (e) => {
 document.getElementById('sort').addEventListener('change', (e) => writeUi({ sort: e.target.value }));
 document.getElementById('theme').addEventListener('change', (e) => writeUi({ theme: e.target.value }));
 document.getElementById('language').addEventListener('change', (e) => writeUi({ language: e.target.value }));
+/* Un seul reglage, deux lecteurs : la veille le relit dans le meme espace de
+   stockage (watch/storage.js) et le moteur par GM_getValue. La langue suit le
+   pays -- c'est la langue de la BOUTIQUE, pas celle de l'interface, qui a son
+   propre reglage juste au-dessus. */
+document.getElementById('epic-country').addEventListener('change', async (e) => {
+  const country = normaliseCountry(e.target.value);
+  await setValue(KEY_COUNTRY, country);
+  await setValue(KEY_LANG, normaliseLang(null, country));
+});
 document.getElementById('hide-owned').addEventListener('change', (e) => writeUi({ hideOwned: e.target.checked }));
 
 document.getElementById('show-all-log').addEventListener('click', () => writeUi({ showAllLog: !ui.showAllLog }));
@@ -1787,4 +1829,5 @@ showTab('games');
    dans les reglages. Pose plus tot, l'invite restait dans celle du navigateur.
    Elle dit pourquoi sauvegarder : le catalogue se refait en un cycle, les codes
    jamais. */
+fillCountries();
 load().then(() => say(t('backupHint')));

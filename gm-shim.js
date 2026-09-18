@@ -24,6 +24,10 @@
     'FGC_epic_auto_mode',
     'FGC_luna_auto_mode',
     'FGC_luna_claim_dlc',
+    // Pays et langue de la boutique : lus de facon SYNCHRONE pour construire
+    // l'URL de l'API Epic, donc prechargees comme l'arret d'urgence.
+    'FGC_epic_country',
+    'FGC_epic_lang',
     'FGC_pending_codes',
     'FGC_schema_version',
     // platformNameForHost() : ces trois noms couvrent tous les hotes injectes.

@@ -64,6 +64,20 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   sur un hote deja autorise. Le controle sans filtre a evite le piege d'un
   endpoint desaffecte qui aurait repondu « rien » eternellement sans jamais
   echouer.
+- **GOG dit lui-meme si sa liste est complete** (2.19.0). La mesure de
+  pagination que cette feuille de route attendait n'est plus a prendre : la
+  reponse porte `page` et `totalPages`, donc la source publie un `complete` PAR
+  REPONSE et GOG fait autorite sur son magasin quand il annonce une page
+  unique. Le jour ou il en annonce plusieurs, la veille cesse d'elle-meme d'en
+  conclure des disparitions, et le journal l'ecrit.
+- **La prediction ancree sur un fuseau nomme** (2.19.1). Les cases de
+  l'histogramme glissaient d'une heure a chaque changement d'heure ; la
+  demi-fenetre chaude vaut 30 minutes, donc la derive faisait manquer le
+  creneau entierement. Les cases existantes sont transposees, pas jetees.
+- **Le pays de la boutique est un reglage** (2.20.0), ecrit a un seul endroit et
+  lu par les trois couches. Mesure au passage : GOG et GamerPower n'acceptent
+  aucun parametre de pays -- le reglage ne concerne qu'Epic, et la devise
+  affichee.
 
 ---
 

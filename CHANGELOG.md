@@ -4,6 +4,61 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.20.0 -- 2026-09-18
+
+**Le pays de la boutique devient un reglage, ecrit a un seul endroit**
+
+`locale=fr-FR&country=FR&allowCountries=FR` etait recopie dans
+`watch/sources/epic.js` ET dans `src/core/01-config.js`, et le reglage de langue
+de l'interface ne touchait ni l'un ni l'autre. Un utilisateur belge, suisse ou
+canadien lisait des prix francais.
+
+### Ce que ce reglage fait -- et ce qu'il ne fait pas
+
+- **Il ne concerne qu'Epic**, et c'est une mesure, pas une limite de mise en
+  oeuvre : **GOG et GamerPower n'acceptent aucun parametre de pays**. Leurs
+  reponses ne changent pas d'un pays a l'autre, et un test le verifie plutot
+  que de le promettre. Steam est detecte, jamais reclame.
+- Un selecteur de pays dans les reglages, rempli DEPUIS la table des pays --
+  une liste recopiee dans le HTML finirait par proposer un pays que la veille
+  refuse.
+- **Un seul reglage, trois lecteurs, aucune recopie** : le popup l'ecrit sous
+  les cles du moteur (`FGC_epic_country`, `FGC_epic_lang`), la veille les relit
+  dans le meme espace de stockage, le moteur par `GM_getValue`. Ces deux cles
+  rejoignent `ENGINE_KEYS` : la lecture doit etre SYNCHRONE, elle sert a
+  construire une URL au moment de l'appel.
+- **Un defaut cable des deux cotes** (`FR`/`fr`) : en userscript il n'y a pas de
+  popup pour ecrire ces cles, et le moteur doit savoir quoi faire sans
+  stockage. Sans reglage, l'URL construite est exactement celle d'avant.
+- **La table des pays est close**, et c'est deliberement conservateur :
+  accepter un code quelconque obligerait a deviner sa devise, et un montant
+  converti dans une devise devinee serait un chiffre invente. Le moteur, lui,
+  ne porte pas la table -- il verifie la FORME (deux lettres) et retombe sur le
+  defaut, parce que c'est le popup qui borne le choix.
+
+### La devise suit le pays
+
+Un pays reglable ne rend PAS la conversion de la 2.17.0 inutile : Epic sert
+bien la devise du compte, mais l'agregateur ne publie que des dollars -- c'est
+structurel chez lui, sa structure ne porte meme pas de code de devise.
+
+- La devise visee cesse d'etre l'euro en dur : elle suit le pays choisi
+  (`CHF` en Suisse, `CAD` au Canada...), et la table de taux est demandee dans
+  cette base.
+- **Un changement de pays fait redemander le taux avant l'heure** : une table
+  dans l'ancienne base ne sait plus convertir vers la bonne, meme fraiche.
+- L'affichage vise la base de la TABLE, pas celle du reglage : afficher une
+  devise qu'on n'a pas su calculer serait un chiffre invente. Le decalage dure
+  au plus un cycle.
+
+### Mesure
+
+`test/locale.test.mjs` (15 tests), dont une **parite moteur / veille** sur les
+quatorze pays proposes -- la meme promesse que `test/epic-parite.test.mjs` pour
+les slugs : deux implementations, une seule verite. La duplication ne peut pas
+disparaitre (le moteur est en ES5 concatene et tourne aussi en userscript), donc
+elle est tenue par un test.
+
 ## 2.19.1 -- 2026-09-18
 
 **La prediction ne derive plus d'une heure deux fois par an**

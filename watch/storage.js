@@ -17,6 +17,7 @@
 import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
 import { schedulesWithDefaults } from './schedule/rules.js';
 import { KEY_RATES } from './rates.js';
+import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale.js';
 /* Le canari possede sa cle, comme la bibliotheque et le journal. Elle est
    importee ici pour une raison precise : son etat doit s'ecrire dans la MEME
    transition que le catalogue et la cadence, sans quoi un worker mort entre
@@ -278,6 +279,12 @@ export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
     KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY, KEY_RATES,
+    /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
+       de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
+       par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
+       reglage recopie a deux endroits finit toujours par diverger -- c'est le
+       defaut meme que ce chantier corrige. */
+    KEY_COUNTRY, KEY_LANG,
   ]);
   return {
     catalog: raw[KEYS.OFFERS] || {},
@@ -294,6 +301,10 @@ export async function readContext(chrome) {
     canary: raw[KEY_CANARY] || {},
     library: raw[KEY_LIBRARY] || {},
     rates: raw[KEY_RATES] || null,
+    locale: {
+      country: normaliseCountry(raw[KEY_COUNTRY]),
+      lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),
+    },
   };
 }
 

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.19.1.js",
-  "sha256": "0401CEAA7D10F6579972347C37BD18CA863F30925097C5E6AE1900081C6727F9",
-  "octets": 204160,
-  "version": "2.19.1",
-  "motif": "2.19.1 : la prediction ancree sur un fuseau nomme"
+  "fichier": "reference-v2.20.0.js",
+  "sha256": "616D7792D01FE22F3AF8D0F3AC94B01DD696521E99723545A1AF7BA8CA90599B",
+  "octets": 206138,
+  "version": "2.20.0",
+  "motif": "2.20.0 : le pays de la boutique est un reglage"
 }

@@ -20,9 +20,44 @@
     return s;
   }
 
+  /* PAYS ET LANGUE DE LA BOUTIQUE.
+   *
+   * Lus dans le stockage, avec les defauts cables de CONFIG. Le popup les
+   * ecrit, la veille les relit dans le meme espace (watch/storage.js), et le
+   * moteur ici : un seul reglage, trois lecteurs, aucune recopie.
+   *
+   * La lecture est SYNCHRONE (GM_getValue) parce qu'elle sert a construire une
+   * URL au moment de l'appel -- d'ou le prechargement de ces deux cles dans
+   * ENGINE_KEYS (gm-shim.js). En userscript, GM_getValue est natif et rend le
+   * defaut cable tant que rien n'a ete ecrit.
+   *
+   * La forme est verifiee plutot que la valeur : un code a deux lettres passe,
+   * le reste retombe sur le defaut. Le moteur n'a pas besoin de la table des
+   * pays -- c'est le popup qui borne le choix (watch/locale.js). */
+  function getEpicCountry() {
+    var raw = String(GM_getValue('FGC_epic_country', CONFIG.epicCountry) || '').trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(raw) ? raw : CONFIG.epicCountry;
+  }
+
+  function getEpicLang() {
+    var raw = String(GM_getValue('FGC_epic_lang', CONFIG.epicLang) || '').trim().toLowerCase();
+    return /^[a-z]{2}$/.test(raw) ? raw : CONFIG.epicLang;
+  }
+
+  function getEpicApiUrls() {
+    var country = getEpicCountry();
+    var locale = getEpicLang() + '-' + country;
+    return CONFIG.epicApiHosts.map(function (host) {
+      return host + '?locale=' + encodeURIComponent(locale)
+        + '&country=' + encodeURIComponent(country)
+        + '&allowCountries=' + encodeURIComponent(country);
+    });
+  }
+
   function epicStoreUrl(path) {
     var url = CONFIG.epicStoreOrigin + path;
-    if (CONFIG.epicLang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(CONFIG.epicLang);
+    var lang = getEpicLang();
+    if (lang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(lang);
     return url;
   }
 

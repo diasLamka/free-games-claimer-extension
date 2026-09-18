@@ -43,13 +43,19 @@
     // (watch/claim.js), et la verification finale doit tenir dans ce budget.
     epicPurchaseSettleMaxMs: 150000,
     epicPurchaseStuckNoticeMs: 60000,
-    epicFreeGamesApiUrls: [
-      'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
-      'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR'
+    // Les deux hotes de l'API, SANS parametres : le pays et la langue sont
+    // desormais un reglage (getEpicApiUrls), plus une URL figee recopiee ici et
+    // dans watch/sources/epic.js. Le second hote est la voie IPv4 pure.
+    epicApiHosts: [
+      'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions',
+      'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions'
     ],
     // Nouveau schema d'URL Epic : plus de prefixe de langue dans le chemin,
     // la langue passe en parametre ?lang=xx (mettre '' pour laisser Epic choisir).
     epicStoreOrigin: 'https://store.epicgames.com',
+    // Defauts CABLES, et ils comptent : en userscript il n'y a pas de popup
+    // pour ecrire ces cles, et le moteur doit savoir quoi faire sans stockage.
+    epicCountry: 'FR',
     epicLang: 'fr',
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.

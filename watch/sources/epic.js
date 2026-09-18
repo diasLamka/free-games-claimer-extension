@@ -13,16 +13,15 @@
  * les deux rendent exactement la meme chose sur les memes entrees.
  */
 import { makeOffer, STORES } from '../offer.js';
+import { epicApiUrls, DEFAULT_COUNTRY, DEFAULT_LANG } from '../locale.js';
 
 export const NAME = 'epic-api';
 
-export const API_URLS = Object.freeze([
-  'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
-  'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=fr-FR&country=FR&allowCountries=FR',
-]);
+/** Les URL par defaut : celles du pays cable, quand rien n'a ete choisi. */
+export const API_URLS = Object.freeze(epicApiUrls(DEFAULT_COUNTRY, DEFAULT_LANG));
 
 export const STORE_ORIGIN = 'https://store.epicgames.com';
-export const LANG = 'fr';
+export const LANG = DEFAULT_LANG;
 
 /* ------------------------------------------------------------------- slugs */
 
@@ -306,10 +305,20 @@ export function mapElements(elements, now) {
  * Les deux hotes de l'API sont essayes dans l'ordre -- le second est la voie
  * IPv4, utile quand la resolution IPv6 echoue chez certains fournisseurs.
  */
-export async function discover({ fetch: fetchImpl = fetch, now = Date.now(), urls = API_URLS } = {}) {
+export async function discover({
+  fetch: fetchImpl = fetch,
+  now = Date.now(),
+  country = null,
+  lang = null,
+  urls = null,
+} = {}) {
   const errors = [];
+  /* Le pays choisi commande l'URL. Epic est le SEUL magasin qui expose ces
+     parametres : GOG et GamerPower n'en acceptent aucun, et leurs sources
+     ignorent donc ces deux arguments. */
+  const targets = urls || (country || lang ? epicApiUrls(country, lang) : API_URLS);
 
-  for (const url of urls) {
+  for (const url of targets) {
     try {
       const response = await fetchImpl(url, {
         credentials: 'omit',

@@ -31,8 +31,13 @@
 
 export const KEY_RATES = 'veille:taux';
 
-/** Un euro vaut combien de chaque devise. */
-export const RATES_URL = 'https://api.frankfurter.app/latest?from=EUR';
+/** Une unite de la devise de base vaut combien de chaque autre devise. */
+export function ratesUrl(base = 'EUR') {
+  return `https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`;
+}
+
+/** L'adresse par defaut, quand aucun pays n'a ete choisi. */
+export const RATES_URL = ratesUrl('EUR');
 
 /** Au-dela, on redemande. La BCE ne publie qu'une fois par jour ouvre. */
 export const REFRESH_AFTER_MS = 24 * 60 * 60 * 1000;
@@ -66,6 +71,8 @@ export function parseRates(payload, now) {
   if (!Object.keys(rates).length) return null;
 
   return {
+    // La devise de base que l'API dit avoir utilisee, pas celle qu'on croyait
+    // demander : c'est elle qui decide ce que la table sait convertir.
     base: typeof payload.base === 'string' ? payload.base : 'EUR',
     // La date que la BCE donne a SON taux, pas l'instant du telechargement :
     // c'est elle qu'on montre a l'utilisateur.
@@ -87,19 +94,28 @@ export function tooOld(stored, now, trustMs = TRUST_FOR_MS) {
   return now - stored.fetchedAt >= trustMs;
 }
 
+/** La devise vers laquelle une table de taux sait convertir. */
+export function baseOf(stored) {
+  return (stored && typeof stored.base === 'string' && stored.base) || 'EUR';
+}
+
 /**
- * Convertit un montant vers l'euro. Rend null quand on ne SAIT pas -- jamais
- * une approximation de secours.
+ * Convertit un montant vers la devise de BASE de la table -- celle du pays
+ * choisi, l'euro par defaut. Rend null quand on ne SAIT pas : jamais une
+ * approximation de secours, jamais un chiffre invente.
  */
-export function toEuros(amount, currency, stored, now) {
+export function toBase(amount, currency, stored, now) {
   if (!Number.isFinite(amount)) return null;
   if (!currency) return null;
-  if (currency === 'EUR') return amount;
+  const base = baseOf(stored);
+  if (currency === base) return amount;
   if (tooOld(stored, now)) return null;
 
-  const perEuro = stored && stored.rates ? Number(stored.rates[currency]) : NaN;
-  if (!Number.isFinite(perEuro) || perEuro <= 0) return null;
-  return amount / perEuro;
+  // La table dit combien d'unites de `currency` vaut UNE unite de base : on
+  // divise donc pour revenir a la base.
+  const perBase = stored && stored.rates ? Number(stored.rates[currency]) : NaN;
+  if (!Number.isFinite(perBase) || perBase <= 0) return null;
+  return amount / perBase;
 }
 
 /**
@@ -109,12 +125,16 @@ export function toEuros(amount, currency, stored, now) {
  * Une panne de taux ne doit jamais faire echouer un cycle de veille : le pire
  * qu'elle produit est un montant affiche dans sa devise d'origine.
  */
-export async function refreshRates({ now, stored, fetch: fetchImpl, record = () => {} }) {
-  if (!shouldRefresh(stored, now)) return { rates: stored, changed: false };
+export async function refreshRates({ now, stored, fetch: fetchImpl, record = () => {}, base = 'EUR' }) {
+  /* Un changement de pays change la devise de base : la table precedente ne
+     sait plus convertir vers la bonne, meme fraiche. C'est le seul cas ou l'on
+     redemande avant l'heure. */
+  const staleBase = baseOf(stored) !== base;
+  if (!staleBase && !shouldRefresh(stored, now)) return { rates: stored, changed: false };
   if (typeof fetchImpl !== 'function') return { rates: stored, changed: false };
 
   try {
-    const response = await fetchImpl(RATES_URL, { headers: { Accept: 'application/json' } });
+    const response = await fetchImpl(ratesUrl(base), { headers: { Accept: 'application/json' } });
     if (!response || !response.ok) throw new Error(`HTTP ${response && response.status}`);
     const parsed = parseRates(await response.json(), now);
     if (!parsed) throw new Error('reponse de taux illisible');
