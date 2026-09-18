@@ -16,7 +16,9 @@
  *      "nouveau". Le second se recalcule et double ; le premier est persiste.
  */
 import { integrate, purgeExpired, openOffers } from './catalog.js';
-import { STATES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
+import { STATES, STORES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
+import { claimableStoresFor, activeSourcesFor } from './sources/index.js';
+import { steamGate } from './steam-claim.js';
 import {
   schedule,
   afterSuccess,
@@ -176,7 +178,11 @@ export async function runCycle({
   offline = () => false,
   force = false,
   webLocks,
-  /** Magasins ou l'extension a le droit de cliquer. Steam n'y est jamais. */
+  /**
+   * Magasins ou l'extension a le droit de cliquer, SANS option. Steam n'y est
+   * jamais : il n'y entre qu'a la lecture des reglages, si `steamAutoClaim`
+   * est active (claimableStoresFor).
+   */
   claimableStores = [],
   /** Faux en test, ou quand l'utilisateur coupe la reclamation autonome. */
   autonomousClaim = true,
@@ -210,9 +216,11 @@ export async function runCycle({
     const forceAll = force === true;
     const forcedList = Array.isArray(force) ? force.filter((n) => sources[n]) : null;
 
+    // La source Steam s'active avec l'option Steam : elle seule donne le paquet.
+    const actives = activeSourcesFor(ctx.settings);
     const names = Object.keys(sources).filter(
       (n) => forceAll
-        || (forcedList ? forcedList.includes(n) : ctx.settings.activeSources.includes(n)),
+        || (forcedList ? forcedList.includes(n) : actives.includes(n)),
     );
 
     const plan = schedule({
@@ -525,7 +533,8 @@ export async function runCycle({
         now,
         catalog,
         filters: ctx.filters,
-        claimableStores,
+        claimableStores: claimableStoresFor(ctx.settings, claimableStores),
+        fetch: fetchImpl,
         // Un magasin decoche n'est pas seulement masque : on n'y touche pas.
         watchedStores: ctx.settings.watchedStores,
         cadence,
@@ -658,11 +667,14 @@ export async function claimWhatCanBe({
   library = null,
   maxReclamations,
   record = () => {},
+  fetch: fetchImpl,
 }) {
   const next = { ...catalog };
   let timestamps = cadence;
   let canaryNext = canary;
   const claims = [];
+  let steamThisRun = 0;
+  let steamHeld = null;
 
   /* Ce que l'extension possede deja, pour ne pas rouvrir un onglet dessus.
      Construit une fois par cycle, pas une fois par offre. */
@@ -687,7 +699,23 @@ export async function claimWhatCanBe({
   const howMany = Math.min(candidates.length, left, maxReclamations);
   record('info', `${howMany} reclamation(s) ce cycle sur ${candidates.length} candidate(s)`);
 
-  for (const offer of candidates.slice(0, howMany)) {
+  let done = 0;
+  for (const offer of candidates) {
+    if (done >= howMany) break;
+
+    /* Steam, en option : plus lent que tout le reste, EN PLUS du plafond
+       horaire. Une offre retenue ne consomme pas de place -- la suivante, sur
+       un autre magasin, passe. Voir steamGate (watch/steam-claim.js). */
+    if (offer.store === STORES.STEAM) {
+      const gate = steamGate(next, Date.now(), { claimedThisRun: steamThisRun });
+      if (!gate.allowed) {
+        steamHeld = gate.reason;
+        continue;
+      }
+      steamThisRun++;
+    }
+    done++;
+
     /* On MARQUE avant d'agir.
      *
      * Ceci ajoute deliberement une ecriture par reclamation, et rompt donc la
@@ -713,6 +741,7 @@ export async function claimWhatCanBe({
       now: commence,
       supportedStores: claimableStores,
       record,
+      fetch: fetchImpl,
     });
 
     timestamps = recordClaim(timestamps, Date.now());
@@ -743,6 +772,8 @@ export async function claimWhatCanBe({
       // qu'il doit faire, quand l'extension ne peut plus rien.
       details: r.details || null,
       attemptStartedAt: null,
+      // Garde, lui : c'est sur cette date que se regle le rythme de Steam.
+      lastAttemptAt: commence,
       updatedAt: Date.now(),
     };
 
@@ -761,6 +792,8 @@ export async function claimWhatCanBe({
       ts: Date.now(),
     });
   }
+
+  if (steamHeld) record('info', `steam : attend son tour (${steamHeld})`);
 
   /* Une alerte n'est ecrite qu'a sa naissance. Repetee a chaque cycle, elle
      noierait le journal et finirait ignoree -- exactement le sort qu'on veut

@@ -15,6 +15,7 @@ import { KEY_CANARY } from './canary.js';
 import { KEY_LIBRARY } from './library.js';
 import { STATES, isExpired } from './offer.js';
 import { MAX_PER_HOUR } from './claim.js';
+import { claimableStoresFor } from './sources/index.js';
 
 /**
  * Reclame tout ce qui peut l'etre, maintenant, a la demande.
@@ -44,7 +45,9 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     now,
     catalog: raw[KEYS.OFFERS] || {},
     filters: raw[KEYS.FILTERS] || {},
-    claimableStores,
+    /* L'option Steam s'applique ici comme au cycle -- et son rythme aussi :
+       « Tout recuperer » ne prend jamais plus d'une offre Steam a la fois. */
+    claimableStores: claimableStoresFor(settings, claimableStores),
     /* Le meme filtre que le cycle. Sans lui, « Tout recuperer » rouvrirait la
        porte que la reclamation de fond vient de fermer, et sur un magasin que
        l'utilisateur a explicitement decoche. */

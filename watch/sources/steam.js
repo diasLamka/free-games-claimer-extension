@@ -1,19 +1,19 @@
 /* Source de decouverte : Steam, jeux et DLC offerts DEFINITIVEMENT.
  *
- * DETECTION SEULE. Ce module ne clique jamais, n'ouvre jamais d'onglet de
- * reclamation, et Steam ne figure pas dans la liste des magasins reclamables.
- * Il repond a une question et une seule : « qu'est-ce qui est gratuit a garder
- * en ce moment, et que je n'ai pas deja ? »
+ * Ce module ne clique jamais. Il repond a une question et une seule : « qu'est-
+ * ce qui est gratuit a garder en ce moment, et que je n'ai pas deja ? »
  *
- * Ce choix n'est pas technique. Le parcours serait le plus simple des quatre --
- * page rendue cote serveur, un seul bouton, aucun panier. Mais le Steam
- * Subscriber Agreement interdit noir sur blanc « any form of scripts, bots,
- * macros... to interact with Content and Services on Steam in any manner », et
- * prevoit la resiliation du compte sans preavis. Un compte Steam represente
- * souvent des annees de bibliotheque : l'extension n'a pas a prendre ce pari.
+ * PAR DEFAUT, le clic reste humain : l'offre est detectee, affichee, mise a un
+ * clic. Le Steam Subscriber Agreement (section 4.C) interdit « any form of
+ * scripts, bots, macros, or other non-human-controlled systems » pour
+ * interagir avec Steam, et prevoit la fermeture du compte sans preavis (4.D).
+ * Un compte Steam represente souvent des annees de bibliotheque.
  *
- * Elle se contente donc de LIRE, ce que fait n'importe quel visiteur, et de
- * mettre l'offre a un clic. Le clic reste humain.
+ * Depuis la 2.22.0, l'utilisateur peut prendre ce risque lui-meme : l'option
+ * `steamAutoClaim`, coupee par defaut, fait recuperer les offres par
+ * watch/claim.js (claimSteamOffer). Ce module lui fournit les deux choses
+ * qu'elle exige : le numero de PAQUET de chaque offre, et la lecture de ce que
+ * le compte possede -- avant d'agir, et comme preuve apres.
  */
 import { makeOffer, STORES } from '../offer.js';
 
@@ -105,7 +105,15 @@ export function mapItem(item, now, owned) {
     end,
     worth: formatted
       || (Number.isFinite(originalPrice) && originalPrice > 0 ? (originalPrice / 100).toFixed(2) : null),
-    category: item.type === 1 ? 'DLC' : 'Game',
+    /* Le DLC porte le type 4. Mesure du 2026-09-19 : « Dying Light: The Beast -
+       Discharge Weapon Pack », offert ce jour-la, rend `type: 4` dans GetItems.
+       Ce module lisait 1 : les vrais DLC passaient pour des jeux, et le filtre
+       « contenu en jeu » ne les voyait jamais. */
+    category: item.type === 4 ? 'DLC' : 'Game',
+    /* Le paquet gratuit que l'offre donne. Mesure du meme jour : c'est aussi
+       le numero du bloc d'achat de la page, et celui que `rgOwnedPackages`
+       contient une fois la licence ajoutee. Sans lui, pas de recuperation. */
+    packageId: purchase.packageid ? String(purchase.packageid) : null,
     /* La source ne rend QUE des offres dont best_purchase_option dit
        is_free_to_keep. Le dire explicitement evite que le filtre retombe sur la
        valeur : un jeu offert dont Steam ne publie pas le prix d'origine serait
@@ -137,6 +145,38 @@ export async function readOwned({ fetch: fetchImpl = fetch } = {}) {
     return new Set(apps.map(String));
   } catch {
     return null;
+  }
+}
+
+/**
+ * Ce que la session possede, applications ET paquets, avec un verdict.
+ *
+ * `readOwned` rend null quand il ne sait pas ; la recuperation a besoin de
+ * savoir POURQUOI. Mesure du 2026-09-19 : sans session, userdata repond 200
+ * avec des listes VIDES -- d'ou « logged_out » sur une liste vide, plutot que
+ * « rien possede ». `cache: 'no-store'` et un parametre qui change : juste
+ * apres une activation, c'est la reponse fraiche qu'il faut lire.
+ */
+export async function readOwnership({ fetch: fetchImpl = fetch, now = Date.now() } = {}) {
+  try {
+    const r = await fetchImpl(`${OWNED_URL}?t=${now}`, {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!r.ok) return { status: 'error', note: `HTTP ${r.status}`, apps: new Set(), packages: new Set() };
+    const data = await r.json();
+    const apps = data && data.rgOwnedApps;
+    const packages = data && data.rgOwnedPackages;
+    if (!Array.isArray(apps) || !Array.isArray(packages)) {
+      return { status: 'error', note: 'forme inattendue', apps: new Set(), packages: new Set() };
+    }
+    if (!apps.length && !packages.length) {
+      return { status: 'logged_out', note: 'listes vides', apps: new Set(), packages: new Set() };
+    }
+    return { status: 'ok', note: null, apps: new Set(apps.map(String)), packages: new Set(packages.map(String)) };
+  } catch (e) {
+    return { status: 'error', note: (e && e.message) || String(e), apps: new Set(), packages: new Set() };
   }
 }
 

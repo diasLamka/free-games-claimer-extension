@@ -211,7 +211,8 @@ async function startCycle(origine, options = {}) {
         },
         record,
         offline: () => typeof navigator !== 'undefined' && navigator.onLine === false,
-        // Steam n'est jamais de cette liste : detecte et affiche, jamais clique.
+        // La liste SANS option. Steam n'y entre qu'a la lecture des reglages,
+        // dans le cycle, si l'utilisateur a active steamAutoClaim.
         claimableStores: CLAIMABLE_STORES,
         ...options,
       });

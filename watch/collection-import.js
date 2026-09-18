@@ -177,13 +177,14 @@ function result(status, { items = [], note = null, lines = [] } = {}) {
 /**
  * Le genre d'une application Steam, d'apres GetItems.
  *
- * `type` 1 est un DLC : c'est la lecture qu'en fait deja la source Steam. Tout
- * le reste hors 0 -- bandes originales, outils, videos -- va dans « autre »,
- * cache par defaut : une bibliotheque Steam en compte des centaines.
+ * `type` 4 est un DLC -- mesure du 2026-09-19 sur un DLC offert ce jour-la ;
+ * la 2.21.0 lisait 1, comme la source Steam, et se trompait avec elle. Tout le
+ * reste hors 0 -- demos, bandes originales, outils, videos -- va dans
+ * « autre », cache par defaut : une bibliotheque Steam en compte des centaines.
  */
-function steamKind(type) {
+export function steamKind(type) {
   if (type === 0) return KINDS.GAME;
-  if (type === 1) return KINDS.DLC;
+  if (type === 4) return KINDS.DLC;
   return KINDS.OTHER;
 }
 

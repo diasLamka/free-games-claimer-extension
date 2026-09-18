@@ -285,6 +285,10 @@ export function makeOffer(raw = {}) {
     sourceId: raw.sourceId === undefined ? null : String(raw.sourceId),
     store,
     storeId: raw.storeId ? String(raw.storeId) : null,
+    /* Le paquet Steam que l'offre donne (source Steam seulement). C'est lui
+       que la recuperation Steam cherche sur la page, puis dans la
+       bibliotheque. null partout ailleurs. */
+    packageId: raw.packageId ? String(raw.packageId) : null,
     title: String(raw.title || '').trim(),
     normalisedTitle: normaliseTitle(raw.title),
     url: webUrl(raw.url),
@@ -440,6 +444,8 @@ export function merge(existing, incoming) {
     // mais ferait croire a deux regles concurrentes.
     platforms: keep(existing.platforms, incoming.platforms),
     category: keep(existing.category, incoming.category),
+    // Une seule source le fournit : l'agregateur ne doit pas l'effacer.
+    packageId: keep(existing.packageId, incoming.packageId),
     updatedAt: incoming.updatedAt ?? existing.updatedAt,
     origin: { ...existingOrigin },
   };

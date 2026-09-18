@@ -856,5 +856,23 @@
   },
   "collectionLaunch": {
     "message": "Lancer dans Steam"
+  },
+  "steamAutoLabel": {
+    "message": "Steam aussi"
+  },
+  "steamAutoHint": {
+    "message": "Coupé par défaut : le contrat Steam l'interdit"
+  },
+  "steamAutoWarn": {
+    "message": "Le contrat d'abonnement Steam (section 4.C) interdit les scripts qui interagissent avec Steam, et Valve peut fermer un compte pour cela, sans préavis (4.D). L'extension n'ajoute que des offres que Steam marque lui-même gratuites à garder, une par cycle et lentement, mais le risque reste entier, et il porte sur tout votre compte Steam."
+  },
+  "steamAutoAccept": {
+    "message": "Activer quand même"
+  },
+  "steamAutoCancel": {
+    "message": "Annuler"
+  },
+  "storeSteamAuto": {
+    "message": "automatique, à vos risques"
   }
 }

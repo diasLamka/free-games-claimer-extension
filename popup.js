@@ -25,7 +25,7 @@ import { KEY_RATES, toBase, baseOf } from './watch/rates.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from './watch/locale.js';
 import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
-import { CLAIMABLE_STORES } from './watch/sources/index.js';
+import { claimableStoresFor } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
@@ -40,10 +40,11 @@ const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chro
 /**
  * The four the product is actually about. Everything else is opt-in.
  *
- * `claim` says whether a claim module exists. Steam is here and always will be
- * without one: its subscriber agreement forbids scripted interaction with its
- * services, with termination and no notice. It is detected, shown, put one
- * click away -- never clicked.
+ * `claim` says whether the extension claims there WITHOUT being asked. Steam
+ * does not: its subscriber agreement forbids scripted interaction with its
+ * services (4.C), with termination and no notice (4.D). It is detected, shown,
+ * put one click away -- and claimed only if the user turns on `steamAutoClaim`
+ * after reading the warning, in which case its row says so.
  */
 const PRIMARY = [
   { id: STORES.EPIC, tag: 'EPIC', claim: true, mode: 'FGC_epic_auto_mode', history: 'FGC_history_Epic Games', url: 'https://store.epicgames.com/free-games' },
@@ -617,7 +618,7 @@ function gameCard({ key, offer }, ctx) {
    * offer sat in the list looking exactly like one that was about to be
    * claimed, and the only way to find out was to wait and see nothing happen. */
   if (behaviour.autonomousClaim !== false) {
-    const verdict = judge(offer, filters, { supportedStores: CLAIMABLE_STORES });
+    const verdict = judge(offer, filters, { supportedStores: claimableStoresFor(behaviour) });
     if (!verdict.claimable) {
       const cle = DROP_KEYS[verdict.reason];
       if (cle) body.append(el('span', 'why', t(cle)));
@@ -650,7 +651,8 @@ function renderGames(all, behaviour) {
 
   document.getElementById('n-games').textContent = rows.length || '';
 
-  const claimable = rows.filter(({ offer }) => CLAIMABLE_STORES.includes(offer.store)).length;
+  const claimableStores = claimableStoresFor(behaviour);
+  const claimable = rows.filter(({ offer }) => claimableStores.includes(offer.store)).length;
   document.getElementById('claim-all-row').hidden = claimable < 2 || behaviour.autonomousClaim === false;
 
   /* --- ce qui vous attend --- */
@@ -987,7 +989,11 @@ function renderStores(all, behaviour) {
       ? Object.values(get(all, store.history, {})).filter((e) => e && (e.status === 'claimed' || e.status === 'redeemed')).length
       : 0;
 
+    // The risky opt-in shows on the row itself: nobody should have to open
+    // the settings to learn that Steam is being clicked.
+    const steamAuto = store.id === STORES.STEAM && behaviour.steamAutoClaim === true;
     const state = !on ? t('storeOff')
+      : steamAuto ? t('storeSteamAuto')
       : !store.claim ? t('storeDetectOnly')
       : autoOff ? t('storeAutoOff')
       : remaining ? t('storePaused', readableDelay(remaining))
@@ -1325,6 +1331,7 @@ function renderFilters(all, behaviour) {
   document.getElementById('include-dlc').checked = filters.claimExtraContent === true;
   document.getElementById('keepable-only').checked = filters.claimOnlyKeepable !== false;
   document.getElementById('autonomous').checked = behaviour.autonomousClaim !== false;
+  document.getElementById('steam-auto').checked = behaviour.steamAutoClaim === true;
 
   // Showing what a setting does BEFORE the slider moves beats letting someone
   // discover afterwards what they suppressed.
@@ -1333,7 +1340,7 @@ function renderFilters(all, behaviour) {
   // Le meme registre que le cycle, sinon l'apercu promet des reclamations que
   // la veille ecartera -- et c'est l'apercu qu'on regarde pour decider.
   const seen = preview(open, filters, {
-    supportedStores: CLAIMABLE_STORES,
+    supportedStores: claimableStoresFor(behaviour),
     owned: ownedKeys(get(all, KEY_LIBRARY, {}), normaliseTitle),
   });
   document.getElementById('filters-preview').textContent = open.length
@@ -1606,6 +1613,28 @@ document.getElementById('min-worth').addEventListener('change', (e) => writeFilt
 document.getElementById('include-dlc').addEventListener('change', (e) => writeFilters({ claimExtraContent: e.target.checked }));
 document.getElementById('keepable-only').addEventListener('change', (e) => writeFilters({ claimOnlyKeepable: e.target.checked }));
 document.getElementById('autonomous').addEventListener('change', (e) => writeBehaviour({ autonomousClaim: e.target.checked }));
+
+/* --- Steam: never on a single click.
+   Ticking the box does not turn it on: it goes back to off, and the warning
+   opens. Only "turn on anyway" writes the setting -- after the user has read
+   what the Steam agreement says. Turning it OFF needs no confirmation. */
+document.getElementById('steam-auto').addEventListener('change', (e) => {
+  const warn = document.getElementById('steam-warn');
+  if (e.target.checked) {
+    e.target.checked = false;
+    warn.hidden = false;
+    return;
+  }
+  warn.hidden = true;
+  writeBehaviour({ steamAutoClaim: false });
+});
+document.getElementById('steam-accept').addEventListener('click', () => {
+  document.getElementById('steam-warn').hidden = true;
+  writeBehaviour({ steamAutoClaim: true });
+});
+document.getElementById('steam-cancel').addEventListener('click', () => {
+  document.getElementById('steam-warn').hidden = true;
+});
 document.getElementById('sync-codes').addEventListener('change', (e) => writeBehaviour({ syncCodes: e.target.checked }));
 
 document.getElementById('notify-mode').addEventListener('change', (e) => writeBehaviour({ notifyMode: e.target.value }));

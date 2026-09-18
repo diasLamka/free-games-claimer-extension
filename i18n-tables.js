@@ -288,7 +288,13 @@ export const TABLES = Object.freeze({
     "collectionNote": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim.",
     "collectionUntitled": "Untitled (#$1)",
     "collectionClaimedTag": "claimed by the extension",
-    "collectionLaunch": "Launch in Steam"
+    "collectionLaunch": "Launch in Steam",
+    "steamAutoLabel": "Steam too",
+    "steamAutoHint": "Off by default: Steam's agreement forbids it",
+    "steamAutoWarn": "Steam's Subscriber Agreement (section 4.C) forbids scripts that interact with Steam, and Valve may close an account for it without notice (4.D). The extension only adds offers Steam itself marks free to keep, one per cycle and slowly, but the risk remains whole, and it covers your entire Steam account.",
+    "steamAutoAccept": "Turn on anyway",
+    "steamAutoCancel": "Cancel",
+    "storeSteamAuto": "automatic, at your own risk"
   },
   "fr": {
     "appName": "Free Games Auto-Claimer",
@@ -576,6 +582,12 @@ export const TABLES = Object.freeze({
     "collectionNote": "Steam : jeux possédés et leurs noms publics. GOG : la liste de jeux de votre compte. Epic : votre historique de commandes, jeux gratuits compris (un DLC y ressemble à un jeu). Un titre présent sur deux magasins est rapproché par son nom : c'est un indice, pas une preuve, et rien ne s'en sert pour décider d'une récupération.",
     "collectionUntitled": "Sans titre (n° $1)",
     "collectionClaimedTag": "récupéré par l'extension",
-    "collectionLaunch": "Lancer dans Steam"
+    "collectionLaunch": "Lancer dans Steam",
+    "steamAutoLabel": "Steam aussi",
+    "steamAutoHint": "Coupé par défaut : le contrat Steam l'interdit",
+    "steamAutoWarn": "Le contrat d'abonnement Steam (section 4.C) interdit les scripts qui interagissent avec Steam, et Valve peut fermer un compte pour cela, sans préavis (4.D). L'extension n'ajoute que des offres que Steam marque lui-même gratuites à garder, une par cycle et lentement, mais le risque reste entier, et il porte sur tout votre compte Steam.",
+    "steamAutoAccept": "Activer quand même",
+    "steamAutoCancel": "Annuler",
+    "storeSteamAuto": "automatique, à vos risques"
   }
 });

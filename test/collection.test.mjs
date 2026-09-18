@@ -231,7 +231,8 @@ test('Steam : la possession vient de userdata, les noms de GetItems par lots', a
   const f = fauxFetch((url) => {
     if (url === OWNED_URL) return { body: { rgOwnedApps: [10, 20, 30], rgWishlist: [] } };
     const lot = JSON.parse(decodeURIComponent(url.split('input_json=')[1])).ids.map((i) => i.appid);
-    const connus = { 10: { name: 'Un Jeu Secret', type: 0 }, 20: { name: 'Son DLC', type: 1 } };
+    // Type 4 : le DLC, mesure le 2026-09-19 (« Dying Light: The Beast - Discharge Weapon Pack »).
+    const connus = { 10: { name: 'Un Jeu Secret', type: 0 }, 20: { name: 'Son DLC', type: 4 } };
     return {
       body: { response: { store_items: lot.filter((id) => connus[id]).map((id) => ({ appid: id, ...connus[id] })) } },
     };

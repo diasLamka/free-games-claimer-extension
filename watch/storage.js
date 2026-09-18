@@ -187,6 +187,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
   activeSources: ['epic-api', 'gamerpower', 'gog'],
   autonomousClaim: true,
 
+  /**
+   * Recuperer aussi sur Steam. COUPE par defaut, et il doit le rester : le
+   * contrat Steam interdit les scripts (section 4.C) et prevoit la fermeture
+   * du compte sans preavis (4.D). Le popup ne l'active qu'apres un
+   * avertissement explicite. Voir watch/steam-claim.js.
+   */
+  steamAutoClaim: false,
+
   /** 'every' | 'digest' | 'off'. Voir watch/notify-policy.js. */
   notifyMode: 'every',
   /** 'unseen' | 'endingToday' | 'off'. */

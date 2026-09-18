@@ -4,6 +4,105 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.22.0 -- 2026-09-19
+
+**Steam : recuperer aussi, en option, a vos risques**
+
+Jusqu'ici Steam etait detecte, affiche, mis a un clic -- jamais clique, parce
+que son contrat l'interdit. C'est desormais le choix de l'utilisateur : une
+option, coupee par defaut, qui ne s'active qu'apres avoir lu ce que dit le
+contrat.
+
+### Ce que dit le contrat, verifie le 2026-09-19
+
+- Section 4.C : « You may not use any form of scripts, bots, macros, or other
+  non-human-controlled systems ("Automation") to interact with Content and
+  Services on Steam in any manner », avec parmi les exemples « Earning rewards
+  or progress without genuine user input ».
+- Section 4.D : Valve peut restreindre ou fermer le compte pour de
+  l'Automation, **sans preavis**.
+
+Le popup le dit avant d'activer quoi que ce soit : cocher « Steam aussi »
+ouvre l'avertissement, et la case reste decochee. Seul « Activer quand meme »
+ecrit le reglage ; le couper est immediat. Tant que l'option est active, la
+ligne Steam des magasins affiche « automatique, a vos risques ».
+
+### Ce qui a ete mesure, et ce qui ne l'a pas ete
+
+Sur la page publique d'une vraie offre en cours (Space Menace, forcee en
+anglais par `?l=english`) :
+
+- le bloc d'achat porte le numero du PAQUET
+  (`game_area_purchase_section_add_to_cart_1827145`), le meme que
+  `best_purchase_option.packageid` dans GetItems ;
+- son formulaire vise `/freelicense/addfreelicense/` : une licence gratuite,
+  pas une caisse -- ce formulaire ne peut rien faire payer ;
+- le bouton dit exactement « Add to Account ».
+
+L'etape injectee a ete jouee A BLANC sur cette page reelle, dans un monde
+isole comme le sera celui de l'extension : les trois verifications
+concordent, un mauvais paquet est refuse, la page n'a pas bouge.
+
+**Le clic lui-meme n'a jamais ete joue.** Meme sans compte, cliquer sur un vrai
+Steam est une action sur un service reel ; elle ne s'est pas faite depuis ce
+depot. Le premier vrai clic sera celui de l'extension, chez l'utilisateur, une
+fois l'option active. S'il ne donne rien, l'offre passe en echec avec son
+motif, et le canari le signale.
+
+### Le parcours -- l'ordre est la securite
+
+1. L'option est RELUE au moment d'agir, pas seulement par l'appelant.
+2. La bibliotheque est lue AVANT tout onglet (`dynamicstore/userdata`). Sans
+   session : « connexion requise », rien d'ouvert. Paquet ou application deja
+   possedes : l'offre est acquise sans rien tenter -- le quota d'activations
+   de Steam compte « deja possede » comme un echec.
+3. La fiche s'ouvre dans la fenetre reduite habituelle ; l'etape injectee
+   verifie le paquet, le formulaire et le libelle, puis clique une fois.
+4. La preuve est le paquet dans `rgOwnedPackages`, relue plusieurs fois --
+   jamais un texte a l'ecran.
+
+Aucun moteur n'est injecte sur Steam : seule cette fonction touche une page
+Steam. La garantie de la 2.9.1, « rien n'est injecte sur une page Steam »,
+devient : rien, sauf par la recuperation Steam, et seulement si vous l'avez
+activee.
+
+### Le rythme
+
+En plus du plafond horaire commun : une offre Steam par cycle, vingt minutes
+d'ecart au moins, six par jour au plus. « Tout recuperer » suit la meme
+regle. Les offres gratuites de Steam durent des jours : rien ne presse.
+
+### La source Steam s'active avec l'option
+
+Elle n'etait pas active par defaut, et c'est elle, seule, qui donne le numero
+de paquet. L'option l'active a la lecture des reglages : rien n'est recopie
+ailleurs.
+
+### Un bug trouve en mesurant
+
+GetItems donne le type **4** au DLC (« Dying Light: The Beast - Discharge
+Weapon Pack », offert le jour de la mesure). La source Steam lisait 1 depuis la
+2.9 : les vrais DLC passaient pour des jeux, et le filtre « contenu en jeu »
+ne les voyait jamais. Corrige, ainsi que dans la collection (2.21.0), qui
+avait repris la meme erreur.
+
+### Et au passage
+
+Le pied du popup : depuis le lien « Ma collection » (2.21.0), la phrase d'aide
+s'ecrasait sur cinq lignes. Elle a maintenant la sienne.
+
+### Mesure
+
+`test/steam-claim.test.mjs` : 21 tests. Ceux qui comptent : un formulaire qui
+ne vise pas la licence gratuite n'est jamais clique ; sans l'option, meme un
+appel direct ne fait rien et le cycle n'interroge pas la source Steam ; sans
+session, aucun onglet ; un clic sans paquet dans la bibliotheque est un
+echec, pas une victoire supposee ; une seule offre Steam par cycle.
+
+Dans un Chrome headless au profil jetable, arret d'urgence tire : l'interrupteur,
+l'avertissement, « Annuler », « Activer quand meme », la ligne Steam et la
+coupure immediate -- sans aucune erreur dans la console. 681 tests au total.
+
 ## 2.21.0 -- 2026-09-19
 
 **Ma collection : ce que vous possedez sur chaque magasin, au meme endroit**

@@ -98,6 +98,7 @@ est declare `"type": "module"`.
 | `sentinel.js` | quand proposer le repli, et comment il rend la main tout seul |
 | `collection.js` | Ma collection : regrouper ce que chaque magasin dit que vous possedez |
 | `collection-import.js` | lire les bibliotheques Steam, GOG et Epic, en lecture seule et a la demande |
+| `steam-claim.js` | Steam en option : l'etape jouee dans la page, et le rythme lent |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 

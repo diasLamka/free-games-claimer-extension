@@ -186,6 +186,18 @@
     margin-bottom: 10px;
     background: color-mix(in srgb, var(--amber) 10%, transparent);
   }
+  /* L'avertissement Steam : meme code que le canari -- ambre, jamais rouge. Il
+     s'ouvre a la place de l'interrupteur, et c'est lui seul qui l'active. */
+  .risk {
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 2px 0 10px;
+    background: color-mix(in srgb, var(--amber) 10%, transparent);
+    font-size: 12px;
+  }
+  .risk p { margin: 0 0 8px; }
+  .risk-actions { display: flex; gap: 8px; align-items: center; }
   .canary-head { display: flex; align-items: baseline; gap: 7px; }
   .canary-store { font-weight: 600; }
   .canary-count { color: var(--amber); font-size: 11px; }
@@ -765,14 +777,20 @@
   .undo button { margin-left: auto; }
 
   /* ------------------------------------------------------------- footer */
+  /* Trois liens et une phrase ne tiennent pas sur 328 px : la phrase prend sa
+     ligne, les liens la suivante. Sans le retour, la phrase s'ecrasait sur
+     cinq lignes d'un mot a cote des liens. */
   footer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 6px 10px;
     padding: 9px var(--pad);
     border-top: 1px solid var(--line);
   }
-  footer .grow { flex: 1; min-width: 0; }
+  footer .grow { flex: 1 1 100%; min-width: 0; }
+  footer .grow:empty { display: none; }
+  footer a:first-of-type { margin-left: auto; }
   footer a { color: var(--mute); font-size: 11px; text-decoration: none; border-bottom: 1px solid transparent; }
   footer a:hover { color: var(--amber); border-bottom-color: var(--amber); }
 
@@ -886,6 +904,18 @@
         <span class="switch"></span>
         <span class="toggle-label"><span data-i18n="keepableOnlyLabel"></span><small data-i18n="keepableOnlyHint"></small></span>
       </label>
+      <label class="toggle">
+        <input type="checkbox" id="steam-auto">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="steamAutoLabel"></span><small data-i18n="steamAutoHint"></small></span>
+      </label>
+      <div class="risk" id="steam-warn" role="alertdialog" aria-labelledby="steam-warn-text" hidden>
+        <p id="steam-warn-text" data-i18n="steamAutoWarn"></p>
+        <div class="risk-actions">
+          <button class="primary" id="steam-cancel" data-i18n="steamAutoCancel"></button>
+          <button id="steam-accept" data-i18n="steamAutoAccept"></button>
+        </div>
+      </div>
       <p class="hint" id="filters-preview"></p>
     </section>
 

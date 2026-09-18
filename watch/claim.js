@@ -15,6 +15,11 @@
  * surveiller elle-meme de facon fiable, c'est justement son timer qui deraille.
  */
 import { STORES, storeFromUrl } from './offer.js';
+import { readSettings } from './storage.js';
+import { readOwnership } from './sources/steam.js';
+import {
+  steamAppUrl, steamPageStep, describeStep, isSteamLoginUrl, isSteamAgeCheckUrl,
+} from './steam-claim.js';
 
 export const BUDGET_MS = 5 * 60 * 1000;
 export const LOAD_WAIT_MS = 45 * 1000;
@@ -373,8 +378,15 @@ export async function claimOffer(offer, {
   budgetMs = BUDGET_MS,
   supportedStores = [],
   record = () => {},
+  fetch: fetchImpl,
+  steamTiming,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('reclamer : "maintenant" est obligatoire');
+
+  // Steam n'a pas de moteur injecte : son parcours est a part, et optionnel.
+  if (offer.store === STORES.STEAM) {
+    return claimSteamOffer(offer, { chrome, now, budgetMs, record, fetch: fetchImpl, timing: steamTiming });
+  }
 
   const target = offer.url || offer.resolveUrl;
   if (!target) return { verdict: VERDICTS.BAD_URL, details: 'aucune page a ouvrir' };
@@ -479,6 +491,162 @@ export async function claimOffer(offer, {
         }
         await forgetPiloted(chrome, tabId);
       }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ Steam */
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Delais du parcours Steam. Injectables pour les tests, qui n'attendent pas. */
+export const STEAM_TIMING = Object.freeze({
+  /** Apres le clic, le formulaire est soumis : on attend la page suivante. */
+  navigationMs: 20 * 1000,
+  /** Frequence a laquelle on regarde ou en est l'onglet pendant cette attente. */
+  pollMs: 500,
+  /** La bibliotheque se relit plusieurs fois : l'ajout n'y est pas instantane. */
+  confirmTries: 5,
+  confirmDelayMs: 3000,
+});
+
+/**
+ * Attend que l'onglet ait quitte la page de depart et fini de charger.
+ *
+ * Le clic declenche une soumission de formulaire, donc une navigation -- mais
+ * l'ecouteur ne peut pas etre pose avant le clic, qui vit dans la page. On
+ * sonde donc l'onglet : parti ailleurs, ou vu en chargement, puis complet.
+ * Rend false a l'expiration sans que ce soit un echec : la preuve, de toute
+ * facon, se lit dans la bibliotheque.
+ */
+async function awaitNavigation(chrome, tabId, fromUrl, timeoutMs, pollMs = STEAM_TIMING.pollMs) {
+  const t0 = Date.now();
+  let sawLoading = false;
+  while (Date.now() - t0 < timeoutMs) {
+    await sleep(pollMs);
+    let t;
+    try { t = await chrome.tabs.get(tabId); } catch { return false; }
+    if (!t) return false;
+    if (t.status === 'loading') sawLoading = true;
+    if (t.status === 'complete' && (sawLoading || (t.url && t.url !== fromUrl))) return true;
+  }
+  return false;
+}
+
+/**
+ * Recupere une offre Steam. OPTIONNEL, coupe par defaut : voir
+ * watch/steam-claim.js pour le contrat Steam et ce qui a ete mesure.
+ *
+ * L'ordre des etapes est la securite :
+ *
+ *   1. l'option est RELUE ici. L'appelant ne devrait jamais venir jusqu'ici
+ *      sans elle ; si un jour il le fait, rien ne se passe ;
+ *   2. la bibliotheque est lue AVANT tout onglet. Des listes vides veulent dire
+ *      « pas connecte » : on le dit sans rien ouvrir. Un paquet ou une
+ *      application deja possedes : c'est acquis, et on ne tente rien -- le
+ *      quota d'activations de Steam compte « deja possede » comme un echec ;
+ *   3. dans la fenetre reduite, l'etape injectee verifie le bloc du PAQUET, le
+ *      formulaire de licence gratuite et le libelle exact, puis clique une
+ *      fois ;
+ *   4. la preuve est le paquet dans `rgOwnedPackages`, pas un texte a l'ecran.
+ *
+ * Aucun moteur n'est injecte sur Steam : seule cette fonction touche une page
+ * Steam, et seulement quand l'option est active.
+ */
+export async function claimSteamOffer(offer, {
+  chrome,
+  now,
+  budgetMs = BUDGET_MS,
+  record = () => {},
+  fetch: fetchImpl = globalThis.fetch,
+  timing,
+} = {}) {
+  const t = { ...STEAM_TIMING, ...(timing || {}) };
+  const store = STORES.STEAM;
+
+  const settings = await readSettings(chrome);
+  if (settings.steamAutoClaim !== true) {
+    return { verdict: VERDICTS.UNDETERMINED, details: 'recuperation Steam coupee : rien fait', store };
+  }
+
+  const appid = /^\d+$/.test(String(offer.storeId || '')) ? String(offer.storeId) : null;
+  const packageId = /^\d+$/.test(String(offer.packageId || '')) ? String(offer.packageId) : null;
+  if (!appid || !packageId) {
+    return { verdict: VERDICTS.FAILURE, details: 'paquet Steam inconnu : seule la source Steam le donne', store };
+  }
+
+  const avant = await readOwnership({ fetch: fetchImpl, now: Date.now() });
+  if (avant.status === 'logged_out') return { verdict: VERDICTS.LOGIN, details: 'session Steam absente', store };
+  if (avant.status !== 'ok') return { verdict: VERDICTS.FAILURE, details: `bibliotheque Steam illisible : ${avant.note}`, store };
+  if (avant.packages.has(packageId) || avant.apps.has(appid)) {
+    return { verdict: VERDICTS.CLAIMED, details: 'deja dans la bibliotheque Steam', store };
+  }
+
+  const url = steamAppUrl(appid);
+  let tabId = null;
+  let windowId = null;
+
+  try {
+    const opened = await openHiddenTab(chrome, url);
+    tabId = opened.tabId;
+    windowId = opened.windowId;
+    await markPiloted(chrome, tabId, {
+      offer: offer.catalogKey || null,
+      windowId,
+      openedAt: now,
+      expire: now + budgetMs,
+    });
+
+    if (!(await awaitLoad(chrome, tabId, LOAD_WAIT_MS))) {
+      return { verdict: VERDICTS.FAILURE, details: 'la page Steam n\'a pas fini de charger', store };
+    }
+    const landed = await tabUrl(chrome, tabId);
+    if (isSteamAgeCheckUrl(landed)) {
+      return { verdict: VERDICTS.FAILURE, details: 'controle d\'age Steam : a passer une fois a la main', store };
+    }
+    if (isSteamLoginUrl(landed)) return { verdict: VERDICTS.LOGIN, details: 'Steam demande la connexion', store };
+
+    let step = null;
+    try {
+      const [injection] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: steamPageStep,
+        args: [packageId, false],
+      });
+      step = injection ? injection.result : null;
+    } catch (e) {
+      return { verdict: VERDICTS.FAILURE, details: `injection impossible : ${(e && e.message) || e}`, store };
+    }
+    if (!step || !step.ok) {
+      if (step && step.reason === 'deja-possede') {
+        return { verdict: VERDICTS.CLAIMED, details: 'Steam dit : deja dans la bibliotheque', store };
+      }
+      return { verdict: VERDICTS.FAILURE, details: `page Steam : ${describeStep(step)}`, store };
+    }
+    record('info', `steam : clic sur « Add to Account » pour le paquet ${packageId}`);
+
+    await awaitNavigation(chrome, tabId, landed || url, t.navigationMs, t.pollMs);
+    const after = await tabUrl(chrome, tabId);
+    if (isSteamLoginUrl(after)) return { verdict: VERDICTS.LOGIN, details: 'Steam a demande la connexion', store };
+
+    for (let i = 0; i < t.confirmTries; i++) {
+      if (i) await sleep(t.confirmDelayMs);
+      const check = await readOwnership({ fetch: fetchImpl, now: Date.now() });
+      if (check.status === 'ok' && check.packages.has(packageId)) {
+        return { verdict: VERDICTS.CLAIMED, details: null, store };
+      }
+    }
+    return {
+      verdict: VERDICTS.FAILURE,
+      details: 'clic fait, mais le paquet n\'est pas apparu dans la bibliotheque Steam',
+      store,
+    };
+  } finally {
+    if (tabId !== null) {
+      expectClosure(tabId);
+      if (windowId !== null) await closeHiddenWindow(chrome, windowId, tabId);
+      else { try { await chrome.tabs.remove(tabId); } catch { /* deja ferme */ } }
+      await forgetPiloted(chrome, tabId);
     }
   }
 }

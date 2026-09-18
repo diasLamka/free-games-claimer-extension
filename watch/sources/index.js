@@ -13,11 +13,13 @@ import { STORES } from '../offer.js';
 
 /**
  * Magasins pour lesquels un module de RECLAMATION existe, et dans lesquels
- * l'extension a donc le droit de cliquer toute seule.
+ * l'extension a donc le droit de cliquer toute seule -- sans rien demander.
  *
- * Steam n'y figure pas et n'y figurera pas : son contrat d'abonnement interdit
- * explicitement les scripts pour interagir avec ses services, avec resiliation
- * sans preavis. Il est detecte, affiche, mis a un clic -- jamais clique.
+ * Steam n'y figure pas : son contrat d'abonnement interdit les scripts pour
+ * interagir avec ses services (section 4.C), avec fermeture du compte sans
+ * preavis (4.D). Par defaut il est detecte, affiche, mis a un clic -- jamais
+ * clique. Seule l'option `steamAutoClaim`, coupee par defaut et confirmee dans
+ * le popup, l'ajoute a la liste : voir `claimableStoresFor`.
  *
  * itch.io n'y figure pas non plus, et n'est meme pas une source : le formulaire
  * qui porte le lien de reclamation gratuite porte AUSSI le champ de prix et les
@@ -30,8 +32,33 @@ export const CLAIMABLE_STORES = Object.freeze([
   STORES.AMAZON,
 ]);
 
-/** Magasins detectes et affiches, mais jamais reclames automatiquement. */
+/** Magasins detectes et affiches, mais jamais reclames sans option explicite. */
 export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM]);
+
+/**
+ * Les magasins reclamables pour CES reglages.
+ *
+ * Calcule a la lecture, jamais ecrit : un reglage recopie dans un autre finit
+ * par diverger. Steam n'entre que sur `steamAutoClaim === true` -- une valeur
+ * absente, abimee ou « truthy » ne suffit pas.
+ */
+export function claimableStoresFor(settings, base = CLAIMABLE_STORES) {
+  return settings && settings.steamAutoClaim === true
+    ? [...new Set([...base, STORES.STEAM])]
+    : [...base];
+}
+
+/**
+ * Les sources a interroger pour CES reglages.
+ *
+ * La source Steam n'est pas active par defaut. Or c'est elle, et elle seule,
+ * qui donne le numero de PAQUET sans lequel aucune recuperation Steam n'est
+ * possible : l'option l'active donc avec elle, a la lecture.
+ */
+export function activeSourcesFor(settings) {
+  const active = (settings && Array.isArray(settings.activeSources)) ? settings.activeSources : [];
+  return settings && settings.steamAutoClaim === true ? [...new Set([...active, steam.NAME])] : [...active];
+}
 
 export const SOURCES = Object.freeze({
   [epic.NAME]: Object.freeze({
@@ -127,7 +154,7 @@ export const SOURCES = Object.freeze({
     authoritativeFor: STORES.STEAM,
     /** Deux requetes par cycle, sur des endpoints publics : on reste poli. */
     minIntervalMs: 30 * 60 * 1000,
-    /** Detection seule : voir MAGASINS_RECLAMABLES. */
+    /** Detection seule par defaut : voir CLAIMABLE_STORES et claimableStoresFor. */
     autoClaim: false,
   }),
 });

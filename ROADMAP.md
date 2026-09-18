@@ -84,6 +84,10 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   garde la langue du pays ; la page, elle, est bornee aux langues que les
   motifs lisent (`fr`, `en`). L'anglais n'a pas encore de capture dans ce
   depot : c'est la prochaine mesure a prendre si une fiche anglaise echoue.
+- **Steam, en option** (2.22.0). Recuperer aussi sur Steam, coupe par defaut et
+  active seulement apres l'avertissement. La page d'une vraie offre a ete
+  mesuree a blanc ; le clic lui-meme ne l'a jamais ete -- le premier sera
+  celui de l'utilisateur qui active l'option, et un echec y a son motif.
 - **Ma collection** (2.21.0). Une page qui rassemble ce que Steam, GOG et Epic
   disent que vous possedez, plus ce que l'extension a reclame. Lecture seule, a
   la demande, et jamais d'effacement sur un echec. Le comportement SANS session
@@ -163,7 +167,7 @@ que ce soit ecrit une fois pour toutes.
 
 | Ecarte | Raison |
 |---|---|
-| Reclamer sur Steam | Son contrat d'abonnement interdit explicitement les scripts pour interagir avec ses services, resiliation sans preavis. Detecte, affiche, mis a un clic -- jamais clique (`watch/sources/index.js`). |
+| Reclamer sur Steam SANS le demander | Son contrat d'abonnement interdit les scripts pour interagir avec ses services (4.C), fermeture du compte sans preavis (4.D). Par defaut : detecte, affiche, mis a un clic -- jamais clique. Depuis la 2.22.0, l'utilisateur peut prendre ce risque lui-meme : une option coupee par defaut, activee seulement apres un avertissement qui cite le contrat (`watch/steam-claim.js`). |
 | itch.io | Le formulaire qui porte le lien de reclamation gratuite porte AUSSI le champ de prix et les boutons Stripe et PayPal. Le seul magasin ou un selecteur un peu large demarre un paiement dans une fenetre invisible. |
 | La veille dans le userscript | Tampermonkey n'a pas d'execution de fond. Le userscript garde la reclamation sur page ouverte, et rien de plus (design §3). |
 | Un service commun entre utilisateurs | Non-objectif du design : aucune mise en commun de donnees, aucune dependance a un serveur propre. |

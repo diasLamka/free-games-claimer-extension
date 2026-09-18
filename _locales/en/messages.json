@@ -856,5 +856,23 @@
   },
   "collectionLaunch": {
     "message": "Launch in Steam"
+  },
+  "steamAutoLabel": {
+    "message": "Steam too"
+  },
+  "steamAutoHint": {
+    "message": "Off by default: Steam's agreement forbids it"
+  },
+  "steamAutoWarn": {
+    "message": "Steam's Subscriber Agreement (section 4.C) forbids scripts that interact with Steam, and Valve may close an account for it without notice (4.D). The extension only adds offers Steam itself marks free to keep, one per cycle and slowly, but the risk remains whole, and it covers your entire Steam account."
+  },
+  "steamAutoAccept": {
+    "message": "Turn on anyway"
+  },
+  "steamAutoCancel": {
+    "message": "Cancel"
+  },
+  "storeSteamAuto": {
+    "message": "automatic, at your own risk"
   }
 }
