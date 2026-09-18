@@ -77,16 +77,24 @@ export const SOURCES = Object.freeze({
     libelle: 'GOG',
     discover: gog.discover,
     /**
-     * FAUX, et c'est deliberement conservateur.
+     * FAUX en tant que promesse STATIQUE, et ce n'est plus la question.
      *
-     * Le catalogue est pagine -- la reponse porte `page` et `totalPages` -- et
-     * cette source ne lit que la premiere page. Le parametre de pagination n'a
-     * pas ete mesure, seulement deduit de la reponse : tant qu'il ne l'est
-     * pas, promettre une liste complete ferait expirer, a chaque cycle, toute
-     * offre qui aurait glisse en deuxieme page. Une offre qui s'attarde coute
-     * moins cher qu'une offre enterree a tort.
+     * Cette valeur ne sert plus que de repli : `discover` publie desormais un
+     * `complete` PAR REPONSE, vrai seulement quand GOG annonce lui-meme une
+     * page unique (`page === 1 && totalPages <= 1`). Une promesse statique ne
+     * pouvait etre que fausse -- le catalogue est pagine et cette source ne
+     * lit que la premiere page -- mais le fait, lui, se mesure a chaque
+     * reponse. Le laisser a `false` garde la prudence si un jour la reponse
+     * cesse de porter ces champs.
      */
     completeList: false,
+    /**
+     * Le magasin sur lequel cette source fait autorite -- et ce pouvoir
+     * n'agit QUE lorsque la reponse s'est declaree complete. Sans lui, une
+     * offre GOG sans date de fin n'avait aucun moyen de mourir : ni par
+     * expiration (pas de date), ni par disparition (aucune autorite).
+     */
+    authoritativeFor: STORES.GOG,
     /** Une requete JSON de quelques kilo-octets sur un site marchand : on reste poli. */
     minIntervalMs: 15 * 60 * 1000,
   }),

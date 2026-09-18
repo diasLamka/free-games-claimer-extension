@@ -82,16 +82,25 @@ test('un calendrier pose par l\'utilisateur remplace le notre, meme vide', () =>
 
 /* --------------------------------- une offre sans date de fin peut mourir */
 
+/* L'entree qui a cause le bug du 2026-09-18 : decouverte par l'agregateur,
+   puis FUSIONNEE avec l'entree native d'Epic, dont elle a herite le `storeId`.
+   Ce `storeId` est la preuve que le magasin l'a publiee sous cette identite --
+   et c'est lui qui donne son poids au silence du magasin. */
 const offreSansFin = (extra = {}) => makeOffer({
   source: 'gamerpower',
   sourceId: 3316,
   store: STORES.EPIC,
+  storeId: 'jeu-de-la-semaine-derniere',
   title: 'Jeu de la semaine derniere (Epic Games) Giveaway',
   url: 'https://www.gamerpower.com/jeu',
   end: null,
   seenAt: T - 3 * 24 * 60 * 60 * 1000,
   ...extra,
 });
+
+/* La meme offre, mais que le magasin n'a JAMAIS publiee sous cette forme :
+   aucun `storeId`, un rapprochement par titre normalise seulement. */
+const offreConnueParTitre = (extra = {}) => offreSansFin({ storeId: null, ...extra });
 
 /** Un cycle ou la source d'Epic publie une liste complete SANS l'offre. */
 function cycleSansLoffre(catalog, now) {
@@ -149,7 +158,28 @@ test('Epic et Steam font autorite sur leur magasin, l\'agregateur sur aucun', ()
   assert.equal(SOURCES['epic-api'].authoritativeFor, STORES.EPIC);
   assert.equal(SOURCES.steam.authoritativeFor, STORES.STEAM);
   assert.equal(SOURCES.gamerpower.authoritativeFor, undefined);
-  assert.equal(SOURCES.gog.authoritativeFor, undefined);
+  /* GOG aussi, depuis la 2.19.0 -- mais son autorite ne s'exerce QUE sur une
+     reponse qui s'est declaree complete (voir gog-complete.test.mjs). */
+  assert.equal(SOURCES.gog.authoritativeFor, STORES.GOG);
+});
+
+test('une entree connue par son seul titre garde la grace de 24 h', () => {
+  const depart = integrate({}, [offreConnueParTitre()], { now: T - 1000, source: 'gamerpower', completeList: false });
+  assert.equal(Object.values(depart.catalog)[0].storeId, null);
+
+  /* Deux constats d'absence dans une liste Epic complete : l'entree qui porte
+     un `storeId` mourrait ici. Celle-ci n'est rapprochee que par titre -- si
+     son titre differe d'une virgule de celui du magasin, elle reste une entree
+     DISTINCTE, et la tuer serait enterrer une offre qui court toujours. */
+  const un = cycleSansLoffre(depart.catalog, T);
+  const deux = cycleSansLoffre(un.catalog, T + 60000);
+  assert.equal(deux.vanished.length, 0);
+  assert.equal(Object.values(deux.catalog)[0].state, STATES.DISCOVERED);
+
+  /* Passe 24 h, le doute a ete couvert et elle s'en va. */
+  const apres = cycleSansLoffre(deux.catalog, T + 25 * 60 * 60 * 1000);
+  assert.equal(apres.vanished.length, 1);
+  assert.equal(Object.values(apres.catalog)[0].state, STATES.EXPIRED);
 });
 
 /* ------------------------------- l'horloge decide, pas l'etat enregistre */

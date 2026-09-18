@@ -196,8 +196,23 @@ export function noteVanished(catalog, { now, source, store = null, seenThisCycle
      * doute a couvrir : deux constats successifs suffisent, et `0` veut dire
      * exactement cela -- pas "tout de suite", mais "au cycle suivant", le
      * premier passage ayant pose `missingSince`.
+     *
+     * MAIS SEULEMENT SI LE MAGASIN L'A PUBLIEE, et c'est la nuance qui manquait.
+     *
+     * Une entree decouverte par l'agregateur et marquee `store: 'gog'` n'a pas
+     * de `storeId` : elle n'est rapprochee que par titre normalise. Si son
+     * titre differe d'une virgule de celui du catalogue, elle reste une entree
+     * DISTINCTE -- et un magasin autoritaire la tuerait au deuxieme cycle
+     * alors que l'offre court toujours. Meme chose pour un giveaway annonce
+     * par la seule banniere d'accueil, que le catalogue filtre ne porte pas.
+     *
+     * Le `storeId` est la preuve que le magasin a publie cette offre sous
+     * cette identite : son absence de la liste complete veut alors dire
+     * quelque chose. Sans lui, le silence du magasin prouve beaucoup moins, et
+     * la grace longue reprend ses droits.
      */
-    const grace = byStore ? STORE_VANISH_DELAY_MS : VANISH_DELAY_MS;
+    const publishedByStore = Boolean(entry.storeId);
+    const grace = byStore && publishedByStore ? STORE_VANISH_DELAY_MS : VANISH_DELAY_MS;
 
     if (now - entry.missingSince >= grace) {
       catalog[catalogKey] = {

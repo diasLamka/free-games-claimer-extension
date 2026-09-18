@@ -4,6 +4,62 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.19.0 -- 2026-09-18
+
+**Une offre GOG peut enfin mourir -- quand GOG l'affirme**
+
+Le bug corrige la veille sur Epic restait ouvert sur GOG. Le balayage par
+MAGASIN, livre en 2.17.0, ne s'exerce que pour une source qui fait autorite sur
+ce magasin ; GOG etait declaree `completeList: false`, faute d'avoir mesure la
+pagination du catalogue. Une offre GOG sans date de fin n'etait donc retiree ni
+par expiration (pas de date), ni par disparition (aucune autorite).
+
+### On ne devine pas la pagination : on croit la reponse
+
+- **`completeList` cesse d'etre une promesse STATIQUE de la source pour devenir
+  un fait PAR REPONSE.** GOG publie `page` et `totalPages` a la racine de sa
+  reponse : il dit lui-meme si elle tient sur une page. Plutot que de deviner
+  le nom du parametre de pagination pour aller chercher la suite, la source
+  publie `complete`, vrai seulement si `page === 1 && totalPages <= 1`.
+- **Le cycle prefere ce fait a la promesse** quand la source en publie un, et
+  retombe sur `completeList` sinon. Aucune autre source ne change de
+  comportement.
+- **Le jour ou GOG annonce plusieurs pages, la veille cesse d'elle-meme d'en
+  conclure des disparitions**, ce cycle-la seulement, et le journal l'ecrit.
+  C'est cette ligne qui fournira la mesure de pagination que ROADMAP.md
+  attendait -- prise en marche, au lieu d'etre attendue.
+- Prudent par construction : une reponse qui ne porte pas ces champs, qui n'est
+  pas a la page 1, ou qui vient d'une source en panne, n'est PAS declaree
+  complete. `totalPages: 0` en revanche l'est : zero page vaut bien une liste
+  complete, elle est vide -- c'est la reponse reellement observee le
+  2026-09-17. A noter, parce que cela mord : `totalResults` arrive en CHAINE la
+  ou `totalGamesFound` est un nombre.
+
+### Et une grace plus fine, qui resserre la 2.17.0
+
+Donner l'autorite a GOG faisait apparaitre un faux positif que
+`completeList: false` masquait, et il valait pour Epic aussi :
+
+- **Une entree decouverte par l'agregateur et marquee `store: 'gog'` n'a pas de
+  `storeId`** : elle n'est rapprochee que par titre normalise. Si son titre
+  differe d'une virgule de celui du catalogue, elle reste une entree DISTINCTE
+  -- et un magasin autoritaire la tuerait au deuxieme cycle alors que l'offre
+  court toujours. Meme chose pour un giveaway annonce par la seule banniere
+  d'accueil, que le catalogue filtre ne porte pas.
+- **Le `storeId` decide donc de la grace** : courte (deux constats) quand
+  l'entree en porte un -- le magasin l'a publiee sous cette identite, son
+  silence veut dire quelque chose ; longue (24 h) quand elle n'est connue que
+  par son titre. C'est le cas de l'entree qui a cause le bug de la veille :
+  decouverte par l'agregateur, puis fusionnee avec l'entree native d'Epic dont
+  elle a herite le `storeId`.
+
+### Mesure
+
+`test/gog-complete.test.mjs` (9 tests) : une reponse annoncant `totalPages: 2`
+ne fait mourir personne et le journal le dit ; `totalPages: 1` fait mourir une
+offre GOG sans date de fin au deuxieme constat ; une entree connue par titre
+seulement y survit. `test/rotation.test.mjs` gagne la contrepartie cote Epic.
+
 ## 2.18.0 -- 2026-09-18
 
 **Ce qui est ECRIT sur le bouton decide, pas le selecteur qui l'a trouve**

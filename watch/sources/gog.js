@@ -165,13 +165,40 @@ export function mapProduct(raw, now) {
 }
 
 /**
+ * La reponse dit-elle elle-meme qu'elle tient sur une seule page ?
+ *
+ * C'est la question qui decide si une absence veut dire quelque chose. GOG
+ * publie `page` et `totalPages` a la racine : plutot que de deviner le nom du
+ * parametre de pagination pour aller chercher les pages suivantes, on le
+ * CROIT quand il annonce une page unique, et on ne conclut rien quand il en
+ * annonce plusieurs.
+ *
+ * Prudent par construction : une reponse qui ne porte pas ces deux champs, ou
+ * qui n'est pas a la page 1, n'est PAS declaree complete. Ne rien savoir et
+ * croire savoir ne se ressemblent que de loin.
+ *
+ * `totalPages: 0` est une reponse reellement observee le 2026-09-17 (aucun jeu
+ * gratuit ce jour-la) : zero page vaut bien une liste complete, elle est vide.
+ * A noter, parce que cela mord : `totalResults` arrive en CHAINE la ou
+ * `totalGamesFound` est un nombre -- d'ou la lecture par Number().
+ */
+export function announcesSinglePage(data) {
+  if (!data || typeof data !== 'object') return false;
+  const page = Number(data.page);
+  const totalPages = Number(data.totalPages);
+  if (!Number.isFinite(page) || page !== 1) return false;
+  if (!Number.isFinite(totalPages)) return false;
+  return totalPages <= 1;
+}
+
+/**
  * Projette une reponse complete. Deduplique sur l'identifiant produit : rien
  * ne garantit que l'API ne repete jamais une entree, et un doublon ferait
  * ouvrir deux onglets pour le meme jeu.
  */
 export function mapResponse(data, now) {
   if (!data || typeof data !== 'object' || !Array.isArray(data.products)) {
-    return { offers: [], dropped: [], erreur: 'la reponse ne porte pas de tableau « products »' };
+    return { offers: [], dropped: [], erreur: 'la reponse ne porte pas de tableau « products »', complete: false };
   }
 
   const offers = [];
@@ -191,7 +218,7 @@ export function mapResponse(data, now) {
     offers.push(offer);
   }
 
-  return { offers, dropped, erreur: null };
+  return { offers, dropped, erreur: null, complete: announcesSinglePage(data) };
 }
 
 /* -------------------------------------------------------------- decouverte */
@@ -226,22 +253,27 @@ export async function discover({
     });
 
     if (!response.ok) {
-      return { offers: [], dropped: [], errors: [`HTTP ${response.status}`] };
+      return { offers: [], dropped: [], errors: [`HTTP ${response.status}`], complete: false };
     }
 
     let data;
     try {
       data = await response.json();
     } catch (e) {
-      return { offers: [], dropped: [], errors: [`JSON illisible : ${(e && e.message) || e}`] };
+      return { offers: [], dropped: [], errors: [`JSON illisible : ${(e && e.message) || e}`], complete: false };
     }
 
-    const { offers, dropped, erreur } = mapResponse(data, now);
+    const { offers, dropped, erreur, complete } = mapResponse(data, now);
     if (erreur) errors.push(erreur);
-    return { offers, dropped, errors };
+    /* `complete` remonte au cycle, qui decide alors s'il peut conclure a des
+       disparitions. Le jour ou GOG rend `totalPages > 1`, la veille cesse
+       d'elle-meme d'en conclure, et le journal le dit -- c'est cette ligne de
+       journal qui fournira la mesure que ROADMAP.md reclamait, au lieu de
+       l'attendre. */
+    return { offers, dropped, errors, complete };
   } catch (e) {
     const reason = e && e.name === 'AbortError' ? `delai depasse (${timeoutMs} ms)` : (e && e.message) || String(e);
-    return { offers: [], dropped: [], errors: [reason] };
+    return { offers: [], dropped: [], errors: [reason], complete: false };
   } finally {
     if (timer) clearTimeout(timer);
   }

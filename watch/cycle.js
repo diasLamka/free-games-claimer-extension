@@ -284,12 +284,31 @@ export async function runCycle({
       // Credibilite de la liste avant d'en tirer des disparitions.
       const currentSize = r.offers.length;
       const knownSize = state.lastSize;
-      const credible = source.completeList
+
+      /*
+       * « Liste complete » est un FAIT PAR REPONSE quand la source en publie
+       * un, et seulement une promesse statique sinon.
+       *
+       * GOG porte `page` et `totalPages` dans sa reponse : il dit lui-meme si
+       * elle tient sur une page. Croire la reponse vaut mieux que deviner le
+       * nom d'un parametre de pagination -- et le jour ou elle annonce
+       * plusieurs pages, la veille cesse d'elle-meme d'en conclure des
+       * disparitions, ce cycle-la seulement.
+       */
+      const announced = typeof r.complete === 'boolean' ? r.complete : null;
+      const claimsComplete = announced === null ? Boolean(source.completeList) : announced;
+
+      const credible = claimsComplete
         && Array.isArray(r.offers)
         && (knownSize === undefined
           || currentSize >= Math.floor(knownSize * CREDIBLE_LIST_RATIO));
 
-      if (source.completeList && !credible) {
+      if (announced === false) {
+        // La mesure que ROADMAP.md attendait, prise en marche.
+        record('info', `${name} : reponse partielle annoncee (plusieurs pages), aucune disparition conclue ce cycle`);
+      }
+
+      if (claimsComplete && !credible) {
         anomalies.push(`${name} : liste tombee de ${knownSize} a ${currentSize}, traitee comme partielle`);
         record('warn', anomalies[anomalies.length - 1]);
       }

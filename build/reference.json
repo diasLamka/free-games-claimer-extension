@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.18.0.js",
+  "fichier": "reference-v2.19.0.js",
   "sha256": "0401CEAA7D10F6579972347C37BD18CA863F30925097C5E6AE1900081C6727F9",
   "octets": 204160,
-  "version": "2.18.0",
-  "motif": "2.18.0 : garde-fous de clic sur Luna et sur l'echange GOG"
+  "version": "2.19.0",
+  "motif": "2.19.0 : GOG dit lui-meme si sa liste est complete"
 }

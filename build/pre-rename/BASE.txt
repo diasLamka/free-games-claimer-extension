@@ -2,7 +2,7 @@ Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
 sha256  : B1398F85A26A83B7D5D6CAD49CA4B22D47F29A46E2C5108479F3BA1786893F02
-motif   : 2.18.0 : garde-fous de clic sur Luna et sur l'echange GOG
+motif   : 2.19.0 : GOG dit lui-meme si sa liste est complete
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a
