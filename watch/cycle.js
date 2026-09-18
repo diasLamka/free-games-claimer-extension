@@ -26,6 +26,7 @@ import {
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { ownedKeys } from './library.js';
+import { refreshRates } from './rates.js';
 import { split } from './filters.js';
 import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched,
@@ -90,10 +91,23 @@ function readableHours(ms) {
   return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h`;
 }
 
-/** Les offres du catalogue qui n'ont jamais ete annoncees. */
-export function toNotify(catalog) {
+/**
+ * Les offres du catalogue qui n'ont jamais ete annoncees.
+ *
+ * `now` n'est pas optionnel par confort : l'etat EXPIRED n'est pose qu'au
+ * passage d'un cycle, donc une offre finie depuis la rotation du jeudi 17 h
+ * peut encore porter l'etat calcule au dernier passage. Sans consulter
+ * l'horloge, on annoncait un jeu qui n'etait plus a prendre -- signale le
+ * 2026-09-18, le lendemain d'une rotation.
+ *
+ * Une fin INCONNUE ne vaut pas une fin passee : `isExpired` rend false, et
+ * l'offre reste annoncable. C'est voulu -- l'agregateur laisse huit offres sur
+ * vingt sans date, et les taire serait pire que de les annoncer.
+ */
+export function toNotify(catalog, now) {
+  if (typeof now !== 'number') throw new TypeError('aAnnoncer : "maintenant" est obligatoire');
   return Object.values(catalog || {}).filter(
-    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED,
+    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED && !isExpired(o, now),
   );
 }
 
@@ -286,6 +300,13 @@ export async function runCycle({
         now,
         source: name,
         completeList: credible,
+        /*
+         * Le magasin sur lequel cette source fait autorite, quand elle en
+         * designe un. C'est ce qui permet au balayage de reconnaitre une
+         * offre Epic decouverte par l'agregateur : son champ `source` dit
+         * « gamerpower » pour toujours, mais son `store` dit « epic ».
+         */
+        store: source.authoritativeFor || null,
       });
       catalog = integration.catalog;
 
@@ -324,7 +345,7 @@ export async function runCycle({
 
     /* ---- amorcage : le premier cycle ne notifie pas ---- */
 
-    const pending = toNotify(catalog);
+    const pending = toNotify(catalog, now);
     let announcements = [];
     let nextState = { ...ctx.state };
 
@@ -340,7 +361,7 @@ export async function runCycle({
       announcements = byUrgency(pending, now);
     }
 
-    const unseen = openOffers(catalog).filter((o) => !o.seen).length;
+    const unseen = openOffers(catalog, now).filter((o) => !o.seen).length;
     nextState = {
       ...nextState,
       lastCycle: now,
@@ -349,9 +370,22 @@ export async function runCycle({
       unseen,
     };
 
+    /* Le taux du jour, pour afficher en euros ce que l'agregateur publie en
+       dollars. Une panne de taux ne fait jamais echouer un cycle : le pire
+       qu'elle produise est un montant affiche dans sa devise d'origine. */
+    const rateRun = await refreshRates({
+      now, stored: ctx.rates, fetch: fetchImpl, record,
+    });
+
     // Persister AVANT de notifier. Une mort du worker entre les deux coute une
     // notification, pas une offre.
-    await writeCycle(chrome, { catalog, sources: sourceStates, state: nextState, stats });
+    await writeCycle(chrome, {
+      catalog,
+      sources: sourceStates,
+      state: nextState,
+      stats,
+      rates: rateRun.changed ? rateRun.rates : undefined,
+    });
 
     /* ---- annonce ---- */
 
@@ -389,7 +423,7 @@ export async function runCycle({
     // Une offre qui se termine bientot et qui n'a pas ete traitee merite un
     // second signal : la premiere notification a pu tomber pendant la nuit. Le
     // seuil est un reglage ; a zero, pas de rappel.
-    const closing = endingSoon(onlyWatched(openOffers(catalog), ctx.settings.watchedStores), {
+    const closing = endingSoon(onlyWatched(openOffers(catalog, now), ctx.settings.watchedStores), {
       now,
       hours: ctx.settings.reminderHours,
       isFinal: (v) => FINAL_VERDICTS.includes(v),
@@ -423,7 +457,7 @@ export async function runCycle({
     await updateBadge(badgeCount({
       mode: ctx.settings.badgeMode,
       unseen,
-      offers: openOffers(catalog),
+      offers: openOffers(catalog, now),
       now,
     }));
 

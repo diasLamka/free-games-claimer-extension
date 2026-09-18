@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.16.2",
+  "version": "2.17.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -37,7 +37,8 @@
     "https://store-site-backend-static-ipv4.ak.epicgames.com/*",
     "https://www.gamerpower.com/*",
     "https://store.steampowered.com/*",
-    "https://api.steampowered.com/*"
+    "https://api.steampowered.com/*",
+    "https://api.frankfurter.app/*"
   ],
   "background": {
     "service_worker": "background.js",

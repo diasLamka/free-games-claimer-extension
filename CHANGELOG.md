@@ -4,6 +4,97 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.17.0 -- 2026-09-18
+
+**Les jeux de la semaine derniere s'en vont, et tout s'affiche en euros**
+
+Deux defauts d'interface, signales au lendemain d'une rotation : les jeux
+termines la veille a 17 h etaient encore listes dans le popup et encore
+annonces, et les montants s'affichaient en dollars sur un compte francais.
+
+### Une offre finie s'en va
+
+- **Une offre SANS date de fin n'avait aucun moyen de mourir.** Le balayage des
+  disparitions ne regardait que le champ `source` de l'entree -- or `merge` le
+  fige a la premiere source qui l'a vue : un jeu Epic decouvert par
+  l'agregateur gardait `source: gamerpower` pour toujours et echappait au
+  balayage d'Epic. Il est desormais balaye par MAGASIN quand la source fait
+  autorite dessus. L'agregateur, qui couvre plusieurs magasins, ne fait
+  autorite sur aucun : son silence ne termine rien.
+- **Et la grace passe de 24 h a deux constats** dans ce cas precis. Les 24 h
+  couvrent le doute sur une liste tronquee ; quand la source du magasin publie
+  une liste complete et jugee credible, ce doute est deja ecarte. Attendre un
+  jour de plus, c'etait afficher le vendredi les jeux de jeudi.
+- **Les notifications et le badge consultent enfin l'horloge.** L'etat
+  « expiree » n'est pose qu'au passage d'un cycle : entre la rotation et le
+  cycle suivant, une offre finie pouvait etre ANNONCEE. Le popup, lui,
+  filtrait deja sur la date -- d'ou l'ecart entre les deux.
+- **Une fin inconnue n'est toujours pas une fin passee** : l'agregateur laisse
+  huit offres sur vingt sans date, et les taire serait pire que de les
+  montrer. C'est le balayage par magasin qui s'en charge.
+
+### La rotation du jeudi est enfin connue
+
+`watch/schedule/clock.js` avait ete ecrit pour exprimer « tous les jeudis a
+telle heure, dans tel fuseau » sans se tromper aux changements d'heure -- et
+personne ne l'appelait jamais avec une regle : la cle des calendriers restait
+vide. La veille ne connaissait la rotation que si Epic l'annoncait, sinon elle
+s'en remettait au plancher de trois interrogations par jour.
+
+- Une regle par defaut est posee pour Epic : **jeudi 11:00 `America/New_York`**.
+  C'est le fuseau ou la regle est VRAIE. A Paris cela tombe a 17 h la plus
+  grande partie de l'annee -- mais **a 16 h** entre le passage a l'heure d'ete
+  americain et l'europeen (mi-mars) et entre les retours a l'heure d'hiver
+  (fin octobre). Ecrire « 17:00 Paris » aurait rate l'ouverture d'une heure,
+  deux fois par an ; un test tient les quatre dates.
+- C'est une heure de REVEIL, pas une verite sur les donnees : elle fait
+  regarder a l'heure dite, elle ne fabrique aucune date. Les fenetres
+  annoncees par Epic restent prioritaires, et une liste vide posee par
+  l'utilisateur reste un choix respecte.
+
+### Un jeu remis en promotion redevient visible
+
+`markExpired` saute les etats terminaux et `merge` conservait l'etat : un jeu
+repropose sur le meme identifiant restait invisible pour toujours. Il revient
+desormais, sauf s'il a deja ete reclame -- celui-la reste terminal, le
+reproposer ferait rouvrir un onglet sur un compte reel.
+
+Au passage, un defaut que ce cas a revele : **une source ne pouvait pas
+corriger sa propre date de fin.** A egalite de fiabilite, l'ancienne valeur
+gagnait toujours. Cette stabilite existe pour rendre la fusion commutative
+entre sources DIFFERENTES ; deux lectures de la meme source ne posent pas
+cette question -- la seconde est plus recente. Un jeu remis en promotion
+gardait sinon la date de la promotion precedente.
+
+### Tout s'affiche en euros
+
+Mesure d'abord : **Epic nous rend deja des euros** et nous lisons le bon champ
+-- la fixture reelle porte `currencyCode: EUR` et `23,99 €`. Le dollar venait
+d'ailleurs.
+
+- **Le prix du magasin bat celui de l'agregateur.** `worth` n'etait arbitre par
+  aucune table de fiabilite : pour un jeu Epic vu par les deux sources, le
+  montant affiche dependait de l'ordre de passage. Le meme jeu valait
+  « 23,99 € » ou « $19.99 » selon le jour. Cette seule correction supprime la
+  plupart des dollars.
+- **Ce qui reste est converti a l'AFFICHAGE**, avec le taux de reference de la
+  Banque centrale europeenne, rafraichi une fois par jour. La donnee stockee
+  ne bouge pas : le jour ou le taux change, il n'y a rien a reecrire, et la
+  verite de la source reste lisible.
+- **Un montant converti le dit** : il porte le signe « environ » et, en
+  infobulle, son montant d'origine avec la date du taux.
+- **Sans taux utilisable, le montant d'origine est rendu intact.** Pas de taux,
+  taux trop vieux, devise que la BCE ne publie pas : on affiche des dollars
+  plutot que des euros faux. Une panne de taux ne fait jamais echouer un cycle.
+- **Le curseur de seuil parle euros.** Il parlait la devise majoritaire des
+  offres : vingt offres de l'agregateur contre une ou deux d'Epic, et une
+  interface francaise affichait « Ne recuperer qu'au-dessus de $15.00 ».
+  A savoir et assume : la comparaison, elle, se fait toujours dans la devise de
+  chaque offre. Pour une valeur indicative l'ordre de grandeur suffit ;
+  convertir dans le filtre ferait entrer un taux dans un module pur.
+
+29 tests de plus (`test/rotation.test.mjs`, `test/rates.test.mjs`).
+
 ## 2.16.2 -- 2026-09-17
 
 **La reclamation passe ; le journal arrete de crier**

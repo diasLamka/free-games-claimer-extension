@@ -15,6 +15,8 @@
  */
 
 import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
+import { schedulesWithDefaults } from './schedule/rules.js';
+import { KEY_RATES } from './rates.js';
 /* Le canari possede sa cle, comme la bibliotheque et le journal. Elle est
    importee ici pour une raison precise : son etat doit s'ecrire dans la MEME
    transition que le catalogue et la cadence, sans quoi un worker mort entre
@@ -275,19 +277,23 @@ export async function readState(chrome) {
 export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
-    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY,
+    KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY, KEY_RATES,
   ]);
   return {
     catalog: raw[KEYS.OFFERS] || {},
     sources: raw[KEYS.SOURCES] || {},
     settings: normaliseSettings(raw[KEYS.SETTINGS]),
-    schedules: raw[KEYS.SCHEDULES] || {},
+    // Les horaires connus des magasins, sauf si l'utilisateur en a pose
+    // d'autres : sans cela la cle restait vide et la rotation hebdomadaire
+    // n'etait jamais anticipee (cf. watch/schedule/rules.js).
+    schedules: schedulesWithDefaults(raw[KEYS.SCHEDULES]),
     state: { ...DEFAULT_STATE, ...(raw[KEYS.STATE] || {}) },
     stats: raw[KEYS.STATS] || {},
     filters: raw[KEYS.FILTERS] || {},
     cadence: raw[KEYS.CADENCE] || [],
     canary: raw[KEY_CANARY] || {},
     library: raw[KEY_LIBRARY] || {},
+    rates: raw[KEY_RATES] || null,
   };
 }
 
@@ -298,7 +304,7 @@ export async function readContext(chrome) {
  * deux, le service worker peut mourir. On prefere perdre une notification
  * qu'en envoyer deux, et le champ notifieLe rend la reprise possible.
  */
-export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary }) {
+export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary, rates }) {
   const obj = {};
   if (catalog !== undefined) obj[KEYS.OFFERS] = catalog;
   if (sources !== undefined) obj[KEYS.SOURCES] = sources;
@@ -306,6 +312,7 @@ export async function writeCycle(chrome, { catalog, sources, state, stats, caden
   if (stats !== undefined) obj[KEYS.STATS] = stats;
   if (cadence !== undefined) obj[KEYS.CADENCE] = cadence;
   if (canary !== undefined) obj[KEY_CANARY] = canary;
+  if (rates !== undefined) obj[KEY_RATES] = rates;
   return write(chrome, obj);
 }
 

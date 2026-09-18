@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.16.2.js",
+  "fichier": "reference-v2.17.0.js",
   "sha256": "4AAAFA4C73A1FDB9F920D89DA718FB56BB5E255CE3EF3C75188B35FAFEC4F9A2",
   "octets": 193651,
-  "version": "2.16.2",
-  "motif": "2.16.2 : le journal n'ecrit plus en warn ce qui est du fonctionnement normal"
+  "version": "2.17.0",
+  "motif": "2.17.0 : offres finies retirees, rotation du jeudi connue, affichage en euros"
 }

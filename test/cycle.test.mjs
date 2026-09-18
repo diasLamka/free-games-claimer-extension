@@ -146,13 +146,13 @@ test('la notification repose sur notifieLe, pas sur le resultat du cycle', async
 
   const catalog = c.faux.payload()[KEYS.OFFERS];
   const entryPairs = Object.values(catalog);
-  assert.equal(toNotify(catalog).length, 0);
+  assert.equal(toNotify(catalog, T).length, 0);
 
   // On simule une entree ecrite mais jamais annoncee -- exactement ce que
   // laisse une mort du service worker entre l'ecriture et la notification.
   const catalogKey = entryPairs[0].catalogKey;
   catalog[catalogKey] = { ...entryPairs[0], notifiedAt: null };
-  assert.equal(toNotify(catalog).length, 1, 'une offre non annoncee doit etre reprise');
+  assert.equal(toNotify(catalog, T).length, 1, 'une offre non annoncee doit etre reprise');
 });
 
 /* ------------------------------------------------- garde sur la liste complete */

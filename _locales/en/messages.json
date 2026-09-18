@@ -125,6 +125,9 @@
   "alsoFreeOn": {
     "message": "also on $1"
   },
+  "approxFrom": {
+    "message": "Converted from $1, at the ECB rate of $2"
+  },
   "upcomingUnannounced": {
     "message": "Title not announced yet"
   },

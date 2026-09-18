@@ -125,6 +125,9 @@
   "alsoFreeOn": {
     "message": "aussi sur $1"
   },
+  "approxFrom": {
+    "message": "Montant converti depuis $1, au taux de la BCE du $2"
+  },
   "upcomingUnannounced": {
     "message": "Titre pas encore annoncé"
   },

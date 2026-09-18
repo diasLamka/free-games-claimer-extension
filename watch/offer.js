@@ -372,6 +372,22 @@ export const FIELD_TRUST = Object.freeze({
   title: ['epic-api', 'gamerpower'],
   // La jaquette du magasin vaut mieux que la vignette remontee par un tiers.
   image: ['epic-api', 'gamerpower'],
+  /*
+   * Le prix du magasin bat celui de l'agregateur, et ce n'est pas qu'une
+   * question de fraicheur : c'est une question de DEVISE.
+   *
+   * Epic publie le prix DU COMPTE -- « 23,99 € » sur un compte francais, avec
+   * son currencyCode a cote. L'agregateur, lui, ne connait que le dollar :
+   * dans la capture reelle test/fixtures/gamerpower-giveaways.json, les vingt
+   * montants renseignes sont en « $ », et la structure ne porte aucun code de
+   * devise.
+   *
+   * Sans cette ligne, `worth` tombait dans la regle generale « le dernier non
+   * vide gagne » : pour un jeu Epic vu par les deux sources, le montant
+   * affiche dependait de l'ordre de passage des sources dans le cycle. Le
+   * meme jeu valait « 23,99 € » ou « $19.99 » selon le jour.
+   */
+  worth: ['epic-api', 'gamerpower'],
 });
 
 const CONTESTED_FIELDS = Object.keys(FIELD_TRUST);
@@ -419,7 +435,9 @@ export function merge(existing, incoming) {
     ...existing,
     store: existing.store === STORES.UNKNOWN ? incoming.store : existing.store,
     resolveUrl: keep(existing.resolveUrl, incoming.resolveUrl),
-    worth: keep(existing.worth, incoming.worth),
+    // `worth` n'est plus ici : il est desormais arbitre par FIELD_TRUST, dans
+    // la boucle ci-dessous. L'y laisser aussi ne changerait rien au resultat,
+    // mais ferait croire a deux regles concurrentes.
     platforms: keep(existing.platforms, incoming.platforms),
     category: keep(existing.category, incoming.category),
     updatedAt: incoming.updatedAt ?? existing.updatedAt,
@@ -438,10 +456,25 @@ export function merge(existing, incoming) {
     }
 
     // Les deux renseignent : la source la plus fiable pour ce champ gagne.
-    // A egalite, l'existante reste, pour que la fusion soit stable.
-    const rankA = rank(champ, existingOrigin[champ] ?? existing.source);
-    const rankB = rank(champ, incomingOrigin[champ] ?? incoming.source);
-    if (rankB < rankA) {
+    const originA = existingOrigin[champ] ?? existing.source;
+    const originB = incomingOrigin[champ] ?? incoming.source;
+    const rankA = rank(champ, originA);
+    const rankB = rank(champ, originB);
+
+    /*
+     * A egalite, l'existante reste -- SAUF si c'est la meme source qui repasse.
+     *
+     * La stabilite a egalite existe pour rendre la fusion commutative entre
+     * deux sources DIFFERENTES : decouvrir par l'agregateur puis par Epic, ou
+     * l'inverse, doit donner le meme resultat. Deux lectures de la MEME source
+     * ne posent pas cette question : la seconde est simplement plus recente.
+     *
+     * Sans cette nuance, Epic ne pouvait pas corriger sa propre date de fin.
+     * Consequence concrete : un jeu remis en promotion gardait la date de sa
+     * promotion precedente, donc restait expire pour toujours.
+     */
+    const sameSource = originA != null && originA === originB;
+    if (rankB < rankA || (rankB === rankA && sameSource)) {
       merged[champ] = incoming[champ];
       merged.origin[champ] = incomingOrigin[champ] ?? incoming.source ?? null;
     }

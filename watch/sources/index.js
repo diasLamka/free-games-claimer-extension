@@ -43,6 +43,18 @@ export const SOURCES = Object.freeze({
      * reponse a reellement disparu.
      */
     completeList: true,
+    /**
+     * Cette source fait AUTORITE sur son magasin.
+     *
+     * Ce que ce champ change : une entree qui dit `store: 'epic'` et que cette
+     * liste ne contient plus est une promotion terminee, meme si c'est
+     * l'agregateur qui l'avait decouverte. Sans lui, le balayage ne regardait
+     * que le champ `source` de l'entree -- or `merge` le fige a la premiere
+     * source, donc un jeu Epic decouvert par l'agregateur gardait
+     * `source: 'gamerpower'` pour toujours et echappait au balayage d'Epic.
+     * C'est ce qui laissait a l'ecran, le vendredi, les jeux de la veille.
+     */
+    authoritativeFor: STORES.EPIC,
     /** Rien ne met cette API en cache : on peut la lire a l'instant du drop. */
     minIntervalMs: 60 * 1000,
   }),
@@ -89,6 +101,8 @@ export const SOURCES = Object.freeze({
      * donc une liste vide est un resultat normal, pas un effondrement.
      */
     completeList: true,
+    /** Liste complete et propre a un seul magasin : elle fait autorite dessus. */
+    authoritativeFor: STORES.STEAM,
     /** Deux requetes par cycle, sur des endpoints publics : on reste poli. */
     minIntervalMs: 30 * 60 * 1000,
     /** Detection seule : voir MAGASINS_RECLAMABLES. */

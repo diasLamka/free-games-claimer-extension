@@ -455,6 +455,10 @@
   .changed { font-size: 11px; color: var(--mute); margin: -4px 0 8px; }
 
   .worth.own { color: var(--jade); }
+  /* Un montant converti se signale sans crier : le signe « environ » porte
+     deja l'information, l'infobulle donne le montant d'origine et la date
+     du taux. */
+  .worth.approx { opacity: 0.85; cursor: help; }
 
   /* Le motif d'ecart, sous la ligne de meta : pourquoi cette offre ne sera pas
      prise pour vous. */

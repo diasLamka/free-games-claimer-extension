@@ -266,7 +266,7 @@ test('enCours et resume decrivent l\'etat du catalogue', () => {
     c: { ...offreEpic({ storeId: 'c' }), state: STATES.EXPIRED },
     d: { ...offreEpic({ storeId: 'd' }), state: STATES.RESOLVED },
   };
-  assert.equal(openOffers(catalog).length, 2);
+  assert.equal(openOffers(catalog, T).length, 2);
   assert.deepEqual(resume(catalog), {
     [STATES.DISCOVERED]: 1,
     [STATES.QUEUED]: 1,

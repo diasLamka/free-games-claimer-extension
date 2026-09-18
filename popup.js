@@ -18,7 +18,10 @@
  */
 import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
 import { STORE_LABELS, STORES, normaliseTitle } from './watch/offer.js';
-import { preview, judge, REASONS, readWorth, dominantCurrency, UNKNOWN_CURRENCY } from './watch/filters.js';
+import {
+  preview, judge, REASONS, readWorth, readCurrency, UNKNOWN_CURRENCY,
+} from './watch/filters.js';
+import { KEY_RATES, toEuros } from './watch/rates.js';
 import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
 import { CLAIMABLE_STORES } from './watch/sources/index.js';
@@ -142,6 +145,7 @@ const KEYS_READ = [
   'FGC_auto_state',
   ...Object.values(HISTORY_KEYS),
   KEY_STATE, KEY_SOURCES, KEY_SETTINGS, KEY_CATALOG, KEY_FILTERS, KEY_STATS, KEY_UI, KEY_STOP, KEY_LIBRARY,
+  KEY_RATES,
   KEY_CANARY,
 ];
 
@@ -546,7 +550,10 @@ function gameCard({ key, offer }, ctx) {
     const others = [...twins].filter((s) => s !== offer.store).map((s) => TAGS[s] || s);
     meta.append(el('span', 'worth', t('alsoFreeOn', others.join(', '))));
   } else if (offer.worth) {
-    meta.append(el('span', 'worth', String(offer.worth)));
+    const shown = worthLabel(offer.worth, now);
+    const tag = el('span', shown.approx ? 'worth approx' : 'worth', shown.text);
+    if (shown.title) tag.title = shown.title;
+    meta.append(tag);
   }
 
   const left = el('span', 'left');
@@ -1176,10 +1183,9 @@ function renderTally(all) {
   }
 }
 
-/* Amounts keep the currency they were published in. No conversion happens
-   anywhere: a rate nobody can check is worse than two totals side by side.
-   What changed is the symbol -- it used to be a hardcoded `$`, which read as
-   dollars on a French account whose Epic prices are all in euros. */
+/* Le symbole n'est jamais choisi par l'interface : il vient de la donnee.
+   Cette fonction ne fait que la MISE EN FORME -- la conversion, elle, vit dans
+   libelleValeur ci-dessous. */
 function money(n, currency) {
   const loc = intlLocale();
   if (!currency || currency === UNKNOWN_CURRENCY) {
@@ -1193,21 +1199,83 @@ function money(n, currency) {
   }
 }
 
-/** "23,99 € + 14,99 $" -- the biggest first, never summed across currencies. */
-function moneyTotals(totals = {}) {
-  return Object.entries(totals)
-    .sort((a, b) => b[1] - a[1])
-    .map(([currency, amount]) => money(amount, currency))
-    .join(' + ');
+/* TOUT S'AFFICHE EN EUROS -- et ce qui est converti le dit.
+ *
+ * Epic publie le prix DU COMPTE, donc deja en euros ici. L'agregateur ne
+ * connait que le dollar : vingt montants sur vingt dans la capture reelle, et
+ * pas meme un code de devise dans sa structure. Les deux se retrouvaient cote
+ * a cote dans la meme liste, « 23,99 € » au-dessus de « $14.99 ».
+ *
+ * Trois regles, dans cet ordre :
+ *   - un montant deja en euros n'est jamais touche ;
+ *   - un montant converti porte le signe « environ » et, en infobulle, son
+ *     montant d'origine avec la date du taux ;
+ *   - sans taux utilisable, le montant d'origine est rendu INTACT. Une
+ *     approximation sans taux serait un chiffre invente.
+ */
+function worthLabel(raw, now) {
+  const original = String(raw);
+  const currency = readCurrency(raw);
+  if (!currency || currency === 'EUR') return { text: original, approx: false, title: '' };
+
+  const euros = toEuros(readWorth(raw), currency, ratesCache, now);
+  if (euros === null) return { text: original, approx: false, title: '' };
+
+  return {
+    text: `\u2248 ${money(euros, 'EUR')}`,
+    approx: true,
+    title: t('approxFrom', original, (ratesCache && ratesCache.date) || '?'),
+  };
+}
+
+/**
+ * Le bilan, en euros.
+ *
+ * Les totaux restent tenus PAR DEVISE en amont (watch/tally.js) : additionner
+ * des devises produirait un nombre qui ne designe rien. C'est ici, et
+ * seulement ici, qu'on les ramene a l'euro pour les montrer -- et ce qui n'a
+ * pas pu etre converti garde sa devise, a cote, plutot que de disparaitre.
+ */
+function moneyTotals(totals = {}, now = Date.now()) {
+  const entries = Object.entries(totals);
+  if (!entries.length) return money(0, 'EUR');
+
+  let sum = 0;
+  let converted = false;
+  let anyEuro = false;
+  const untouched = [];
+
+  for (const [currency, amount] of entries) {
+    if (currency === 'EUR') { sum += amount; anyEuro = true; continue; }
+    const euros = toEuros(amount, currency, ratesCache, now);
+    if (euros === null) { untouched.push(money(amount, currency)); continue; }
+    sum += euros;
+    converted = true;
+  }
+
+  if (!converted && !anyEuro) return untouched.join(' + ');
+  const head = (converted ? '\u2248 ' : '') + money(sum, 'EUR');
+  return untouched.length ? [head, ...untouched].join(' + ') : head;
 }
 
 /** The currency the threshold slider speaks, read off the offers on screen. */
 let seuilDevise = null;
 
-function thresholdCurrency(catalog) {
-  const found = dominantCurrency(Object.values(catalog || {}));
-  if (found) return found;
-  return intlLocale().startsWith('fr') ? 'EUR' : 'USD';
+/*
+ * Le curseur parle euros, comme tout le reste de l'ecran.
+ *
+ * Il parlait la devise MAJORITAIRE des offres : vingt offres de l'agregateur
+ * contre une ou deux d'Epic, et une interface francaise affichait
+ * « Ne recuperer qu'au-dessus de $15.00 ».
+ *
+ * A savoir, et assume : la COMPARAISON, elle, se fait toujours dans la devise
+ * de chaque offre, sans conversion (watch/filters.js). Un seuil a 15 ecarte
+ * donc « $14.99 » comme « 14,99 € ». Pour une valeur indicative, l'ordre de
+ * grandeur suffit ; convertir dans le filtre demanderait de faire entrer un
+ * taux dans un module pur, et de le faire entrer dans ses tests.
+ */
+function thresholdCurrency() {
+  return 'EUR';
 }
 
 /* ------------------------------------------------------------ code backup */
@@ -1240,7 +1308,7 @@ function renderFilters(all, behaviour) {
   const catalog = get(all, KEY_CATALOG, {});
 
   const threshold = Number.isFinite(filters.minWorth) ? filters.minWorth : 0;
-  seuilDevise = thresholdCurrency(catalog);
+  seuilDevise = thresholdCurrency();
   document.getElementById('min-worth').value = String(threshold);
   document.getElementById('min-worth-value').textContent = threshold > 0 ? money(threshold, seuilDevise) : t('noThreshold');
   document.getElementById('include-dlc').checked = filters.claimExtraContent === true;
@@ -1291,6 +1359,10 @@ function applyLook() {
 
 let behaviourCache = { ...DEFAULT_BEHAVIOUR };
 
+/* Le taux du jour, pose par le cycle de veille (watch/rates.js). Null tant
+   qu'aucun cycle n'a tourne : les montants restent alors dans leur devise. */
+let ratesCache = null;
+
 async function load() {
   return withWorking(render);
 }
@@ -1300,6 +1372,7 @@ async function render() {
 
   ui = { ...DEFAULT_UI, ...get(all, KEY_UI, {}) };
   behaviourCache = { ...DEFAULT_BEHAVIOUR, ...get(all, KEY_SETTINGS, {}) };
+  ratesCache = get(all, KEY_RATES, null);
 
   setLocale(ui.language === 'auto' ? null : ui.language);
   translateDocument();
