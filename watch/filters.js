@@ -257,6 +257,12 @@ export function judge(offer, filters = {}, { supportedStores = [], owned = null 
 
   if (!offer.store || offer.store === STORES.UNKNOWN) return deny(REASONS.STORE_UNKNOWN);
   if (!supportedStores.includes(offer.store)) return deny(REASONS.STORE_UNSUPPORTED);
+  /* Steam, en option, ne sait recuperer qu'une licence gratuite identifiee par
+     son PAQUET -- et seule la source Steam le donne. Une entree Steam sans
+     paquet (une cle offerte sur un site tiers, vue par l'agregateur) n'a rien
+     que le module sache prendre : la tenter echouait, et occupait pour vingt
+     minutes le creneau Steam des vraies offres, a chaque nouvel essai. */
+  if (offer.store === STORES.STEAM && !offer.packageId) return deny(REASONS.STORE_UNSUPPORTED);
   if (f.allowedStores && !f.allowedStores.includes(offer.store)) {
     return deny(REASONS.STORE_DISABLED);
   }

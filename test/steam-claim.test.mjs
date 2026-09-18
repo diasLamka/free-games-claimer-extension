@@ -33,6 +33,7 @@ import { CLAIMABLE_STORES, claimableStoresFor, activeSourcesFor } from '../watch
 import { mapItem, readOwnership, OWNED_URL } from '../watch/sources/steam.js';
 import { makeOffer, merge, STORES, STATES } from '../watch/offer.js';
 import { DEFAULT_SETTINGS, KEYS } from '../watch/storage.js';
+import { judge, REASONS } from '../watch/filters.js';
 
 const PAQUET = '1827145';
 const APPID = '2000040';
@@ -483,4 +484,35 @@ test('cycle, option coupee : la source Steam n\'est meme pas interrogee', async 
   assert.equal(r.ouverts.length, 0);
   // Le cycle lit d'autres choses (les taux de change) : seule la bibliotheque Steam compte ici.
   assert.ok(!r.lectures.some((u) => u.startsWith(OWNED_URL)), 'bibliotheque Steam lue sans option');
+});
+
+test('une entree Steam sans paquet n\'est pas candidate, et ne prend pas le creneau', async () => {
+  /* Une cle Steam offerte sur un site tiers, vue par l'agregateur : magasin
+     « steam », mais aucun paquet. Plus urgente que la vraie offre, elle passait
+     devant, echouait, et bloquait le creneau Steam pendant vingt minutes. */
+  const sansPaquet = {
+    ...makeOffer({
+      source: 'gamerpower', store: STORES.STEAM, title: 'Cle Steam offerte ailleurs',
+      url: 'https://www.gamerpower.com/x', keepable: true, end: new Date(T + 3600000).toISOString(),
+    }),
+    catalogKey: 'steam:cle',
+  };
+  const avecOption = claimableStoresFor({ steamAutoClaim: true });
+  assert.equal(judge(sansPaquet, {}, { supportedStores: avecOption }).reason, REASONS.STORE_UNSUPPORTED);
+
+  const ctx = await fauxSteam();
+  const vraie = offreSteam();
+  const r = await claimWhatCanBe({
+    chrome: ctx.chrome,
+    now: T,
+    catalog: { [sansPaquet.catalogKey]: sansPaquet, [vraie.catalogKey]: vraie },
+    filters: {},
+    claimableStores: avecOption,
+    watchedStores: ['steam'],
+    cadence: [],
+    maxReclamations: 3,
+    fetch: ctx.fetch,
+  });
+  assert.deepEqual(r.claims.map((c) => c.catalogKey), [vraie.catalogKey]);
+  assert.equal(r.claims[0].verdict, VERDICTS.CLAIMED);
 });

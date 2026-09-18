@@ -4,6 +4,36 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.22.1 -- 2026-09-19
+
+**Steam : l'option agit tout de suite, et une fausse offre ne bloque plus les vraies**
+
+Retour d'usage, le jour meme : « pour l'instant rien de reclame ». Deux causes
+dans le code, trouvees en relisant le chemin de bout en bout.
+
+- **Activer l'option ne declenchait rien.** Le prochain cycle venait a son
+  heure : plusieurs heures sur une journee calme (trois verifications par jour
+  au minimum, plus les creneaux de sortie). « Activer quand meme » lance
+  desormais la meme verification que « Verifier maintenant ». L'arret
+  d'urgence l'emporte toujours : il annule ce cycle comme les autres.
+- **Une entree Steam sans paquet prenait le creneau des vraies.** L'agregateur
+  voit aussi des cles Steam offertes sur des sites tiers : magasin « steam »,
+  mais aucun paquet. Plus urgentes, elles passaient devant, echouaient
+  (« paquet Steam inconnu ») et bloquaient la recuperation Steam vingt minutes,
+  a chaque nouvel essai, jusqu'a cinq. Le filtre les ecarte maintenant comme un
+  magasin sans module : detectees, affichees, a un clic.
+
+Ce que ce correctif ne tranche pas : si l'extension lit bien la session Steam,
+et si le clic reussit. Le journal de la veille le dit, offre par offre
+(« -> needs_login », « -> failed (page Steam : ...) », « steam : attend son
+tour »).
+
+### Mesure
+
+`test/steam-claim.test.mjs` : 22 tests, dont l'entree sans paquet, plus urgente
+que la vraie offre, qui ne passe plus devant. Dans un Chrome headless :
+« Activer quand meme » puis la verification, sans erreur. 682 tests.
+
 ## 2.22.0 -- 2026-09-19
 
 **Steam : recuperer aussi, en option, a vos risques**

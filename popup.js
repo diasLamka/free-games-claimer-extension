@@ -1628,9 +1628,14 @@ document.getElementById('steam-auto').addEventListener('change', (e) => {
   warn.hidden = true;
   writeBehaviour({ steamAutoClaim: false });
 });
-document.getElementById('steam-accept').addEventListener('click', () => {
+document.getElementById('steam-accept').addEventListener('click', async () => {
   document.getElementById('steam-warn').hidden = true;
-  writeBehaviour({ steamAutoClaim: true });
+  await writeBehaviour({ steamAutoClaim: true });
+  /* Without this, nothing moved until the next planned cycle -- hours, on a
+     quiet day. The user has just decided: look now, like "Check now" does.
+     The emergency stop still wins: a stopped extension cancels the cycle. */
+  await withWorking(requestCycle, { immediate: true });
+  await load();
 });
 document.getElementById('steam-cancel').addEventListener('click', () => {
   document.getElementById('steam-warn').hidden = true;
