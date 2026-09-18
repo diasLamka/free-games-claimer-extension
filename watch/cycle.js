@@ -336,6 +336,11 @@ export async function runCycle({
         stats[name] = observe(stats[name] || emptyStat(), fresh, {
           now,
           lastEmptyPoll: state.lastSuccess ?? null,
+          /* Le fuseau ou l'heure de publication de cette source veut dire
+             quelque chose. Sans lui, les cases restent en UTC et glissent
+             d'une heure a chaque changement d'heure -- soit, pour une source
+             hebdomadaire, trois semaines a reapprendre deux fois par an. */
+          zone: source.zone || null,
         });
       }
 

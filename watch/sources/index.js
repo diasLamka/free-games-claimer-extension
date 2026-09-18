@@ -55,6 +55,14 @@ export const SOURCES = Object.freeze({
      * C'est ce qui laissait a l'ecran, le vendredi, les jeux de la veille.
      */
     authoritativeFor: STORES.EPIC,
+    /**
+     * Le fuseau ou l'heure de publication d'Epic veut dire quelque chose :
+     * 11:00 a New York, tous les jeudis. C'est la meme mesure que la regle de
+     * rotation (`watch/schedule/rules.js`), et la couche apprenante y range
+     * desormais ses cases -- sans quoi elles glissent d'une heure deux fois
+     * par an, et la fenetre chaude de 30 minutes les rate entierement.
+     */
+    zone: 'America/New_York',
     /** Rien ne met cette API en cache : on peut la lire a l'instant du drop. */
     minIntervalMs: 60 * 1000,
   }),
@@ -64,6 +72,12 @@ export const SOURCES = Object.freeze({
     libelle: 'GamerPower',
     discover: gamerpower.discover,
     completeList: true,
+    /**
+     * Mesure : l'agregateur date ses offres en heure de New York, sans fuseau
+     * dans la chaine (`DATE_ZONE` dans watch/sources/gamerpower.js). C'est donc
+     * la aussi que ses heures de publication veulent dire quelque chose.
+     */
+    zone: gamerpower.DATE_ZONE,
     /**
      * Le CDN sert la reponse avec Cache-Control: max-age=600. Interroger plus
      * souvent relit le meme cache : cout reel, gain nul, et impossible a

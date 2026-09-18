@@ -17,14 +17,22 @@
  *   2. sinon on credite un INTERVALLE (dernier sondage negatif -> sondage
  *      positif) reparti uniformement, pas une case. Flou, mais non biaise.
  *
- * Les cases sont en UTC. Un magasin suit ses horaires locaux, donc ses cases
- * glissent d'une heure aux changements d'heure ; la decroissance par demi-vie
- * absorbe ce glissement en quelques semaines, et l'alternative -- ancrer
- * l'histogramme sur le fuseau suppose de chaque magasin -- demanderait de
- * connaitre ce fuseau, ce qu'on ne sait pas pour toutes les sources.
+ * LES CASES SONT ANCREES SUR UN FUSEAU NOMME quand on connait celui de la
+ * source, en UTC sinon. Le commentaire precedent pariait que la decroissance
+ * par demi-vie absorberait le glissement d'une heure des changements d'heure.
+ * Le chiffre dit le contraire : la demi-fenetre chaude de l'ordonnanceur vaut
+ * 30 MINUTES (`hotHalfWindowMs`), donc une derive d'une heure ne la frole meme
+ * pas -- elle la rate entierement. Et reapprendre demande trois observations
+ * dans la nouvelle case, soit trois semaines pour une source hebdomadaire.
+ *
+ * Le fuseau est donc porte par l'histogramme lui-meme (`stat.zone`), pas par
+ * l'appelant : une case rangee dans un fuseau et relue dans un autre serait
+ * pire que le bug qu'on corrige. Quand la source change de fuseau, les cases
+ * sont TRANSPOSEES -- voir `retuneZone`.
  *
  * Module pur : aucune horloge implicite.
  */
+import { localParts, validZone, nextOccurrence } from './clock.js';
 
 const HOUR = 3600000;
 const DAY = 24 * HOUR;
@@ -46,18 +54,91 @@ export const ABOVE_AVERAGE_FACTOR = 3;
 export const CELL_COUNT = 168;
 
 export function emptyStat() {
-  return { cells: {}, observations: 0, lastUpdate: null };
+  return { cells: {}, observations: 0, lastUpdate: null, zone: null };
 }
 
-/** Cle d'une case : jour de la semaine UTC (0 = dimanche) et heure UTC. */
-export function cellKey(instant) {
-  const d = new Date(instant);
-  return `${d.getUTCDay()}-${d.getUTCHours()}`;
+/**
+ * Le fuseau dans lequel les cases d'un histogramme sont rangees.
+ *
+ * `null` -- le cas de tous les histogrammes appris jusqu'ici -- veut dire UTC,
+ * et c'est ce qu'ils etaient. Un fuseau inconnu de la plateforme retombe sur
+ * UTC plutot que de faire echouer la lecture : une prediction degradee vaut
+ * mieux qu'une veille arretee.
+ */
+export function statZone(stat) {
+  const z = stat && typeof stat.zone === 'string' ? stat.zone.trim() : '';
+  return z && validZone(z) ? z : 'UTC';
+}
+
+/** Cle d'une case : jour de la semaine (0 = dimanche) et heure, dans `zone`. */
+export function cellKey(instant, zone = 'UTC') {
+  if (!zone || zone === 'UTC') {
+    const d = new Date(instant);
+    return `${d.getUTCDay()}-${d.getUTCHours()}`;
+  }
+  const p = localParts(instant, zone);
+  return `${p.weekday}-${p.hour}`;
 }
 
 export function readKey(key) {
   const [day, hour] = String(key).split('-').map(Number);
   return { day, hour };
+}
+
+/* ------------------------------------------------------------ transposition */
+
+/** Decale une cle de case d'un nombre entier d'heures, en bouclant sur la semaine. */
+function shiftKey(key, hours) {
+  const { day, hour } = readKey(key);
+  const total = day * 24 + hour + hours;
+  const wrapped = ((total % CELL_COUNT) + CELL_COUNT) % CELL_COUNT;
+  return `${Math.floor(wrapped / 24)}-${wrapped % 24}`;
+}
+
+/**
+ * Range les cases dans un autre fuseau.
+ *
+ * CE QUE CETTE FONCTION NE PEUT PAS FAIRE, et il faut le dire : une case ne
+ * garde ni les dates ni les decalages de ses observations, seulement un poids
+ * et un compteur. Une transposition exacte est donc IMPOSSIBLE -- l'information
+ * qu'elle demanderait a ete jetee a l'ecriture.
+ *
+ * Ce qu'elle fait a la place : elle applique le decalage EN VIGUEUR A CET
+ * INSTANT entre les deux fuseaux. Les observations faites sous ce decalage --
+ * les recentes, donc les seules qui pesent encore -- atterrissent dans la
+ * bonne case. Les plus anciennes, faites sous l'autre decalage, se retrouvent
+ * a une heure pres : elles l'etaient deja, c'est tout le probleme qu'on
+ * corrige, et la demi-vie les efface.
+ *
+ * C'est strictement mieux que les deux alternatives : rester en UTC garde la
+ * derive pour toujours, et repartir de zero coute trois semaines de
+ * reapprentissage pour une source hebdomadaire.
+ */
+export function retuneZone(stat, zone, now) {
+  const from = statZone(stat);
+  const to = zone && validZone(zone) ? zone : 'UTC';
+  const base = { ...emptyStat(), ...stat };
+  if (from === to) return { ...base, zone: to === 'UTC' ? (base.zone || null) : to };
+
+  // Les fuseaux a la demi-heure existent (Inde, Terre-Neuve) : une case fait
+  // une heure, on arrondit donc au plus proche plutot que de perdre la case.
+  const hours = Math.round((offsetAt(now, to) - offsetAt(now, from)) / HOUR);
+
+  const cells = {};
+  for (const [key, c] of Object.entries(base.cells || {})) {
+    const next = shiftKey(key, hours);
+    const prev = cells[next] || { weight: 0, observations: 0 };
+    cells[next] = { weight: prev.weight + c.weight, observations: prev.observations + c.observations };
+  }
+
+  return { ...base, cells, zone: to === 'UTC' ? null : to };
+}
+
+/** Decalage d'un fuseau par rapport a UTC, en millisecondes, a cet instant. */
+function offsetAt(instant, zone) {
+  if (!zone || zone === 'UTC') return 0;
+  const p = localParts(instant, zone);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - (instant - (instant % 1000));
 }
 
 /* ---------------------------------------------------------- decroissance */
@@ -102,8 +183,8 @@ function addOffer(cells, key, weight) {
 export function creditInstant(stat, instant, now, halfLifeMs = HALF_LIFE_MS) {
   const decayed = decay(stat, now, halfLifeMs);
   const cells = { ...decayed.cells };
-  addOffer(cells, cellKey(instant), 1);
-  return { cells, observations: (decayed.observations || 0) + 1, lastUpdate: now };
+  addOffer(cells, cellKey(instant, statZone(decayed)), 1);
+  return { cells, observations: (decayed.observations || 0) + 1, lastUpdate: now, zone: decayed.zone || null };
 }
 
 /**
@@ -127,15 +208,16 @@ export function creditInterval(stat, start, end, now, halfLifeMs = HALF_LIFE_MS)
   const cells = { ...decayed.cells };
   const duration = end - start;
 
+  const zone = statZone(decayed);
   let cursor = start;
   while (cursor < end) {
     const cellEnd = Math.floor(cursor / HOUR) * HOUR + HOUR;
     const clamp = Math.min(cellEnd, end);
-    addOffer(cells, cellKey(cursor), (clamp - cursor) / duration);
+    addOffer(cells, cellKey(cursor, zone), (clamp - cursor) / duration);
     cursor = clamp;
   }
 
-  return { cells, observations: (decayed.observations || 0) + 1, lastUpdate: now };
+  return { cells, observations: (decayed.observations || 0) + 1, lastUpdate: now, zone: decayed.zone || null };
 }
 
 /**
@@ -145,18 +227,23 @@ export function creditInterval(stat, start, end, now, halfLifeMs = HALF_LIFE_MS)
  * n'avait pas vu cette offre. Sans lui, et sans date de publication, on ne peut
  * rien apprendre : on compte l'observation sans la situer.
  */
-export function observe(stat, offer, { now, lastEmptyPoll = null, halfLifeMs = HALF_LIFE_MS } = {}) {
+export function observe(stat, offer, { now, lastEmptyPoll = null, halfLifeMs = HALF_LIFE_MS, zone = null } = {}) {
   if (typeof now !== 'number') throw new TypeError('observer : "maintenant" est obligatoire');
+
+  /* Le fuseau de la source, quand elle en declare un, commande le rangement.
+     S'il differe de celui des cases, elles sont transposees ICI, une fois, et
+     tout ce qui suit travaille dans le bon fuseau. */
+  const tuned = retuneZone(stat, zone, now);
 
   // La date publiee par la source prime toujours : c'est la seule mesure non
   // biaisee de l'heure du drop.
   if (offer && typeof offer.start === 'number') {
-    return creditInstant(stat, offer.start, now, halfLifeMs);
+    return creditInstant(tuned, offer.start, now, halfLifeMs);
   }
   if (typeof lastEmptyPoll === 'number') {
-    return creditInterval(stat, lastEmptyPoll, now, now, halfLifeMs);
+    return creditInterval(tuned, lastEmptyPoll, now, now, halfLifeMs);
   }
-  const decayed = decay(stat, now, halfLifeMs);
+  const decayed = decay(tuned, now, halfLifeMs);
   return { ...decayed, observations: (decayed.observations || 0) + 1, lastUpdate: now };
 }
 
@@ -187,23 +274,28 @@ export function hotCells(stat, { now = null, halfLifeMs = HALF_LIFE_MS } = {}) {
  * Les prochaines occurrences des cases chaudes, en instants, prets pour
  * l'ordonnanceur.
  *
- * Une case chaude « jeudi 15 h UTC » devient l'instant du prochain jeudi 15:00
- * UTC. Pas de fuseau ici : les cases sont en UTC et le restent.
+ * DEUX INSTANTS PAR CASE, et ce n'est pas un luxe. Une case couvre une heure
+ * pleine, tandis que la fenetre chaude de l'ordonnanceur s'etend sur 30 minutes
+ * de part et d'autre d'un instant : n'annoncer que le debut de la case
+ * (« jeudi 15:00 ») laissait la SECONDE MOITIE de toute case apprise
+ * decouverte. Avec 15:00 et 15:30, la couverture va de 14:30 a 16:00 -- la case
+ * entiere, plus une avance qui rattrape un drop legerement anticipe.
+ *
+ * L'occurrence est calculee par `nextOccurrence`, qui itere sur le CALENDRIER
+ * LOCAL du fuseau : aucune arithmetique en millisecondes ne survit a un jour de
+ * 23 heures.
  */
 export function learnedHotInstants(stat, now, { horizonMs = 7 * DAY, halfLifeMs = HALF_LIFE_MS } = {}) {
+  const zone = statZone(stat);
   const hotKeys = hotCells(stat, { now, halfLifeMs });
   const instants = [];
 
   for (const c of hotKeys) {
-    const d = new Date(now);
-    const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), c.hour);
-    for (let i = 0; i <= 7; i++) {
-      const candidate = base + i * DAY;
-      if (candidate <= now) continue;
-      if (candidate - now > horizonMs) break;
-      if (new Date(candidate).getUTCDay() !== c.day) continue;
-      instants.push(candidate);
-      break;
+    for (const minute of [0, 30]) {
+      const next = nextOccurrence({ zone, dayCount: [c.day], hour: c.hour, minute }, now);
+      if (!next) continue;
+      if (next.instant - now > horizonMs) continue;
+      instants.push(next.instant);
     }
   }
 
@@ -221,13 +313,14 @@ export function learnedHotInstants(stat, now, { horizonMs = 7 * DAY, halfLifeMs 
  */
 export function band24h(stat, now, { halfLifeMs = HALF_LIFE_MS } = {}) {
   const s = decay(stat, now, halfLifeMs);
+  const zone = statZone(s);
   const total = totalWeight(s);
   const max = Math.max(0, ...Object.values(s.cells || {}).map((c) => c.weight));
 
   const bands = [];
   for (let i = 0; i < 24; i++) {
     const instant = now + i * HOUR;
-    const key = cellKey(instant);
+    const key = cellKey(instant, zone);
     const c = (s.cells || {})[key];
     bands.push({
       instant,

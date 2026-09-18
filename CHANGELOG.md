@@ -4,6 +4,67 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.19.1 -- 2026-09-18
+
+**La prediction ne derive plus d'une heure deux fois par an**
+
+L'histogramme qui apprend « quand regarder » rangeait ses cases en UTC. Un
+magasin publie a une heure LOCALE : a chaque changement d'heure, toutes ses
+cases glissaient d'une heure.
+
+### Le chiffre qui a decide de la forme du correctif
+
+Le commentaire du module pariait que la decroissance par demi-vie absorberait
+ce glissement en quelques semaines. Deux mesures disent le contraire :
+
+- **la demi-fenetre chaude de l'ordonnanceur vaut 30 MINUTES**
+  (`hotHalfWindowMs`). Une case qui a glisse d'une heure place l'instant attendu
+  a 60 minutes du drop reel : le creneau chaud ne s'ouvre meme pas. La derive
+  n'est pas amortie, elle fait manquer la fenetre entierement ;
+- **reapprendre demande trois observations** dans la nouvelle case
+  (`MIN_OBSERVATIONS`), soit TROIS SEMAINES pour une source hebdomadaire comme
+  Epic -- deux fois par an, et la prochaine echeance est le 25 octobre.
+
+### Ce qui change
+
+- **Les cases sont ancrees sur un fuseau NOMME** quand on connait celui de la
+  source, en UTC sinon. Le fuseau est porte par l'histogramme lui-meme
+  (`stat.zone`) et non par l'appelant : une case rangee dans un fuseau et relue
+  dans un autre serait pire que le bug corrige.
+- **Deux sources en declarent un, et seulement parce que c'est mesure** : Epic
+  (11:00 a New York, la meme mesure que la regle de rotation de la 2.17.0) et
+  l'agregateur (`DATE_ZONE`, deja mesure dans sa propre source). GOG et Steam
+  n'en declarent pas : leur heure de publication n'a jamais ete mesuree, et
+  supposer un fuseau serait ecrire une hypothese non mesuree.
+- **Les cases deja apprises sont TRANSPOSEES, pas jetees.** Une transposition
+  exacte est impossible -- une case ne garde ni les dates ni les decalages de
+  ses observations, seulement un poids et un compteur. La transposition applique
+  donc le decalage en vigueur a cet instant : les observations recentes, les
+  seules qui pesent encore, atterrissent dans la bonne case ; les plus
+  anciennes, faites sous l'autre decalage, se retrouvent a une heure pres --
+  elles l'etaient deja, et la demi-vie les efface. C'est strictement mieux que
+  rester en UTC (derive permanente) ou repartir de zero (trois semaines).
+
+### Et un second defaut, trouve en mesurant le premier
+
+- **La seconde moitie de toute case apprise n'etait jamais couverte.** Une case
+  couvre une heure pleine, mais l'ordonnanceur ne recevait que son DEBUT :
+  avec une fenetre de +/- 30 minutes, « jeudi 15 h » ne couvrait que
+  14:30-15:30. Chaque case chaude annonce desormais DEUX instants, a l'heure
+  pleine et a la demie : la couverture va de 14:30 a 16:00 -- la case entiere,
+  plus une avance qui rattrape un drop legerement anticipe.
+- Les occurrences passent par `nextOccurrence`, qui itere sur le calendrier
+  local : aucune arithmetique en millisecondes ne survit a un jour de 23 heures.
+
+### Mesure
+
+`test/prediction-zone.test.mjs` (12 tests), autour des changements d'heure de
+2026. Dont celui qui resume le probleme : le jeudi 29 octobre, entre le
+changement europeen (25 octobre) et l'americain (1er novembre), la rotation
+d'Epic tombe a **16 h a Paris**, pas 17 h. Une regle ecrite
+« 17:00 Europe/Paris » se tromperait ce jour-la ; une case ancree sur New York,
+non.
+
 ## 2.19.0 -- 2026-09-18
 
 **Une offre GOG peut enfin mourir -- quand GOG l'affirme**
