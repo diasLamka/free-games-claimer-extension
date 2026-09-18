@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.20.0
+ * FREE GAMES AUTO-CLAIMER -- v2.20.1
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -86,6 +86,14 @@
     // pour ecrire ces cles, et le moteur doit savoir quoi faire sans stockage.
     epicCountry: 'FR',
     epicLang: 'fr',
+    // Les langues dans lesquelles le moteur sait LIRE une fiche Epic : ses
+    // motifs (03-patterns-epic.js) ne connaissent que celles-ci. La langue du
+    // pays sert a l'API ; une page, elle, ne s'ouvre que dans l'une de ces
+    // langues, et en anglais a defaut (getEpicPageLang). Ajouter une langue
+    // ici sans ses motifs, mesures sur la vraie page, rouvrirait le bug de la
+    // 2.20.0 : des fiches ou le moteur ne reconnait plus aucun bouton.
+    epicReadableLangs: ['fr', 'en'],
+    epicFallbackPageLang: 'en',
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.
     epicCardWaitTimeout: 8000,
@@ -1031,6 +1039,23 @@
     return /^[a-z]{2}$/.test(raw) ? raw : CONFIG.epicLang;
   }
 
+  /* LA LANGUE DE LA PAGE N'EST PAS CELLE DE L'API.
+   *
+   * Le moteur choisit ses boutons par ce qui est ECRIT dessus (2.18.0), et ses
+   * motifs ne lisent que CONFIG.epicReadableLangs. La 2.20.0 envoyait la langue
+   * du pays jusque dans l'URL des fiches : regle sur l'Allemagne, le moteur
+   * ouvrait des pages en allemand, ou aucun motif ne reconnait rien. Aucun
+   * clic, donc aucun danger -- mais plus aucune reclamation non plus.
+   *
+   * L'API garde la langue du pays (titres, descriptions) ; la page prend celle
+   * du reglage si le moteur la lit, l'anglais sinon. Une langue vide reste
+   * vide : c'est le "laisser Epic choisir" de CONFIG.epicStoreOrigin. */
+  function getEpicPageLang() {
+    var lang = getEpicLang();
+    if (!lang) return lang;
+    return CONFIG.epicReadableLangs.indexOf(lang) !== -1 ? lang : CONFIG.epicFallbackPageLang;
+  }
+
   function getEpicApiUrls() {
     var country = getEpicCountry();
     var locale = getEpicLang() + '-' + country;
@@ -1043,7 +1068,7 @@
 
   function epicStoreUrl(path) {
     var url = CONFIG.epicStoreOrigin + path;
-    var lang = getEpicLang();
+    var lang = getEpicPageLang();
     if (lang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(lang);
     return url;
   }
@@ -3884,6 +3909,7 @@
       epicStoreUrl: epicStoreUrl,
       getEpicCountry: getEpicCountry,
       getEpicLang: getEpicLang,
+      getEpicPageLang: getEpicPageLang,
       getEpicApiUrls: getEpicApiUrls,
       buildEpicUrl: buildEpicUrl,
       isEpicNotFoundPage: isEpicNotFoundPage,
@@ -3944,6 +3970,8 @@
       LUNA_CLAIMED_TEXT: LUNA_CLAIMED_TEXT,
       GOG_REDEEM_SUCCESS_TEXT: GOG_REDEEM_SUCCESS_TEXT,
       GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,
+      EPIC_MAIN_CTA_PATTERNS: EPIC_MAIN_CTA_PATTERNS,
+      EPIC_OWNERSHIP_PATTERNS: EPIC_OWNERSHIP_PATTERNS,
       EPIC_LIBRARY_PATTERNS: EPIC_LIBRARY_PATTERNS,
       EPIC_LIBRARY_LOOSE_PATTERNS: EPIC_LIBRARY_LOOSE_PATTERNS,
       EPIC_AGREE_PATTERNS: EPIC_AGREE_PATTERNS,

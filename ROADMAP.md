@@ -78,6 +78,12 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   lu par les trois couches. Mesure au passage : GOG et GamerPower n'acceptent
   aucun parametre de pays -- le reglage ne concerne qu'Epic, et la devise
   affichee.
+- **Une fiche Epic s'ouvre dans une langue que le moteur lit** (2.20.1). La
+  2.20.0 envoyait la langue du pays jusque dans l'URL des fiches : six pays sur
+  quatorze ouvraient des pages ou aucun motif ne reconnait un bouton. L'API
+  garde la langue du pays ; la page, elle, est bornee aux langues que les
+  motifs lisent (`fr`, `en`). L'anglais n'a pas encore de capture dans ce
+  depot : c'est la prochaine mesure a prendre si une fiche anglaise echoue.
 
 ---
 

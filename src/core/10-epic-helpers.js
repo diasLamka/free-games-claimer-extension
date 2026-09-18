@@ -44,6 +44,23 @@
     return /^[a-z]{2}$/.test(raw) ? raw : CONFIG.epicLang;
   }
 
+  /* LA LANGUE DE LA PAGE N'EST PAS CELLE DE L'API.
+   *
+   * Le moteur choisit ses boutons par ce qui est ECRIT dessus (2.18.0), et ses
+   * motifs ne lisent que CONFIG.epicReadableLangs. La 2.20.0 envoyait la langue
+   * du pays jusque dans l'URL des fiches : regle sur l'Allemagne, le moteur
+   * ouvrait des pages en allemand, ou aucun motif ne reconnait rien. Aucun
+   * clic, donc aucun danger -- mais plus aucune reclamation non plus.
+   *
+   * L'API garde la langue du pays (titres, descriptions) ; la page prend celle
+   * du reglage si le moteur la lit, l'anglais sinon. Une langue vide reste
+   * vide : c'est le "laisser Epic choisir" de CONFIG.epicStoreOrigin. */
+  function getEpicPageLang() {
+    var lang = getEpicLang();
+    if (!lang) return lang;
+    return CONFIG.epicReadableLangs.indexOf(lang) !== -1 ? lang : CONFIG.epicFallbackPageLang;
+  }
+
   function getEpicApiUrls() {
     var country = getEpicCountry();
     var locale = getEpicLang() + '-' + country;
@@ -56,7 +73,7 @@
 
   function epicStoreUrl(path) {
     var url = CONFIG.epicStoreOrigin + path;
-    var lang = getEpicLang();
+    var lang = getEpicPageLang();
     if (lang) url += (path.indexOf('?') === -1 ? '?' : '&') + 'lang=' + encodeURIComponent(lang);
     return url;
   }

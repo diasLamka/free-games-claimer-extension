@@ -169,9 +169,98 @@ test('le moteur refuse une valeur qui n\'a pas la forme d\'un code', () => {
   assert.equal(fgc.getEpicLang(), DEFAULT_LANG);
 });
 
-test('la langue de la boutique suit le reglage jusque dans l\'URL d\'une fiche', () => {
+/* ------------------------------ la langue de la page n'est pas celle de l'API */
+
+/* Le moteur choisit ses boutons par ce qui est ECRIT dessus (2.18.0), et ses
+ * motifs ne lisent que quelques langues. La 2.20.0 envoyait la langue du pays
+ * jusque dans l'URL des fiches -- et ce fichier le TESTAIT : « regle sur
+ * l'Allemagne, l'URL finit par lang=de ». C'etait le bug, ecrit comme une
+ * promesse. Le moteur ouvrait des pages en allemand, ou aucun motif ne
+ * reconnait un bouton : aucun clic, donc aucun danger -- mais plus aucune
+ * reclamation non plus. */
+
+test('regle sur l\'Allemagne, la fiche s\'ouvre dans une langue que le moteur lit', () => {
   const fgc = moteur('DE', 'de');
-  assert.ok(fgc.epicStoreUrl('/p/un-jeu').endsWith('lang=de'));
+  assert.equal(fgc.getEpicPageLang(), 'en');
+  assert.ok(fgc.epicStoreUrl('/p/un-jeu').endsWith('?lang=en'), fgc.epicStoreUrl('/p/un-jeu'));
+  /* L'API, elle, garde la langue du pays : les titres affiches restent en
+     allemand. Le moteur retrouve ses cartes par le slug, jamais par le titre,
+     donc une API et une page dans deux langues ne se genent pas. */
+  assert.ok(fgc.getEpicApiUrls()[0].includes('locale=de-DE'));
+});
+
+test('pays par pays, aucune fiche ne s\'ouvre dans une langue que le moteur ne lit pas', () => {
+  for (const [code, info] of Object.entries(COUNTRIES)) {
+    const fgc = moteur(code, info.lang);
+    const lisibles = Array.from(fgc.CONFIG.epicReadableLangs);
+    const page = fgc.getEpicPageLang();
+
+    assert.ok(lisibles.includes(page), `${code} ouvre ses fiches en « ${page} »`);
+    assert.ok(fgc.epicStoreUrl('/p/un-jeu').endsWith(`lang=${page}`), code);
+    /* Une langue lisible est gardee telle quelle : un Suisse romand lit ses
+       fiches en francais, un Americain en anglais. Seules les autres tombent
+       sur le repli. */
+    if (lisibles.includes(info.lang)) assert.equal(page, info.lang, code);
+    else assert.equal(page, fgc.CONFIG.epicFallbackPageLang, code);
+  }
+});
+
+test('une langue vide reste vide : Epic choisit, comme le permet CONFIG', () => {
+  /* `epicLang: ''` est le « laisser Epic choisir » documente dans CONFIG. Sans
+     la garde de getEpicPageLang, la chaine vide -- absente de la liste des
+     langues lisibles -- serait devenue « en » en silence. */
+  const fgc = moteur();
+  fgc.CONFIG.epicLang = '';
+  assert.equal(fgc.getEpicPageLang(), '');
+  assert.equal(fgc.epicStoreUrl('/free-games'), 'https://store.epicgames.com/free-games');
+});
+
+/* Ce que le moteur doit savoir lire, etape par etape, dans chaque langue qu'il
+ * declare lisible.
+ *
+ * Le francais vient des captures reelles (2026-08-27 et 2026-09-17, voir le
+ * CHANGELOG de la 2.12.1 a la 2.16.2). L'anglais n'a AUCUNE capture dans ce
+ * depot : ses libelles sont ceux que les motifs du moteur portent. Cette table
+ * ne prouve donc pas que l'anglais marche. Elle interdit deux choses : qu'une
+ * langue soit declaree lisible sans libelle pour chaque etape, et qu'un motif
+ * retreci perde en silence un libelle connu. */
+const LIBELLES = {
+  fr: {
+    cta: ['Obtenir', 'Ajouter au panier'],
+    commande: ['Ajouter à la bibliothèque', 'Valider la commande'],
+    accord: ['J\'accepte', 'J’accepte'],
+    possede: ['Dans la bibliothèque'],
+  },
+  en: {
+    cta: ['Get', 'Add To Cart'],
+    commande: ['Place Order'],
+    accord: ['I Agree'],
+    possede: ['In Library'],
+  },
+};
+
+test('une langue n\'est declaree lisible qu\'avec ses libelles, a chaque etape', () => {
+  const fgc = moteur();
+  const etapes = {
+    cta: fgc.EPIC_MAIN_CTA_PATTERNS,
+    commande: fgc.EPIC_LIBRARY_PATTERNS,
+    accord: fgc.EPIC_AGREE_PATTERNS,
+    possede: fgc.EPIC_OWNERSHIP_PATTERNS,
+  };
+  const lisibles = Array.from(fgc.CONFIG.epicReadableLangs);
+  assert.ok(lisibles.includes(fgc.CONFIG.epicFallbackPageLang), 'le repli doit etre lui-meme une langue lisible');
+
+  for (const lang of lisibles) {
+    assert.ok(LIBELLES[lang], `« ${lang} » est declaree lisible sans aucun libelle : mesurer la vraie page d'abord`);
+    for (const [etape, motifs] of Object.entries(etapes)) {
+      const libelles = LIBELLES[lang][etape] || [];
+      assert.ok(libelles.length, `« ${lang} » : aucun libelle pour l'etape « ${etape} »`);
+      for (const libelle of libelles) {
+        assert.ok(Array.from(motifs).some((m) => m.test(libelle)),
+          `« ${lang} » : « ${libelle} » (${etape}) n'est reconnu par aucun motif`);
+      }
+    }
+  }
 });
 
 /* --------------------------------------------- la devise suit le pays */

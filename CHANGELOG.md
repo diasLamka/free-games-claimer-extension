@@ -4,6 +4,69 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.20.1 -- 2026-09-18
+
+**Une fiche Epic s'ouvre dans une langue que le moteur sait lire**
+
+La 2.20.0 a fait du pays de la boutique un reglage, et la langue du pays est
+allee jusque dans l'URL des fiches. Regle sur l'Allemagne, le moteur ouvrait
+`/p/<jeu>?lang=de` : une page en allemand, ou aucun de ses motifs ne reconnait
+un bouton. Aucun clic, donc aucun danger -- mais plus aucune reclamation non
+plus, pour six des quatorze pays proposes (DE, ES, IT, PT, NL, PL).
+
+### La langue de la page n'est plus celle de l'API
+
+- **L'API garde la langue du pays** : titres et descriptions restent dans la
+  langue choisie. Le moteur retrouve ses cartes par le slug, jamais par le
+  titre -- une API et une page dans deux langues ne se genent donc pas.
+- **La page prend la langue du reglage si le moteur la lit, l'anglais sinon**
+  (`getEpicPageLang`). Les langues lisibles sont ecrites a un seul endroit,
+  `CONFIG.epicReadableLangs` (`fr`, `en`) : ce sont celles que portent les
+  motifs de `03-patterns-epic.js`, a chaque etape du parcours.
+- Rien ne change pour la France, la Belgique, le Luxembourg et la Suisse
+  (`fr`), ni pour les quatre pays anglophones (`en`) : leur URL est exactement
+  celle de la 2.20.0.
+- **Une langue vide reste vide** : c'est le « laisser Epic choisir » que
+  documente `CONFIG`. Sans cette garde, la chaine vide -- absente des langues
+  lisibles -- serait devenue `en` en silence.
+
+### Ce qui etait touche, et ce qui ne l'etait pas
+
+- **Touchees : les navigations du moteur lui-meme.** Le retour sur
+  `/free-games` (deux endroits de `13-epic-check.js`) et la fiche ouverte quand
+  la carte d'un jeu manque (`16-epic-run.js`).
+- **Pas touchee : la reclamation autonome.** La veille construit ses propres
+  URL de fiche, et elles portent toujours `lang=fr` (`watch/sources/epic.js`),
+  une langue que le moteur lit. Ce correctif ne la change pas.
+
+### Ce que ce correctif ne prouve pas
+
+**L'anglais n'a aucune capture dans ce depot.** Les libelles francais viennent
+des pages reelles (2026-08-27, 2026-09-17) ; les motifs anglais sont presents a
+chaque etape (« Get », « Place Order », « I Agree », « In Library »), mais aucun
+n'a ete releve ici sur une vraie fiche. Le repli vers l'anglais repose sur eux.
+Si une fiche anglaise fait echouer une reclamation, le canari le signalera,
+motif technique compris.
+
+### Mesure
+
+`test/locale.test.mjs` : le test qui promettait `lang=de` dans l'URL d'une
+fiche -- le bug, ecrit comme une promesse -- est remplace par quatre :
+
+- regle sur l'Allemagne, la fiche s'ouvre en anglais et l'API reste en
+  `de-DE` ;
+- pays par pays, aucune fiche ne s'ouvre dans une langue que le moteur ne lit
+  pas ;
+- une langue vide reste vide ;
+- **une langue n'est declaree lisible qu'avec ses libelles, a chaque etape**
+  (bouton principal, commande, accord, possession). Ajouter `de` a la liste
+  sans ses libelles fait echouer ce test : c'est le garde-fou qui empeche de
+  rouvrir le bug.
+
+Chacun a ete verifie contre le defaut qu'il doit attraper. Quatre mutants --
+l'URL reprend la langue du pays, `de` declare lisible, garde de la langue vide
+retiree, repli sur une langue illisible -- font tous echouer au moins un test.
+
 ## 2.20.0 -- 2026-09-18
 
 **Le pays de la boutique devient un reglage, ecrit a un seul endroit**

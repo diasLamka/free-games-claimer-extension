@@ -57,6 +57,14 @@
     // pour ecrire ces cles, et le moteur doit savoir quoi faire sans stockage.
     epicCountry: 'FR',
     epicLang: 'fr',
+    // Les langues dans lesquelles le moteur sait LIRE une fiche Epic : ses
+    // motifs (03-patterns-epic.js) ne connaissent que celles-ci. La langue du
+    // pays sert a l'API ; une page, elle, ne s'ouvre que dans l'une de ces
+    // langues, et en anglais a defaut (getEpicPageLang). Ajouter une langue
+    // ici sans ses motifs, mesures sur la vraie page, rouvrirait le bug de la
+    // 2.20.0 : des fiches ou le moteur ne reconnait plus aucun bouton.
+    epicReadableLangs: ['fr', 'en'],
+    epicFallbackPageLang: 'en',
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.
     epicCardWaitTimeout: 8000,

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.20.0.js",
-  "sha256": "616D7792D01FE22F3AF8D0F3AC94B01DD696521E99723545A1AF7BA8CA90599B",
-  "octets": 206138,
-  "version": "2.20.0",
-  "motif": "2.20.0 : le pays de la boutique est un reglage"
+  "fichier": "reference-v2.20.1.js",
+  "sha256": "F57F3BABCF2B797CE23893E119C1FA44028A4B717DF10921272F8E3D6B35DBFF",
+  "octets": 207714,
+  "version": "2.20.1",
+  "motif": "2.20.1 : la fiche s'ouvre dans une langue que le moteur lit"
 }
