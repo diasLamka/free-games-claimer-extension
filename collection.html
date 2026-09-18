@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Games Auto-Claimer</title>
+<style>
+  /* Memes jetons que popup.html et journal.html. Le sombre est la base, le
+     clair une surcharge -- « systeme » retire la surcharge et laisse la media
+     query gagner. */
+  :root {
+    --ink:    #14101F;
+    --ink-2:  #1E1830;
+    --ink-3:  #262038;
+    --line:   #2E2745;
+    --paper:  #EDE9F5;
+    --mute:   #9A90B8;
+    --amber:  #FFB454;
+    --jade:   #56D6A0;
+    --rose:   #FF6B81;
+
+    --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono:    "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink:    #FBFAFE;
+      --ink-2:  #F2EFF9;
+      --ink-3:  #E8E3F3;
+      --line:   #DCD5EC;
+      --paper:  #1B1528;
+      --mute:   #6E6488;
+      --amber:  #B96A00;
+      --jade:   #12805B;
+      --rose:   #D62B47;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink:    #FBFAFE;
+    --ink-2:  #F2EFF9;
+    --ink-3:  #E8E3F3;
+    --line:   #DCD5EC;
+    --paper:  #1B1528;
+    --mute:   #6E6488;
+    --amber:  #B96A00;
+    --jade:   #12805B;
+    --rose:   #D62B47;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 16px 40px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 13px/1.5 var(--body);
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  h1 { font: 600 19px/1.2 var(--display); margin: 0; letter-spacing: .02em; }
+  .sub { color: var(--mute); font-size: 12px; margin: 0 0 18px; max-width: 76ch; }
+
+  .counts { display: flex; gap: 16px; margin-left: auto; font-size: 12px; flex-wrap: wrap; color: var(--mute); }
+  .counts b { font: 600 15px/1 var(--display); color: var(--paper); margin-left: 4px; }
+  .counts .dup b { color: var(--amber); }
+  .counts .claimed b { color: var(--jade); }
+
+  /* ------------------------------------------------------ les magasins */
+  /* « cards », pas « stores » : la cellule du tableau porte deja ce nom-la,
+     et une grille appliquee a une cellule empile ses pastilles. */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .card h2 { font: 600 14px/1.2 var(--display); margin: 0; letter-spacing: .02em; }
+  .card-count { font: 600 18px/1 var(--display); }
+  .card-count.zero { color: var(--mute); }
+  .state { margin: 0; font-size: 12px; color: var(--mute); flex: 1 1 auto; }
+  .state.ok { color: var(--jade); }
+  .state.warn { color: var(--amber); }
+  .state.err { color: var(--rose); }
+  .state.run { color: var(--paper); }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+  /* ------------------------------------------------------ la barre */
+  .bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 10px; margin-bottom: 14px;
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 8px;
+  }
+
+  input[type="search"], select, button {
+    font: inherit; color: var(--paper);
+    background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px;
+  }
+  input[type="search"] { flex: 1 1 200px; min-width: 150px; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--amber); }
+  button:disabled { opacity: .55; cursor: default; }
+  button.primary { border-color: var(--amber); color: var(--amber); font-weight: 600; }
+  button.ghost { background: transparent; color: var(--mute); }
+  a.link { color: var(--amber); font-size: 12px; }
+  label.check { display: inline-flex; gap: 6px; align-items: center; color: var(--mute); cursor: pointer; }
+  .spacer { flex: 1 1 auto; }
+
+  /* ------------------------------------------------------ la liste */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font: 600 11px/1 var(--body); text-transform: uppercase;
+    letter-spacing: .06em; color: var(--mute);
+    padding: 0 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:hover td { background: var(--ink-2); }
+
+  td.title { word-break: break-word; }
+  td.title .untitled { color: var(--mute); font-style: italic; }
+  .tag { display: inline-block; margin-left: 8px; font-size: 11px; color: var(--jade); white-space: nowrap; }
+  td.stores { white-space: nowrap; width: 1%; }
+  td.since { white-space: nowrap; width: 1%; color: var(--mute); font-family: var(--mono); font-size: 12px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin: 1px 4px 1px 0; padding: 1px 8px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--ink-3); font-size: 11px;
+  }
+  .badge a, .badge span { color: var(--paper); text-decoration: none; }
+  .badge a:hover { color: var(--amber); }
+  .badge a.launch { color: var(--amber); font-size: 10px; }
+
+  /* Etroit : les pastilles passent a la ligne plutot que de pousser la date
+     hors de l'ecran. */
+  @media (max-width: 600px) {
+    td { padding: 7px 6px; }
+    td.stores { white-space: normal; width: auto; }
+    td.since { font-size: 11px; }
+  }
+
+  .empty { color: var(--mute); padding: 28px 10px; text-align: center; }
+  .note { color: var(--mute); font-size: 11px; margin-top: 16px; max-width: 76ch; }
+  .flash { color: var(--amber); font-size: 12px; min-height: 1.5em; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 data-i18n="collectionTitle"></h1>
+      <div class="counts">
+        <span><span data-i18n="collectionTitles"></span><b id="count-titles">0</b></span>
+        <span class="dup"><span data-i18n="collectionDuplicates"></span><b id="count-duplicates">0</b></span>
+        <span class="claimed"><span data-i18n="collectionClaimed"></span><b id="count-claimed">0</b></span>
+      </div>
+    </header>
+    <p class="sub" data-i18n="collectionSub"></p>
+
+    <div class="cards" id="stores"></div>
+
+    <p class="flash" id="flash" role="status"></p>
+
+    <div class="bar">
+      <input type="search" id="search" data-i18n-attr="placeholder:collectionSearch,aria-label:collectionSearch">
+      <select id="store" data-i18n-attr="aria-label:collectionColStores">
+        <option value="" data-i18n="collectionAllStores"></option>
+      </select>
+      <select id="kind" data-i18n-attr="aria-label:collectionKindLabel">
+        <option value="game" data-i18n="collectionKindGames"></option>
+        <option value="dlc" data-i18n="collectionKindDlc"></option>
+        <option value="all" data-i18n="collectionKindAll"></option>
+      </select>
+      <select id="sort" data-i18n-attr="aria-label:collectionSortLabel">
+        <option value="title" data-i18n="collectionSortTitle"></option>
+        <option value="since" data-i18n="collectionSortSince"></option>
+        <option value="stores" data-i18n="collectionSortStores"></option>
+      </select>
+      <label class="check"><input type="checkbox" id="duplicates"> <span data-i18n="collectionDuplicatesOnly"></span></label>
+      <span class="spacer"></span>
+      <button id="import-all" class="primary" data-i18n="collectionImportAll"></button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="collectionColTitle"></th>
+            <th data-i18n="collectionColStores"></th>
+            <th data-i18n="collectionColSince"></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <p class="empty" id="empty" hidden></p>
+    <p class="note" data-i18n="collectionNote"></p>
+  </div>
+
+  <script src="collection.js" type="module"></script>
+</body>
+</html>

@@ -26,7 +26,7 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V1 | Decoupage du moteur | livree -- `src/core/`, 34 modules, build reproductible au bit pres |
 | V2 | Veille en notification seule | livree -- `watch/`, 2.8.0 |
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
-| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup |
+| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup. Hors design, la **collection** a aussi sa page (2.21.0) |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
 | V6 | Sources HTML, mode repli | **livree** -- repli (`sentinel.html`), lecture HTML (`watch/offscreen.js`) et source GOG en propre (2.15.0) |
 | V7 | Elargissement | **Prime Gaming mesure et ferme** le 2026-09-17 ; trois magasins reclamables, un quatrieme seulement detecte |
@@ -84,6 +84,11 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   garde la langue du pays ; la page, elle, est bornee aux langues que les
   motifs lisent (`fr`, `en`). L'anglais n'a pas encore de capture dans ce
   depot : c'est la prochaine mesure a prendre si une fiche anglaise echoue.
+- **Ma collection** (2.21.0). Une page qui rassemble ce que Steam, GOG et Epic
+  disent que vous possedez, plus ce que l'extension a reclame. Lecture seule, a
+  la demande, et jamais d'effacement sur un echec. Le comportement SANS session
+  des trois magasins est mesure ; la forme d'une reponse connectee de GOG et
+  d'Epic ne l'est pas encore -- c'est l'entree 4.
 
 ---
 
@@ -125,6 +130,29 @@ coutent encore un jeton du plafond horaire.
 *A mesurer d'abord.* Combien d'ouvertures sont reellement inutiles sur un mois.
 Si la reponse est « une », l'entree ne vaut pas son code, et elle sort de la
 liste.
+
+*Ce qui a change.* La collection (2.21.0) sait desormais ce que vous possediez
+avant l'extension, sur Steam, GOG et Epic : la donnee existe, et la mesure
+ci-dessus se lit dans la page. Si l'entree se confirme, le filtre ne devra
+decider que sur un IDENTIFIANT exact, jamais sur un titre -- un faux « deja
+possede » ferait rater un jeu offert, ce qui coute plus cher qu'un onglet de
+trop.
+
+## 4. Mesurer Ma collection sur un vrai compte
+
+*Pourquoi.* Les importations GOG et Epic reposent sur la forme de reponses que
+ce depot n'a jamais lues CONNECTE. Leur comportement sans session est mesure
+(2026-09-19) ; le reste est une hypothese, verifiee a chaque lecture mais pas
+encore confirmee.
+
+*Ce qu'il faut.* Une seule chose : cliquer « Tout importer » en etant connecte
+aux trois magasins. Si une carte dit « reponse inattendue », son bouton
+« Copier le rapport » donne la forme exacte de la reponse, sans aucune valeur,
+et c'est de quoi corriger le parseur du premier coup.
+
+*A quoi on reconnaitra que c'est fini.* Les trois cartes disent « Importe
+le... » avec un nombre plausible -- ou le parseur a ete corrige d'apres le
+rapport, et elles le disent ensuite.
 
 ---
 

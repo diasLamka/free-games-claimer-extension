@@ -727,5 +727,134 @@
   },
   "sentinelBannerHint": {
     "message": "After three failures a source sleeps for hours. The fallback tab retries it while you watch."
+  },
+  "openCollection": {
+    "message": "My collection"
+  },
+  "collectionTitle": {
+    "message": "My collection"
+  },
+  "collectionSub": {
+    "message": "Everything you own on Steam, GOG and Epic, read with your own session and read-only, plus what the extension claimed. Nothing leaves your browser, and nothing is read until you ask."
+  },
+  "collectionTitles": {
+    "message": "Titles"
+  },
+  "collectionDuplicates": {
+    "message": "On several stores"
+  },
+  "collectionClaimed": {
+    "message": "Claimed by the extension"
+  },
+  "collectionSearch": {
+    "message": "Search a game"
+  },
+  "collectionAllStores": {
+    "message": "All stores"
+  },
+  "collectionKindLabel": {
+    "message": "Kind"
+  },
+  "collectionKindGames": {
+    "message": "Games"
+  },
+  "collectionKindDlc": {
+    "message": "DLC"
+  },
+  "collectionKindAll": {
+    "message": "Everything"
+  },
+  "collectionSortLabel": {
+    "message": "Order"
+  },
+  "collectionSortTitle": {
+    "message": "By title"
+  },
+  "collectionSortSince": {
+    "message": "Most recent first"
+  },
+  "collectionSortStores": {
+    "message": "On the most stores"
+  },
+  "collectionDuplicatesOnly": {
+    "message": "Only duplicates"
+  },
+  "collectionImportAll": {
+    "message": "Import everything"
+  },
+  "collectionImport": {
+    "message": "Import"
+  },
+  "collectionReimport": {
+    "message": "Import again"
+  },
+  "collectionImporting": {
+    "message": "Importing…"
+  },
+  "collectionBusy": {
+    "message": "An import is already running."
+  },
+  "collectionCopyReport": {
+    "message": "Copy the report"
+  },
+  "collectionReportCopied": {
+    "message": "Copied"
+  },
+  "collectionCopyFailed": {
+    "message": "Copy refused"
+  },
+  "collectionSignIn": {
+    "message": "Sign in"
+  },
+  "collectionNever": {
+    "message": "Never imported"
+  },
+  "collectionStateOk": {
+    "message": "Imported $1"
+  },
+  "collectionStateLoggedOut": {
+    "message": "Not signed in: sign in, then import again."
+  },
+  "collectionStateShape": {
+    "message": "Unexpected answer: copy the report and send it, it will say what changed."
+  },
+  "collectionStateError": {
+    "message": "Failed: $1"
+  },
+  "collectionStateStale": {
+    "message": "Import interrupted: import again."
+  },
+  "collectionKept": {
+    "message": "The list from $1 is still shown."
+  },
+  "collectionAmazonState": {
+    "message": "Only what the extension claimed: Amazon's own library is not read yet."
+  },
+  "collectionColTitle": {
+    "message": "Game"
+  },
+  "collectionColStores": {
+    "message": "Stores"
+  },
+  "collectionColSince": {
+    "message": "Since"
+  },
+  "collectionEmpty": {
+    "message": "Nothing yet: import a store above."
+  },
+  "collectionNoMatch": {
+    "message": "No game matches."
+  },
+  "collectionNote": {
+    "message": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim."
+  },
+  "collectionUntitled": {
+    "message": "Untitled (#$1)"
+  },
+  "collectionClaimedTag": {
+    "message": "claimed by the extension"
+  },
+  "collectionLaunch": {
+    "message": "Launch in Steam"
   }
 }

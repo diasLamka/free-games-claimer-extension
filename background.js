@@ -42,6 +42,9 @@ import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
 import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
+import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
+import { importStore } from './watch/collection-import.js';
+import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -228,6 +231,47 @@ async function startCycle(origine, options = {}) {
   })();
 
   return cycleRunning;
+}
+
+/* --------------------------------------------------------------- collection */
+
+/** Garde intra-instance : un double clic ne lance pas deux importations qui s'ecrasent. */
+let collectionRunning = null;
+
+/**
+ * Importe les bibliotheques demandees, un magasin apres l'autre.
+ *
+ * Chaque magasin est ECRIT des qu'il est lu : la page voit la progression par
+ * storage.onChanged, et un worker tue en route ne perd que le magasin en cours
+ * -- marque « en cours », que effectiveStatus finit par declarer mort. Le
+ * worker reste l'unique ecrivain de la cle, comme pour le catalogue.
+ */
+async function importCollection(stores) {
+  const stopKeepalive = startKeepalive();
+  const results = {};
+  try {
+    const raw = await readKeys(api, [KEY_COUNTRY]);
+    const country = normaliseCountry(raw[KEY_COUNTRY]);
+
+    for (const store of stores) {
+      const avant = await readKeys(api, KEY_COLLECTION);
+      await write(api, { [KEY_COLLECTION]: markRunning(avant[KEY_COLLECTION], store, Date.now()) });
+
+      const result = await importStore(store, { fetch: (url, init) => fetch(url, init), country });
+
+      // Relire avant d'ecrire : un magasin ne doit pas ecraser ce que le
+      // precedent vient d'y mettre.
+      const apres = await readKeys(api, KEY_COLLECTION);
+      await write(api, { [KEY_COLLECTION]: applyImport(apres[KEY_COLLECTION], store, result, Date.now()) });
+
+      const niveau = result.status === IMPORT_STATUS.OK ? 'info' : 'warn';
+      record(niveau, `collection ${store} : ${result.status}${result.note ? ` (${result.note})` : ''}`);
+      results[store] = { status: result.status, count: result.items.length, note: result.note };
+    }
+    return results;
+  } finally {
+    stopKeepalive();
+  }
 }
 
 /* --------------------------------------------------- listeners, au niveau racine */
@@ -593,6 +637,23 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       record('info', 'journal efface a la demande');
       sendResponse({ cleared: true });
     })().catch((e) => sendResponse({ cleared: false, error: String((e && e.message) || e) }));
+    return true;
+  }
+
+  /* Importer la collection, a la demande de la page. Jamais de facon
+     automatique : chaque importation lit un compte avec la session de
+     l'utilisateur, et c'est lui qui decide quand. */
+  if (msg.type === 'fgc-collection-import') {
+    if (collectionRunning) { sendResponse({ busy: true }); return; }
+    const demandes = Array.isArray(msg.stores) && msg.stores.length ? msg.stores : IMPORTABLE_STORES;
+    collectionRunning = importCollection(demandes.filter((s) => IMPORTABLE_STORES.includes(s)));
+    collectionRunning
+      .then((results) => sendResponse({ ok: true, results }))
+      .catch((e) => {
+        record('warn', 'collection : importation impossible', e);
+        sendResponse({ ok: false, error: String((e && e.message) || e) });
+      })
+      .finally(() => { collectionRunning = null; });
     return true;
   }
 

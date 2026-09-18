@@ -96,6 +96,8 @@ est declare `"type": "module"`.
 | `backup.js` | les codes en attente, recopies dans la zone synchronisee |
 | `offscreen.js` | lire une page HTML depuis un contexte qui n'a pas de DOM |
 | `sentinel.js` | quand proposer le repli, et comment il rend la main tout seul |
+| `collection.js` | Ma collection : regrouper ce que chaque magasin dit que vous possedez |
+| `collection-import.js` | lire les bibliotheques Steam, GOG et Epic, en lecture seule et a la demande |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -144,6 +146,7 @@ background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
 journal.html / journal.js   le journal de la veille, 500 entrees persistees
 sentinel.html / sentinel.js le mode repli : reessayer une source en panne, sous surveillance
+collection.html / .js       Ma collection : vos jeux des quatre magasins, en une page
 offscreen-html.html / .js   lecture de HTML pour le service worker, qui n'a pas de DOM
 diagnostics.html / .js      mesures V0-2, V0-3 et V6-V7
 manifest.json               Chrome / Edge

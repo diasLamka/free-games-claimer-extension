@@ -4,6 +4,83 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.21.0 -- 2026-09-19
+
+**Ma collection : ce que vous possedez sur chaque magasin, au meme endroit**
+
+Le registre (2.12.0) fige ce que l'extension RECLAME. Apres des mois de jeux
+hebdomadaires, une collection est eparpillee entre quatre launchers, et rien ne
+disait ce qu'on possedait deja ailleurs -- ni avant l'extension. Une page
+dediee, `collection.html`, ouverte depuis le pied du popup, rassemble les deux.
+
+### Ce que la page fait
+
+- **Elle lit ce que chaque magasin dit que vous possedez**, avec votre
+  session, en lecture seule, et seulement quand vous cliquez « Importer » :
+  Steam (`dynamicstore/userdata` pour la possession, `GetItems` pour les noms,
+  deux adresses que la source Steam lisait deja), GOG
+  (`account/getFilteredProducts`), Epic (l'historique de commandes du compte,
+  jeux gratuits compris).
+- **Elle y ajoute ce que l'extension a reclame** : le registre, Amazon
+  compris. La bibliotheque Amazon elle-meme n'est pas lue, et la carte le dit.
+- **Une ligne par titre, tous magasins confondus** : recherche, filtre par
+  magasin, « seulement en double », genre (jeux par defaut, DLC, tout), tri par
+  titre, par date ou par nombre de magasins. Chaque pastille ouvre la fiche du
+  jeu ; celle de Steam le lance (`steam://run/`, documente par Valve -- les
+  schemas des autres launchers n'ont pas ete verifies, donc pas de bouton).
+
+### Les regles
+
+- **Une importation reussie est une photographie** : elle remplace tout ce
+  que le magasin avait, et un jeu rembourse disparait.
+- **Une importation ratee n'efface rien.** Session expiree, forme inattendue,
+  page 3 ratee sur 5 : la liste precedente reste, et la carte dit de quand elle
+  date. Une pagination incomplete ne s'applique jamais.
+- **Une forme inattendue est un statut, pas une liste vide**, et chaque
+  importation rend un **rapport** : la forme des reponses, jamais leurs valeurs
+  -- ni titre, ni prix, ni jeton de pagination. « Copier le rapport » le met
+  dans le presse-papiers.
+- **Rien ne decide sur la collection.** Deux magasins sont rapproches par le
+  titre normalise : un indice pour l'affichage, pas une preuve. Aucune
+  reclamation ne la lit ; la brancher sur le filtre (ROADMAP, « possede AVANT
+  l'extension ») attend que les importations aient ete mesurees sur de vrais
+  comptes.
+- **Aucune permission nouvelle** : les hotes lus etaient deja autorises.
+
+### Mesure
+
+**Ce qui est mesure** (2026-09-19, sans session, depuis un vrai Chrome 153) :
+
+- Steam : 200 et des listes vides -- lu comme « non connecte », pas comme une
+  bibliotheque vide qui effacerait la precedente.
+- GOG : **403**, avec `{"message":"Full authentication is required to access
+  this resource."}`. C'est le corps qui tranche : une deconnexion, pas un mur
+  anti-robot.
+- Epic : l'adresse historique sur `www.epicgames.com` redirige vers
+  **`accounts.epicgames.com`**, puis vers la connexion. L'importation vise
+  directement ce second hote.
+- Un piege du banc d'essai, garde pour la suite : un agent « HeadlessChrome »
+  recoit d'Epic un 403 HTML, sans redirection. Le titre de la page part
+  desormais dans la note d'erreur.
+
+**Ce qui ne l'est pas : la forme d'une reponse CONNECTEE de GOG et d'Epic.**
+Aucun compte n'a ete lu depuis ce depot. La premiere importation le dira ; si
+la forme n'est pas celle attendue, la carte affiche « reponse inattendue » et
+le rapport dit ce qui a change.
+
+**Verification dans le navigateur.** L'extension chargee dans un Chrome
+headless au profil jetable, la page ouverte avec des donnees de test, en
+francais et en anglais, en sombre et en clair, a 1280 et a 420 px ; puis
+« Tout importer » contre les vrais serveurs, sans session : trois « non
+connecte », aucun jeu efface, aucune erreur dans la console. Trois defauts vus
+sur les captures, et corriges : une classe CSS partagee avec une cellule du
+tableau empilait les pastilles ; « 1 jeux » (les nombres vivent desormais
+seuls, sans nom a accorder) ; une option trop longue renvoyait « Tout
+importer » a la ligne.
+
+`test/collection.test.mjs` : 26 tests, dont la vraie reponse 403 de GOG. 660
+tests au total.
+
 ## 2.20.1 -- 2026-09-18
 
 **Une fiche Epic s'ouvre dans une langue que le moteur sait lire**

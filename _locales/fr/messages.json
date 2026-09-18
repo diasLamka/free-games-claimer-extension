@@ -727,5 +727,134 @@
   },
   "sentinelBannerHint": {
     "message": "Après trois échecs, une source dort pendant des heures. L'onglet de repli la réessaie pendant que vous regardez."
+  },
+  "openCollection": {
+    "message": "Ma collection"
+  },
+  "collectionTitle": {
+    "message": "Ma collection"
+  },
+  "collectionSub": {
+    "message": "Tout ce que vous possédez sur Steam, GOG et Epic, lu avec votre session et en lecture seule, plus ce que l'extension a récupéré. Rien ne quitte votre navigateur, et rien n'est lu sans que vous le demandiez."
+  },
+  "collectionTitles": {
+    "message": "Titres"
+  },
+  "collectionDuplicates": {
+    "message": "Sur plusieurs magasins"
+  },
+  "collectionClaimed": {
+    "message": "Récupérés par l'extension"
+  },
+  "collectionSearch": {
+    "message": "Chercher un jeu"
+  },
+  "collectionAllStores": {
+    "message": "Tous les magasins"
+  },
+  "collectionKindLabel": {
+    "message": "Genre"
+  },
+  "collectionKindGames": {
+    "message": "Jeux"
+  },
+  "collectionKindDlc": {
+    "message": "DLC"
+  },
+  "collectionKindAll": {
+    "message": "Tout"
+  },
+  "collectionSortLabel": {
+    "message": "Ordre"
+  },
+  "collectionSortTitle": {
+    "message": "Par titre"
+  },
+  "collectionSortSince": {
+    "message": "Les plus récents"
+  },
+  "collectionSortStores": {
+    "message": "Sur le plus de magasins"
+  },
+  "collectionDuplicatesOnly": {
+    "message": "Seulement en double"
+  },
+  "collectionImportAll": {
+    "message": "Tout importer"
+  },
+  "collectionImport": {
+    "message": "Importer"
+  },
+  "collectionReimport": {
+    "message": "Réimporter"
+  },
+  "collectionImporting": {
+    "message": "Importation en cours…"
+  },
+  "collectionBusy": {
+    "message": "Une importation est déjà en cours."
+  },
+  "collectionCopyReport": {
+    "message": "Copier le rapport"
+  },
+  "collectionReportCopied": {
+    "message": "Copié"
+  },
+  "collectionCopyFailed": {
+    "message": "Copie refusée"
+  },
+  "collectionSignIn": {
+    "message": "Se connecter"
+  },
+  "collectionNever": {
+    "message": "Jamais importé"
+  },
+  "collectionStateOk": {
+    "message": "Importé le $1"
+  },
+  "collectionStateLoggedOut": {
+    "message": "Non connecté : connectez-vous, puis réimportez."
+  },
+  "collectionStateShape": {
+    "message": "Réponse inattendue : copiez le rapport et envoyez-le, il dira ce qui a changé."
+  },
+  "collectionStateError": {
+    "message": "Échec : $1"
+  },
+  "collectionStateStale": {
+    "message": "Importation interrompue : réimportez."
+  },
+  "collectionKept": {
+    "message": "La liste du $1 reste affichée."
+  },
+  "collectionAmazonState": {
+    "message": "Seulement ce que l'extension a récupéré : la bibliothèque Amazon elle-même n'est pas encore lue."
+  },
+  "collectionColTitle": {
+    "message": "Jeu"
+  },
+  "collectionColStores": {
+    "message": "Magasins"
+  },
+  "collectionColSince": {
+    "message": "Depuis"
+  },
+  "collectionEmpty": {
+    "message": "Rien pour l'instant : importez un magasin ci-dessus."
+  },
+  "collectionNoMatch": {
+    "message": "Aucun jeu ne correspond."
+  },
+  "collectionNote": {
+    "message": "Steam : jeux possédés et leurs noms publics. GOG : la liste de jeux de votre compte. Epic : votre historique de commandes, jeux gratuits compris (un DLC y ressemble à un jeu). Un titre présent sur deux magasins est rapproché par son nom : c'est un indice, pas une preuve, et rien ne s'en sert pour décider d'une récupération."
+  },
+  "collectionUntitled": {
+    "message": "Sans titre (n° $1)"
+  },
+  "collectionClaimedTag": {
+    "message": "récupéré par l'extension"
+  },
+  "collectionLaunch": {
+    "message": "Lancer dans Steam"
   }
 }

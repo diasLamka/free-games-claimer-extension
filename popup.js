@@ -1761,6 +1761,13 @@ document.getElementById('resume').addEventListener('click', async () => {
   await load();
 });
 
+/* --- the collection, on its own page: a whole library does not fit either */
+
+document.getElementById('open-collection').addEventListener('click', (e) => {
+  e.preventDefault();
+  openTab(api.runtime.getURL('collection.html'));
+});
+
 /* --- the watch log, on its own page: 500 lines do not fit in 328 px */
 
 document.getElementById('open-journal').addEventListener('click', (e) => {
