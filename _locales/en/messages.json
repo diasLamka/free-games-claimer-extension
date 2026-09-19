@@ -134,6 +134,9 @@
   "summary": {
     "message": "Summary"
   },
+  "foldTallyCount": {
+    "message": "$1 claimed"
+  },
   "tallyNone": {
     "message": "Nothing claimed yet."
   },
@@ -148,6 +151,12 @@
   },
   "claimForMe": {
     "message": "Claim without me"
+  },
+  "foldClaimOn": {
+    "message": "autonomous"
+  },
+  "foldClaimOff": {
+    "message": "manual"
   },
   "autonomousLabel": {
     "message": "Claim without me"
@@ -175,6 +184,9 @@
   },
   "stores": {
     "message": "Stores"
+  },
+  "foldStoresCount": {
+    "message": "$1 watched"
   },
   "moreStores": {
     "message": "Other stores"
@@ -205,6 +217,9 @@
   },
   "watch": {
     "message": "Background watch"
+  },
+  "foldSourcesCount": {
+    "message": "$1 sources"
   },
   "floorLabel": {
     "message": "Minimum checks per day"

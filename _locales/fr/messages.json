@@ -134,6 +134,9 @@
   "summary": {
     "message": "Bilan"
   },
+  "foldTallyCount": {
+    "message": "$1 récupérés"
+  },
   "tallyNone": {
     "message": "Rien de récupéré pour l’instant."
   },
@@ -148,6 +151,12 @@
   },
   "claimForMe": {
     "message": "Récupérer sans moi"
+  },
+  "foldClaimOn": {
+    "message": "autonome"
+  },
+  "foldClaimOff": {
+    "message": "manuel"
   },
   "autonomousLabel": {
     "message": "Récupérer sans moi"
@@ -175,6 +184,9 @@
   },
   "stores": {
     "message": "Magasins"
+  },
+  "foldStoresCount": {
+    "message": "$1 suivis"
   },
   "moreStores": {
     "message": "Autres magasins"
@@ -205,6 +217,9 @@
   },
   "watch": {
     "message": "Veille de fond"
+  },
+  "foldSourcesCount": {
+    "message": "$1 sources"
   },
   "floorLabel": {
     "message": "Vérifications minimum par jour"

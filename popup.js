@@ -326,6 +326,39 @@ const el = (tag, cls, text) => {
   return n;
 };
 
+/* ------------------------------------------------------------------- plis */
+
+/* Un pli ferme ne doit rien avaler d'important.
+ *
+ * Replier Magasins et Veille a un cout precis : ce sont les deux seuls
+ * endroits ou l'extension crie -- le canari qui signale un selecteur mort,
+ * la source mise en repli, la session perdue. Un chevron par-dessus, et
+ * l'alerte n'existe plus.
+ *
+ * D'ou deux regles, et la seconde compte autant que la premiere.
+ *
+ *   `foldSay`  garde la ligne de verdict VISIBLE sur le pli ferme. On lit
+ *              « 4 suivis » ou « autonome » sans rien ouvrir.
+ *   `foldOpen` ouvre le pli quand il a une alerte a montrer -- UNE FOIS par
+ *              ouverture du popup. `render()` retourne apres chaque clic ;
+ *              sans ce souvenir, un pli que l'utilisateur vient de refermer
+ *              se rouvrirait sous ses doigts, et l'interface discuterait avec
+ *              lui. Il a ferme, c'est une reponse. */
+const PLIS_OUVERTS = new Set();
+
+function foldSay(id, texte) {
+  const n = document.getElementById(`${id}-say`);
+  if (n) n.textContent = texte || '';
+}
+
+function foldOpen(id, alerte) {
+  if (!alerte || PLIS_OUVERTS.has(id)) return;
+  const pli = document.getElementById(id);
+  if (!pli) return;
+  PLIS_OUVERTS.add(id);
+  pli.open = true;
+}
+
 function storeTag(store) {
   const n = el('span', `store-tag ${store}`, TAGS[store] || (STORE_LABELS[store] || store).toUpperCase());
   n.title = STORE_LABELS[store] || store;
@@ -946,7 +979,11 @@ function renderCanary(all) {
   const host = document.getElementById('canary');
   host.textContent = '';
 
-  for (const a of canaryAlerts(get(all, KEY_CANARY, {}))) {
+  const alertes = canaryAlerts(get(all, KEY_CANARY, {}));
+  // Un canari sous un pli ferme ne sert a rien : le pli s'ouvre.
+  foldOpen('fold-stores', alertes.length > 0);
+
+  for (const a of alertes) {
     const bloc = el('div', 'canary');
     const titre = el('div', 'canary-head');
     titre.append(el('span', 'canary-store', STORE_LABELS[a.store] || a.store));
@@ -1022,6 +1059,12 @@ function renderStores(all, behaviour) {
   const watched = behaviour.watchedStores || DEFAULT_WATCHED;
   const sessions = get(all, KEY_SESSIONS, {});
   renderSessionsHead(sessions, watched);
+
+  foldSay('fold-stores', t('foldStoresCount', String(watched.length)));
+  /* Une session perdue ouvre le pli -- et SEULEMENT elle. `actionable` ne
+     compte que les `logged_out` : un `inconnu` n'appelle aucun geste, et
+     ouvrir le pli pour lui ferait passer une ignorance pour une alerte. */
+  foldOpen('fold-stores', summarise(sessions, { watchedStores: watched }).actionable.length > 0);
 
   for (const store of PRIMARY) {
     const row = el('div', 'row');
@@ -1108,6 +1151,7 @@ function renderFallback(all) {
   host.textContent = '';
 
   const casse = failingSources(get(all, KEY_SOURCES, {}));
+  foldOpen('fold-watch', casse.length > 0);
   if (!casse.length) return;
 
   const bloc = el('div', 'canary');
@@ -1131,6 +1175,7 @@ function renderSources(all, behaviour) {
   host.textContent = '';
 
   const names = Object.keys(sources);
+  foldSay('fold-watch', names.length ? t('foldSourcesCount', String(names.length)) : '');
   if (!names.length) host.append(el('p', 'empty', t('emptySources')));
 
   for (const name of names) {
@@ -1205,6 +1250,8 @@ function renderTally(all) {
   const b = tally(claimsMade(histories, get(all, KEY_CATALOG, {}), { library: get(all, KEY_LIBRARY, {}) }));
   const zone = document.getElementById('tally');
   zone.textContent = '';
+
+  foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count)) : '');
 
   if (!b.count) {
     zone.className = 'empty';
@@ -1409,6 +1456,10 @@ function renderFilters(all, behaviour) {
   document.getElementById('filters-preview').textContent = open.length
     ? t('filtersPreview', String(open.length), String(seen.claimableCount), String(seen.dropped))
     : t('filtersPreviewNone');
+
+  /* Le reglage le plus lourd de la page tient en un mot sur le pli ferme :
+     l'extension reclame-t-elle toute seule, oui ou non ? */
+  foldSay('fold-claim', t(behaviour.autonomousClaim !== false ? 'foldClaimOn' : 'foldClaimOff'));
 }
 
 /* ----------------------------------------------------- notifications, look */

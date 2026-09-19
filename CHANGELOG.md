@@ -4,6 +4,67 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.25.2 -- 2026-09-20
+
+**Les huit sections se replient, et un pli qui a une alerte s'ouvre tout seul**
+
+La 2.25.1 en avait replie quatre et laisse cinq depliees. Demande : replier
+les autres. Fait -- mais replier Magasins et Veille de fond n'etait pas une
+simple continuation, parce que ce sont les deux seuls endroits ou l'extension
+CRIE.
+
+### Ce que replier aurait coute, si on s'etait arrete la
+
+Trois alertes vivent dans ces deux sections : le canari qui signale un
+selecteur mort, la source mise en repli apres trois echecs, la session
+perdue. Un chevron par-dessus, et aucune des trois n'existe plus. On aurait
+gagne des pixels en enterrant le seul mecanisme qui previent quand la
+reclamation cesse de marcher -- exactement le silence qui a coute trois
+versions en septembre.
+
+D'ou deux regles, ajoutees avec les plis plutot qu'apres.
+
+**Un pli ferme garde sa ligne de verdict.** A droite du titre, sans rien
+ouvrir : « 4 recuperes », « autonome », « 4 suivis », « 3 sources ». Replier
+n'est pas cacher.
+
+**Un pli qui a une alerte s'ouvre de lui-meme**, et seulement lui. Magasins
+s'ouvre sur un canari ou une session `logged_out` ; Veille de fond sur une
+source en repli. Une session `inconnu` n'ouvre rien : elle n'appelle aucun
+geste, et l'ouvrir ferait passer une ignorance pour une alerte -- la lecon de
+la 2.22.2, tenue jusque dans un chevron.
+
+**Une fois par ouverture du popup.** `render()` retourne apres chaque clic ;
+sans ce souvenir, un pli que l'utilisateur vient de refermer se rouvrirait
+sous ses doigts. Il a ferme : c'est une reponse, pas un accident.
+
+### L'arret d'urgence reste deplie
+
+Seule section sur neuf. Une section qu'on ouvre en panique ne se cherche pas
+derriere un chevron, et son bouton ne vaut que s'il est deja la.
+
+### Mesure
+
+Meme donnee semee, meme fenetre de 560 px, popup.js reellement execute dans
+Chromium.
+
+| Onglet Reglages a l'ouverture | 2.25.1 | 2.25.2 |
+|---|---|---|
+| rien a signaler | 1391 px (2,5 ecrans) | **467 px -- aucun defilement** |
+| rien a signaler, densite compacte | -- | **395 px** |
+| canari + repli + session perdue | 1391 px | 1212 px, les deux bons plis ouverts |
+| tout deplie a la main | -- | 2185 px |
+
+Les trois declencheurs ont ete pris un a un : canari seul ouvre Magasins,
+repli seul ouvre Veille de fond, session perdue seule ouvre Magasins, et rien
+n'ouvre rien quand tout va bien.
+
+### Detail
+
+Cinq cles de libelle ajoutees (309 par locale). Les quatre plis de la 2.25.1
+fermaient a dix espaces d'indentation ; ils ferment desormais sous leur
+ouverture.
+
 ## 2.25.1 -- 2026-09-20
 
 **Trois fissures dans une interface qui, par ailleurs, n'a pas besoin d'etre refaite**

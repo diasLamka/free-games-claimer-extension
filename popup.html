@@ -847,20 +847,29 @@
 
   /* SECTION REPLIABLE.
    *
-   * L'onglet Reglages fait 1592 px de haut dans une fenetre qui en montre
-   * 560 : trois ecrans de defilement pour neuf sections. Celles qu'on regle
-   * une fois puis qu'on oublie se replient, les quatre qui portent le travail
-   * quotidien restent ouvertes.
+   * L'onglet Reglages faisait 1592 px de haut dans une fenetre qui en montre
+   * 560 : trois ecrans de defilement pour neuf sections. Huit se replient
+   * desormais ; seul l'arret d'urgence reste deplie, parce qu'une section
+   * qu'on ouvre en panique ne se cherche pas.
    *
    * Le `<h2>` reste DANS le `<summary>` plutot que d'etre remplace par lui :
    * le titre garde son allure, et un lecteur d'ecran garde son niveau de
-   * titre. Un `<summary>` nu aurait coute les deux. */
+   * titre. Un `<summary>` nu aurait coute les deux.
+   *
+   * REPLIER N'EST PAS CACHER. Un pli ferme garde sa ligne de resume a droite
+   * -- « 4 suivis », « autonome » -- et il s'ouvre de lui-meme quand il a une
+   * alerte a montrer : un canari, une source en repli, une session perdue.
+   * Voir `fold` dans popup.js. Sans cela, replier les magasins et la veille
+   * aurait enterre les deux seuls endroits ou l'extension crie. */
   .fold { border-top: 0; }
   .fold > summary { padding: 0; }
   .fold > summary > h2 { margin: 0; }
   .fold[open] > summary > h2 { margin-bottom: 10px; }
   .fold > summary::before { margin-bottom: 1px; }
   .fold[open] > summary::before { margin-bottom: 11px; }
+  /* Le resume suit la marge du titre : sans cela, `align-items: center`
+     le decale d'une demi-marge des que le pli s'ouvre. */
+  .fold[open] > summary > .aside { margin-bottom: 10px; }
 
   /* --------------------------------------------------------- prediction */
   .pred { margin-bottom: 9px; }
@@ -1017,79 +1026,87 @@
   <!-- --------------------------------------------------------- settings -->
   <div class="pane" id="pane-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
     <section>
-      <h2 data-i18n="summary"></h2>
-      <p class="tally" id="tally"></p>
-      <p class="hint" id="tally-extra"></p>
-      <div id="tally-stores"></div>
-    </section>
-
-    <section>
-      <h2 data-i18n="claimForMe"></h2>
-      <label class="toggle">
-        <input type="checkbox" id="autonomous">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="autonomousLabel"></span><small data-i18n="autonomousHint"></small></span>
-      </label>
-      <label class="range">
-        <span class="range-label"><span data-i18n="minWorthLabel"></span> <b id="min-worth-value"></b></span>
-        <input type="range" id="min-worth" min="0" max="30" step="1" value="0">
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="include-dlc">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="includeDlcLabel"></span><small data-i18n="includeDlcHint"></small></span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="keepable-only">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="keepableOnlyLabel"></span><small data-i18n="keepableOnlyHint"></small></span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="steam-auto">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="steamAutoLabel"></span><small data-i18n="steamAutoHint"></small></span>
-      </label>
-      <div class="risk" id="steam-warn" role="alertdialog" aria-labelledby="steam-warn-text" hidden>
-        <p id="steam-warn-text" data-i18n="steamAutoWarn"></p>
-        <div class="risk-actions">
-          <button class="primary" id="steam-cancel" data-i18n="steamAutoCancel"></button>
-          <button id="steam-accept" data-i18n="steamAutoAccept"></button>
-        </div>
-      </div>
-      <p class="hint" id="filters-preview"></p>
-    </section>
-
-    <section>
-      <h2 data-i18n="stores"></h2>
-      <div id="canary"></div>
-      <div id="stores"></div>
-      <div class="sessions-head">
-        <button class="link" id="session-probe" data-i18n="sessionsCheck"></button>
-        <span class="aside" id="sessions-when"></span>
-      </div>
-      <details id="more-stores">
-        <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
-        <p class="hint" data-i18n="moreStoresHint"></p>
-        <div class="checks" id="extra-stores"></div>
+      <details class="fold" id="fold-tally">
+        <summary><h2 data-i18n="summary"></h2><span class="aside" id="fold-tally-say"></span></summary>
+        <p class="tally" id="tally"></p>
+        <p class="hint" id="tally-extra"></p>
+        <div id="tally-stores"></div>
       </details>
     </section>
 
     <section>
-      <h2 data-i18n="watch"></h2>
-      <div id="fallback"></div>
-      <div id="sources"></div>
-      <label class="range">
-        <span class="range-label"><span data-i18n="floorLabel"></span> <b id="floor-value">3</b></span>
-        <input type="range" id="floor" min="1" max="24" step="1" value="3">
-      </label>
-      <div class="actions">
-        <button class="primary" id="check-now" data-i18n="checkNow"></button>
-      </div>
-      <p class="hint" data-i18n="watchNote"></p>
+      <details class="fold" id="fold-claim">
+        <summary><h2 data-i18n="claimForMe"></h2><span class="aside" id="fold-claim-say"></span></summary>
+        <label class="toggle">
+          <input type="checkbox" id="autonomous">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="autonomousLabel"></span><small data-i18n="autonomousHint"></small></span>
+        </label>
+        <label class="range">
+          <span class="range-label"><span data-i18n="minWorthLabel"></span> <b id="min-worth-value"></b></span>
+          <input type="range" id="min-worth" min="0" max="30" step="1" value="0">
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="include-dlc">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="includeDlcLabel"></span><small data-i18n="includeDlcHint"></small></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="keepable-only">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="keepableOnlyLabel"></span><small data-i18n="keepableOnlyHint"></small></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="steam-auto">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="steamAutoLabel"></span><small data-i18n="steamAutoHint"></small></span>
+        </label>
+        <div class="risk" id="steam-warn" role="alertdialog" aria-labelledby="steam-warn-text" hidden>
+          <p id="steam-warn-text" data-i18n="steamAutoWarn"></p>
+          <div class="risk-actions">
+            <button class="primary" id="steam-cancel" data-i18n="steamAutoCancel"></button>
+            <button id="steam-accept" data-i18n="steamAutoAccept"></button>
+          </div>
+        </div>
+        <p class="hint" id="filters-preview"></p>
+      </details>
+    </section>
 
-      <details>
-        <summary data-i18n="predictionTitle"></summary>
-        <div id="prediction"></div>
+    <section>
+      <details class="fold" id="fold-stores">
+        <summary><h2 data-i18n="stores"></h2><span class="aside" id="fold-stores-say"></span></summary>
+        <div id="canary"></div>
+        <div id="stores"></div>
+        <div class="sessions-head">
+          <button class="link" id="session-probe" data-i18n="sessionsCheck"></button>
+          <span class="aside" id="sessions-when"></span>
+        </div>
+        <details id="more-stores">
+          <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
+          <p class="hint" data-i18n="moreStoresHint"></p>
+          <div class="checks" id="extra-stores"></div>
+        </details>
+      </details>
+    </section>
+
+    <section>
+      <details class="fold" id="fold-watch">
+        <summary><h2 data-i18n="watch"></h2><span class="aside" id="fold-watch-say"></span></summary>
+        <div id="fallback"></div>
+        <div id="sources"></div>
+        <label class="range">
+          <span class="range-label"><span data-i18n="floorLabel"></span> <b id="floor-value">3</b></span>
+          <input type="range" id="floor" min="1" max="24" step="1" value="3">
+        </label>
+        <div class="actions">
+          <button class="primary" id="check-now" data-i18n="checkNow"></button>
+        </div>
+        <p class="hint" data-i18n="watchNote"></p>
+
+        <details>
+          <summary data-i18n="predictionTitle"></summary>
+          <div id="prediction"></div>
+        </details>
       </details>
     </section>
 
@@ -1121,7 +1138,7 @@
           <span class="range-label"><span data-i18n="reminderLabel"></span> <b id="reminder-value">6</b></span>
           <input type="range" id="reminder" min="0" max="24" step="1" value="6">
         </label>
-          </details>
+      </details>
     </section>
 
     <section>
@@ -1146,7 +1163,7 @@
           <button id="open-epic" data-i18n="openEpic"></button>
           <button id="open-luna" data-i18n="openLuna"></button>
         </div>
-          </details>
+      </details>
     </section>
 
     <section>
@@ -1185,7 +1202,7 @@
           <span class="switch"></span>
           <span class="toggle-label" data-i18n="hideOwnedLabel"></span>
         </label>
-          </details>
+      </details>
     </section>
 
     <section>
@@ -1221,7 +1238,7 @@
           <summary data-i18n="shortcutsTitle"></summary>
           <p class="hint" data-i18n="shortcutsBody"></p>
         </details>
-          </details>
+      </details>
     </section>
   </div>
 
