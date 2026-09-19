@@ -12,11 +12,14 @@
     --ink-2:  #1E1830;
     --ink-3:  #262038;
     --line:   #2E2745;
+    --rail:   #0E0A18;
     --paper:  #EDE9F5;
     --mute:   #9A90B8;
     --amber:  #FFB454;
+    --amber-d:#FF8A3D;
     --jade:   #56D6A0;
     --rose:   #FF6B81;
+    color-scheme: dark;
 
     --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
     --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -29,11 +32,14 @@
       --ink-2:  #F2EFF9;
       --ink-3:  #E8E3F3;
       --line:   #DCD5EC;
+      --rail:   #E2DCEF;
       --paper:  #1B1528;
       --mute:   #6E6488;
       --amber:  #B96A00;
+      --amber-d:#A85400;
       --jade:   #12805B;
       --rose:   #D62B47;
+      color-scheme: light;
     }
   }
 
@@ -42,14 +48,98 @@
     --ink-2:  #F2EFF9;
     --ink-3:  #E8E3F3;
     --line:   #DCD5EC;
+    --rail:   #E2DCEF;
     --paper:  #1B1528;
     --mute:   #6E6488;
     --amber:  #B96A00;
+    --amber-d:#A85400;
     --jade:   #12805B;
     --rose:   #D62B47;
+    color-scheme: light;
   }
 
   * { box-sizing: border-box; }
+
+  /* ------------------------------------------------- barre de defilement
+     Le pouce EST un ticket : le degrade ambre de icon.svg, des coins
+     pleinement arrondis, et la ligne de perforation en pointilles qui le
+     traverse dans sa longueur (l'icone la dessine en `stroke-dasharray`).
+     La piste est le creux ou le ticket coulisse -- `--rail`, deja le token
+     de tous les creux du produit.
+
+     La couleur de la perforation est tiree de `--ink`, et c'est le tour de
+     force du truc : `--ink` bascule avec le theme, donc la perforation
+     bascule avec lui, dans le bon sens et sans une ligne de plus. Sombre
+     sur ambre vif ; claire sur ambre brule.
+
+     Pas de transition : Chrome n'anime pas les pseudo-elements de
+     scrollbar. Le survol est un basculement net, et c'est assume. */
+
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+
+  ::-webkit-scrollbar-track { background: var(--rail); }
+  ::-webkit-scrollbar-corner { background: var(--rail); }
+  ::-webkit-scrollbar-button { display: none; }
+
+  ::-webkit-scrollbar-thumb {
+    /* Bordure transparente + content-box : une gouttiere de 2px, pour que le
+       ticket ne touche jamais les bords de son rail. */
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+    /* En dessous, la perforation n'aurait pas la place d'exister. */
+    min-height: 36px;
+    background-color: var(--amber-d);
+    background-image:
+      repeating-linear-gradient(180deg,
+        color-mix(in srgb, var(--ink) 62%, transparent) 0 5px,
+        transparent 5px 9px),
+      linear-gradient(180deg, var(--amber), var(--amber-d));
+    background-repeat: repeat-y, no-repeat;
+    background-size: 2px 9px, auto;
+    background-position: center top, 0 0;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-image:
+      repeating-linear-gradient(180deg,
+        color-mix(in srgb, var(--ink) 72%, transparent) 0 5px,
+        transparent 5px 9px),
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--amber) 82%, white), var(--amber));
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-image:
+      repeating-linear-gradient(180deg,
+        color-mix(in srgb, var(--ink) 80%, transparent) 0 5px,
+        transparent 5px 9px),
+      linear-gradient(180deg, var(--amber-d), var(--amber-d));
+  }
+
+  /* Le ticket couche : la perforation tourne avec lui. */
+  ::-webkit-scrollbar-thumb:horizontal {
+    min-height: 0;
+    min-width: 36px;
+    background-image:
+      repeating-linear-gradient(90deg,
+        color-mix(in srgb, var(--ink) 62%, transparent) 0 5px,
+        transparent 5px 9px),
+      linear-gradient(90deg, var(--amber), var(--amber-d));
+    background-repeat: repeat-x, no-repeat;
+    background-size: 9px 2px, auto;
+    background-position: left center, 0 0;
+  }
+
+  /* Firefox n'a pas ces pseudo-elements : il recoit la version plate. Chrome,
+     lui, comprend `selector(::-webkit-scrollbar)`, donc ce bloc ne s'y
+     applique pas -- et surtout : poser `scrollbar-width` ou `scrollbar-color`
+     sur un element fait IGNORER a Chromium (121+) tous ses
+     `::-webkit-scrollbar-*`. Ces deux proprietes doivent donc rester hors de
+     sa portee, sans quoi rien de ce qui precede ne s'affiche. */
+  @supports not selector(::-webkit-scrollbar) {
+    :root { scrollbar-width: thin; scrollbar-color: var(--amber-d) var(--rail); }
+  }
 
   body {
     margin: 0;

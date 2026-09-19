@@ -4,6 +4,74 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.23.0 -- 2026-09-19
+
+**Le pouce de la barre de defilement est un ticket**
+
+L'identite du produit s'arretait aux icones. `icon.svg` est un ticket a coins
+arrondis, degrade ambre `#FFC06B -> #FF8A3D`, evide en violet nuit, traverse
+d'une perforation en pointilles -- et les cinq pages laissaient le navigateur
+poser ses barres grises par-dessus. Sur le journal, 500 lignes, la rupture
+etait permanente.
+
+### Le dessin
+
+Le pouce EST le ticket : le degrade ambre, des coins pleinement arrondis, et
+la ligne de perforation qui le traverse dans sa longueur. La piste est le
+creux ou il coulisse -- `--rail`, deja le jeton de tous les creux du produit
+(anneau de decompte, rails d'interrupteurs, jauges). Couche, le ticket tourne
+sa perforation avec lui.
+
+La couleur de la perforation est `color-mix(in srgb, var(--ink) 62%,
+transparent)`. Comme `--ink` bascule avec le theme, la perforation bascule
+avec lui, dans le bon sens et sans une ligne de plus : sombre sur ambre vif,
+claire sur ambre brule.
+
+Geometrie : dash 5px / gap 4px, ratio 1,25 contre 1,36 dans l'icone
+(`stroke-dasharray="7.2 5.3"`). Transposer le ratio exact a cette echelle
+donnerait un trait de 0,5px, invisible. On garde la lecture, pas la mesure.
+
+### Le piege desamorce
+
+`popup.html` portait `scrollbar-width: thin` et `scrollbar-color` sur son
+`body`. **Depuis Chrome 121, poser l'une de ces deux proprietes sur un
+element fait IGNORER a Chromium tous ses `::-webkit-scrollbar-*`.** Ces deux
+lignes auraient suffi a annuler tout le travail sur la surface la plus vue.
+Elles sont retirees, et remplacees par un bloc reserve a Firefox -- qui n'a
+pas les pseudo-elements et recoit la version plate :
+
+```css
+@supports not selector(::-webkit-scrollbar) { ... }
+```
+
+Chrome comprend `selector(::-webkit-scrollbar)`, donc le bloc ne s'y applique
+pas. `manifest.firefox.json` existe : Firefox n'est pas hypothetique.
+
+### Deux jetons qui avaient derive
+
+Les cinq pages recopient leur `:root` en se promettant « memes jetons que
+popup.html ». La copie avait deja derive : `--rail` n'existait que dans
+popup, `--amber-d` que dans popup et diagnostics. Les deux sont ajoutes
+partout, dans les trois blocs de chaque page (sombre, `prefers-color-scheme`,
+`[data-theme="light"]`).
+
+Au passage, `color-scheme` est declare sur chaque page : les controles natifs
+-- le `textarea` de diagnostics, les `select` -- cessent d'arriver en blanc
+sur fond violet.
+
+### Mesure
+
+CSSOM verifie dans Chromium : les huit regles sont parsees et acceptees. Le
+rendu n'a PAS pu etre photographie -- ce Chromium headless ne dessine aucune
+barre de defilement classique, meme sur un cas minimal sans notre CSS. Le
+premier rendu reel sera celui de l'utilisateur. 692 tests.
+
+### Dette assumee
+
+Le bloc est recopie cinq fois, comme les jetons -- et c'est cette duplication
+qui les avait fait deriver. Un `theme.css` partage supprimerait les deux
+problemes d'un coup ; il n'a pas ete fait ici.
+
 ## 2.22.4 -- 2026-09-19
 
 **Le journal accusait l'API d'avoir change de format. C'etait notre minuteur.**
