@@ -4,6 +4,66 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.25.0 -- 2026-09-20
+
+**« Suis-je connecte ? » -- la question que l'extension ne savait pas poser**
+
+Trois versions de suite ont ete depensees a chercher pourquoi Steam ne
+reclamait rien. La reponse tenait a une question que l'extension ne posait
+nulle part. Elle la devinait depuis le service worker -- une lecture de
+`dynamicstore/userdata` qui rend des listes vides aussi bien pour « pas de
+session » que pour « le worker n'a pas vu la session » -- et elle se taisait.
+L'utilisateur voyait « aucune action », et rien d'autre.
+
+### Ce qui s'affiche
+
+Sous chaque magasin sondable, une ligne : **connecte** (en vert, avec la date
+de la mesure), **deconnecte** (en rouge, avec un lien pour aller se
+reconnecter), ou **inconnu**. Un bouton « Verifier les sessions » mesure les
+trois d'un coup, et le resume passe en ambre des que la plus ancienne mesure
+a plus de six heures -- c'est elle qui dit depuis quand le tableau peut
+mentir.
+
+### La nuance qui compte
+
+**Ne pas savoir n'est pas etre deconnecte.** Une reponse illisible, une
+adresse qui a change, une page HTML au lieu du JSON : tout cela rend
+« inconnu », jamais « deconnecte ». Et « inconnu » n'affiche aucun lien de
+reconnexion -- envoyer se reconnecter quelqu'un qui l'est deja, c'est
+exactement l'erreur de la 2.22.2, et elle est tenue par un test.
+
+Amazon dit « non sondable » plutot qu'« inconnu » : sa bibliotheque vit
+derriere une API GraphQL dont rien n'a ete mesure. Les deux se ressemblent et
+ne veulent pas dire la meme chose -- l'un attend une mesure, l'autre du code.
+
+### Ce qui n'a PAS ete ecrit, et pourquoi
+
+La sonde ne part **jamais toute seule**. Sonder, c'est lire un compte avec
+votre session ; l'importation de collection s'en tient a cette regle depuis
+la 2.21.0, et `SECURITY.md` la promet. Une fonction `dueForProbe`, qui aurait
+resonde a chaque cycle, a ete ecrite puis **retiree avant livraison** : la
+livrer inutilisee aurait laisse dans le depot du code contredisant cette
+promesse. Le commentaire qui la remplace dit comment la refaire le jour ou
+elle se justifiera.
+
+### Ce qui a ete reutilise plutot que reecrit
+
+La sonde ne contient presque rien : elle appelle le `judge` de
+`watch/collection-import.js`, qui sait depuis la 2.21.0 les trois facons
+mesurees de dire « pas connecte » -- un 401, une redirection vers une page de
+connexion, un refus d'authentification dans le corps -- et qui refuse
+d'y compter le 403, parce que c'est aussi ce que rend un mur anti-robot.
+Steam est le seul cas a part, et c'est mesure : sans session il repond 200
+avec des listes vides, que `judge` trouverait normales. C'est `readOwnership`
+qui sait lire ce cas.
+
+### Mesure
+
+`test/session.test.mjs` : 9 tests. Une forme inattendue ne devient jamais
+« deconnecte » ; une valeur abimee au stockage ne devient pas « connecte » ;
+la sonde GOG demande `page=1` et rien de plus ; Steam sans session rend bien
+« deconnecte », et une erreur HTTP rend « inconnu ». 713 tests.
+
 ## 2.24.0 -- 2026-09-19
 
 **Deux audits de securite : rien d'exploitable, quatre portes fermees quand meme**

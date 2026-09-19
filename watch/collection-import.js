@@ -28,7 +28,7 @@
  */
 import { IMPORT_STATUS, KINDS, makeItem, describeShape } from './collection.js';
 import { describeFetchFailure } from './net.js';
-import { OWNED_URL, itemsUrl } from './sources/steam.js';
+import { OWNED_URL, itemsUrl, readOwnership } from './sources/steam.js';
 import { normaliseTitle } from './offer.js';
 
 export const GOG_LIBRARY_URL = 'https://www.gog.com/account/getFilteredProducts';
@@ -397,6 +397,43 @@ export async function importEpic({ fetch: fetchImpl = fetch, pause = defaultPaus
 }
 
 /* ------------------------------------------------------------------ entree */
+
+/* --------------------------------------------------------- sonde de session */
+
+/**
+ * Etes-vous connecte a ce magasin ? Une requete, et rien de plus.
+ *
+ * POURQUOI ICI, et pas dans un module a part. Repondre a cette question, c'est
+ * exactement ce que `judge` fait deja depuis la 2.21.0 -- avec ses trois
+ * facons mesurees de dire « pas connecte » (un 401, une redirection vers une
+ * page de connexion, un refus d'authentification dans le corps) et son refus
+ * assume de compter le 403 parmi elles. Ecrire une seconde logique a cote
+ * aurait produit deux verites sur la meme question, et elles auraient
+ * diverge -- le depot en a deja fait l'experience avec `--rail`.
+ *
+ * On demande donc le MOINS possible : la premiere page, jamais la
+ * pagination. Une sonde ne rapatrie pas une bibliotheque.
+ *
+ * Steam est a part, et c'est mesure : sans session, `dynamicstore/userdata`
+ * repond 200 avec des listes VIDES -- `judge` n'y verrait rien d'anormal.
+ * C'est `readOwnership` qui sait lire ce cas, et c'est lui qu'on appelle.
+ */
+export async function probeSession(store, { fetch: fetchImpl = fetch } = {}) {
+  if (store === 'steam') {
+    const r = await readOwnership({ fetch: fetchImpl, now: Date.now() });
+    if (r.status === 'ok') return { status: IMPORT_STATUS.OK, note: `${r.apps.size} jeu(x) vus` };
+    if (r.status === 'logged_out') return { status: IMPORT_STATUS.LOGGED_OUT, note: 'listes vides' };
+    return { status: IMPORT_STATUS.ERROR, note: r.note || 'illisible' };
+  }
+
+  const url = store === 'gog' ? gogPageUrl(1) : store === 'epic' ? epicPageUrl() : null;
+  if (!url) return { status: IMPORT_STATUS.ERROR, note: `magasin sans sonde : ${store}` };
+
+  const res = await fetchJson(fetchImpl, url);
+  const verdict = judge(res);
+  // `judge` rend null quand la reponse n'a rien d'anormal : c'est un oui.
+  return verdict || { status: IMPORT_STATUS.OK, note: describeResponse(res, url) };
+}
 
 const IMPORTERS = Object.freeze({ steam: importSteam, gog: importGog, epic: importEpic });
 

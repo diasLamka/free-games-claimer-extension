@@ -59,6 +59,13 @@ Uniquement vers **le magasin concerne lui-meme**, jamais vers un tiers :
 `accounts.epicgames.com` (import de collection, sur clic). Toutes sont des
 `GET`, sans corps, avec `Accept: application/json` pour seul en-tete.
 
+La **sonde de session** (2.25.0, bouton « Verifier les sessions ») emprunte
+les memes adresses, en demandant le moins possible : une seule page, jamais
+la pagination. Elle part **sur un geste**, comme l'import -- l'extension ne
+lit jamais un compte de sa propre initiative. C'est pour tenir cette phrase
+qu'une fonction de sonde automatique, ecrite puis relue, a ete retiree avant
+d'etre livree (voir le commentaire en fin de `watch/session.js`).
+
 ### Fuite passive a connaitre
 
 Le popup affiche les vignettes des offres depuis les CDN d'Epic, GOG, Steam et

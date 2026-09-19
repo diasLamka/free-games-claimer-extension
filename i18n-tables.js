@@ -294,7 +294,16 @@ export const TABLES = Object.freeze({
     "steamAutoWarn": "Steam's Subscriber Agreement (section 4.C) forbids scripts that interact with Steam, and Valve may close an account for it without notice (4.D). The extension only adds offers Steam itself marks free to keep, one per cycle and slowly, but the risk remains whole, and it covers your entire Steam account.",
     "steamAutoAccept": "Turn on anyway",
     "steamAutoCancel": "Cancel",
-    "storeSteamAuto": "automatic, at your own risk"
+    "storeSteamAuto": "automatic, at your own risk",
+    "sessionsCheck": "Check sessions",
+    "sessionsChecking": "Checking...",
+    "sessionsChecked": "checked $1",
+    "sessionsNever": "never checked",
+    "sessionIn": "signed in",
+    "sessionOut": "signed out",
+    "sessionUnknown": "unknown",
+    "sessionNever": "not checked yet",
+    "sessionSignIn": "Sign in"
   },
   "fr": {
     "appName": "Free Games Auto-Claimer",
@@ -588,6 +597,15 @@ export const TABLES = Object.freeze({
     "steamAutoWarn": "Le contrat d'abonnement Steam (section 4.C) interdit les scripts qui interagissent avec Steam, et Valve peut fermer un compte pour cela, sans préavis (4.D). L'extension n'ajoute que des offres que Steam marque lui-même gratuites à garder, une par cycle et lentement, mais le risque reste entier, et il porte sur tout votre compte Steam.",
     "steamAutoAccept": "Activer quand même",
     "steamAutoCancel": "Annuler",
-    "storeSteamAuto": "automatique, à vos risques"
+    "storeSteamAuto": "automatique, à vos risques",
+    "sessionsCheck": "Vérifier les sessions",
+    "sessionsChecking": "Vérification...",
+    "sessionsChecked": "vérifié $1",
+    "sessionsNever": "jamais vérifié",
+    "sessionIn": "connecté",
+    "sessionOut": "déconnecté",
+    "sessionUnknown": "inconnu",
+    "sessionNever": "pas encore vérifié",
+    "sessionSignIn": "Se connecter"
   }
 });

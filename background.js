@@ -38,6 +38,9 @@ import {
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
+import {
+  KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
+} from './watch/session.js';
 import { senderKind, messageAllowed, isOurs, hostMatchers, relayRequest } from './watch/messaging.js';
 import { webUrl } from './watch/offer.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
@@ -45,7 +48,7 @@ import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
 import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
 import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
-import { importStore } from './watch/collection-import.js';
+import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
@@ -275,6 +278,41 @@ async function importCollection(stores) {
   } finally {
     stopKeepalive();
   }
+}
+
+/* ----------------------------------------------------------- sessions */
+
+/** Garde intra-instance : deux sondes simultanees liraient les memes comptes. */
+let sessionRunning = null;
+
+/**
+ * Mesure l'etat de session des magasins demandes, et l'ecrit.
+ *
+ * Une requete par magasin, la plus petite que l'import sache faire. Jamais
+ * d'ecriture sur un compte : c'est de la lecture, comme l'importation.
+ *
+ * Ne jette jamais : une sonde qui echoue rend `inconnu`, ce qui est la
+ * verite. C'est tout le point du module -- ne pas savoir est un etat, pas
+ * une panne.
+ */
+async function probeSessions(stores) {
+  const raw = await readKeys(api, KEY_SESSIONS);
+  let etat = raw[KEY_SESSIONS] || {};
+
+  for (const store of stores) {
+    let mesure;
+    try {
+      mesure = await probeSession(store, { fetch: (url, init) => fetch(url, init) });
+    } catch (e) {
+      mesure = { status: null, note: (e && e.message) || String(e) };
+    }
+    const status = fromImportStatus(mesure.status);
+    etat = recordSession(etat, store, { status, note: mesure.note }, Date.now());
+    record('info', `session ${store} : ${status}${mesure.note ? ` (${mesure.note})` : ''}`);
+  }
+
+  await write(api, { [KEY_SESSIONS]: etat });
+  return etat;
 }
 
 /* --------------------------------------------------- listeners, au niveau racine */
@@ -701,6 +739,24 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         sendResponse({ ok: false, error: String((e && e.message) || e) });
       })
       .finally(() => { collectionRunning = null; });
+    return true;
+  }
+
+  /* Sonder les sessions, a la demande de la page. Meme regle que
+     l'importation : chaque sonde lit un compte avec la session de
+     l'utilisateur, donc elle part sur un geste, jamais toute seule. */
+  if (msg.type === 'fgc-session-probe') {
+    if (sessionRunning) { sendResponse({ busy: true }); return; }
+    const demandes = (Array.isArray(msg.stores) && msg.stores.length ? msg.stores : PROBED_STORES)
+      .filter((s) => PROBED_STORES.includes(s));
+    sessionRunning = probeSessions(demandes);
+    sessionRunning
+      .then((sessions) => sendResponse({ ok: true, sessions }))
+      .catch((e) => {
+        record('warn', 'sessions : sonde impossible', e);
+        sendResponse({ ok: false, error: String((e && e.message) || e) });
+      })
+      .finally(() => { sessionRunning = null; });
     return true;
   }
 

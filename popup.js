@@ -32,6 +32,9 @@ import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
+import {
+  KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
+} from './watch/session.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -150,6 +153,7 @@ const KEYS_READ = [
   KEY_RATES,
   KEY_CANARY,
   KEY_COUNTRY, KEY_LANG,
+  KEY_SESSIONS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -965,11 +969,59 @@ function renderCanary(all) {
   }
 }
 
+/**
+ * Une ligne d'etat de session.
+ *
+ * Trois etats, trois traitements, et la nuance compte :
+ *   - connecte  : discret, avec la date de la mesure. Une mesure sans date ne
+ *                 dit rien d'aujourd'hui, et le dire vaut mieux que se taire.
+ *   - deconnecte: en rouge, avec un lien pour aller se reconnecter. C'est le
+ *                 seul etat qui appelle un geste.
+ *   - inconnu   : neutre. On n'envoie PAS se reconnecter quelqu'un qui l'est
+ *                 peut-etre deja : c'est exactement l'erreur de la 2.22.2.
+ */
+function renderSessionsHead(sessions, watched) {
+  const quand = document.getElementById('sessions-when');
+  if (!quand) return;
+  const bilan = summarise(sessions, { watchedStores: watched });
+  const dates = bilan.rows.map((r) => r.at).filter((x) => typeof x === 'number');
+  /* La plus ANCIENNE des mesures, pas la plus recente : c'est elle qui dit
+     depuis quand le tableau peut mentir. */
+  const plusAncienne = dates.length ? Math.min(...dates) : null;
+  quand.textContent = plusAncienne
+    ? t('sessionsChecked', since(plusAncienne) || '')
+    : t('sessionsNever');
+  /* Passe six heures, la mesure ne dit plus rien d'aujourd'hui. Le dire vaut
+     mieux que laisser croire que le tableau est a jour. */
+  quand.classList.toggle('hi', isStale({ at: plusAncienne }, Date.now()));
+}
+
+function sessionLine(entry, storeId) {
+  const line = el('div', 'session');
+  const etat = entry.status === SESSION.OK ? t('sessionIn')
+    : entry.status === SESSION.OUT ? t('sessionOut')
+    : t('sessionUnknown');
+  const teinte = entry.status === SESSION.OK ? 'ok' : entry.status === SESSION.OUT ? 'out' : '';
+  line.append(el('span', `who ${teinte}`.trim(), etat));
+
+  if (entry.at) line.append(el('span', null, since(entry.at)));
+  else line.append(el('span', null, t('sessionNever')));
+
+  if (entry.status === SESSION.OUT && LOGIN_URLS[storeId]) {
+    const lien = el('button', 'link', t('sessionSignIn'));
+    lien.addEventListener('click', () => openTab(LOGIN_URLS[storeId]));
+    line.append(lien);
+  }
+  return line;
+}
+
 function renderStores(all, behaviour) {
   const host = document.getElementById('stores');
   host.textContent = '';
   const cooldowns = get(all, 'FGC_auto_state', {});
   const watched = behaviour.watchedStores || DEFAULT_WATCHED;
+  const sessions = get(all, KEY_SESSIONS, {});
+  renderSessionsHead(sessions, watched);
 
   for (const store of PRIMARY) {
     const row = el('div', 'row');
@@ -1002,6 +1054,17 @@ function renderStores(all, behaviour) {
 
     row.append(el('span', 'aside', state));
     host.append(row);
+
+    /* L'etat de session, sous la ligne du magasin.
+     *
+     * C'est la reponse a la question que l'extension ne savait pas poser, et
+     * qui a coute trois versions en septembre : « suis-je connecte ? ». Elle
+     * ne s'affiche que pour les magasins qu'on sait sonder, et seulement s'ils
+     * sont suivis -- afficher l'etat d'un magasin decoche reviendrait a avoir
+     * lu un compte que personne n'a demande. */
+    if (on && PROBED_STORES.includes(store.id)) {
+      host.append(sessionLine(readSession(sessions, store.id), store.id));
+    }
   }
 
   /* Secondary stores. The label says "watched and notified, never claimed",
@@ -1671,6 +1734,23 @@ document.getElementById('floor').addEventListener('change', async (e) => {
   await writeBehaviour({ floorPerDay: Number(e.target.value) });
   await withWorking(requestCycle, { immediate: true });
   await load();
+});
+
+/* Sonder les sessions. Un geste explicite : chaque sonde lit un compte avec
+   la session de l'utilisateur, exactement comme l'importation de collection,
+   et pour la meme raison elle ne part jamais toute seule. */
+document.getElementById('session-probe').addEventListener('click', async (e) => {
+  const button = e.currentTarget;
+  button.disabled = true;
+  const avant = button.textContent;
+  button.textContent = t('sessionsChecking');
+  try {
+    await tell('fgc-session-probe');
+  } finally {
+    button.disabled = false;
+    button.textContent = avant;
+    await load();
+  }
 });
 
 document.getElementById('check-now').addEventListener('click', async (e) => {

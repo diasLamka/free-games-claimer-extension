@@ -55,7 +55,8 @@ export function senderKind(sender, extensionBase) {
 export const UI_COMMANDS = Object.freeze([
   'fgc-check-now', 'fgc-mark-seen', 'fgc-claim-all', 'fgc-sweep-tabs',
   'fgc-retry', 'fgc-prune', 'fgc-sentinel', 'fgc-canary-ack',
-  'fgc-journal-clear', 'fgc-collection-import', 'fgc-watch-state',
+  'fgc-journal-clear', 'fgc-collection-import', 'fgc-session-probe',
+  'fgc-watch-state',
 ]);
 
 /**

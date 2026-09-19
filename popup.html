@@ -620,6 +620,39 @@
   }
   .row .aside.hi { color: var(--amber); }
 
+  /* L'etat de session, sous la ligne du magasin.
+     Une deuxieme ligne plutot qu'une colonne de plus : a 328 px, « Epic Games
+     Store » et « pret, 4 recuperes » remplissent deja la largeur. */
+  .session {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 0 var(--pad) 8px;
+    margin-top: -5px;
+    font-size: 10.5px;
+    color: var(--mute);
+    border-bottom: 1px solid var(--line);
+  }
+  /* Le trait de separation appartient au BAS du bloc, pas au milieu. Sans
+     ceci, « connecte il y a 2 h » tombait sous la ligne d'Epic et avait l'air
+     de decrire GOG -- l'inverse exact de ce que la ligne dit. */
+  .row:has(+ .session) { border-bottom: 0; }
+  .session:last-child { border-bottom: 0; }
+  .session .who { font-family: var(--mono); }
+  .session .who.out { color: var(--rose); }
+  .session .who.ok { color: var(--jade); }
+  .sessions-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px var(--pad) 0;
+  }
+  /* `.aside` n'est defini que DANS une rangee : hors d'elle, le resume
+     repartait a la taille du corps de texte. */
+  .sessions-head .aside { color: var(--mute); font-size: 11px; }
+  .sessions-head .aside.hi { color: var(--amber); }
+
   .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--jade); }
   .dot.paused { background: var(--amber); }
   .dot.off { background: var(--line); }
@@ -1008,6 +1041,10 @@
       <h2 data-i18n="stores"></h2>
       <div id="canary"></div>
       <div id="stores"></div>
+      <div class="sessions-head">
+        <button class="link" id="session-probe" data-i18n="sessionsCheck"></button>
+        <span class="aside" id="sessions-when"></span>
+      </div>
       <details id="more-stores">
         <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
         <p class="hint" data-i18n="moreStoresHint"></p>

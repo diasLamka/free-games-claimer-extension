@@ -874,5 +874,32 @@
   },
   "storeSteamAuto": {
     "message": "automatique, à vos risques"
+  },
+  "sessionsCheck": {
+    "message": "Vérifier les sessions"
+  },
+  "sessionsChecking": {
+    "message": "Vérification..."
+  },
+  "sessionsChecked": {
+    "message": "vérifié $1"
+  },
+  "sessionsNever": {
+    "message": "jamais vérifié"
+  },
+  "sessionIn": {
+    "message": "connecté"
+  },
+  "sessionOut": {
+    "message": "déconnecté"
+  },
+  "sessionUnknown": {
+    "message": "inconnu"
+  },
+  "sessionNever": {
+    "message": "pas encore vérifié"
+  },
+  "sessionSignIn": {
+    "message": "Se connecter"
   }
 }
