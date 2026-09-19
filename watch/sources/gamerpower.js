@@ -13,6 +13,7 @@
  * ouvrir dans le champ urlResolution.
  */
 import { makeOffer, detectStore, STORES } from '../offer.js';
+import { describeFetchFailure } from '../net.js';
 
 export const NAME = 'gamerpower';
 
@@ -126,22 +127,28 @@ export function mapResponse(data, now) {
 /**
  * Interroge l'API. Ne jette jamais : une source en panne doit degrader la
  * veille, pas l'arreter.
+ *
+ * Vingt secondes, comme la source Steam. C'etait quinze, et trois expirations
+ * d'affilee ont endormi la source -- alors qu'une relance sept secondes plus
+ * tard rendait bien ses vingt offres. Le CDN est parfois lent, pas casse.
  */
 export async function discover({
   fetch: fetchImpl = fetch,
   now = Date.now(),
   url = buildUrl(),
-  timeoutMs = 15000,
+  timeoutMs = 20000,
 } = {}) {
   const errors = [];
   const stopwatch = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = stopwatch ? setTimeout(() => stopwatch.abort(), timeoutMs) : null;
+  const signal = stopwatch ? stopwatch.signal : undefined;
+  const pourquoi = (e, label) => describeFetchFailure(e, { timeoutMs, signal, label });
 
   try {
     const response = await fetchImpl(url, {
       credentials: 'omit',
       headers: { Accept: 'application/json' },
-      signal: stopwatch ? stopwatch.signal : undefined,
+      signal,
     });
 
     if (!response.ok) {
@@ -152,15 +159,17 @@ export async function discover({
     try {
       data = await response.json();
     } catch (e) {
-      return { offers: [], dropped: [], errors: [`JSON illisible : ${(e && e.message) || e}`] };
+      /* L'abandon de NOTRE minuteur remonte ici, pas dans le catch exterieur :
+         les en-tetes etaient arrivees, le corps non. Le dire « JSON illisible »
+         accusait l'API d'avoir change de format -- voir watch/net.js. */
+      return { offers: [], dropped: [], errors: [pourquoi(e, 'JSON illisible')] };
     }
 
     const { offers, dropped, erreur } = mapResponse(data, now);
     if (erreur) errors.push(erreur);
     return { offers, dropped, errors };
   } catch (e) {
-    const reason = e && e.name === 'AbortError' ? `delai depasse (${timeoutMs} ms)` : (e && e.message) || String(e);
-    return { offers: [], dropped: [], errors: [reason] };
+    return { offers: [], dropped: [], errors: [pourquoi(e)] };
   } finally {
     if (timer) clearTimeout(timer);
   }

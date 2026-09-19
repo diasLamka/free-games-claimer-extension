@@ -4,6 +4,61 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.22.4 -- 2026-09-19
+
+**Le journal accusait l'API d'avoir change de format. C'etait notre minuteur.**
+
+```
+gamerpower : echec
+{"errors":["JSON illisible : signal is aborted without reason"],"failures":3}
+```
+
+L'API n'avait rien change. « signal is aborted without reason » est le motif
+que Chrome donne a un abandon : c'est NOTRE delai qui avait coupe la requete.
+
+### Pourquoi le mauvais message gagnait
+
+Les en-tetes arrivent, donc `response.ok` est vrai, donc on entre dans
+`response.json()` -- et c'est pendant la lecture du corps que l'abandon
+remonte. Chaque source avait deux endroits ou attraper une erreur : le catch
+exterieur traduisait correctement l'abandon en « delai depasse », et le catch
+interieur, pose autour du seul `json()`, le renommait en probleme de format.
+Le plus proche gagnait, et il avait tort.
+
+Le meme piege dormait dans la source GOG, mot pour mot.
+
+### Le correctif
+
+- **`watch/net.js`, une seule fonction pour les deux endroits.** Elle consulte
+  d'abord NOTRE signal : si le minuteur a tire, la cause est notre delai,
+  quelle que soit la forme prise par l'erreur en remontant. Toutes les
+  plateformes ne rejettent pas un abandon avec un `AbortError` -- certaines
+  rendent un « Failed to fetch » ordinaire -- et se fier au seul nom de
+  l'erreur, c'etait une loterie.
+- **« JSON illisible » est conserve pour les vraies erreurs de format.** Deux
+  tests ont refuse la premiere version du correctif, qui supprimait le
+  libelle partout : elle remplacait un mauvais diagnostic par une absence de
+  diagnostic. Ils avaient raison.
+- **Vingt secondes au lieu de quinze** pour l'agregateur, comme la source
+  Steam. Trois expirations d'affilee ont endormi la source alors qu'une
+  relance sept secondes plus tard rendait bien ses vingt offres : le CDN est
+  parfois lent, pas casse.
+- Les sources Steam et l'import de collection passent par la meme fonction.
+  Deux copies d'un meme idiome, c'est ainsi que la premiere avait diverge.
+
+### Mesure
+
+`test/gamerpower.test.mjs` et `test/gog.test.mjs` : l'abandon pendant la
+lecture du corps rend « delai depasse », ne mentionne plus le format, et un
+abandon dont le nom ne dit rien reste un delai. Une reponse vraiment mal
+formee garde son « JSON illisible ». 692 tests.
+
+### Reste ouvert
+
+La source Epic n'a AUCUN delai : pas d'`AbortController`, donc une requete
+suspendue le reste jusqu'a la mort du service worker. Elle ne pose pas
+probleme aujourd'hui ; c'est la meme famille de defaut, et c'est signale.
+
 ## 2.22.3 -- 2026-09-19
 
 **Steam : le clic partait dans le vide -- c'est le formulaire qu'il faut envoyer**

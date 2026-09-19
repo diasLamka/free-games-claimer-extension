@@ -27,6 +27,7 @@
  * hypotheses.
  */
 import { IMPORT_STATUS, KINDS, makeItem, describeShape } from './collection.js';
+import { describeFetchFailure } from './net.js';
 import { OWNED_URL, itemsUrl } from './sources/steam.js';
 import { normaliseTitle } from './offer.js';
 
@@ -95,7 +96,7 @@ async function fetchJson(fetchImpl, url, { credentials = 'include' } = {}) {
       title: titre ? titre[1].trim() : null,
     };
   } catch (e) {
-    const reason = e && e.name === 'AbortError' ? `delai depasse (${TIMEOUT_MS} ms)` : (e && e.message) || String(e);
+    const reason = describeFetchFailure(e, { timeoutMs: TIMEOUT_MS, signal: stopwatch ? stopwatch.signal : undefined });
     return { ok: false, status: 0, type: '', bytes: 0, finalUrl: url, json: undefined, error: reason };
   } finally {
     if (timer) clearTimeout(timer);

@@ -186,6 +186,49 @@ test('decouvrir ne jette jamais, quelle que soit la panne', async () => {
   }
 });
 
+test('un abandon PENDANT la lecture du corps est un delai, pas un JSON illisible', async () => {
+  /* Le cas exact du journal du 2026-09-19 :
+       gamerpower : echec
+       {"errors":["JSON illisible : signal is aborted without reason"]}
+     Les en-tetes etaient arrivees -- donc `response.ok` vrai, donc on entrait
+     dans `json()` -- et c'est la que NOTRE minuteur a coupe. Le catch pose
+     autour du seul `json()` accusait l'API d'avoir change de format ; elle
+     n'avait rien change. Trois expirations de suite ont endormi la source, et
+     le message a envoye chercher au mauvais endroit. */
+  const r = await gp.discover({
+    fetch: (url, opts) => Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => new Promise((resolve, reject) => {
+        opts.signal.addEventListener('abort', () => {
+          // Le message que Chrome donne a un abandon sans motif explicite.
+          const e = new Error('signal is aborted without reason');
+          e.name = 'AbortError';
+          reject(e);
+        });
+      }),
+    }),
+    now: T,
+    timeoutMs: 30,
+  });
+  assert.equal(r.offers.length, 0);
+  assert.deepEqual(r.errors, ['delai depasse (30 ms)']);
+  assert.ok(!r.errors.some((e) => /JSON illisible/.test(e)), 'ne doit plus accuser le format');
+});
+
+test('et un abandon dont le nom ne dit rien reste un delai : c\'est NOTRE signal qui tranche', async () => {
+  /* Toutes les plateformes ne rejettent pas un abandon avec un AbortError.
+     Se fier au seul nom de l'erreur, c'etait se remettre a une loterie. */
+  const r = await gp.discover({
+    fetch: (url, opts) => new Promise((resolve, reject) => {
+      opts.signal.addEventListener('abort', () => reject(new TypeError('Failed to fetch')));
+    }),
+    now: T,
+    timeoutMs: 30,
+  });
+  assert.deepEqual(r.errors, ['delai depasse (30 ms)']);
+});
+
 test('decouvrir abandonne au bout du delai imparti', async () => {
   const r = await gp.discover({
     fetch: (url, opts) => new Promise((resolve, reject) => {

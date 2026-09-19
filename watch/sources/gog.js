@@ -37,6 +37,7 @@
  * Module pur, sauf `discover` qui recoit son `fetch`.
  */
 import { makeOffer, STORES } from '../offer.js';
+import { describeFetchFailure } from '../net.js';
 
 export const NAME = 'gog';
 
@@ -236,6 +237,7 @@ export async function discover({
   const errors = [];
   const stopwatch = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = stopwatch ? setTimeout(() => stopwatch.abort(), timeoutMs) : null;
+  const pourquoi = (e, label) => describeFetchFailure(e, { timeoutMs, label, signal: stopwatch ? stopwatch.signal : undefined });
 
   try {
     const response = await fetchImpl(url, {
@@ -260,7 +262,9 @@ export async function discover({
     try {
       data = await response.json();
     } catch (e) {
-      return { offers: [], dropped: [], errors: [`JSON illisible : ${(e && e.message) || e}`], complete: false };
+      /* Meme piege que chez l'agregateur : notre propre abandon remonte ici,
+         les en-tetes deja recues et le corps non. Voir watch/net.js. */
+      return { offers: [], dropped: [], errors: [pourquoi(e, 'JSON illisible')], complete: false };
     }
 
     const { offers, dropped, erreur, complete } = mapResponse(data, now);
@@ -272,8 +276,7 @@ export async function discover({
        l'attendre. */
     return { offers, dropped, errors, complete };
   } catch (e) {
-    const reason = e && e.name === 'AbortError' ? `delai depasse (${timeoutMs} ms)` : (e && e.message) || String(e);
-    return { offers: [], dropped: [], errors: [reason], complete: false };
+    return { offers: [], dropped: [], errors: [pourquoi(e)], complete: false };
   } finally {
     if (timer) clearTimeout(timer);
   }

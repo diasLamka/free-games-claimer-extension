@@ -16,6 +16,7 @@
  * le compte possede -- avant d'agir, et comme preuve apres.
  */
 import { makeOffer, STORES } from '../offer.js';
+import { describeFetchFailure } from '../net.js';
 
 export const NAME = 'steam';
 
@@ -233,8 +234,7 @@ export async function discover({
 
     return { offers, dropped, errors };
   } catch (e) {
-    const reason = e && e.name === 'AbortError' ? `delai depasse (${timeoutMs} ms)` : (e && e.message) || String(e);
-    return { offers: [], dropped: [], errors: [reason] };
+    return { offers: [], dropped: [], errors: [describeFetchFailure(e, { timeoutMs, signal })] };
   } finally {
     if (timer) clearTimeout(timer);
   }

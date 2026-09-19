@@ -157,6 +157,28 @@ test('discover projette la capture', async () => {
   assert.deepEqual(errors, []);
 });
 
+test('gog aussi : un abandon pendant la lecture du corps est un delai', async () => {
+  /* Le meme piege que chez l'agregateur, latent ici : un catch pose autour du
+     seul `json()` renommait notre propre expiration en probleme de format. */
+  const r = await discover({
+    fetch: (url, opts) => Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => new Promise((resolve, reject) => {
+        opts.signal.addEventListener('abort', () => {
+          const e = new Error('signal is aborted without reason');
+          e.name = 'AbortError';
+          reject(e);
+        });
+      }),
+    }),
+    now: T,
+    timeoutMs: 30,
+  });
+  assert.deepEqual(r.errors, ['delai depasse (30 ms)']);
+  assert.equal(r.complete, false, 'une lecture coupee ne declare jamais la liste complete');
+});
+
 test('discover ne jette jamais : une source en panne degrade, elle n\'arrete pas', async () => {
   const casse = await discover({ fetch: async () => { throw new Error('socket coupee'); }, now: T });
   assert.deepEqual(casse.offers, []);
