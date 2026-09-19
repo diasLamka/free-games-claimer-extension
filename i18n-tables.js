@@ -303,7 +303,10 @@ export const TABLES = Object.freeze({
     "sessionOut": "signed out",
     "sessionUnknown": "unknown",
     "sessionNever": "not checked yet",
-    "sessionSignIn": "Sign in"
+    "sessionSignIn": "Sign in",
+    "densityLabel": "Density",
+    "densityCosy": "Comfortable",
+    "densityCompact": "Compact"
   },
   "fr": {
     "appName": "Free Games Auto-Claimer",
@@ -606,6 +609,9 @@ export const TABLES = Object.freeze({
     "sessionOut": "déconnecté",
     "sessionUnknown": "inconnu",
     "sessionNever": "pas encore vérifié",
-    "sessionSignIn": "Se connecter"
+    "sessionSignIn": "Se connecter",
+    "densityLabel": "Densité",
+    "densityCosy": "Confortable",
+    "densityCompact": "Compacte"
   }
 });

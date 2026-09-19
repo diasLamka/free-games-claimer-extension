@@ -4,6 +4,70 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.25.1 -- 2026-09-20
+
+**Trois fissures dans une interface qui, par ailleurs, n'a pas besoin d'etre refaite**
+
+Question posee : faut-il redessiner l'interface ? Apres l'avoir mesuree et
+regardee : non. Un seul jeu de jetons pour cinq pages, aucun controle natif
+non style, et des choix d'interaction qui tiennent -- l'annulation a 12 s sur
+un rejet, l'anneau de decompte, les onglets collants. Une refonte aurait
+detruit ca pour rien.
+
+Trois defauts precis, en revanche.
+
+### Le reglage de densite n'existait pas
+
+`popup.js` enregistrait `density: 'cosy'`. `popup.html` definissait
+`body[data-density="compact"] { --pad: 10px; --gap: 5px; }`. Et **rien ne
+posait jamais `data-density`**, aucun controle ne permettait d'en changer.
+Une preference que personne ne pouvait modifier, une regle qui ne
+s'appliquait jamais, et les deux qui s'attendaient depuis des mois.
+
+Le lien est fait, et le choix ajoute a la section Apparence.
+
+### La page de diagnostic ignorait le theme
+
+Les quatre autres pages ont trois blocs de theme : la base sombre, la media
+query `prefers-color-scheme`, et la surcharge `[data-theme]`. Diagnostics
+n'en avait qu'un. Elle restait en sombre meme quand l'utilisateur avait
+choisi Clair. Elle a desormais les trois, et lit la preference comme le
+journal, la collection et la sentinelle.
+
+### L'onglet Reglages faisait trois ecrans
+
+**1592 px mesures, dans une fenetre qui en montre 560** : neuf sections,
+31 controles, 3,1 ecrans de defilement. C'est ce que `ROADMAP.md` avait
+nomme -- « le popup porte a l'etroit dans 328 px ce que le design reserve a
+un onglet dedie ».
+
+Les quatre sections qu'on regle une fois puis qu'on oublie -- notifications,
+reclamation sur page ouverte, apparence, sauvegarde -- se replient. Les
+quatre qui portent le travail quotidien restent ouvertes, et l'arret
+d'urgence aussi : une section qu'on ouvre en panique ne se cache pas.
+
+| | avant | apres |
+|---|---|---|
+| Confortable | 1592 px (3,1 ecrans) | **864 px (1,7)** |
+| Compacte | -- | **792 px (1,5)** |
+
+Le `<h2>` reste DANS le `<summary>` au lieu d'etre remplace par lui : le
+titre garde son allure de section, et un lecteur d'ecran garde son niveau de
+titre. Un `<summary>` nu aurait coute les deux.
+
+### Mesure
+
+Les trois hauteurs sont mesurees dans Chromium sur la vraie page, pas
+estimees. Le theme de diagnostics est verifie sur la couleur calculee du
+`body` : `#14101F` en sombre, `#FBFAFE` en clair. 713 tests.
+
+### Deux faux defauts, signales pour memoire
+
+Pour voir la page, tous les attributs `hidden` avaient ete retires. Ca a fait
+apparaitre un champ de fichier non style et une section sans titre -- les
+deux etaient des artefacts de la mesure : `import-file` est `hidden` par
+conception, et la premiere section a bien son titre. Rien n'a ete « corrige ».
+
 ## 2.25.0 -- 2026-09-20
 
 **« Suis-je connecte ? » -- la question que l'extension ne savait pas poser**

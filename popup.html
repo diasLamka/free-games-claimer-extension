@@ -76,6 +76,11 @@
     color-scheme: light;
   }
 
+  /* La densite compacte resserre les deux mesures dont tout le reste depend.
+     Elle a longtemps ete une regle MORTE : `popup.js` enregistrait bien un
+     reglage `density`, mais rien ne posait jamais `data-density` et aucun
+     controle ne permettait d'en changer. Une preference que personne ne
+     pouvait modifier, et une regle qui ne s'appliquait jamais. */
   body[data-density="compact"] { --pad: 10px; --gap: 5px; }
 
   * { box-sizing: border-box; }
@@ -840,6 +845,23 @@
   summary:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
   details > *:not(summary):last-child { padding-bottom: 8px; }
 
+  /* SECTION REPLIABLE.
+   *
+   * L'onglet Reglages fait 1592 px de haut dans une fenetre qui en montre
+   * 560 : trois ecrans de defilement pour neuf sections. Celles qu'on regle
+   * une fois puis qu'on oublie se replient, les quatre qui portent le travail
+   * quotidien restent ouvertes.
+   *
+   * Le `<h2>` reste DANS le `<summary>` plutot que d'etre remplace par lui :
+   * le titre garde son allure, et un lecteur d'ecran garde son niveau de
+   * titre. Un `<summary>` nu aurait coute les deux. */
+  .fold { border-top: 0; }
+  .fold > summary { padding: 0; }
+  .fold > summary > h2 { margin: 0; }
+  .fold[open] > summary > h2 { margin-bottom: 10px; }
+  .fold > summary::before { margin-bottom: 1px; }
+  .fold[open] > summary::before { margin-bottom: 11px; }
+
   /* --------------------------------------------------------- prediction */
   .pred { margin-bottom: 9px; }
   .pred-name {
@@ -1072,85 +1094,98 @@
     </section>
 
     <section>
-      <h2 data-i18n="notifications"></h2>
-      <div class="field">
-        <span data-i18n="notifyModeLabel"></span>
-        <select id="notify-mode">
-          <option value="every" data-i18n="notifyEvery"></option>
-          <option value="digest" data-i18n="notifyDigest"></option>
-          <option value="off" data-i18n="notifyOff"></option>
-        </select>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="quiet-on">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="quietLabel"></span><small data-i18n="quietHint"></small></span>
-      </label>
-      <div class="field" id="quiet-range">
-        <span data-i18n="quietFrom"></span>
-        <span class="pair">
-          <input type="time" id="quiet-start" value="23:00">
-          <span data-i18n="quietTo"></span>
-          <input type="time" id="quiet-end" value="08:00">
-        </span>
-      </div>
-      <label class="range">
-        <span class="range-label"><span data-i18n="reminderLabel"></span> <b id="reminder-value">6</b></span>
-        <input type="range" id="reminder" min="0" max="24" step="1" value="6">
-      </label>
+      <details class="fold">
+        <summary><h2 data-i18n="notifications"></h2></summary>
+        <div class="field">
+          <span data-i18n="notifyModeLabel"></span>
+          <select id="notify-mode">
+            <option value="every" data-i18n="notifyEvery"></option>
+            <option value="digest" data-i18n="notifyDigest"></option>
+            <option value="off" data-i18n="notifyOff"></option>
+          </select>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="quiet-on">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="quietLabel"></span><small data-i18n="quietHint"></small></span>
+        </label>
+        <div class="field" id="quiet-range">
+          <span data-i18n="quietFrom"></span>
+          <span class="pair">
+            <input type="time" id="quiet-start" value="23:00">
+            <span data-i18n="quietTo"></span>
+            <input type="time" id="quiet-end" value="08:00">
+          </span>
+        </div>
+        <label class="range">
+          <span class="range-label"><span data-i18n="reminderLabel"></span> <b id="reminder-value">6</b></span>
+          <input type="range" id="reminder" min="0" max="24" step="1" value="6">
+        </label>
+          </details>
     </section>
 
     <section>
-      <h2 data-i18n="onPagesIOpen"></h2>
-      <label class="toggle">
-        <input type="checkbox" id="epic-auto">
-        <span class="switch"></span>
-        <span class="toggle-label" data-i18n="epicAutoLabel"></span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="luna-auto">
-        <span class="switch"></span>
-        <span class="toggle-label" data-i18n="lunaAutoLabel"></span>
-      </label>
-      <label class="toggle">
-        <input type="checkbox" id="luna-dlc">
-        <span class="switch"></span>
-        <span class="toggle-label" data-i18n="lunaDlcLabel"></span>
-      </label>
-      <div class="actions">
-        <button id="open-epic" data-i18n="openEpic"></button>
-        <button id="open-luna" data-i18n="openLuna"></button>
-      </div>
+      <details class="fold">
+        <summary><h2 data-i18n="onPagesIOpen"></h2></summary>
+        <label class="toggle">
+          <input type="checkbox" id="epic-auto">
+          <span class="switch"></span>
+          <span class="toggle-label" data-i18n="epicAutoLabel"></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="luna-auto">
+          <span class="switch"></span>
+          <span class="toggle-label" data-i18n="lunaAutoLabel"></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="luna-dlc">
+          <span class="switch"></span>
+          <span class="toggle-label" data-i18n="lunaDlcLabel"></span>
+        </label>
+        <div class="actions">
+          <button id="open-epic" data-i18n="openEpic"></button>
+          <button id="open-luna" data-i18n="openLuna"></button>
+        </div>
+          </details>
     </section>
 
     <section>
-      <h2 data-i18n="appearance"></h2>
-      <div class="field">
-        <span data-i18n="themeLabel"></span>
-        <select id="theme">
-          <option value="system" data-i18n="themeSystem"></option>
-          <option value="dark" data-i18n="themeDark"></option>
-          <option value="light" data-i18n="themeLight"></option>
-        </select>
-      </div>
-      <div class="field">
-        <span data-i18n="languageLabel"></span>
-        <select id="language">
-          <option value="auto" data-i18n="languageAuto"></option>
-          <option value="en">English</option>
-          <option value="fr">Francais</option>
-        </select>
-      </div>
-      <div class="field">
-        <span data-i18n="countryLabel"></span>
-        <select id="epic-country"></select>
-      </div>
-      <p class="hint" data-i18n="countryHint"></p>
-      <label class="toggle">
-        <input type="checkbox" id="hide-owned">
-        <span class="switch"></span>
-        <span class="toggle-label" data-i18n="hideOwnedLabel"></span>
-      </label>
+      <details class="fold">
+        <summary><h2 data-i18n="appearance"></h2></summary>
+        <div class="field">
+          <span data-i18n="themeLabel"></span>
+          <select id="theme">
+            <option value="system" data-i18n="themeSystem"></option>
+            <option value="dark" data-i18n="themeDark"></option>
+            <option value="light" data-i18n="themeLight"></option>
+          </select>
+        </div>
+        <div class="field">
+          <span data-i18n="densityLabel"></span>
+          <select id="density">
+            <option value="cosy" data-i18n="densityCosy"></option>
+            <option value="compact" data-i18n="densityCompact"></option>
+          </select>
+        </div>
+        <div class="field">
+          <span data-i18n="languageLabel"></span>
+          <select id="language">
+            <option value="auto" data-i18n="languageAuto"></option>
+            <option value="en">English</option>
+            <option value="fr">Francais</option>
+          </select>
+        </div>
+        <div class="field">
+          <span data-i18n="countryLabel"></span>
+          <select id="epic-country"></select>
+        </div>
+        <p class="hint" data-i18n="countryHint"></p>
+        <label class="toggle">
+          <input type="checkbox" id="hide-owned">
+          <span class="switch"></span>
+          <span class="toggle-label" data-i18n="hideOwnedLabel"></span>
+        </label>
+          </details>
     </section>
 
     <section>
@@ -1162,29 +1197,31 @@
     </section>
 
     <section>
-      <h2 data-i18n="backup"></h2>
-      <div class="actions">
-        <button id="export-json" data-i18n="exportJson"></button>
-        <button id="export-csv" data-i18n="exportCsv"></button>
-      </div>
-      <div class="actions">
-        <button id="import" data-i18n="import"></button>
-      </div>
+      <details class="fold">
+        <summary><h2 data-i18n="backup"></h2></summary>
+        <div class="actions">
+          <button id="export-json" data-i18n="exportJson"></button>
+          <button id="export-csv" data-i18n="exportCsv"></button>
+        </div>
+        <div class="actions">
+          <button id="import" data-i18n="import"></button>
+        </div>
 
-      <label class="toggle">
-        <input type="checkbox" id="sync-codes">
-        <span class="switch"></span>
-        <span class="toggle-label"><span data-i18n="syncCodesLabel"></span><small data-i18n="syncCodesHint"></small></span>
-      </label>
-      <p class="hint" id="sync-state"></p>
+        <label class="toggle">
+          <input type="checkbox" id="sync-codes">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="syncCodesLabel"></span><small data-i18n="syncCodesHint"></small></span>
+        </label>
+        <p class="hint" id="sync-state"></p>
 
-      <p class="hint" id="backup-state"></p>
-      <input type="file" id="import-file" accept="application/json,.json" hidden>
+        <p class="hint" id="backup-state"></p>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
 
-      <details>
-        <summary data-i18n="shortcutsTitle"></summary>
-        <p class="hint" data-i18n="shortcutsBody"></p>
-      </details>
+        <details>
+          <summary data-i18n="shortcutsTitle"></summary>
+          <p class="hint" data-i18n="shortcutsBody"></p>
+        </details>
+          </details>
     </section>
   </div>
 

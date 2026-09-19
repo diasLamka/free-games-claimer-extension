@@ -23,6 +23,16 @@ const resultats = { throttle: null, offscreen: null, sonde: null };
 
 $('version').textContent = 'v' + api.runtime.getManifest().version;
 
+/* La preference de theme, lue comme sur le journal, la collection et la
+   sentinelle. Cette page etait la seule des cinq a l'ignorer : elle restait
+   en sombre meme quand l'utilisateur avait choisi Clair.
+   Asynchrone, et volontairement sans `await` : une page de mesure ne doit
+   pas retarder son affichage pour une question de couleur. */
+api.storage.local.get('veille:ui').then((raw) => {
+  const ui = (raw && raw['veille:ui']) || {};
+  if (ui.theme && ui.theme !== 'system') document.documentElement.dataset.theme = ui.theme;
+}).catch(() => { /* sans preference lisible, le sombre de base s'applique */ });
+
 /* ---------------------------------------------------------------- utilitaires */
 
 const mediane = (xs) => {

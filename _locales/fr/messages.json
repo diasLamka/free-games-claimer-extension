@@ -901,5 +901,14 @@
   },
   "sessionSignIn": {
     "message": "Se connecter"
+  },
+  "densityLabel": {
+    "message": "Densité"
+  },
+  "densityCosy": {
+    "message": "Confortable"
+  },
+  "densityCompact": {
+    "message": "Compacte"
   }
 }

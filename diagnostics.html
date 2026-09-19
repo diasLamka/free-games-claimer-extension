@@ -21,10 +21,43 @@
     --body:    "Segoe UI", system-ui, -apple-system, sans-serif;
     --mono:    "Cascadia Mono", "Consolas", ui-monospace, monospace;
 
-    /* Cette page est en sombre FIGE -- elle n'a ni media query ni
-       [data-theme], contrairement aux quatre autres. Le declarer ici evite
-       que le textarea arrive en blanc sur fond violet. */
     color-scheme: dark;
+  }
+
+  /* Le sombre est la base, le clair une surcharge -- « systeme » retire la
+     surcharge et laisse la media query gagner. Le meme motif que les quatre
+     autres pages ; celle-ci etait la seule a ne pas l'avoir, et elle restait
+     en sombre meme quand l'utilisateur avait choisi Clair. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink:    #FBFAFE;
+      --ink-2:  #F2EFF9;
+      --ink-3:  #E8E3F3;
+      --line:   #DCD5EC;
+      --rail:   #E2DCEF;
+      --paper:  #1B1528;
+      --mute:   #6E6488;
+      --amber:  #B96A00;
+      --amber-d:#A85400;
+      --jade:   #12805B;
+      --rose:   #D62B47;
+      color-scheme: light;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --ink:    #FBFAFE;
+    --ink-2:  #F2EFF9;
+    --ink-3:  #E8E3F3;
+    --line:   #DCD5EC;
+    --rail:   #E2DCEF;
+    --paper:  #1B1528;
+    --mute:   #6E6488;
+    --amber:  #B96A00;
+    --amber-d:#A85400;
+    --jade:   #12805B;
+    --rose:   #D62B47;
+    color-scheme: light;
   }
 
   * { box-sizing: border-box; }

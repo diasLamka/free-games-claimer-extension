@@ -1431,6 +1431,15 @@ function applyLook() {
   document.documentElement.dataset.theme = ui.theme === 'system' ? '' : ui.theme;
   if (ui.theme === 'system') document.documentElement.removeAttribute('data-theme');
   document.getElementById('theme').value = ui.theme;
+
+  /* La densite, posee sur BODY -- c'est la que la regle l'attend, et elle
+     l'attendait depuis longtemps : le reglage etait enregistre, la regle CSS
+     ecrite, et personne ne faisait le lien. On retire l'attribut plutot que
+     de poser une chaine vide, pour que `[data-density]` ne matche pas. */
+  const dense = ui.density === 'compact';
+  if (dense) document.body.dataset.density = 'compact';
+  else document.body.removeAttribute('data-density');
+  document.getElementById('density').value = dense ? 'compact' : 'cosy';
   document.getElementById('language').value = ui.language;
   document.getElementById('hide-owned').checked = ui.hideOwned === true;
   document.getElementById('sort').value = ui.sort;
@@ -1630,6 +1639,7 @@ document.getElementById('search').addEventListener('input', async (e) => {
 
 document.getElementById('sort').addEventListener('change', (e) => writeUi({ sort: e.target.value }));
 document.getElementById('theme').addEventListener('change', (e) => writeUi({ theme: e.target.value }));
+document.getElementById('density').addEventListener('change', (e) => writeUi({ density: e.target.value }));
 document.getElementById('language').addEventListener('change', (e) => writeUi({ language: e.target.value }));
 /* Un seul reglage, deux lecteurs : la veille le relit dans le meme espace de
    stockage (watch/storage.js) et le moteur par GM_getValue. La langue suit le
