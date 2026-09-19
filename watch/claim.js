@@ -295,6 +295,25 @@ async function tabUrl(chrome, tabId) {
   }
 }
 
+/**
+ * Ou l'onglet a atterri, en une ligne lisible.
+ *
+ * Le titre autant que l'URL : quand Steam refuse une licence gratuite, il
+ * repond une page dont le TITRE porte le motif. Sans lui, l'echec disait
+ * seulement « le paquet n'est pas apparu », ce qui n'aide personne.
+ */
+async function tabWhere(chrome, tabId) {
+  try {
+    const t = await chrome.tabs.get(tabId);
+    if (!t) return null;
+    const title = String(t.title || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    const url = String(t.url || '').split('?')[0];
+    return [title, url].filter(Boolean).join(' - ') || null;
+  } catch {
+    return null;
+  }
+}
+
 /* ------------------------------------------------------- onglet invisible */
 
 /**
@@ -507,7 +526,7 @@ export const STEAM_TIMING = Object.freeze({
   /** Frequence a laquelle on regarde ou en est l'onglet pendant cette attente. */
   pollMs: 500,
   /** La bibliotheque se relit plusieurs fois : l'ajout n'y est pas instantane. */
-  confirmTries: 5,
+  confirmTries: 8,
   confirmDelayMs: 3000,
 });
 
@@ -690,11 +709,19 @@ export async function claimSteamOffer(offer, {
       }
       return { verdict: VERDICTS.FAILURE, details: `page Steam : ${describeStep(step)}`, store };
     }
-    record('info', `steam : clic sur « Add to Account » pour le paquet ${packageId}`);
+    const geste = step.via === 'formulaire' ? 'formulaire envoye' : 'clic';
+    record('info', `steam : ${geste} pour le paquet ${packageId} (« Add to Account »)`);
+    if (step.via === 'formulaire' && step.sessionid === false) {
+      record('warn', 'steam : le formulaire ne porte pas de sessionid -- le POST va probablement etre refuse');
+    }
 
     await awaitNavigation(chrome, tabId, landed || url, t.navigationMs, t.pollMs);
     const after = await tabUrl(chrome, tabId);
     if (isSteamLoginUrl(after)) return { verdict: VERDICTS.LOGIN, details: 'Steam a demande la connexion', store };
+    /* Ou la demande a atterri. Lu MAINTENANT, avant que la seconde lecture ne
+       renvoie l'onglet sur la fiche : c'est cette page-la qui porte le motif
+       d'un refus, et elle ne sera plus affichee ensuite. */
+    const atterrissage = await tabWhere(chrome, tabId);
 
     /* La preuve, d'abord dans la bibliotheque. On retient si elle a seulement
        SU repondre : une bibliotheque muette ne prouve pas l'echec, et c'est
@@ -707,25 +734,29 @@ export async function claimSteamOffer(offer, {
       readable = true;
       if (check.packages.has(packageId)) return { verdict: VERDICTS.CLAIMED, details: null, store };
     }
-    if (readable) {
-      return {
-        verdict: VERDICTS.FAILURE,
-        details: 'clic fait, mais le paquet n\'est pas apparu dans la bibliotheque Steam',
-        store,
-      };
-    }
 
-    /* Bibliotheque illisible de bout en bout : la page redevient le juge. On y
-       retourne et on relit A BLANC -- un paquet acquis fait disparaitre le
-       bloc d'achat et apparaitre « You already have this item ». */
+    /* La bibliotheque n'a pas montre le paquet -- lisible ou non. On ne conclut
+       PAS encore : on retourne sur la fiche et on la relit a blanc. Elle sait
+       deux choses que `userdata` peut mettre du temps a dire : que le paquet
+       est acquis (« You already have this item »), ou que le bouton est
+       toujours la, donc que rien ne s'est passe. */
     const second = await inspectAgain(chrome, tabId, url, packageId, t);
     if (ownedFromStep(second)) {
-      return { verdict: VERDICTS.CLAIMED, details: 'confirme par la page, bibliotheque illisible', store };
+      return { verdict: VERDICTS.CLAIMED, details: 'confirme par la page', store };
     }
+
+    const ou = atterrissage ? ` -- arrive sur : ${atterrissage}` : '';
     if (second && second.ok) {
       return {
         verdict: VERDICTS.FAILURE,
-        details: 'clic fait, mais la page propose toujours « Add to Account »',
+        details: `${geste}, mais la page propose toujours « Add to Account »${ou}`,
+        store,
+      };
+    }
+    if (readable) {
+      return {
+        verdict: VERDICTS.FAILURE,
+        details: `${geste}, mais le paquet n'est pas apparu dans la bibliotheque Steam${ou}`,
         store,
       };
     }
@@ -734,7 +765,7 @@ export async function claimSteamOffer(offer, {
        compte n'aura pas ete declare en echec pour une mesure absente. */
     return {
       verdict: VERDICTS.UNDETERMINED,
-      details: `clic fait, resultat invisible (${describeStep(second)})`,
+      details: `${geste}, resultat invisible (${describeStep(second)})${ou}`,
       store,
     };
   } finally {

@@ -117,9 +117,59 @@ export function steamPageStep(packageId, dryRun, doc) {
     return { ok: false, reason: 'libelle-payant' };
   }
 
-  if (dryRun) return { ok: true, dryRun: true };
-  matches[0].click();
-  return { ok: true, clicked: true };
+  /* COMMENT ON DECLENCHE, ET POURQUOI CE N'EST PAS TOUJOURS UN CLIC.
+   *
+   * Mesure du bouton reel (Deadshot, paquet 1830927, 2026-09-19) : c'est une
+   * ancre dont le href est `javascript:addToCart( 1830927 );`. Or une
+   * navigation vers une URL « javascript: » demandee depuis un MONDE ISOLE --
+   * celui de chrome.scripting par defaut -- est refusee par Chrome. Le clic
+   * partait, ne jetait rien, et ne faisait rien : le journal disait « clic
+   * fait », la bibliotheque restait vide, et l'echec etait mis sur le compte
+   * de Steam.
+   *
+   * Alors on fait ce que ce href ferait : soumettre le formulaire. Le meme,
+   * deja verifie trois fois ci-dessus -- il vise /freelicense/addfreelicense/
+   * et porte NOTRE paquet. Une soumission ne peut donc pas faire autre chose
+   * que ce que le bouton faisait.
+   *
+   * Et on ne substitue qu'a coup sur : le href doit etre exactement
+   * `addToCart(<notre paquet>)`. Un « javascript: » qui appelle autre chose
+   * est un refus -- on ne devine pas ce qu'un script inconnu allait faire.
+   *
+   * Si le bouton n'est PAS un href « javascript: » (un gestionnaire pose sur
+   * l'element), le clic ordinaire fonctionne depuis un monde isole, et c'est
+   * lui qu'on garde : plus fidele, et il traverse les mondes.
+   *
+   * Une voie ou l'autre, jamais les deux : Steam tient un quota d'activations
+   * ou meme un « deja possede » compte comme un echec.
+   */
+  const button = matches[0];
+  const href = clean(button.getAttribute && button.getAttribute('href'));
+  const viaForm = /^javascript:/i.test(href);
+  if (viaForm && !new RegExp(`addToCart\\(\\s*${id}\\s*\\)`).test(href)) {
+    return { ok: false, reason: 'action-inconnue', href: href.slice(0, 80) };
+  }
+  const via = viaForm ? 'formulaire' : 'clic';
+
+  /* Le jeton de session que Steam attend dans ce POST. On ne bloque PAS s'il
+     manque -- le bouton du site part du meme formulaire, donc son absence
+     voudrait dire que la page a change de forme -- mais on le REMONTE : un
+     POST sans jeton echoue en silence, et c'est le genre de silence qui
+     coute une soiree a diagnostiquer. */
+  const jeton = Boolean(form.querySelector('input[name="sessionid"]'));
+
+  if (dryRun) return { ok: true, dryRun: true, via, sessionid: jeton };
+
+  if (viaForm) {
+    /* `requestSubmit` plutot que `submit` : il declenche l'evenement submit,
+       donc les gestionnaires de la page s'executent comme lors d'un vrai
+       envoi. `submit` les sauterait. */
+    if (typeof form.requestSubmit === 'function') form.requestSubmit();
+    else form.submit();
+  } else {
+    button.click();
+  }
+  return { ok: true, clicked: true, via, sessionid: jeton };
 }
 
 /**
@@ -138,8 +188,9 @@ export function ownedFromStep(step) {
 export function describeStep(step) {
   if (!step) return 'aucune reponse de la page';
   const extra = step.labels ? ` (boutons : ${step.labels.join(' | ') || 'aucun'})`
-    : step.action ? ` (formulaire : ${step.action || 'absent'})`
-      : step.title ? ` (page : ${step.title})` : '';
+    : step.href ? ` (action : ${step.href})`
+      : step.action ? ` (formulaire : ${step.action || 'absent'})`
+        : step.title ? ` (page : ${step.title})` : '';
   return `${step.reason || 'refus'}${extra}`;
 }
 

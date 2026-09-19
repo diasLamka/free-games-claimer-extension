@@ -4,6 +4,66 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.22.3 -- 2026-09-19
+
+**Steam : le clic partait dans le vide -- c'est le formulaire qu'il faut envoyer**
+
+Le journal de l'utilisateur a tranche ce que deux versions n'avaient pas su
+voir :
+
+```
+10:47:02  steam : clic sur « Add to Account » pour le paquet 1830927
+10:47:35  Deadshot (Steam) Giveaway -> failed
+          clic fait, mais le paquet n'est pas apparu dans la bibliotheque
+```
+
+Le clic partait. Les trois verifications etaient passees : bloc du paquet,
+formulaire de licence gratuite, libelle exact. Et rien.
+
+### La cause
+
+Le bouton reel est une ancre dont le href est `javascript:addToCart( 1830927 );`.
+Chrome REFUSE une navigation vers une URL « javascript: » demandee depuis un
+monde isole -- celui ou `chrome.scripting` execute nos injections par defaut.
+`element.click()` ne jette pas, ne previent pas : il ne fait rien.
+
+Le code tenait donc « clic fait » pour un fait accompli, et attribuait
+l'echec a Steam. Trois fois d'affilee, jusqu'a reveiller le canari.
+
+### Le correctif
+
+- **Un href « javascript: » : on envoie SON formulaire.** Le meme, deja
+  verifie trois fois -- il vise `/freelicense/addfreelicense/` et porte notre
+  paquet. Une soumission ne peut donc rien faire d'autre que ce que le bouton
+  faisait. `requestSubmit()` plutot que `submit()`, pour que les gestionnaires
+  de la page s'executent comme lors d'un vrai envoi.
+- **Et seulement a coup sur.** Le href doit etre exactement
+  `addToCart(<notre paquet>)`. `addToCart(999)`, `checkout()`, `void(0)` :
+  refus, sans rien tenter. On ne devine pas ce qu'un script inconnu allait
+  faire.
+- **Un bouton a gestionnaire reste clique.** Un clic, lui, traverse les
+  mondes. Une voie ou l'autre, jamais les deux : Steam tient un quota
+  d'activations ou meme un « deja possede » compte comme un echec.
+- **Le jeton de session est verifie et remonte.** S'il manque du formulaire,
+  le POST serait refuse en silence ; le journal le dit avant, pas apres.
+
+### Deux echecs qui ne diront plus rien de faux
+
+- **La page tranche avant tout verdict d'echec.** `dynamicstore/userdata` est
+  cache cote Steam et peut rester en retard sur une activation qui a bien eu
+  lieu. On retourne desormais sur la fiche AVANT de conclure : « You already
+  have this item » vaut succes, meme si la bibliotheque n'a rien vu. La
+  fenetre de confirmation passe de 5 a 8 relectures.
+- **L'echec dit ou la demande a atterri.** Titre et URL de la page d'arrivee :
+  quand Steam refuse une licence gratuite, c'est la que le motif est ecrit.
+
+### Mesure
+
+`test/steam-claim.test.mjs` : 28 tests. Nouveaux -- le href mesure et son
+formulaire envoye une seule fois, le bouton a gestionnaire toujours clique,
+trois « javascript: » inconnus refuses sans rien tenter, le formulaire sans
+jeton signale, et la bibliotheque en retard rattrapee par la page. 689 tests.
+
 ## 2.22.2 -- 2026-09-19
 
 **Steam : c'est la page qui dit si le compte est connecte, plus le worker**

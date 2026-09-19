@@ -125,12 +125,28 @@ function fauxDocument({
   owned = false,
   /** 'in' : le menu de compte est la. 'out' : un lien de connexion. null : ni l'un ni l'autre. */
   session = 'in',
+  /* Le href MESURE le 2026-09-19 sur Deadshot : une URL « javascript: ». Une
+     chaine vide modelise un bouton a gestionnaire, que le clic atteint. */
+  href,
+  sessionid = true,
 } = {}) {
   const clics = [];
-  const boutons = labels.map((label) => ({ textContent: `\n    ${label}   \n`, click() { clics.push(label); } }));
+  const envois = [];
+  const lienDefaut = `javascript:addToCart( ${packageId} );`;
+  const lien = href === undefined ? lienDefaut : href;
+  const boutons = labels.map((label) => ({
+    textContent: `\n    ${label}   \n`,
+    getAttribute: (n) => (n === 'href' ? lien : null),
+    click() { clics.push(label); },
+  }));
   const form = {
     getAttribute: (n) => (n === 'action' ? action : null),
-    querySelector: (s) => (s === 'input[name="subid"]' ? { value: subid ?? packageId } : null),
+    querySelector: (s) => {
+      if (s === 'input[name="subid"]') return { value: subid ?? packageId };
+      if (s === 'input[name="sessionid"]') return sessionid ? { value: 'abc' } : null;
+      return null;
+    },
+    requestSubmit() { envois.push(subid ?? packageId); },
   };
   const bloc = {
     querySelector: (s) => (s === `form[name="add_to_cart_${packageId}"]` ? form : null),
@@ -148,16 +164,59 @@ function fauxDocument({
       return null;
     },
     clics,
+    envois,
   };
 }
 
-test('l\'etape clique une fois quand paquet, formulaire gratuit et libelle concordent', () => {
+test('le bouton reel est un href « javascript: » : on envoie SON formulaire, une fois', () => {
+  /* Mesure du 2026-09-19 (Deadshot, paquet 1830927) : le bouton est une ancre
+     `javascript:addToCart( 1830927 );`. Chrome REFUSE une navigation vers une
+     URL « javascript: » demandee depuis le monde isole de chrome.scripting :
+     le clic partait sans rien jeter et sans rien faire. Le journal disait
+     « clic fait », la bibliotheque restait vide. */
   const doc = fauxDocument();
-  assert.deepEqual(steamPageStep(PAQUET, true, doc), { ok: true, dryRun: true });
-  assert.equal(doc.clics.length, 0, 'a blanc : aucun clic');
+  assert.deepEqual(steamPageStep(PAQUET, true, doc), { ok: true, dryRun: true, via: 'formulaire', sessionid: true });
+  assert.equal(doc.envois.length, 0, 'a blanc : rien envoye');
 
-  assert.deepEqual(steamPageStep(PAQUET, false, doc), { ok: true, clicked: true });
+  assert.deepEqual(steamPageStep(PAQUET, false, doc), { ok: true, clicked: true, via: 'formulaire', sessionid: true });
+  assert.deepEqual(doc.envois, [PAQUET], 'le formulaire deja verifie, une seule fois');
+  assert.equal(doc.clics.length, 0, 'et jamais les deux : Steam compte les activations');
+});
+
+test('un bouton a gestionnaire, lui, se clique -- un clic traverse les mondes', () => {
+  const doc = fauxDocument({ href: '' });
+  assert.deepEqual(steamPageStep(PAQUET, true, doc), { ok: true, dryRun: true, via: 'clic', sessionid: true });
+
+  assert.deepEqual(steamPageStep(PAQUET, false, doc), { ok: true, clicked: true, via: 'clic', sessionid: true });
   assert.deepEqual(doc.clics, ['Add to Account']);
+  assert.equal(doc.envois.length, 0);
+});
+
+test('un formulaire sans sessionid part quand meme, mais il est signale', () => {
+  /* On ne bloque pas : le bouton du site part du MEME formulaire, donc son
+     absence dirait que la page a change de forme, pas que l'envoi est
+     impossible. Mais un POST sans jeton echoue en silence -- et un silence,
+     ici, coute une soiree. */
+  const doc = fauxDocument({ sessionid: false });
+  const r = steamPageStep(PAQUET, false, doc);
+  assert.equal(r.ok, true);
+  assert.equal(r.sessionid, false);
+  assert.deepEqual(doc.envois, [PAQUET]);
+});
+
+test('un « javascript: » qui appelle autre chose est un refus, pas une devinette', () => {
+  for (const mauvais of [
+    'javascript:addToCart( 999 );',
+    'javascript:checkout();',
+    'javascript:void(0)',
+  ]) {
+    const doc = fauxDocument({ href: mauvais });
+    const r = steamPageStep(PAQUET, false, doc);
+    assert.equal(r.ok, false, mauvais);
+    assert.equal(r.reason, 'action-inconnue', mauvais);
+    assert.equal(doc.envois.length + doc.clics.length, 0, mauvais);
+  }
+  assert.match(describeStep({ reason: 'action-inconnue', href: 'javascript:checkout();' }), /checkout/);
 });
 
 test('un formulaire qui ne vise pas la licence gratuite n\'est jamais clique', () => {
@@ -202,7 +261,7 @@ test('la session se lit sur la page, et l\'inconnu laisse passer', () => {
      peut rendre des listes vides alors que la session existe : c'est la page
      qui tranche, et elle ne tranche que sur un signe franc. */
   const connecte = fauxDocument({ session: 'in' });
-  assert.deepEqual(steamPageStep(PAQUET, true, connecte), { ok: true, dryRun: true });
+  assert.deepEqual(steamPageStep(PAQUET, true, connecte), { ok: true, dryRun: true, via: 'formulaire', sessionid: true });
 
   const deconnecte = fauxDocument({ session: 'out' });
   const r = steamPageStep(PAQUET, false, deconnecte);
@@ -213,7 +272,7 @@ test('la session se lit sur la page, et l\'inconnu laisse passer', () => {
   /* Ni menu de compte, ni lien de connexion : Steam a change de balisage. On
      ne sait pas, et ne pas savoir ne doit pas bloquer -- les trois
      verifications suivantes protegent deja de ce qui coute. */
-  assert.deepEqual(steamPageStep(PAQUET, true, fauxDocument({ session: null })), { ok: true, dryRun: true });
+  assert.deepEqual(steamPageStep(PAQUET, true, fauxDocument({ session: null })), { ok: true, dryRun: true, via: 'formulaire', sessionid: true });
 
   /* Et un lien « /login/ » AILLEURS que dans le menu global -- l'encart
      « sign in to see reasons », present sur une page connectee -- ne prouve
@@ -223,14 +282,14 @@ test('la session se lit sur la page, et l\'inconnu laisse passer', () => {
   const encart = fauxDocument({ session: null });
   const brut = encart.querySelector;
   encart.querySelector = (sel) => (sel === 'a[href*="/login/"]' ? {} : brut(sel));
-  assert.deepEqual(steamPageStep(PAQUET, true, encart), { ok: true, dryRun: true });
+  assert.deepEqual(steamPageStep(PAQUET, true, encart), { ok: true, dryRun: true, via: 'formulaire', sessionid: true });
 });
 
 test('l\'etape se suffit a elle-meme une fois serialisee', () => {
   /* executeScript l'envoie en texte : une reference a ce module y serait
      indefinie. On la reconstruit depuis sa source, comme le fera Chrome. */
   const reconstruite = new Function(`return (${steamPageStep.toString()})`)();
-  assert.deepEqual(reconstruite(PAQUET, true, fauxDocument()), { ok: true, dryRun: true });
+  assert.deepEqual(reconstruite(PAQUET, true, fauxDocument()), { ok: true, dryRun: true, via: 'formulaire', sessionid: true });
 });
 
 /* ------------------------------------------------------------ le rythme */
@@ -450,12 +509,28 @@ test('un refus de la page est un echec qui dit pourquoi, et la fenetre se referm
   assert.equal(ctx.traces.fermes.length, 1);
 });
 
-test('clic fait mais paquet absent : echec, pas une victoire supposee', async () => {
+test('clic fait mais paquet absent : echec, pas une victoire supposee -- et on dit ou ca a atterri', async () => {
   const ctx = await fauxSteam({ bibliotheques: [{ rgOwnedApps: [1], rgOwnedPackages: [1] }] });
   const r = await reclamer(ctx);
   assert.equal(r.verdict, VERDICTS.FAILURE);
   assert.match(r.details, /pas apparu/);
+  /* Le motif d'un refus de Steam est sur la page d'arrivee, pas ailleurs.
+     Sans elle, l'echec ne disait rien d'actionnable. */
+  assert.match(r.details, /arrive sur.*addfreelicense/);
   assert.equal(ctx.traces.lectures, 1 + RAPIDE.confirmTries);
+});
+
+test('bibliotheque lisible mais en retard : la page rattrape, et c\'est un succes', async () => {
+  /* `dynamicstore/userdata` est cache cote Steam et peut rester en retard sur
+     une activation qui a pourtant eu lieu. On ne declare plus l'echec avant
+     d'avoir redemande a la page -- elle, elle sait. */
+  const ctx = await fauxSteam({
+    bibliotheques: [{ rgOwnedApps: [1], rgOwnedPackages: [1] }],
+    etapeApres: { ok: false, reason: 'deja-possede', title: 'Deadshot' },
+  });
+  const r = await reclamer(ctx);
+  assert.equal(r.verdict, VERDICTS.CLAIMED, JSON.stringify(r));
+  assert.match(r.details, /confirme par la page/);
 });
 
 test('controle d\'age ou connexion : on n\'injecte rien', async () => {
