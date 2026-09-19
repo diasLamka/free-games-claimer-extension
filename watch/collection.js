@@ -16,7 +16,7 @@
  * Module pur : le reseau est dans collection-import.js, l'ecriture dans
  * background.js -- un seul ecrivain, comme pour le catalogue.
  */
-import { normaliseTitle } from './offer.js';
+import { normaliseTitle, webUrl } from './offer.js';
 import { ACQUIRED } from './library.js';
 
 /** Cle de stockage. Espace de la veille, jamais l'espace FGC_* du moteur. */
@@ -82,7 +82,13 @@ export function makeItem({ store, id, title, url = null, kind = KINDS.GAME, acqu
     store,
     id: String(id),
     title: clean || null,
-    url: url || null,
+    /* Le meme filtre que pour les offres, et pour la meme raison : cette URL
+       vient d'une reponse de magasin -- la fiche GOG est publiee par
+       `account/getFilteredProducts`, lu AVEC la session -- et elle finit dans
+       le `href` d'un lien de la page Collection. Elle ne passait par aucun
+       controle de schema ; seul un hasard heureux la sauvait, `absoluteGog`
+       prefixant un « javascript: » par « https://www.gog.com/ ». */
+    url: webUrl(url),
     kind: Object.values(KINDS).includes(kind) ? kind : KINDS.OTHER,
     acquiredAt: Number.isFinite(acquiredAt) && acquiredAt > 0 ? acquiredAt : null,
   };
@@ -323,7 +329,10 @@ export function summarise(rows) {
 
 /** La fiche du jeu sur son magasin, quand on sait la construire. */
 export function storePageUrl(store, copy) {
-  if (copy && copy.url) return copy.url;
+  // Filtree une seconde fois : une collection ecrite par une version
+  // anterieure a ce controle peut encore porter n'importe quoi.
+  const propre = webUrl(copy && copy.url);
+  if (propre) return propre;
   if (store === 'steam' && /^\d+$/.test(String(copy && copy.id))) {
     return `https://store.steampowered.com/app/${copy.id}/`;
   }

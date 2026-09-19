@@ -38,6 +38,8 @@ import {
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
+import { senderKind, messageAllowed, isOurs, hostMatchers, relayRequest } from './watch/messaging.js';
+import { webUrl } from './watch/offer.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
@@ -424,8 +426,33 @@ api.notifications.onClicked.addListener((id) => {
 
 /* ------------------------------------------- relais du moteur (inchange, V1) */
 
+/* Les hotes du relais sont ceux du manifeste, lus une fois. La liste ne peut
+   donc pas deriver de ce que l'extension a le droit de lire : c'est la meme. */
+const HOTES_RELAIS = hostMatchers((api.runtime.getManifest().host_permissions) || []);
+
+/** La base chrome-extension:// de CETTE extension. Sert a reconnaitre nos pages. */
+const BASE_EXTENSION = api.runtime.getURL('');
+
 api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (!msg || !msg.type) return;
+
+  /* QUI demande, avant QUOI est demande.
+   *
+   * Les commandes d'interface -- importer une bibliotheque avec les cookies
+   * de l'utilisateur, forcer une vague de reclamations, effacer le journal --
+   * n'acceptent qu'une page de l'extension. Les messages du moteur
+   * n'acceptent qu'un script de contenu. Voir watch/messaging.js pour le
+   * pourquoi ; rien de ceci n'etait joignable depuis le web, c'est de la
+   * defense en profondeur. */
+  /* Ce qui ne nous est pas adresse passe en silence : sendMessage arrose tous
+     les contextes, et la page de diagnostic parle au document de sonde. */
+  if (!isOurs(msg.type)) return;
+
+  const origine = senderKind(sender, BASE_EXTENSION);
+  if (!messageAllowed(msg.type, origine)) {
+    record('warn', `message refuse : ${msg.type} venu de « ${origine} »`);
+    return;
+  }
 
   /* --- dialogue avec un onglet pilote par la veille --- */
 
@@ -448,7 +475,17 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   }
 
   if (msg.type === 'fgc-fetch') {
-    fetch(msg.url, { method: msg.method || 'GET', headers: msg.headers || {}, credentials: 'omit' })
+    /* Le relais etait un proxy ouvert : URL, methode et en-tetes libres. Il
+       est desormais borne a un GET HTTPS vers un hote du manifeste, avec
+       `Accept` pour tout bagage -- ce que son unique appelant reel demande.
+       Voir relayRequest (watch/messaging.js). */
+    const demande = relayRequest(msg, HOTES_RELAIS);
+    if (demande.refus) {
+      record('warn', `relais refuse : ${demande.refus}`);
+      sendResponse({ error: `relais refuse : ${demande.refus}` });
+      return true;
+    }
+    fetch(demande.url, demande.init)
       .then(function (r) { return r.text().then(function (body) { sendResponse({ status: r.status, body: body }); }); })
       .catch(function (e) { sendResponse({ error: String(e && e.message || e) }); });
     return true;
@@ -468,21 +505,30 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
        celle de l'utilisateur. Sans cela, l'echange GOG declenche depuis Luna
        ouvrait un onglet en pleine session de l'utilisateur, et la fermeture de
        la fenetre de reclamation ne l'emportait pas. */
+    /* Le schema est verifie ici, par la MEME fonction qui filtre les URL des
+       offres. Sans elle, `chrome-extension://<id>/...` et `file:///`
+       passaient : Chrome bloque « javascript: » et « data: » en navigation de
+       premier niveau, pas ces deux-la. */
+    const cible = webUrl(msg.url);
+    if (!cible) {
+      record('warn', `ouverture d'onglet refusee : ${String(msg.url).slice(0, 80)}`);
+      return;
+    }
     const senderTabId = msg && sender && sender.tab ? sender.tab.id : undefined;
     const senderWindowId = sender && sender.tab ? sender.tab.windowId : undefined;
-    const echec = (e) => record('warn', `ouverture d'onglet impossible : ${msg.url}`, e);
+    const echec = (e) => record('warn', `ouverture d'onglet impossible : ${cible}`, e);
     if (senderTabId !== undefined) {
       isPiloted(api, senderTabId)
         .then((piloted) => api.tabs.create(
           piloted && senderWindowId !== undefined
-            ? { url: msg.url, active: false, windowId: senderWindowId }
-            : { url: msg.url, active: !!msg.active },
+            ? { url: cible, active: false, windowId: senderWindowId }
+            : { url: cible, active: !!msg.active },
         ))
-        .catch(() => api.tabs.create({ url: msg.url, active: !!msg.active }))
+        .catch(() => api.tabs.create({ url: cible, active: !!msg.active }))
         .catch(echec);
       return;
     }
-    api.tabs.create({ url: msg.url, active: !!msg.active }).catch(echec);
+    api.tabs.create({ url: cible, active: !!msg.active }).catch(echec);
     return;
   }
 

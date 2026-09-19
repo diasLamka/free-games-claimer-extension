@@ -1,0 +1,160 @@
+# Vos donnees
+
+Ce fichier repond a une question posee le 2026-09-19 : « tout est chiffre, ou
+sauvegarde de mon cote ? » La reponse courte tient en deux phrases.
+
+**Rien n'est chiffre par l'extension. Tout vit chez vous.**
+
+Ce qui suit dit exactement quoi, ou, et ce qui sort de la machine. Chaque
+affirmation renvoie au code qui la porte, pour qu'elle reste verifiable quand
+ce fichier aura vieilli.
+
+## Ce qui est stocke, et ou
+
+Tout est dans `chrome.storage.local` -- une base LevelDB **en clair** dans le
+repertoire de profil du navigateur. Qui peut lire ce repertoire peut tout
+lire.
+
+| Espace | Cles | Contenu |
+|---|---|---|
+| Veille | `veille:*` (16 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change |
+| Moteur | `FGC_*` (`gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue |
+
+Trois cles vivent dans `chrome.storage.session` et disparaissent a la
+fermeture du navigateur : le verrou de cycle, les liens de notification, et la
+liste des onglets pilotes.
+
+## Ce qui peut quitter la machine
+
+**Une seule chose, et elle est coupee par defaut.**
+
+Le reglage `syncCodes` (Reglages -> Sauvegarde, `watch/storage.js:216`) recopie
+les codes en attente dans `chrome.storage.sync`, qui transite par votre compte
+navigateur. Le chiffrement applique est alors celui de Chrome Sync ou de
+Firefox Sync -- **pas le notre**, puisque nous n'en avons aucun.
+
+Rien d'autre ne part tout seul.
+
+## Ce qui part sur le reseau, et vers qui
+
+### Sans vos cookies (`credentials: 'omit'`)
+
+| Destination | Ce qu'elle apprend de vous |
+|---|---|
+| API publique Epic (`store-site-backend-static.ak.epicgames.com`) | Votre pays et votre langue, choisis dans le popup |
+| `www.gog.com` (catalogue filtre) | Rien. Anonyme **deliberement** : connecte, GOG masque ce que le compte possede deja, et la veille croirait l'offre terminee |
+| `www.gamerpower.com` | Rien |
+| `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue |
+| `api.frankfurter.app` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
+
+Une exception a connaitre : pendant un **import de collection Steam**, les
+identifiants de **tous** vos jeux partent par lots de 50 vers
+`api.steampowered.com` pour en recuperer les noms. Sans cookie, et seulement
+sur un clic de votre part.
+
+### Avec vos cookies (`credentials: 'include'`)
+
+Uniquement vers **le magasin concerne lui-meme**, jamais vers un tiers :
+`store.steampowered.com` (ce que vous possedez), `www.gog.com` et
+`accounts.epicgames.com` (import de collection, sur clic). Toutes sont des
+`GET`, sans corps, avec `Accept: application/json` pour seul en-tete.
+
+### Fuite passive a connaitre
+
+Le popup affiche les vignettes des offres depuis les CDN d'Epic, GOG, Steam et
+GamerPower. A chaque ouverture, ces CDN recoivent votre adresse IP et savent
+quels jeux vous sont presentes. Ce n'est pas une requete de l'extension, c'est
+un `<img>` -- mais l'effet est le meme, et il vaut d'etre dit.
+
+## Ce que l'extension ne fait pas
+
+- **Aucune telemetrie.** Pas d'identifiant d'installation, pas de rapport
+  d'erreur distant, pas de ping de demarrage. Les erreurs vont dans le journal
+  local (`journal.html`) et nulle part ailleurs.
+- **Aucun serveur.** C'est un non-objectif ecrit du design : « mettre en commun
+  des donnees entre utilisateurs, ou dependre d'un serveur propre ».
+- **Aucun mot de passe, aucun jeton d'authentification, aucun cookie stocke.**
+  L'extension n'a meme pas la permission `cookies` : elle ne peut pas en lire
+  un. Les sessions sont utilisees de facon ambiante par le navigateur.
+- **Aucune ressource distante dans ses pages.** Pas de police, pas de script,
+  pas de feuille de style tierce.
+
+## Votre donnee la plus sensible : les codes de rachat
+
+Un code de rachat est un **porteur** : qui l'a, l'utilise. Ils vivent dans
+`FGC_pending_codes`, en clair, et ils sont aussi :
+
+- copies dans le **presse-papiers systeme** a la capture, donc lisibles par
+  toute application du poste ;
+- inclus **en clair dans l'export JSON**, qui atterrit dans votre dossier de
+  telechargements.
+
+Depuis la 2.24.0 ils ne sont plus recopies dans `FGC_history_*`, un historique
+que rien ne purge et que l'export emporte : l'historique garde le fait, plus
+le secret.
+
+**Ils ne sont volontairement pas chiffres.** Le raisonnement : qui a acces a
+votre profil navigateur a deja vos cookies de session Steam, GOG et Epic --
+donc deja vos comptes. Chiffrer les codes seuls deplacerait la serrure sans
+changer la porte, au prix d'une phrase secrete a saisir. **Le vrai levier est
+le chiffrement de disque de votre systeme** (BitLocker, FileVault, LUKS).
+
+**Ils ne sont pas non plus purges automatiquement.** Un code supprime a tort
+est un jeu perdu, et l'onglet Codes affiche deja les jours restants : c'est
+vous qui decidez.
+
+## Les permissions, et pourquoi
+
+| Permission | Pourquoi |
+|---|---|
+| `storage` | Tout ce qui precede |
+| `notifications` | Annoncer une offre, un defi de securite |
+| `clipboardWrite` | Copier un code. **C'est aussi par la qu'un code arrive dans le presse-papiers systeme** |
+| `scripting` | Le clic Steam, les sondes de diagnostic. Bornee aux hotes ci-dessous |
+| `offscreen` | Lire du HTML : un service worker MV3 n'a pas de `DOMParser`. Absente sur Firefox |
+| `alarms` | Se reveiller pour verifier |
+
+**Ce qui est absent, et c'est le point** : pas de `tabs`, pas de `cookies`,
+pas de `webRequest`, pas de `downloads`, pas de `identity`, pas de `history`,
+pas de `<all_urls>`. L'extension ne peut pas lire l'URL de vos onglets.
+
+Les 26 `host_permissions` couvrent Epic, GOG, les 15 domaines Luna, GamerPower,
+Steam et l'API de taux de change. Deux sont plus larges que le strict besoin,
+et c'est assume : `https://*.epicgames.com/*` (le joker couvre `store.`, `www.`
+et `accounts.`, requis par l'import de commandes) et
+`https://gaming.amazon.com/*` (sans restriction de chemin, contrairement aux
+entrees Luna bornees a `/claims/*`).
+
+## Ce qui protege le code lui-meme
+
+Deux audits complets, le 2026-09-19. Ils n'ont trouve **aucun chemin
+exploitable**, et les raisons valent d'etre ecrites pour qu'on ne les casse
+pas :
+
+- **Zero `innerHTML`** dans les ~200 Ko de script de contenu genere, les 34
+  modules de `src/core`, les modules `watch/` et les cinq pages. Une seule
+  ecriture dans tout le depot, et c'est `= ''`. Tout le DOM se construit par
+  noeuds et `textContent`.
+- **CSP MV3 par defaut intacte** (`script-src 'self'`) : aucun `eval`, aucun
+  `new Function`, aucun script en ligne, aucun script distant.
+- **Pas d'`externally_connectable`, pas de `web_accessible_resources`** :
+  aucune page web ne peut parler a l'extension, ni detecter sa presence.
+- **Script de contenu en monde isole** : les passerelles `GM_*` sont hors de
+  portee du JavaScript des pages.
+- **`DOMParser` inerte** pour tout le HTML distant, sans cookies : les scripts
+  d'une page lue ne s'executent jamais.
+- **Liste blanche de schemas** (`webUrl`, `watch/offer.js`) plutot que liste
+  noire : une URL d'origine distante n'atteint un onglet ou un `href` que si
+  elle est en `http(s)`.
+
+La 2.24.0 a ferme quatre faiblesses de defense en profondeur -- aucune
+joignable depuis le web, toutes reelles : le relais reseau du service worker
+etait un proxy ouvert, l'ouverture d'onglet ne verifiait aucun schema, les
+seize commandes du worker ne regardaient pas qui les demandait, et les URL de
+collection echappaient au filtre. Voir `watch/messaging.js` et
+`test/messaging.test.mjs`.
+
+## Signaler un probleme
+
+Ouvrez une issue sur le depot. Si le sujet est sensible, dites-le sans detail
+public : on conviendra d'un canal.

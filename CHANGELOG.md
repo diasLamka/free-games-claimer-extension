@@ -4,6 +4,82 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.24.0 -- 2026-09-19
+
+**Deux audits de securite : rien d'exploitable, quatre portes fermees quand meme**
+
+Question posee : « tout est chiffre, ou sauvegarde de mon cote ? » Deux
+inspections completes ont tourne sur le depot -- stockage et reseau d'un cote,
+surface d'injection de l'autre.
+
+### La reponse
+
+**Rien n'est chiffre. Tout vit chez vous**, en clair, dans le profil du
+navigateur. Une seule cle peut quitter la machine -- les codes, vers votre
+compte navigateur -- et elle est coupee par defaut. Aucun mot de passe, aucun
+jeton, aucun cookie n'est stocke ; l'extension n'a meme pas la permission
+`cookies`. Aucune telemetrie. Le detail complet est desormais dans
+**`SECURITY.md`**, qui vieillira avec le code.
+
+### Ce que les audits ont trouve : rien d'exploitable
+
+Zero `innerHTML` dans les 200 Ko de moteur genere, les 34 modules de
+`src/core`, les modules `watch/` et les cinq pages. CSP MV3 par defaut
+intacte. Pas d'`externally_connectable` : aucune page web ne peut parler a
+l'extension. `DOMParser` inerte pour le HTML distant. Liste blanche de
+schemas d'URL plutot que liste noire.
+
+### Les quatre portes fermees quand meme
+
+Aucune n'etait joignable depuis le web -- il aurait fallu deja controler le
+script de contenu. Ce sont des defenses en profondeur, et elles tenaient
+toutes la meme promesse implicite : « personne d'autre que nous n'appellera
+ceci ». Une promesse implicite n'est pas une garde.
+
+- **Le relais reseau etait un proxy ouvert.** `fgc-fetch` acceptait n'importe
+  quelle URL, n'importe quelle methode, n'importe quels en-tetes, et rendait
+  le corps entier -- de quoi sonder `http://localhost` depuis le service
+  worker. Il est borne a un GET HTTPS vers un hote **du manifeste**, avec
+  `Accept` pour tout bagage. La liste ne peut pas deriver : c'est celle des
+  `host_permissions`.
+- **L'ouverture d'onglet ne verifiait aucun schema.** Chrome bloque
+  « javascript: » et « data: » en navigation de premier niveau, mais pas
+  `chrome-extension://` ni `file:///`. Elle passe desormais par `webUrl`, la
+  meme fonction qui filtre les URL des offres.
+- **Les seize commandes du worker ne regardaient pas qui les demandait.**
+  Une page de magasin pouvait declencher un import de bibliotheque -- qui lit
+  Steam, GOG et Epic AVEC vos cookies -- ou effacer le journal. Les commandes
+  d'interface n'acceptent plus qu'une page de l'extension, les messages du
+  moteur qu'un script de contenu, et un type inconnu est refuse.
+- **Les URL de collection echappaient au filtre.** `makeItem` posait une `url`
+  d'origine distante -- la fiche GOG vient d'une reponse lue avec la session
+  -- et elle atterrissait dans un `href`. Seul un hasard heureux la sauvait.
+  Symetrie retablie avec `makeOffer`.
+
+### Hygiene des codes
+
+Un code de rachat est un porteur. Il etait recopie **en clair dans
+`FGC_history_*`**, un historique que rien ne purge et que l'export emporte --
+en double, sans que rien ne le relise. L'historique garde desormais le fait,
+plus le secret.
+
+En revanche les codes **ne sont pas purges automatiquement**, contrairement a
+ce qui avait ete envisage : un code supprime a tort est un jeu perdu, et
+l'onglet Codes affiche deja les jours restants. C'est a l'utilisateur de
+decider, pas a une minuterie.
+
+### Mesure
+
+`test/messaging.test.mjs` : 11 tests. Le relais refuse `localhost`, une
+methode autre que GET, un en-tete `Cookie`, une valeur d'`Accept` qui tente
+une injection de retour chariot -- et laisse passer l'appel reel du moteur.
+Une page de l'extension **dans un onglet** (journal, collection) n'est pas
+prise pour un script de contenu. Les deux listes de commandes ne se
+chevauchent pas. 703 tests.
+
+Le temoin de build a ete refige (`--freeze`) : c'est la premiere modification
+de `src/core` depuis la 2.20.1, et elle est volontaire.
+
 ## 2.23.0 -- 2026-09-19
 
 **Le pouce de la barre de defilement est un ticket**

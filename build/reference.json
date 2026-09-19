@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.20.1.js",
-  "sha256": "F57F3BABCF2B797CE23893E119C1FA44028A4B717DF10921272F8E3D6B35DBFF",
-  "octets": 207714,
-  "version": "2.20.1",
-  "motif": "2.20.1 : la fiche s'ouvre dans une langue que le moteur lit"
+  "fichier": "reference-v2.24.0.js",
+  "sha256": "B95076ACAB2B9095AB14FE66A1438418D1308173CBFF7E5C4A0A18DFDE7A4EED",
+  "octets": 208008,
+  "version": "2.24.0",
+  "motif": "2.24.0 : le code de rachat sort de l'historique, qui n'est jamais purge"
 }

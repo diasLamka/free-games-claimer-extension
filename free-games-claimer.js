@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.23.0
+ * FREE GAMES AUTO-CLAIMER -- v2.24.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -2939,13 +2939,17 @@
       bumpLunaBatch('codes');
       if (store === 'gog') {
         addPendingRedeemCode({ store: 'gog', code: code, title: title, offerId: offerId, ts: Date.now(), attempts: 0, deadline: deadline });
-        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', code);
+        // Le FAIT, pas le secret : le code vit dans FGC_pending_codes, qui
+        // sait le retirer une fois echange. L'historique, lui, n'est jamais
+        // purge et part dans l'export -- un porteur y dormait pour toujours,
+        // en double, sans que rien ne le relise.
+        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange');
         log(PLATFORM, 'info', 'Code GOG pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers)' : '') + '. Echange automatique sur gog.com/redeem a la fin de la serie.');
         updateUiState('ok', 'Luna : code GOG obtenu pour ' + title);
         return;
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
-      saveHistoryEntry(PLATFORM, key, 'code_copied', label + ' : ' + code + (deadline ? ' (avant le ' + deadline + ')' : ''));
+      saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''));
       var redeemUrl = store === 'microsoft' ? CONFIG.microsoftRedeemUrl : null;
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);

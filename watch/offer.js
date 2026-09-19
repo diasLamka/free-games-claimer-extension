@@ -262,8 +262,15 @@ export function matchKeys(offer) {
  */
 /* Ces URL viennent d'API tierces et finissent dans tabs.create, windows.create
    et un <img> du popup : seul http(s) passe. Un « javascript: » ou un
-   « chrome: » publie par erreur -- ou expres -- n'a rien a y faire. */
-function webUrl(value) {
+   « chrome: » publie par erreur -- ou expres -- n'a rien a y faire.
+
+   Exportee, et pas seulement par commodite : c'est LE point de passage des
+   URL d'origine distante. Deux autres endroits en avaient besoin et s'en
+   passaient -- l'ouverture d'onglet demandee par le moteur (background.js) et
+   les entrees de collection (watch/collection.js). Une copie de plus aurait
+   fini par diverger de celle-ci ; le champ `--rail` de la scrollbar avait
+   deja montre comment. */
+export function webUrl(value) {
   if (!value) return null;
   try {
     return /^https?:$/.test(new URL(String(value)).protocol) ? String(value) : null;
