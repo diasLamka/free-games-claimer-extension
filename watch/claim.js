@@ -18,7 +18,8 @@ import { STORES, storeFromUrl } from './offer.js';
 import { readSettings } from './storage.js';
 import { readOwnership } from './sources/steam.js';
 import {
-  steamAppUrl, steamPageStep, describeStep, isSteamLoginUrl, isSteamAgeCheckUrl,
+  steamAppUrl, steamPageStep, describeStep, ownedFromStep,
+  isSteamLoginUrl, isSteamAgeCheckUrl,
 } from './steam-claim.js';
 
 export const BUDGET_MS = 5 * 60 * 1000;
@@ -534,6 +535,50 @@ async function awaitNavigation(chrome, tabId, fromUrl, timeoutMs, pollMs = STEAM
 }
 
 /**
+ * Relit la fiche APRES le clic, a blanc, et rend ce que la page repond.
+ *
+ * Seconde preuve, utilisee quand `dynamicstore/userdata` est reste muet
+ * pendant toutes les tentatives. On revient sur la fiche -- le clic a
+ * navigue ailleurs -- et on rejoue l'etape en `dryRun` : elle ne clique
+ * rien, elle decrit.
+ *
+ * Ne jette jamais et rend null quand la plateforme ne permet pas le detour
+ * (pas de `tabs.update`, onglet deja parti) : l'appelant traduit null en
+ * « on ne sait pas », ce qui est la verite.
+ */
+async function inspectAgain(chrome, tabId, url, packageId, t) {
+  if (!chrome.tabs || typeof chrome.tabs.update !== 'function') return null;
+  const base = url.split('?')[0];
+  try {
+    await chrome.tabs.update(tabId, { url });
+
+    /* On attend d'etre REVENU sur la fiche, pas seulement « une page a fini de
+       charger » : juste apres le clic l'onglet est encore sur la reponse du
+       formulaire, et elle est complete. Un chargement suffisant comme preuve
+       aurait fait relire la mauvaise page. */
+    let back = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < t.navigationMs) {
+      await sleep(t.pollMs);
+      let tab;
+      try { tab = await chrome.tabs.get(tabId); } catch { return null; }
+      if (!tab) return null;
+      if (tab.status === 'complete' && String(tab.url || '').startsWith(base)) { back = true; break; }
+    }
+    if (!back) return null;
+
+    const [injection] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: steamPageStep,
+      args: [packageId, true],
+    });
+    return injection ? injection.result : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Recupere une offre Steam. OPTIONNEL, coupe par defaut : voir
  * watch/steam-claim.js pour le contrat Steam et ce qui a ete mesure.
  *
@@ -541,14 +586,26 @@ async function awaitNavigation(chrome, tabId, fromUrl, timeoutMs, pollMs = STEAM
  *
  *   1. l'option est RELUE ici. L'appelant ne devrait jamais venir jusqu'ici
  *      sans elle ; si un jour il le fait, rien ne se passe ;
- *   2. la bibliotheque est lue AVANT tout onglet. Des listes vides veulent dire
- *      « pas connecte » : on le dit sans rien ouvrir. Un paquet ou une
- *      application deja possedes : c'est acquis, et on ne tente rien -- le
- *      quota d'activations de Steam compte « deja possede » comme un echec ;
- *   3. dans la fenetre reduite, l'etape injectee verifie le bloc du PAQUET, le
- *      formulaire de licence gratuite et le libelle exact, puis clique une
- *      fois ;
- *   4. la preuve est le paquet dans `rgOwnedPackages`, pas un texte a l'ecran.
+ *   2. la bibliotheque est lue AVANT tout onglet, pour NE RIEN FAIRE sur un
+ *      jeu deja acquis -- le quota d'activations de Steam compte « deja
+ *      possede » comme un echec. Mais une lecture vide ou illisible n'arrete
+ *      plus rien : voir ci-dessous ;
+ *   3. dans la fenetre reduite, l'etape injectee lit d'abord la SESSION sur la
+ *      page, puis verifie le bloc du PAQUET, le formulaire de licence gratuite
+ *      et le libelle exact, puis clique une fois ;
+ *   4. la preuve est le paquet dans `rgOwnedPackages` ; a defaut, la page
+ *      rechargee qui dit « deja possede ». Jamais un texte lu avant le clic.
+ *
+ * POURQUOI LA LECTURE DE BIBLIOTHEQUE N'EST PLUS UN VERROU (2.22.2). Elle
+ * l'etait : `logged_out` rendait « connexion requise », et toute autre
+ * anomalie un echec -- sans ouvrir la moindre page. Or `dynamicstore/userdata`
+ * lu depuis un service worker peut rendre des listes vides ou une reponse
+ * illisible alors que la session existe bel et bien dans le navigateur. Le
+ * resultat, signale par un utilisateur connecte : « aucune action », a chaque
+ * cycle, pour toujours -- l'extension refusait d'aller voir la seule chose qui
+ * sait repondre. Desormais elle y va : la page est rendue avec les vrais
+ * cookies, et c'est elle qui tranche. Ce que la lecture prealable garde, c'est
+ * son seul pouvoir utile : empecher une tentative sur un jeu deja acquis.
  *
  * Aucun moteur n'est injecte sur Steam : seule cette fonction touche une page
  * Steam, et seulement quand l'option est active.
@@ -576,10 +633,15 @@ export async function claimSteamOffer(offer, {
   }
 
   const avant = await readOwnership({ fetch: fetchImpl, now: Date.now() });
-  if (avant.status === 'logged_out') return { verdict: VERDICTS.LOGIN, details: 'session Steam absente', store };
-  if (avant.status !== 'ok') return { verdict: VERDICTS.FAILURE, details: `bibliotheque Steam illisible : ${avant.note}`, store };
-  if (avant.packages.has(packageId) || avant.apps.has(appid)) {
+  if (avant.status === 'ok' && (avant.packages.has(packageId) || avant.apps.has(appid))) {
     return { verdict: VERDICTS.CLAIMED, details: 'deja dans la bibliotheque Steam', store };
+  }
+  if (avant.status !== 'ok') {
+    /* On continue, et le journal dit pourquoi. C'est le correctif de la 2.22.2 :
+       une bibliotheque muette n'est pas une preuve d'absence de session. */
+    record('info', avant.status === 'logged_out'
+      ? 'steam : bibliotheque vide depuis le worker, la page va trancher'
+      : `steam : bibliotheque illisible (${avant.note}), la page va trancher`);
   }
 
   const url = steamAppUrl(appid);
@@ -621,6 +683,11 @@ export async function claimSteamOffer(offer, {
       if (step && step.reason === 'deja-possede') {
         return { verdict: VERDICTS.CLAIMED, details: 'Steam dit : deja dans la bibliotheque', store };
       }
+      /* La page, elle, sait : son menu de compte porte un lien de connexion.
+         C'est le seul « pas connecte » auquel on se fie desormais. */
+      if (step && step.reason === 'non-connecte') {
+        return { verdict: VERDICTS.LOGIN, details: 'la page Steam n\'est pas connectee', store };
+      }
       return { verdict: VERDICTS.FAILURE, details: `page Steam : ${describeStep(step)}`, store };
     }
     record('info', `steam : clic sur « Add to Account » pour le paquet ${packageId}`);
@@ -629,16 +696,45 @@ export async function claimSteamOffer(offer, {
     const after = await tabUrl(chrome, tabId);
     if (isSteamLoginUrl(after)) return { verdict: VERDICTS.LOGIN, details: 'Steam a demande la connexion', store };
 
+    /* La preuve, d'abord dans la bibliotheque. On retient si elle a seulement
+       SU repondre : une bibliotheque muette ne prouve pas l'echec, et c'est
+       toute la difference entre « rate » et « on ne sait pas ». */
+    let readable = false;
     for (let i = 0; i < t.confirmTries; i++) {
       if (i) await sleep(t.confirmDelayMs);
       const check = await readOwnership({ fetch: fetchImpl, now: Date.now() });
-      if (check.status === 'ok' && check.packages.has(packageId)) {
-        return { verdict: VERDICTS.CLAIMED, details: null, store };
-      }
+      if (check.status !== 'ok') continue;
+      readable = true;
+      if (check.packages.has(packageId)) return { verdict: VERDICTS.CLAIMED, details: null, store };
     }
+    if (readable) {
+      return {
+        verdict: VERDICTS.FAILURE,
+        details: 'clic fait, mais le paquet n\'est pas apparu dans la bibliotheque Steam',
+        store,
+      };
+    }
+
+    /* Bibliotheque illisible de bout en bout : la page redevient le juge. On y
+       retourne et on relit A BLANC -- un paquet acquis fait disparaitre le
+       bloc d'achat et apparaitre « You already have this item ». */
+    const second = await inspectAgain(chrome, tabId, url, packageId, t);
+    if (ownedFromStep(second)) {
+      return { verdict: VERDICTS.CLAIMED, details: 'confirme par la page, bibliotheque illisible', store };
+    }
+    if (second && second.ok) {
+      return {
+        verdict: VERDICTS.FAILURE,
+        details: 'clic fait, mais la page propose toujours « Add to Account »',
+        store,
+      };
+    }
+    /* Ni l'une ni l'autre n'a repondu : ni succes, ni echec. `undetermined`
+       n'est pas definitif, donc l'offre repassera apres le recul -- et le
+       compte n'aura pas ete declare en echec pour une mesure absente. */
     return {
-      verdict: VERDICTS.FAILURE,
-      details: 'clic fait, mais le paquet n\'est pas apparu dans la bibliotheque Steam',
+      verdict: VERDICTS.UNDETERMINED,
+      details: `clic fait, resultat invisible (${describeStep(second)})`,
       store,
     };
   } finally {

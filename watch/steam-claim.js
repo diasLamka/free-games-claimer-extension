@@ -51,16 +51,44 @@ export function isSteamAgeCheckUrl(url) {
  * dans la page, c'est `document`.
  *
  * Elle verifie avant de cliquer, et refuse au moindre ecart :
+ *   0. la page est bien celle d'une session connectee ;
  *   1. le bloc du paquet attendu existe ;
  *   2. son formulaire vise la licence gratuite, pour CE paquet ;
  *   3. un seul bouton dit exactement « Add to Account », sans montant.
  * Un seul clic. `dryRun` verifie tout sans cliquer : c'est ce qui permet de
- * mesurer la page reelle sans rien y faire.
+ * mesurer la page reelle sans rien y faire -- et c'est aussi ce qui sert de
+ * seconde lecture apres le clic, quand la bibliotheque reste muette.
  */
 export function steamPageStep(packageId, dryRun, doc) {
   const d = doc || document;
   const id = String(packageId);
   const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+
+  /* La session se lit SUR LA PAGE, et c'est le seul juge qui ne se trompe pas.
+   *
+   * `dynamicstore/userdata`, lu depuis le service worker, est un proxy fragile
+   * de « suis-je connecte » : une lecture vide ou illisible ne prouve rien.
+   * La page, elle, est rendue avec les vrais cookies de l'utilisateur -- si
+   * elle porte le menu de compte, la session existe.
+   *
+   * L'ordre des trois questions compte. Un signe POSITIF de connexion clot le
+   * sujet ; sinon un lien de connexion DANS LE MENU GLOBAL est un refus ;
+   * sinon on ne sait pas, et ne pas savoir laisse passer -- les trois
+   * verifications suivantes protegent deja de tout ce qui pourrait couter
+   * quelque chose, et un clic sans session ne fait que rebondir sur la page
+   * de connexion, ce que l'appelant lit dans l'URL d'arrivee.
+   *
+   * Le lien de refus est cherche DANS le menu global, jamais dans la page
+   * entiere : « /login/ » se trouve aussi dans les encarts de
+   * recommandation, et un selecteur large declarerait deconnecte un compte
+   * qui ne l'est pas -- exactement la panne qu'on repare ici. */
+  const signedIn = Boolean(
+    d.getElementById('account_pulldown')
+    || d.querySelector('#global_actions .user_avatar, #account_dropdown'),
+  );
+  if (!signedIn && d.querySelector('#global_action_menu a[href*="/login/"], a.global_action_link[href*="/login/"]')) {
+    return { ok: false, reason: 'non-connecte', title: clean(d.title).slice(0, 80) };
+  }
 
   const block = d.getElementById(`game_area_purchase_section_add_to_cart_${id}`);
   if (!block) {
@@ -92,6 +120,18 @@ export function steamPageStep(packageId, dryRun, doc) {
   if (dryRun) return { ok: true, dryRun: true };
   matches[0].click();
   return { ok: true, clicked: true };
+}
+
+/**
+ * Le paquet est-il acquis, d'apres la page elle-meme ?
+ *
+ * Sert de SECONDE preuve, quand `dynamicstore/userdata` ne repond pas : un
+ * clic reussi fait disparaitre le bloc d'achat et apparaitre « You already
+ * have this item ». Seul ce marqueur vaut preuve -- un bloc simplement absent
+ * peut aussi vouloir dire que la page a change de forme.
+ */
+export function ownedFromStep(step) {
+  return Boolean(step && step.ok === false && step.reason === 'deja-possede');
 }
 
 /** Ce que dit un refus de l'etape, en une ligne pour le journal et le canari. */

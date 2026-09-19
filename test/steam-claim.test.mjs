@@ -123,6 +123,8 @@ function fauxDocument({
   subid,
   labels = ['Add to Account'],
   owned = false,
+  /** 'in' : le menu de compte est la. 'out' : un lien de connexion. null : ni l'un ni l'autre. */
+  session = 'in',
 } = {}) {
   const clics = [];
   const boutons = labels.map((label) => ({ textContent: `\n    ${label}   \n`, click() { clics.push(label); } }));
@@ -136,8 +138,15 @@ function fauxDocument({
   };
   return {
     title: 'Save 100% on Space Menace on Steam',
-    getElementById: (id) => (id === `game_area_purchase_section_add_to_cart_${packageId}` ? bloc : null),
-    querySelector: (s) => (s === '.game_area_already_owned' && owned ? {} : null),
+    getElementById: (id) => {
+      if (id === 'account_pulldown') return session === 'in' ? {} : null;
+      return id === `game_area_purchase_section_add_to_cart_${packageId}` ? bloc : null;
+    },
+    querySelector: (s) => {
+      if (s === '.game_area_already_owned') return owned ? {} : null;
+      if (s.includes('/login/')) return session === 'out' ? {} : null;
+      return null;
+    },
     clics,
   };
 }
@@ -186,6 +195,35 @@ test('l\'etape refuse tout ecart, sans jamais cliquer', () => {
   }
   assert.match(describeStep({ reason: 'bouton-introuvable', labels: ['Add to Cart'] }), /Add to Cart/);
   assert.equal(describeStep(null), 'aucune reponse de la page');
+});
+
+test('la session se lit sur la page, et l\'inconnu laisse passer', () => {
+  /* Le correctif de la 2.22.2. La bibliotheque lue depuis le service worker
+     peut rendre des listes vides alors que la session existe : c'est la page
+     qui tranche, et elle ne tranche que sur un signe franc. */
+  const connecte = fauxDocument({ session: 'in' });
+  assert.deepEqual(steamPageStep(PAQUET, true, connecte), { ok: true, dryRun: true });
+
+  const deconnecte = fauxDocument({ session: 'out' });
+  const r = steamPageStep(PAQUET, false, deconnecte);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'non-connecte');
+  assert.equal(deconnecte.clics.length, 0, 'jamais de clic sans session');
+
+  /* Ni menu de compte, ni lien de connexion : Steam a change de balisage. On
+     ne sait pas, et ne pas savoir ne doit pas bloquer -- les trois
+     verifications suivantes protegent deja de ce qui coute. */
+  assert.deepEqual(steamPageStep(PAQUET, true, fauxDocument({ session: null })), { ok: true, dryRun: true });
+
+  /* Et un lien « /login/ » AILLEURS que dans le menu global -- l'encart
+     « sign in to see reasons », present sur une page connectee -- ne prouve
+     rien. Ce document ne repond qu'a une recherche NON restreinte : si
+     l'etape en faisait une, elle declarerait deconnecte un compte qui ne
+     l'est pas, et c'est precisement la panne qu'on repare. */
+  const encart = fauxDocument({ session: null });
+  const brut = encart.querySelector;
+  encart.querySelector = (sel) => (sel === 'a[href*="/login/"]' ? {} : brut(sel));
+  assert.deepEqual(steamPageStep(PAQUET, true, encart), { ok: true, dryRun: true });
 });
 
 test('l\'etape se suffit a elle-meme une fois serialisee', () => {
@@ -237,6 +275,10 @@ async function fauxSteam({
   option = true,
   bibliotheques = [{ rgOwnedApps: [1], rgOwnedPackages: [1] }, { rgOwnedApps: [1], rgOwnedPackages: [1, Number(PAQUET)] }],
   etape = { ok: true, clicked: true },
+  /** Ce que rend la SECONDE lecture, a blanc, quand la bibliotheque est muette. */
+  etapeApres = null,
+  /** Faux si la plateforme ne permet pas de revenir sur la fiche. */
+  retour = true,
   atterrissage = null,
   apresClic = 'https://store.steampowered.com/freelicense/addfreelicense/',
   fenetres = false,
@@ -245,7 +287,7 @@ async function fauxSteam({
   await faux.chrome.storage.local.set({ [KEYS.SETTINGS]: { ...DEFAULT_SETTINGS, steamAutoClaim: option } });
 
   const onglets = new Map();
-  const traces = { ouverts: [], fermes: [], fenetresFermees: [], injections: [], lectures: 0 };
+  const traces = { ouverts: [], fermes: [], fenetresFermees: [], injections: [], retours: [], lectures: 0 };
   let prochain = 500;
 
   faux.chrome.tabs = {
@@ -263,6 +305,15 @@ async function fauxSteam({
     async remove(id) { onglets.delete(id); traces.fermes.push(id); },
     onUpdated: { addListener() {}, removeListener() {} },
   };
+  if (retour) {
+    faux.chrome.tabs.update = async (id, { url }) => {
+      const t = onglets.get(id);
+      if (!t) throw new Error('onglet inconnu');
+      onglets.set(id, { ...t, url, status: 'complete' });
+      traces.retours.push(url);
+      return onglets.get(id);
+    };
+  }
   if (fenetres) {
     faux.chrome.windows = {
       async create({ url, state }) {
@@ -276,6 +327,8 @@ async function fauxSteam({
   faux.chrome.scripting = {
     async executeScript({ target, func, args }) {
       traces.injections.push({ tabId: target.tabId, func, args });
+      // args[1] est `dryRun` : la seconde lecture, celle d'apres le clic.
+      if (args[1] === true) return [{ result: etapeApres }];
       if (etape && etape.clicked) {
         const t = onglets.get(target.tabId);
         if (t) onglets.set(target.tabId, { ...t, url: apresClic, status: 'complete' });
@@ -305,12 +358,58 @@ test('option coupee : meme un appel direct ne fait rien', async () => {
   assert.equal(ctx.traces.lectures, 0, 'pas meme la bibliotheque');
 });
 
-test('sans session : « connexion requise », et aucun onglet', async () => {
-  const ctx = await fauxSteam({ bibliotheques: [{ rgOwnedApps: [], rgOwnedPackages: [] }] });
+test('bibliotheque vide : on va voir la page, et c\'est ELLE qui dit « connexion requise »', async () => {
+  /* Le correctif de la 2.22.2. Avant : des listes vides suffisaient a rendre
+     « connexion requise » sans rien ouvrir -- et un utilisateur connecte,
+     dont `dynamicstore/userdata` ne rend rien depuis le service worker,
+     n'obtenait AUCUNE action, a chaque cycle, pour toujours. */
+  const ctx = await fauxSteam({
+    bibliotheques: [{ rgOwnedApps: [], rgOwnedPackages: [] }],
+    etape: { ok: false, reason: 'non-connecte', title: 'Space Menace' },
+  });
   const r = await reclamer(ctx);
   assert.equal(r.verdict, VERDICTS.LOGIN);
-  assert.equal(ctx.traces.ouverts.length, 0);
-  assert.equal(ctx.traces.injections.length, 0);
+  assert.equal(ctx.traces.ouverts.length, 1, 'la page est ouverte : elle seule sait');
+  assert.equal(ctx.traces.injections.length, 1);
+});
+
+test('bibliotheque muette mais session bien la : la recuperation se fait', async () => {
+  /* Le coeur du bug signale : « mon compte Steam est connecte, aucune
+     action ». La bibliotheque ne repond rien d'exploitable avant le clic,
+     la page est connectee, et la preuve arrive apres. */
+  for (const muette of [{ rgOwnedApps: [], rgOwnedPackages: [] }, { pasDeListes: true }]) {
+    const ctx = await fauxSteam({
+      bibliotheques: [muette, { rgOwnedApps: [1], rgOwnedPackages: [1, Number(PAQUET)] }],
+    });
+    const r = await reclamer(ctx);
+    assert.equal(r.verdict, VERDICTS.CLAIMED, JSON.stringify(r));
+    assert.equal(ctx.traces.injections.length, 1, 'un seul clic');
+  }
+});
+
+test('bibliotheque illisible apres le clic : la page rechargee sert de preuve', async () => {
+  const muette = [{ rgOwnedApps: [], rgOwnedPackages: [] }];
+
+  const acquis = await fauxSteam({
+    bibliotheques: muette,
+    etapeApres: { ok: false, reason: 'deja-possede', title: 'Space Menace' },
+  });
+  const r = await reclamer(acquis);
+  assert.equal(r.verdict, VERDICTS.CLAIMED, JSON.stringify(r));
+  assert.match(r.details, /confirme par la page/);
+  assert.deepEqual(acquis.traces.retours, [steamAppUrl(APPID)], 'on revient sur la fiche');
+  assert.equal(acquis.traces.injections.length, 2);
+  assert.equal(acquis.traces.injections[1].args[1], true, 'la seconde lecture ne clique pas');
+
+  // Le bouton est toujours la : le clic n'a rien donne, et on le dit.
+  const rate = await fauxSteam({ bibliotheques: muette, etapeApres: { ok: true, dryRun: true } });
+  assert.equal((await reclamer(rate)).verdict, VERDICTS.FAILURE);
+
+  // Ni bibliotheque, ni page : ni succes, ni echec.
+  const aveugle = await fauxSteam({ bibliotheques: muette, retour: false });
+  const flou = await reclamer(aveugle);
+  assert.equal(flou.verdict, VERDICTS.UNDETERMINED);
+  assert.match(flou.details, /resultat invisible/);
 });
 
 test('deja possede, par le paquet ou par l\'application : acquis, sans rien tenter', async () => {
@@ -444,8 +543,21 @@ async function cycleSteam({ option }) {
       steamAutoClaim: option,
     },
   });
+  /* Un onglet complet : la recuperation Steam va desormais REGARDER la page
+     quand la bibliotheque ne dit rien, il lui faut donc de quoi le faire. */
   const ouverts = [];
-  faux.chrome.tabs = { ...faux.chrome.tabs, async create(o) { ouverts.push(o); return { id: 9 }; } };
+  const onglets = new Map();
+  faux.chrome.tabs = {
+    ...faux.chrome.tabs,
+    async create(o) { ouverts.push(o); onglets.set(9, { id: 9, url: o.url, status: 'complete' }); return { id: 9 }; },
+    async get(id) { const t = onglets.get(id); if (!t) throw new Error('onglet inconnu'); return t; },
+    async remove(id) { onglets.delete(id); },
+    onUpdated: { addListener() {}, removeListener() {} },
+  };
+  /* Sans session, la page porte un lien de connexion : c'est elle qui tranche. */
+  faux.chrome.scripting = {
+    async executeScript() { return [{ result: { ok: false, reason: 'non-connecte', title: 'Space Menace' } }]; },
+  };
 
   const fin = T + 3 * 86400000;
   const steam = sourceFactice('steam', [makeOffer({
@@ -468,13 +580,16 @@ async function cycleSteam({ option }) {
   return { steam, ouverts, lectures, offre: offres.find((o) => o.store === STORES.STEAM) };
 }
 
-test('cycle, option active : la source Steam est interrogee, et sans session rien ne s\'ouvre', async () => {
+test('cycle, option active : la source Steam est interrogee, et la page tranche la session', async () => {
   const r = await cycleSteam({ option: true });
   assert.equal(r.steam.appels, 1, 'l\'option active la source Steam');
   assert.ok(r.offre, 'l\'offre est au catalogue');
   assert.equal(r.offre.packageId, PAQUET);
+  /* Des listes vides ne suffisent plus a conclure : le cycle ouvre la fiche,
+     et c'est son menu de compte qui rend le verdict. Sans cela, un compte
+     connecte que le worker ne voit pas restait sans la moindre action. */
+  assert.equal(r.ouverts.length, 1, 'la page est consultee');
   assert.equal(r.offre.verdict, VERDICTS.LOGIN);
-  assert.equal(r.ouverts.length, 0, 'aucun onglet sans session');
   assert.ok(r.lectures.some((u) => u.startsWith(OWNED_URL)), 'la bibliotheque a ete lue');
 });
 

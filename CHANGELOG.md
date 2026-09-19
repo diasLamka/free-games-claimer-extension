@@ -4,6 +4,59 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.22.2 -- 2026-09-19
+
+**Steam : c'est la page qui dit si le compte est connecte, plus le worker**
+
+Retour d'usage : « mon compte Steam est connecte, aucune action ». Le compte
+l'etait bel et bien. L'extension, elle, ne l'a jamais verifie la ou c'etait
+verifiable.
+
+### La cause
+
+Avant d'ouvrir quoi que ce soit, la recuperation lisait
+`store.steampowered.com/dynamicstore/userdata/` depuis le service worker, et
+en tirait trois conclusions definitives : listes vides -> « connexion
+requise » ; reponse illisible -> echec ; paquet present -> deja acquis.
+
+Les deux premieres etaient des devinettes. Cette lecture depuis un service
+worker peut rendre des listes vides ou une reponse inexploitable alors que la
+session existe parfaitement dans le navigateur. Et comme elle se faisait
+AVANT tout onglet, le resultat etait litteralement rien : pas de page, pas de
+clic, pas de trace visible -- a chaque cycle, indefiniment. L'extension
+refusait d'aller voir la seule chose capable de repondre.
+
+### Le correctif
+
+- **La lecture de bibliotheque ne bloque plus.** Elle garde son seul pouvoir
+  utile : ne rien tenter sur un jeu deja acquis, parce que le quota
+  d'activations de Steam compte « deja possede » comme un echec. Vide ou
+  illisible, elle note la raison au journal et laisse la suite se faire.
+- **La session se lit sur la page.** L'etape injectee cherche d'abord le menu
+  de compte ; a defaut, un lien de connexion DANS le menu global -- jamais
+  dans la page entiere, ou « /login/ » apparait aussi sur un compte connecte.
+  Signe franc de connexion : on continue. Lien de connexion : « connexion
+  requise », et aucun clic. Ni l'un ni l'autre : on continue, les trois
+  verifications qui suivent (bloc du paquet, formulaire de licence gratuite,
+  libelle exact) protegent deja de tout ce qui pourrait couter quelque chose.
+- **Une seconde preuve apres le clic.** Si la bibliotheque reste muette
+  jusqu'au bout, on revient sur la fiche et on la relit A BLANC : « deja
+  possede » vaut succes, un bouton toujours la vaut echec. Si aucune des deux
+  ne repond, le verdict est `undetermined` -- ni victoire supposee, ni echec
+  declare -- et l'offre repasse apres le recul.
+
+Ce que ce correctif ne tranche toujours pas : si le clic lui-meme aboutit. Il
+n'a jamais ete joue depuis ce depot. Mais l'echec, desormais, dit ce qu'il a
+vu.
+
+### Mesure
+
+`test/steam-claim.test.mjs` : 25 tests. Nouveaux -- la session lue sur la page
+dans ses trois etats (connectee, deconnectee, indeterminee), un lien
+« /login/ » hors du menu global qui ne conclut rien, une bibliotheque muette
+qui n'empeche plus la recuperation, et les trois issues de la seconde lecture.
+685 tests.
+
 ## 2.22.1 -- 2026-09-19
 
 **Steam : l'option agit tout de suite, et une fausse offre ne bloque plus les vraies**
