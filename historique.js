@@ -13,6 +13,9 @@
 import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
 import { STORE_LABELS } from './watch/offer.js';
 import { KEY_OUTCOMES, OUTCOMES } from './watch/outcomes.js';
+import { KEY_LIBRARY } from './watch/library.js';
+import { normaliseTitle } from './watch/offer.js';
+import { recurrenceIndex, recurring } from './watch/recurrence.js';
 import {
   byMonth, filterHistory, historyRows, summariseHistory,
 } from './watch/history.js';
@@ -22,6 +25,7 @@ const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chro
 const KEY_UI = 'veille:ui';
 
 let rows = [];
+let library = {};
 
 /* ------------------------------------------------------------------ outils */
 
@@ -162,11 +166,35 @@ function render() {
   }
   mois.textContent = '';
   mois.append(lotMois);
+
+  /* Ce qui revient : le seul tableau de la page qui parle d'AVENIR. Les autres
+     racontent ce qui s'est passe ; celui-ci dit ce qu'on peut attendre plutot
+     qu'acheter. */
+  const index = recurrenceIndex({
+    outcomes: Object.fromEntries(rows.map((r, i) => [String(i), r])),
+    library,
+    normalise: normaliseTitle,
+  });
+  const cible = document.getElementById('recurring');
+  const lotRevient = document.createDocumentFragment();
+
+  for (const e of recurring(index).slice(0, 25)) {
+    const tr = el('tr');
+    tr.append(el('td', null, e.title));
+    tr.append(el('td', 'info', String(e.count)));
+    tr.append(el('td', 'when', e.passes[0].ts ? whenText(e.passes[0].ts) : '—'));
+    lotRevient.append(tr);
+  }
+  cible.textContent = '';
+  cible.append(lotRevient);
 }
 
 async function load() {
-  const brut = await api.storage.local.get(KEY_OUTCOMES);
+  const brut = await api.storage.local.get([KEY_OUTCOMES, KEY_LIBRARY]);
   rows = historyRows(brut[KEY_OUTCOMES]);
+  /* Le registre entre ici, et pas seulement les issues : il n'est JAMAIS
+     purge, donc il porte seul les passages anterieurs a la 2.27.0. */
+  library = brut[KEY_LIBRARY] || {};
   render();
 }
 

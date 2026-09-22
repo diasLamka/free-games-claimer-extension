@@ -797,6 +797,18 @@
   "historyNote": {
     "message": "Lecture seule. Les 1000 dernieres offres terminees sont conservees."
   },
+  "historyRecurring": {
+    "message": "Ce qui revient"
+  },
+  "historyRecurringSub": {
+    "message": "Les titres que cette extension a vus offerts plus d une fois. Ceux-la, vous pouvez les attendre plutot que les acheter."
+  },
+  "historyTimes": {
+    "message": "Fois"
+  },
+  "historyLastSeen": {
+    "message": "Vu la derniere fois"
+  },
   "openJournal": {
     "message": "Journal de la veille"
   },

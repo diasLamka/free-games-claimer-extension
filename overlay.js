@@ -93,6 +93,10 @@
       return 'Recupere par l\'extension'
         + (fait.ts ? ' le ' + new Date(fait.ts).toLocaleDateString('fr-FR') : '') + '.';
     }
+    if (fait.kind === 'recurring') {
+      return 'Deja offert ' + fait.count + ' fois depuis que vous le suivez. '
+        + 'Celui-la, vous pouvez l\'attendre.';
+    }
     if (fait.kind === 'missed') {
       return 'Deja offert une fois'
         + (fait.ts ? ' (' + new Date(fait.ts).toLocaleDateString('fr-FR') + ')' : '')

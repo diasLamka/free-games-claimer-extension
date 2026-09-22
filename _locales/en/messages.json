@@ -797,6 +797,18 @@
   "historyNote": {
     "message": "Read only. Kept for the last 1000 offers that ended."
   },
+  "historyRecurring": {
+    "message": "What comes back"
+  },
+  "historyRecurringSub": {
+    "message": "Titles this extension has seen offered more than once. These you can wait for instead of buying."
+  },
+  "historyTimes": {
+    "message": "Times"
+  },
+  "historyLastSeen": {
+    "message": "Last seen"
+  },
   "openJournal": {
     "message": "Watch log"
   },

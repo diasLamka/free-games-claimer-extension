@@ -111,6 +111,7 @@ est declare `"type": "module"`.
 | `permissions.js` | ce qui se demande apres l'installation, et ce qui s'affiche alors |
 | `teaching.js` | apprendre un libelle de bouton, sans jamais apprendre a payer |
 | `lookup.js` | ce que l'extension sait d'un titre, repondu a une page de magasin |
+| `recurrence.js` | ce qui revient : les titres deja offerts plus d'une fois |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -144,7 +145,7 @@ watch/             la veille de fond, en ES modules
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
   wishlist.js annotations.js history.js codes.js permissions.js teaching.js
-  lookup.js
+  lookup.js recurrence.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

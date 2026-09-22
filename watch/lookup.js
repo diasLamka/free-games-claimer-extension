@@ -13,6 +13,7 @@
  * d'autre que ce qui sort d'ici.
  */
 import { OUTCOMES } from './outcomes.js';
+import { RECURRENT_AFTER, recurrenceFor, recurrenceIndex } from './recurrence.js';
 
 /** Les faits qu'une fiche peut porter, du plus utile au moins utile. */
 export const FACTS = Object.freeze({
@@ -24,6 +25,8 @@ export const FACTS = Object.freeze({
   CLAIMED: 'claimed',
   /** Il est deja passe en offre, et vous l'avez rate. */
   MISSED: 'missed',
+  /** Il est passe plusieurs fois : celui-la, on peut l'attendre. */
+  RECURRING: 'recurring',
 });
 
 /**
@@ -98,6 +101,18 @@ export function lookup({
     if (!issue || !issue.title || normalise(issue.title) !== cle) continue;
     if (issue.outcome !== OUTCOMES.MISSED) continue;
     faits.push({ kind: FACTS.MISSED, store: issue.store, ts: issue.ts ?? null });
+  }
+
+  /* 5. Revient-il ?
+   *
+   * Le seul fait de la liste qui puisse changer une decision d'ACHAT. Il est
+   * calcule en DERNIER et ajoute a la fin : il complete les autres, il ne les
+   * remplace pas -- savoir qu'un jeu revient n'annule pas le fait qu'il soit
+   * offert aujourd'hui. */
+  const index = recurrenceIndex({ outcomes, library, normalise });
+  const revient = recurrenceFor(index, title, normalise);
+  if (revient && revient.count >= RECURRENT_AFTER) {
+    faits.push({ kind: FACTS.RECURRING, count: revient.count, last: revient.passes[0].ts ?? null });
   }
 
   return dedupe(faits);

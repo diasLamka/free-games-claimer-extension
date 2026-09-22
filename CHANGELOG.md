@@ -4,6 +4,69 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.38.0 -- 2026-09-22
+
+**Le seul signal de l'extension qui puisse vous faire ne PAS acheter**
+
+Tout le reste dit quoi prendre, et quand. Celui-ci dit quoi ATTENDRE.
+
+Un jeu deja offert deux fois est un jeu qu'on peut attendre plutot que payer
+vingt euros. La surcouche le dit sur la fiche, et la page Historique en donne
+la liste complete.
+
+### La mesure a change la source, et c'est le coeur de cette version
+
+L'idee reposait sur une archive publique des giveaways passes. Elle n'existe
+pas.
+
+Mesure du 2026-09-22 sur l'API de l'agregateur : le SEUL statut present dans
+sa reponse est « Active », et aucun champ ne designe une offre passee. Il n'y a
+donc rien a interroger.
+
+L'histoire vient donc de ce que l'extension a ELLE-MEME observe : les issues
+figees depuis la 2.27.0, et le registre d'acquisitions, qui n'est jamais purge
+et porte seul les passages anterieurs.
+
+C'est plus pauvre au debut, puisque cela part de rien et grandit. C'est plus
+honnete ensuite : chaque ligne est verifiable dans l'historique de celui qui la
+lit, et une histoire inventee aurait valu moins que rien.
+
+### Deux sources fusionnees, jamais choisies
+
+Le registre sait ce qui a ete PRIS et survit a toutes les purges. Les issues
+savent aussi ce qui a ete RATE, mais s'arretent aux mille dernieres. Ni l'un ni
+l'autre ne suffit.
+
+**Le dedoublonnage est le vrai sujet.** Une offre reclamee figure dans les deux
+sources : la compter deux fois ferait croire a une recurrence qui n'existe pas.
+Et ce chiffre est precisement celui sur lequel quelqu'un va s'appuyer pour ne
+pas acheter.
+
+Le recoupement se fait sur le magasin ET le jour. Assez serre pour fondre un
+doublon, assez lache pour laisser passer ce qui compte : le meme jeu, sur le
+meme magasin, a deux annees d'ecart, reste bien deux passages. C'est meme
+exactement le cas qui interesse, et un dedoublonnage trop large aurait detruit
+le signal entier.
+
+### Deux passages, pas trois
+
+Un jeu vu deux fois est deja un jeu qu'on peut attendre. Exiger trois passages
+rendrait le signal inutilisable pendant des annees, vu la profondeur reelle des
+donnees.
+
+### Detail
+
+Le fait est calcule en dernier et ajoute a la fin des autres : savoir qu'un jeu
+revient n'annule pas le fait qu'il soit offert aujourd'hui.
+
+Quatre cles de libelle par langue (376 par locale). Le moteur est identique a
+celui de la 2.37.0.
+
+| | 2.37.0 | 2.38.0 |
+|---|---|---|
+| tests | 929 | 941 |
+| signaux qui portent sur l'avenir | 0 | 1 |
+
 ## 2.37.0 -- 2026-09-22
 
 **Toute la connaissance de l'extension vivait dans son popup**
