@@ -44,7 +44,7 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     return { claimed: 0, left: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION]);
   const settings = normaliseSettings(raw[KEYS.SETTINGS]);
 
   const { catalog, cadence, claims, canary } = await claimWhatCanBe({
@@ -67,6 +67,8 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     /* Et le meme registre : rouvrir un onglet sur un jeu deja possede coute un
        jeton du plafond horaire, que ce soit un cycle ou un clic qui l'ouvre. */
     library: raw[KEY_LIBRARY] || {},
+    // Et ce que les magasins disent deja que vous possedez.
+    collection: raw[KEY_COLLECTION] || null,
     maxReclamations: MAX_PER_HOUR,
     record,
   });
@@ -225,7 +227,7 @@ export async function claimOneNow({
     return { claimed: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION]);
   const catalog = raw[KEYS.OFFERS] || {};
   const offer = catalog[catalogKey];
   if (!offer) return { claimed: 0, claims: [], reason: 'unknown' };
@@ -248,6 +250,7 @@ export async function claimOneNow({
     cadence: raw[KEYS.CADENCE] || [],
     canary: raw[KEY_CANARY] || {},
     library: raw[KEY_LIBRARY] || {},
+    collection: raw[KEY_COLLECTION] || null,
     maxReclamations: 1,
     record,
     claim,

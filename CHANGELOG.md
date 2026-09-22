@@ -4,6 +4,53 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.42.0 -- 2026-09-22
+
+**Un nouvel ordinateur ne rouvre plus ce que vous possedez deja**
+
+### Le registre n'avait jamais rien recu
+
+Le moteur ecrit son historique par GM_setValue, donc en TEXTE JSON, et
+storage.onChanged le rend tel quel. `addedEntries` le parcourait comme un
+objet -- caractere par caractere -- n'y trouvait aucune entree datee, et le
+registre est reste vide depuis sa creation. Les tests lui passaient des objets,
+ils ne pouvaient pas le voir. Constate sur une vraie installation : treize
+reclamations dans l'historique, aucun registre.
+
+`readHistory` lit les deux formes. Et comme tout ce qui a ete note avant est
+perdu pour le registre, l'historique entier est rejoue au demarrage et a
+l'installation -- sans effet sur ce qui est deja connu, puisque `mergeEntry`
+garde la premiere date et ne vide aucun champ.
+
+C'est ce registre que lit le filtre « deja dans la bibliotheque » : il sert
+enfin.
+
+### Ma collection ecarte ce que le magasin dit que vous possedez
+
+La collection savait ce que vous possedez sur Epic, GOG et Steam, et rien ne
+la lisait. Le filtre de reclamation la consulte maintenant, sur la regle que
+le ROADMAP posait : un IDENTIFIANT exact, jamais un titre.
+
+- Epic : `el.id` de l'offre, le `offerId` de l'historique des commandes ;
+- GOG : l'identifiant de produit ;
+- Steam : l'appid.
+
+Une offre de l'agregateur, qui ne porte pas l'identifiant du magasin, n'est
+jamais ecartee par ce chemin. Un jeu du meme nom sous un autre identifiant non
+plus : un faux « deja possede » ferait rater un jeu offert. Seul compte un
+magasin dont une importation a reussi ; une importation ratee plus tard ne
+retire rien.
+
+Sur un nouvel ordinateur : importer la collection (Ma collection, « Tout
+importer ») suffit pour que la veille n'ouvre plus d'onglet sur vos jeux.
+
+### Le popup juge comme la veille
+
+La puce « deja dans la bibliotheque » et le bouton « celle-ci » appelaient
+`judge()` sans le registre : ils pouvaient promettre une reclamation que la
+veille ecartait. Ils recoivent maintenant le registre et la collection, comme
+le cycle.
+
 ## 2.41.0 -- 2026-09-22
 
 **« Deja recupere » disait « recupere » pour des jeux que l'extension n'avait pas pris**

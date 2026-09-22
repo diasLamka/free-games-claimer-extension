@@ -31,6 +31,7 @@ import {
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { ownedKeys } from './library.js';
+import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
 import { split } from './filters.js';
@@ -596,6 +597,7 @@ export async function runCycle({
         cadence,
         canary: ctx.canary,
         library: ctx.library,
+        collection: ctx.collection,
         maxReclamations,
         record,
       });
@@ -650,7 +652,7 @@ export async function runCycle({
  * jeu deja reclame ne sert a rien, et chez certains magasins cela consomme un
  * quota.
  */
-export function claimCandidates(catalog, filters, { claimableStores, watchedStores, now, owned = null }) {
+export function claimCandidates(catalog, filters, { claimableStores, watchedStores, now, owned = null, ownedIds = null }) {
   const openList = Object.values(catalog || {}).filter((o) => {
     if (!o) return false;
     if (FINAL_VERDICTS.includes(o.verdict)) return false;
@@ -706,6 +708,7 @@ export function claimCandidates(catalog, filters, { claimableStores, watchedStor
   const { claimableCount, dropped } = split(openList, filters, {
     supportedStores: autorises,
     owned,
+    ownedIds,
   });
   return { candidates: byUrgency(claimableCount, now), dropped };
 }
@@ -727,6 +730,9 @@ export async function claimWhatCanBe({
   cadence,
   canary = {},
   library = null,
+  /* Ma collection : ce que les magasins disent que vous possedez. Compare par
+     identifiant exact seulement (voir collection.js). */
+  collection = null,
   maxReclamations,
   record = () => {},
   fetch: fetchImpl,
@@ -749,9 +755,10 @@ export async function claimWhatCanBe({
   /* Ce que l'extension possede deja, pour ne pas rouvrir un onglet dessus.
      Construit une fois par cycle, pas une fois par offre. */
   const owned = library ? ownedKeys(library, normaliseTitle) : null;
+  const ownedIds = collection ? ownedStoreKeys(collection) : null;
 
   const { candidates, dropped } = claimCandidates(next, filters, {
-    claimableStores, watchedStores, now, owned,
+    claimableStores, watchedStores, now, owned, ownedIds,
   });
   if (dropped.length) {
     record('info', `${dropped.length} offre(s) ecartee(s) par les filtres`, {

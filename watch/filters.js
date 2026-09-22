@@ -19,6 +19,7 @@
  */
 import { STORES, normaliseTitle } from './offer.js';
 import { ownedKeyFor } from './library.js';
+import { offerStoreKeys } from './collection.js';
 
 export const DEFAULT_FILTERS = Object.freeze({
   /**
@@ -248,7 +249,7 @@ export function isKeepable(offer) {
  * ailleurs reste au catalogue et reste notifiee : elle n'est simplement pas
  * reclamee toute seule.
  */
-export function judge(offer, filters = {}, { supportedStores = [], owned = null } = {}) {
+export function judge(offer, filters = {}, { supportedStores = [], owned = null, ownedIds = null } = {}) {
   const f = { ...DEFAULT_FILTERS, ...filters };
   const deny = (reason) => ({ claimable: false, reason });
 
@@ -294,6 +295,14 @@ export function judge(offer, filters = {}, { supportedStores = [], owned = null 
    * Sans registre (`owned` a null), rien ne change : ne pas savoir n'est pas
    * une raison de refuser. */
   if (owned && owned.has(ownedKeyFor(offer.store, title))) {
+    return deny(REASONS.ALREADY_OWNED);
+  }
+  /* Ce que le MAGASIN dit que vous possedez, importe dans Ma collection.
+   *
+   * Par identifiant exact seulement : un faux « deja possede » ferait rater un
+   * jeu offert, ce qui coute plus cher qu'un onglet de trop. Une offre dont la
+   * source ne donne pas l'identifiant du magasin n'est jamais ecartee ici. */
+  if (ownedIds && offerStoreKeys(offer).some((k) => ownedIds.has(k))) {
     return deny(REASONS.ALREADY_OWNED);
   }
   for (const excludedTitle of f.excludedTitles || []) {

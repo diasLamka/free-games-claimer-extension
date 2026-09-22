@@ -1038,7 +1038,7 @@
     "message": "Aucun jeu ne correspond."
   },
   "collectionNote": {
-    "message": "Steam : jeux possédés et leurs noms publics. GOG : la liste de jeux de votre compte. Epic : votre historique de commandes, jeux gratuits compris (un DLC y ressemble à un jeu). Un titre présent sur deux magasins est rapproché par son nom : c'est un indice, pas une preuve, et rien ne s'en sert pour décider d'une récupération."
+    "message": "Steam : jeux possédés et leurs noms publics. GOG : la liste de jeux de votre compte. Epic : votre historique de commandes, jeux gratuits compris (un DLC y ressemble à un jeu). Un titre présent sur deux magasins est rapproché par son nom : c'est un indice, pas une preuve, et rien ne s'en sert pour décider d'une récupération. Ce qu'un magasin dit que vous possédez, en revanche, évite de rouvrir son offre : par identifiant exact, jamais par le nom."
   },
   "mirrorRead": {
     "message": "Lire le temps de jeu Steam"

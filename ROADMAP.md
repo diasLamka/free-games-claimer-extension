@@ -165,6 +165,12 @@ decider que sur un IDENTIFIANT exact, jamais sur un titre -- un faux « deja
 possede » ferait rater un jeu offert, ce qui coute plus cher qu'un onglet de
 trop.
 
+*Fait en 2.42.0, sur cette regle.* Une offre Epic (`el.id`), GOG (produit) ou
+Steam (appid) dont l'identifiant figure dans la collection n'ouvre plus
+d'onglet ; un titre seul n'ecarte rien. Seul compte un magasin dont une
+importation a reussi. C'est aussi ce qui evite, sur un nouvel ordinateur, de
+tout retenter -- a condition d'y avoir importe la collection.
+
 ## 4. Mesurer Ma collection sur un vrai compte
 
 *Pourquoi.* Les importations GOG et Epic reposent sur la forme de reponses que

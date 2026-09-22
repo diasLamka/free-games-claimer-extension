@@ -1038,7 +1038,7 @@
     "message": "No game matches."
   },
   "collectionNote": {
-    "message": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim."
+    "message": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim. What a store says you own, however, keeps its offer from being opened again: by exact identifier, never by name."
   },
   "mirrorRead": {
     "message": "Read Steam playtime"

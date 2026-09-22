@@ -86,6 +86,22 @@ export function mergeEntry(existing, incoming) {
 }
 
 /**
+ * L'historique d'une plateforme, tel que le stockage le rend.
+ *
+ * Le moteur l'ecrit par GM_setValue, donc en TEXTE JSON, et storage.onChanged
+ * rend ce texte tel quel. addedEntries le parcourait caractere par caractere,
+ * n'y trouvait aucune entree datee, et le registre n'a jamais rien recu hors
+ * des tests -- qui, eux, lui passaient des objets.
+ */
+export function readHistory(value) {
+  let v = value;
+  if (typeof v === 'string') {
+    try { v = JSON.parse(v); } catch { return {}; }
+  }
+  return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+}
+
+/**
  * Les entrees d'historique qu'un changement de storage vient d'ajouter.
  *
  * saveHistoryEntry reecrit l'OBJET ENTIER de l'historique de la plateforme a
@@ -95,11 +111,13 @@ export function mergeEntry(existing, incoming) {
  * collection du meme jour.
  *
  * `oldValue` absent est le cas normal a la premiere ecriture : on prend tout,
- * ce qui est correct puisque le registre est vide.
+ * ce qui est correct puisque le registre est vide. C'est aussi ce que fait le
+ * rattrapage, qui passe l'historique entier : `mergeEntry` rend l'operation
+ * sans effet sur ce qui est deja connu.
  */
 export function addedEntries(oldValue, newValue) {
-  const avant = oldValue || {};
-  const apres = newValue || {};
+  const avant = readHistory(oldValue);
+  const apres = readHistory(newValue);
   const out = [];
 
   for (const [key, entry] of Object.entries(apres)) {

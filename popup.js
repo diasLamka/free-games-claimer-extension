@@ -30,6 +30,7 @@ import { claimableStoresFor } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
+import { KEY_COLLECTION, ownedStoreKeys } from './watch/collection.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
 import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
@@ -174,6 +175,7 @@ const KEYS_READ = [
   KEY_WISHLIST,
   KEY_TAUGHT,
   KEY_SEEN,
+  KEY_COLLECTION,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -696,6 +698,7 @@ function gameCard({ key, offer }, ctx) {
    * apprendrait a s'en mefier. */
   const claimable = judge(offer, filters, {
     supportedStores: claimableStoresFor(behaviour),
+    ...ctx.judging,
   }).claimable;
 
   if (claimable) {
@@ -765,7 +768,7 @@ function gameCard({ key, offer }, ctx) {
    * offer sat in the list looking exactly like one that was about to be
    * claimed, and the only way to find out was to wait and see nothing happen. */
   if (behaviour.autonomousClaim !== false) {
-    const verdict = judge(offer, filters, { supportedStores: claimableStoresFor(behaviour) });
+    const verdict = judge(offer, filters, { supportedStores: claimableStoresFor(behaviour), ...ctx.judging });
     if (!verdict.claimable) {
       /* Dans la rangee des actions, a droite, et non sur une ligne a elle :
          la rangee est vide tant qu'on ne survole pas, et chaque carte Steam
@@ -797,6 +800,13 @@ function renderGames(all, behaviour) {
     behaviour,
     alsoOn: crossStore(rows),
     owned: ownedTitles(library, normaliseTitle),
+    /* Ce que la veille sait deja posseder, sous la forme que judge() lit.
+       Sans eux, la puce et le bouton « celle-ci » promettaient une
+       reclamation que la veille ecarte. */
+    judging: {
+      owned: ownedKeys(library, normaliseTitle),
+      ownedIds: ownedStoreKeys(get(all, KEY_COLLECTION, null)),
+    },
     fresh: markFresh(rows),
     wishlist: get(all, KEY_WISHLIST, []),
   };
@@ -1716,6 +1726,7 @@ function renderFilters(all, behaviour) {
   const seen = preview(open, filters, {
     supportedStores: claimableStoresFor(behaviour),
     owned: ownedKeys(get(all, KEY_LIBRARY, {}), normaliseTitle),
+    ownedIds: ownedStoreKeys(get(all, KEY_COLLECTION, null)),
   });
   document.getElementById('filters-preview').textContent = open.length
     ? t('filtersPreview', String(open.length), String(seen.claimableCount), String(seen.dropped))

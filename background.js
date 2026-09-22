@@ -40,7 +40,7 @@ import {
   claimAllNow, claimOneNow, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
 } from './watch/commands.js';
-import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
+import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory } from './watch/library.js';
 import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
 } from './watch/session.js';
@@ -570,32 +570,55 @@ api.storage.onChanged.addListener((changes, area) => {
 
   if (!lots.length) return;
 
-  (async () => {
-    try {
-      const raw = await readKeys(api, [KEY_LIBRARY, KEYS.OFFERS]);
-      let library = raw[KEY_LIBRARY] || {};
-      let total = 0;
-
-      for (const { platform, added } of lots) {
-        const r = integrateHistory(library, {
-          platform,
-          added,
-          catalog: raw[KEYS.OFFERS] || {},
-        });
-        library = r.library;
-        total += r.changed;
-      }
-
-      if (total) {
-        await write(api, { [KEY_LIBRARY]: library });
-        record('info', `bibliotheque : ${total} entree(s) figee(s)`);
-      }
-    } catch (e) {
-      // Un registre qui echoue ne doit jamais empecher une reclamation.
-      record('warn', 'bibliotheque non mise a jour', e);
-    }
-  })();
+  integrateIntoLibrary(lots, 'figee(s)');
 });
+
+/** Integre des lots d'historique au registre, et l'ecrit s'il a change. */
+async function integrateIntoLibrary(lots, verbe) {
+  try {
+    const raw = await readKeys(api, [KEY_LIBRARY, KEYS.OFFERS]);
+    let library = raw[KEY_LIBRARY] || {};
+    let total = 0;
+
+    for (const { platform, added } of lots) {
+      const r = integrateHistory(library, {
+        platform,
+        added,
+        catalog: raw[KEYS.OFFERS] || {},
+      });
+      library = r.library;
+      total += r.changed;
+    }
+
+    if (total) {
+      await write(api, { [KEY_LIBRARY]: library });
+      record('info', `bibliotheque : ${total} entree(s) ${verbe}`);
+    }
+  } catch (e) {
+    // Un registre qui echoue ne doit jamais empecher une reclamation.
+    record('warn', 'bibliotheque non mise a jour', e);
+  }
+}
+
+/* Le registre rattrape l'historique deja ecrit.
+ *
+ * Jusqu'a la 2.42.0 il ne recevait rien (voir readHistory) : tout ce que le
+ * moteur a note avant est absent, et le filtre « deja dans la bibliotheque »
+ * ne pouvait pas s'en servir. L'historique entier est donc rejoue au
+ * demarrage et a l'installation -- sans effet sur ce qui est deja connu,
+ * puisque mergeEntry garde la premiere date et ne vide aucun champ. */
+async function backfillLibrary(origine) {
+  const cles = Object.keys(PLATFORM_STORES).map((p) => `FGC_history_${p}`);
+  const raw = await readKeys(api, cles);
+  const lots = Object.keys(PLATFORM_STORES)
+    .map((platform) => ({ platform, added: addedEntries(null, raw[`FGC_history_${platform}`]) }))
+    .filter((l) => l.added.length);
+  if (lots.length) await integrateIntoLibrary(lots, `rattrapee(s) depuis l'historique (${origine})`);
+}
+
+const rattraper = (origine) => backfillLibrary(origine).catch((e) => record('warn', 'rattrapage du registre impossible', e));
+api.runtime.onStartup.addListener(() => rattraper('demarrage'));
+api.runtime.onInstalled.addListener(() => rattraper('installation'));
 
 /* Un onglet pilote qui disparait resout ses attentes tout de suite.
  *

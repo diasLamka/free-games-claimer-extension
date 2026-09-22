@@ -8,10 +8,13 @@
  * que vous possedez (lu avec votre session, en lecture seule), et ce que
  * l'extension a reclame.
  *
- * Il ne decide RIEN. Aucune reclamation ne lit la collection : un titre mal
- * rapproche ne peut donc pas faire rater un jeu offert. La brancher sur le
- * filtre de reclamation (ROADMAP, « possede AVANT l'extension ») attend que les
- * importations aient ete mesurees sur de vrais comptes.
+ * Depuis la 2.42.0, elle decide d'une seule chose, et sur un IDENTIFIANT
+ * exact, jamais sur un titre (ROADMAP, « possede AVANT l'extension ») : ne pas
+ * ouvrir d'onglet pour une offre dont le magasin dit que vous l'avez deja.
+ * C'est ce qui evite, sur un nouvel ordinateur, de tout retenter. Un titre mal
+ * rapproche ne peut toujours pas faire rater un jeu offert : sans identifiant
+ * commun, rien n'est ecarte. Et seul un magasin dont une importation a REUSSI
+ * compte -- une reponse inattendue ne laisse aucun jeu derriere elle.
  *
  * Module pur : le reseau est dans collection-import.js, l'ecriture dans
  * background.js -- un seul ecrivain, comme pour le catalogue.
@@ -92,6 +95,56 @@ export function makeItem({ store, id, title, url = null, kind = KINDS.GAME, acqu
     kind: Object.values(KINDS).includes(kind) ? kind : KINDS.OTHER,
     acquiredAt: Number.isFinite(acquiredAt) && acquiredAt > 0 ? acquiredAt : null,
   };
+}
+
+/* ------------------------------------------------------ possession exacte */
+
+/**
+ * Les sources dont l'identifiant d'offre EST l'identifiant du magasin, et donc
+ * celui que l'importation range.
+ *
+ *   - epic-api : `el.id`, l'offre du catalogue Epic -- l'historique des
+ *     commandes porte le meme `offerId` ;
+ *   - gog      : l'identifiant de produit, celui de `getFilteredProducts` ;
+ *   - steam    : l'appid.
+ *
+ * L'agregateur n'y est pas : son identifiant est le sien, pas celui d'un
+ * magasin, et une offre qu'on ne sait pas identifier n'est jamais ecartee.
+ */
+export const STORE_ID_SOURCES = Object.freeze({ 'epic-api': 'epic', gog: 'gog', steam: 'steam' });
+
+/** Les cles de collection qu'une offre designe exactement, s'il y en a une. */
+export function offerStoreKeys(offer) {
+  if (!offer || offer.sourceId === null || offer.sourceId === undefined) return [];
+  // makeOffer ecrit String(null) quand la source n'a rien donne : « null »
+  // n'identifie aucun jeu.
+  const id = String(offer.sourceId);
+  if (!id || id === 'null' || id === 'undefined') return [];
+  const store = STORE_ID_SOURCES[offer.source];
+  // L'offre doit viser le magasin que sa source decrit : un identifiant Epic
+  // n'a rien a dire d'une offre qui atterrirait ailleurs.
+  if (!store || store !== offer.store) return [];
+  return [itemKey(store, id)];
+}
+
+/**
+ * Les cles exactes de ce que les magasins disent que vous possedez.
+ *
+ * Seuls comptent les magasins dont une importation a reussi au moins une fois
+ * (`lastOk`) : la photographie est alors celle d'une reponse verifiee sur VOTRE
+ * compte. Une importation ratee plus tard ne l'efface pas -- on ne perd pas un
+ * jeu parce qu'une session a expire.
+ */
+export function ownedStoreKeys(collection) {
+  const c = sanitiseCollection(collection);
+  const out = new Set();
+  for (const it of Object.values(c.items)) {
+    if (!it || !it.store || it.id === null || it.id === undefined) continue;
+    const st = c.stores[it.store];
+    if (!st || !st.lastOk) continue;
+    out.add(itemKey(it.store, String(it.id)));
+  }
+  return out;
 }
 
 /** Le nombre de jeux d'un magasin dans la collection. */

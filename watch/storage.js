@@ -25,6 +25,7 @@ import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale
    n'a jamais ete enregistree. */
 import { KEY_CANARY } from './canary.js';
 import { KEY_LIBRARY } from './library.js';
+import { KEY_COLLECTION } from './collection.js';
 /* Les issues d'offres terminees. Ecrites dans la MEME transition que le
    catalogue : une mort du worker entre les deux laisserait une offre purgee
    sans que son issue ait ete figee, et l'information n'existe plus nulle part
@@ -334,7 +335,7 @@ export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
     KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY, KEY_RATES,
-    KEY_OUTCOMES,
+    KEY_OUTCOMES, KEY_COLLECTION,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -356,6 +357,7 @@ export async function readContext(chrome) {
     cadence: raw[KEYS.CADENCE] || [],
     canary: raw[KEY_CANARY] || {},
     library: raw[KEY_LIBRARY] || {},
+    collection: raw[KEY_COLLECTION] || null,
     rates: raw[KEY_RATES] || null,
     outcomes: raw[KEY_OUTCOMES] || {},
     wishlist: raw[KEY_WISHLIST] || [],
