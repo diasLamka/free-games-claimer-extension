@@ -451,9 +451,14 @@ function sortOffers(rows, now) {
   };
   const runway = (o) => (o.end == null ? -1 : o.end - now);
 
+  /* La priorite se lit sur l'OFFRE depuis la 2.29.0, plus dans les preferences
+     d'affichage. Elle y etait purement decorative : le service worker ne lit
+     jamais `veille:ui`, donc l'etoile ordonnait la liste et ne changeait rien
+     a ce qui etait reclame en premier. Le popup et le worker trient desormais
+     sur le meme champ, ce qui est la seule facon qu'ils s'accordent. */
   const pinnedFirst = (a, b) => {
-    const pa = ui.pinned.includes(a.key) ? 0 : 1;
-    const pb = ui.pinned.includes(b.key) ? 0 : 1;
+    const pa = a.offer.priority === true ? 0 : 1;
+    const pb = b.offer.priority === true ? 0 : 1;
     return pa - pb;
   };
 
@@ -608,15 +613,61 @@ function gameCard({ key, offer }, ctx) {
   }
   meta.append(left);
 
-  const pinned = ui.pinned.includes(key);
+  /* Mise de cote, avec son echeance. Une pause se voit, sinon elle ressemble a
+     une offre qu'on a oubliee. */
+  if (typeof offer.snoozedUntil === 'number' && offer.snoozedUntil > now) {
+    meta.append(el('span', 'aside', t('snoozedFor', readableDelay(offer.snoozedUntil - now))));
+  }
+
+  /* L'etoile ecrit sur le CATALOGUE, via le worker qui en est seul ecrivain.
+     Elle vivait dans `veille:ui`, que le worker ne lit jamais : elle ordonnait
+     la liste et ne changeait rien a ce qui etait reclame en premier. */
+  const pinned = offer.priority === true;
   const pin = el('button', `pin${pinned ? ' on' : ''}`, pinned ? '★' : '☆');
   pin.title = t(pinned ? 'unpinTitle' : 'pinTitle');
   pin.addEventListener('click', async (e) => {
     e.stopPropagation();
-    ui.pinned = pinned ? ui.pinned.filter((k) => k !== key) : [...ui.pinned, key];
-    await writeUi();
+    await tell('fgc-prioritise', { catalogKey: key, on: !pinned });
+    await load();
   });
   meta.append(pin);
+
+  /* « Celle-ci, maintenant. »
+   *
+   * Le bouton passe par le meme chemin que « Tout recuperer » : memes filtres,
+   * meme canari, meme registre, meme plafond horaire. Il n'apparait donc que
+   * si l'offre est reellement reclamable -- un bouton qui ne ferait rien
+   * apprendrait a s'en mefier. */
+  const claimable = judge(offer, filters, {
+    supportedStores: claimableStoresFor(behaviour),
+  }).claimable;
+
+  if (claimable) {
+    const takeIt = el('button', 'pin go', '▸');
+    takeIt.title = t('claimThisTitle');
+    takeIt.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      takeIt.disabled = true;
+      await withWorking(() => tell('fgc-claim-one', { catalogKey: key }), { immediate: true });
+      await load();
+    });
+    meta.append(takeIt);
+
+    /* « Plus tard », qui n'est pas « jamais ». La croix exclut le TITRE pour
+       toujours ; ceci pose une echeance qui se perime toute seule. Les deux
+       gestes voisinent parce qu'on les confond, et la difference tient dans
+       leur libelle. */
+    if (!(typeof offer.snoozedUntil === 'number' && offer.snoozedUntil > now)) {
+      const later = el('button', 'pin', '⏾');
+      later.title = t('snoozeTitle');
+      later.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await tell('fgc-snooze', { catalogKey: key });
+        await load();
+      });
+      meta.append(later);
+    }
+  }
 
   /* Un seul geste pour « je n'en veux pas ».
    *
@@ -1572,6 +1623,24 @@ async function render() {
   ui = { ...DEFAULT_UI, ...get(all, KEY_UI, {}) };
   behaviourCache = { ...DEFAULT_BEHAVIOUR, ...get(all, KEY_SETTINGS, {}) };
   ratesCache = get(all, KEY_RATES, null);
+
+  /* Les etoiles posees avant la 2.29.0 deviennent de vraies priorites.
+   *
+   * Elles vivaient dans les preferences d'affichage, que le service worker ne
+   * lit jamais : elles ordonnaient la liste sans rien changer a ce qui etait
+   * reclame en premier. Les jeter ferait perdre un choix deja exprime ; les
+   * laisser la ferait cohabiter deux notions de priorite, dont une muette.
+   *
+   * La traduction est faite UNE fois, puis la liste est videe -- c'est elle
+   * qui sert de marqueur, et non une cle de version de plus. */
+  if (Array.isArray(ui.pinned) && ui.pinned.length) {
+    const catalogue = get(all, KEY_CATALOG, {});
+    for (const key of ui.pinned) {
+      if (catalogue[key]) await tell('fgc-prioritise', { catalogKey: key, on: true });
+    }
+    await writeUi({ pinned: [] });
+    return render();
+  }
   localeCache = {
     country: normaliseCountry(all[KEY_COUNTRY]),
     lang: normaliseLang(all[KEY_LANG], all[KEY_COUNTRY]),

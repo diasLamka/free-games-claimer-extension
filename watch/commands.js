@@ -136,3 +136,124 @@ export async function pruneNow({ chrome, now = Date.now(), keepMs = KEEP_EXPIRED
   if (dropped) await write(chrome, { [KEYS.OFFERS]: kept });
   return { dropped, kept: Object.keys(kept).length };
 }
+
+/* ------------------------------------------------------- la file pilotable */
+
+/**
+ * Duree d'une mise en pause.
+ *
+ * Six heures : assez pour qu'une offre cesse d'occuper la tete de liste pendant
+ * qu'on fait autre chose, assez court pour qu'elle revienne dans la journee.
+ * Une pause qui durerait jusqu'a la fin de l'offre ne serait plus un report,
+ * mais un refus deguise -- et le refus a deja son geste, la croix.
+ */
+export const SNOOZE_MS = 6 * 3600000;
+
+/** Marge minimale avant la fin. En deca, reporter revient a renoncer. */
+const SNOOZE_MARGIN_MS = 30 * 60000;
+
+/**
+ * Pose ou retire la priorite d'une offre.
+ *
+ * Elle s'ecrit sur le CATALOGUE et non dans les preferences d'affichage.
+ * L'epinglage vivait dans `veille:ui`, que le service worker ne lit jamais :
+ * il ordonnait la liste et ne changeait rien a ce qui etait reclame en
+ * premier. Une etoile qui ne fait rien est pire qu'une etoile absente.
+ */
+export async function prioritise({ chrome, catalogKey, on = true, now = Date.now() }) {
+  const raw = await readKeys(chrome, [KEYS.OFFERS]);
+  const catalog = raw[KEYS.OFFERS] || {};
+  const offer = catalog[catalogKey];
+  if (!offer) return { changed: false };
+
+  await writeCycle(chrome, {
+    catalog: { ...catalog, [catalogKey]: { ...offer, priority: on === true, updatedAt: now } },
+  });
+  return { changed: true };
+}
+
+/**
+ * Met une offre de cote, pour un temps.
+ *
+ * Une ECHEANCE, jamais un drapeau : un booleen demanderait a quelqu'un de
+ * penser a le retirer, alors qu'une echeance se perime toute seule. C'est la
+ * seule forme de report qui ne s'oublie pas.
+ *
+ * Bornee par la fin de l'offre. Reporter au-dela reviendrait a la refuser en
+ * croyant la remettre a plus tard -- et le refus a deja son geste.
+ */
+export async function snooze({ chrome, catalogKey, now = Date.now(), ms = SNOOZE_MS }) {
+  const raw = await readKeys(chrome, [KEYS.OFFERS]);
+  const catalog = raw[KEYS.OFFERS] || {};
+  const offer = catalog[catalogKey];
+  if (!offer) return { changed: false };
+
+  let until = now + ms;
+  if (typeof offer.end === 'number' && offer.end > now) {
+    until = Math.min(until, offer.end - SNOOZE_MARGIN_MS);
+  }
+
+  await writeCycle(chrome, {
+    catalog: { ...catalog, [catalogKey]: { ...offer, snoozedUntil: until, updatedAt: now } },
+  });
+  return { changed: true, until };
+}
+
+/**
+ * Reclame UNE offre, celle qu'on designe, tout de suite.
+ *
+ * Le chemin passe par `claimWhatCanBe` comme « Tout recuperer » : memes
+ * filtres, meme canari, meme registre, meme plafond horaire. Un second chemin
+ * de reclamation qui contournerait l'un des quatre serait le genre de raccourci
+ * qui finit par ouvrir un onglet sur un magasin decoche.
+ *
+ * Une pause posee sur cette offre est IGNOREE : le report est une consigne pour
+ * la reclamation automatique, et un clic explicite est plus recent que lui.
+ */
+export async function claimOneNow({
+  chrome, catalogKey, now = Date.now(), claimableStores, record = () => {}, claim,
+}) {
+  if (await isStopped(chrome)) {
+    record('warn', 'arret d\'urgence actif : aucune reclamation');
+    return { claimed: 0, claims: [], stopped: true };
+  }
+
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY]);
+  const catalog = raw[KEYS.OFFERS] || {};
+  const offer = catalog[catalogKey];
+  if (!offer) return { claimed: 0, claims: [], reason: 'unknown' };
+
+  const settings = normaliseSettings(raw[KEYS.SETTINGS]);
+
+  /* Le catalogue reduit a cette seule offre, sa pause levee. Reduire l'ENTREE
+     plutot que filtrer la sortie garantit qu'aucune autre offre ne peut etre
+     tentee par ce chemin, quelles que soient les evolutions de
+     `claimWhatCanBe`. */
+  const seule = { [catalogKey]: { ...offer, snoozedUntil: null } };
+
+  const r = await claimWhatCanBe({
+    chrome,
+    now,
+    catalog: seule,
+    filters: raw[KEYS.FILTERS] || {},
+    claimableStores: claimableStoresFor(settings, claimableStores),
+    watchedStores: settings.watchedStores,
+    cadence: raw[KEYS.CADENCE] || [],
+    canary: raw[KEY_CANARY] || {},
+    library: raw[KEY_LIBRARY] || {},
+    maxReclamations: 1,
+    record,
+    claim,
+  });
+
+  /* Reinjecter dans le catalogue COMPLET : `claimWhatCanBe` n'a vu qu'une
+     entree, ecrire son resultat tel quel effacerait toutes les autres. */
+  await writeCycle(chrome, {
+    catalog: { ...catalog, ...r.catalog },
+    cadence: r.cadence,
+    canary: r.canary,
+  });
+
+  const claimed = r.claims.filter((c) => c.verdict === 'claimed').length;
+  return { claimed, claims: r.claims };
+}

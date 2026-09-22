@@ -629,6 +629,12 @@ export function claimCandidates(catalog, filters, { claimableStores, watchedStor
     if (isExpired(o, now)) return false;
     if (o.alreadyOwned === true) return false;
 
+    /* Mise de cote par l'utilisateur, jusqu'a une echeance qui se perime toute
+       seule. Different de la croix, qui exclut le TITRE pour toujours : ici
+       l'offre revient d'elle-meme. Un clic explicite passe outre -- voir
+       claimOneNow. */
+    if (typeof o.snoozedUntil === 'number' && o.snoozedUntil > now) return false;
+
     /* Pas encore ouverte : il n'y a rien a prendre, et ouvrir un onglet sur une
        page qui n'offre rien coute un jeton du plafond horaire pour rien.
        `start` etait rempli par makeOffer et personne ne le lisait. */
@@ -695,6 +701,14 @@ export async function claimWhatCanBe({
   maxReclamations,
   record = () => {},
   fetch: fetchImpl,
+  /* Le geste de reclamation lui-meme, injectable.
+   *
+   * Par defaut c'est claimOffer, qui ouvre un onglet et joue l'etape dans la
+   * page. Le rendre remplacable permet de tester les chemins QUI DECIDENT --
+   * qui est candidat, dans quel ordre, sous quel plafond -- sans monter un
+   * faux navigateur complet a chaque fois. Meme raison d'etre que le fetch
+   * injecte juste au-dessus. */
+  claim = claimOffer,
 }) {
   const next = { ...catalog };
   let timestamps = cadence;
@@ -763,7 +777,7 @@ export async function claimWhatCanBe({
     };
     await writeCycle(chrome, { catalog: next });
 
-    const r = await claimOffer(offer, {
+    const r = await claim(offer, {
       chrome,
       now: commence,
       supportedStores: claimableStores,

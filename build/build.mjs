@@ -332,6 +332,10 @@ function citeeQuelquePart(cle, sources) {
 
 const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js',
   'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js',
+  /* Le tour d'inspection compose ses propres titres de notification depuis la
+     2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
+     une faute de frappe y serait restee invisible. */
+  'watch/health.js',
   'collection.html', 'collection.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
@@ -348,6 +352,10 @@ const MSG_MANIFESTE = new Set(['appName', 'appDesc']);
    y cherche vit dans les attributs. */
 const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
   'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js',
+  /* Le tour d'inspection compose ses propres titres de notification depuis la
+     2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
+     une faute de frappe y serait restee invisible. */
+  'watch/health.js',
   'collection.html', 'collection.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')

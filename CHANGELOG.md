@@ -4,6 +4,106 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.29.0 -- 2026-09-22
+
+**Entre « ne rien faire » et « tout prendre », il n'y avait rien**
+
+« Tout recuperer » existait avec exactement les bonnes garanties : memes
+filtres, meme canari, meme registre, meme plafond horaire. Mais il ne
+s'affichait qu'a partir de deux offres, et il prenait TOUT. Aucun geste entre
+les deux.
+
+Trois manques, tous verifies dans le code avant d'etre combles.
+
+### L'etoile ne faisait rien
+
+C'est le plus genant des trois, parce qu'il avait l'air de marcher.
+
+L'epinglage vivait dans `veille:ui`, dont l'en-tete dit ce qu'il est : des
+preferences d'affichage que le service worker ne lit jamais. L'etoile
+ordonnait donc la liste dans le popup, et ne changeait RIEN a ce qui etait
+reclame en premier -- `claimCandidates` triait sur la seule urgence.
+
+Une etoile qui ne fait rien est pire qu'une etoile absente : elle donne
+l'impression d'avoir agi.
+
+La priorite s'ecrit desormais sur le CATALOGUE, via le service worker qui en
+est seul ecrivain, et le popup trie sur le meme champ que lui. Un choix
+explicite bat le calcul d'urgence, et c'est normal : l'utilisateur sait sur ce
+jeu des choses que l'urgence ne dira jamais.
+
+**Les etoiles deja posees ne sont pas jetees.** Elles sont traduites une fois,
+au premier affichage, puis la liste d'origine est videe -- c'est elle qui sert
+de marqueur, plutot qu'une cle de version de plus.
+
+### « Plus tard » n'existait pas
+
+Le seul geste de mise a l'ecart etait la croix, qui exclut le TITRE pour
+toujours, sur tous les magasins et pour toutes les fois ou il repassera. Un
+bannissement la ou on voulait un report.
+
+La pause pose une ECHEANCE, jamais un drapeau. Un booleen demanderait a
+quelqu'un de penser a le retirer ; une echeance se perime toute seule, et
+c'est la seule forme de report qui ne s'oublie pas.
+
+**Elle est bornee par la fin de l'offre.** Reporter au-dela reviendrait a
+refuser en croyant remettre a plus tard -- et le refus a deja son geste.
+
+**Un clic explicite passe outre.** Le report est une consigne pour la
+reclamation automatique ; obeir a une pause contre celui qui vient de cliquer
+serait absurde.
+
+### « Celle-ci, maintenant »
+
+`fgc-claim-one` est inscrite dans la table des commandes, qui refuse tout type
+absent : une branche ajoutee sans y etre inscrite echoue bruyamment en test
+plutot que de passer en silence en production.
+
+Le bouton emprunte le MEME chemin que « Tout recuperer ». Un second chemin de
+reclamation qui contournerait le canari, le registre ou le plafond horaire
+serait exactement le genre de raccourci qui finit par ouvrir un onglet sur un
+magasin decoche.
+
+Deux precautions qui tiennent en une ligne chacune.
+
+**Le catalogue est reduit a cette seule offre en ENTREE**, pas filtre en
+sortie : aucune autre offre ne peut etre tentee par ce chemin, quelles que
+soient les evolutions futures de la fonction de reclamation.
+
+**Le resultat est reinjecte dans le catalogue complet.** La fonction n'a vu
+qu'une entree ; ecrire son resultat tel quel aurait efface toutes les autres.
+
+**L'arret d'urgence prime.** Le bouton est neuf, l'arret d'urgence est la
+promesse la plus forte de l'extension : un chemin nouveau qui l'ignorerait la
+viderait de son sens.
+
+Le bouton n'apparait que si l'offre est reellement reclamable, d'apres la meme
+fonction de jugement que la veille. Un bouton qui ne ferait rien apprendrait a
+s'en mefier.
+
+### Ce que le test a fait changer dans le code de production
+
+Le geste de reclamation est devenu injectable, comme le `fetch` juste
+au-dessus de lui. Sans cela, tester qui est candidat, dans quel ordre et sous
+quel plafond aurait demande de monter un faux navigateur complet a chaque
+fois -- et un test trop cher est un test qu'on n'ecrit pas.
+
+### Detail
+
+Le build scanne desormais `watch/health.js` pour les cles de libelle : les deux
+titres de notification du chien de garde y avaient demenage en 2.28.0, et
+passaient depuis pour orphelines -- une faute de frappe y serait restee
+invisible.
+
+Trois cles de libelle par langue (316 par locale). Le moteur est identique a
+celui de la 2.28.0.
+
+| | 2.28.0 | 2.29.0 |
+|---|---|---|
+| tests | 806 | 819 |
+| commandes du worker | 12 | 15 |
+| gestes par offre | 2 | 4 |
+
 ## 2.28.0 -- 2026-09-22
 
 **L'extension savait deja qu'elle etait cassee. Elle ne savait pas le dire**

@@ -122,6 +122,15 @@
   "unpinTitle": {
     "message": "Stop keeping at the top"
   },
+  "claimThisTitle": {
+    "message": "Claim this one now"
+  },
+  "snoozeTitle": {
+    "message": "Set aside for a while"
+  },
+  "snoozedFor": {
+    "message": "paused $1"
+  },
   "alsoFreeOn": {
     "message": "also on $1"
   },

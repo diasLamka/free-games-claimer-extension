@@ -57,6 +57,10 @@ export const UI_COMMANDS = Object.freeze([
   'fgc-retry', 'fgc-prune', 'fgc-sentinel', 'fgc-canary-ack',
   'fgc-journal-clear', 'fgc-collection-import', 'fgc-session-probe',
   'fgc-watch-state',
+  /* La file pilotable (2.29.0) : reclamer une offre precise, la prioriser, la
+     reporter. Les trois agissent sur le catalogue ou sur un vrai compte, donc
+     elles sont reservees aux pages de l'extension comme les precedentes. */
+  'fgc-claim-one', 'fgc-prioritise', 'fgc-snooze',
 ]);
 
 /**

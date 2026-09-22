@@ -36,7 +36,9 @@ import {
   rememberNotificationLink, readNotificationLink,
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
-import { claimAllNow, pruneNow, retryNow } from './watch/commands.js';
+import {
+  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze,
+} from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
@@ -701,6 +703,37 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     retryNow({ chrome: api, catalogKey: msg.catalogKey })
       .then(sendResponse)
       .catch(() => sendResponse({ retried: false }));
+    return true;
+  }
+
+  /* La file pilotable. Les trois ecrivent le catalogue, dont le worker est le
+     seul ecrivain : le popup demande, il n'ecrit pas. */
+  if (msg.type === 'fgc-claim-one') {
+    claimOneNow({
+      chrome: api,
+      catalogKey: msg.catalogKey,
+      claimableStores: CLAIMABLE_STORES,
+      record,
+    })
+      .then(sendResponse)
+      .catch((e) => {
+        record('warn', 'reclamation a l\'unite impossible', e);
+        sendResponse({ claimed: 0, claims: [], error: String((e && e.message) || e) });
+      });
+    return true;
+  }
+
+  if (msg.type === 'fgc-prioritise') {
+    prioritise({ chrome: api, catalogKey: msg.catalogKey, on: msg.on === true })
+      .then(sendResponse)
+      .catch(() => sendResponse({ changed: false }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-snooze') {
+    snooze({ chrome: api, catalogKey: msg.catalogKey })
+      .then(sendResponse)
+      .catch(() => sendResponse({ changed: false }));
     return true;
   }
 

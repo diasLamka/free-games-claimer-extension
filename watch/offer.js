@@ -523,6 +523,13 @@ export function urgency(offer, now) {
 /** Trie une liste d'offres de la plus urgente a la moins urgente. */
 export function byUrgency(offers, now) {
   return [...offers].sort((a, b) => {
+    /* Ce que l'utilisateur a DESIGNE passe devant tout le reste. C'est le seul
+       endroit ou son choix explicite bat le calcul -- et c'est normal : il sait
+       des choses sur ce jeu que l'urgence ne dira jamais. */
+    const pa = a.priority === true ? 0 : 1;
+    const pb = b.priority === true ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+
     const ua = urgency(a, now);
     const ub = urgency(b, now);
     if (ua !== ub) return ua - ub;

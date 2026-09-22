@@ -122,6 +122,15 @@
   "unpinTitle": {
     "message": "Ne plus garder en tête"
   },
+  "claimThisTitle": {
+    "message": "Recuperer celle-ci maintenant"
+  },
+  "snoozeTitle": {
+    "message": "Mettre de cote un moment"
+  },
+  "snoozedFor": {
+    "message": "en pause $1"
+  },
   "alsoFreeOn": {
     "message": "aussi sur $1"
   },
