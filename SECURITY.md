@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (16 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change |
+| Veille | `veille:*` (21 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus) |
 | Moteur | `FGC_*` (`gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -44,8 +44,18 @@ Rien d'autre ne part tout seul.
 | API publique Epic (`store-site-backend-static.ak.epicgames.com`) | Votre pays et votre langue, choisis dans le popup |
 | `www.gog.com` (catalogue filtre) | Rien. Anonyme **deliberement** : connecte, GOG masque ce que le compte possede deja, et la veille croirait l'offre terminee |
 | `www.gamerpower.com` | Rien |
-| `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue |
+| `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue. **Depuis la 2.27.0, pour tout le monde** : la detection Steam ne depend plus de l'option de reclamation. Voir la note ci-dessous |
 | `api.frankfurter.app` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
+
+**Regarder Steam et y cliquer sont deux choses, depuis la 2.27.0.** La source
+Steam etait jusque-la liee a l'option de reclamation : qui refusait le clic --
+le cas par defaut, volontairement -- ne voyait de Steam que ce que l'agregateur
+en dit. Elle est desormais interrogee pour tout le monde, mais uniquement par
+sa **recherche publique, sans cookie**. Lire ce que le compte possede en
+demande, et cela reste conditionne a l'option de reclamation, qui en a besoin
+pour ne pas reclamer deux fois. Le reglage qui commande cette lecture est
+transmis a chaque cycle (`withOwned`, `watch/cycle.js`) et se compare a `true`,
+jamais a la veracite.
 
 Une exception a connaitre : pendant un **import de collection Steam**, les
 identifiants de **tous** vos jeux partent par lots de 50 vers

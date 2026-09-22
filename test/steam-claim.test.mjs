@@ -43,7 +43,18 @@ const APPID = '2000040';
 test('l\'option est coupee par defaut, et seul un vrai « true » ajoute Steam', () => {
   assert.equal(DEFAULT_SETTINGS.steamAutoClaim, false);
   assert.ok(!claimableStoresFor(DEFAULT_SETTINGS).includes(STORES.STEAM));
-  assert.ok(!activeSourcesFor(DEFAULT_SETTINGS).includes('steam'), 'la source Steam reste inactive par defaut');
+
+  /* La 2.27.0 a separe deux choses que cette ligne confondait.
+   *
+   * Elle exigeait jusqu'ici que la SOURCE Steam soit inactive par defaut.
+   * C'etait lier regarder et cliquer : la source ne fait que lire une
+   * recherche publique, sans cookie, et elle est desormais interrogee pour
+   * tout le monde -- c'est elle, et elle seule, qui donne la date de fin
+   * exacte, le type DLC et le numero de paquet.
+   *
+   * Ce qui reste coupe par defaut, et qui est le vrai sujet du contrat Steam,
+   * c'est la RECLAMATION. Le reste de ce fichier ne teste que celle-la. */
+  assert.ok(activeSourcesFor(DEFAULT_SETTINGS).includes('steam'), 'la source Steam est lue par defaut');
 
   for (const presque of ['true', 1, 'oui', {}, null, undefined]) {
     assert.ok(!claimableStoresFor({ steamAutoClaim: presque }).includes(STORES.STEAM), `accepte a tort : ${JSON.stringify(presque)}`);
@@ -51,7 +62,7 @@ test('l\'option est coupee par defaut, et seul un vrai « true » ajoute Steam',
 
   const on = { ...DEFAULT_SETTINGS, steamAutoClaim: true };
   assert.deepEqual(claimableStoresFor(on), [...CLAIMABLE_STORES, STORES.STEAM]);
-  assert.ok(activeSourcesFor(on).includes('steam'), 'l\'option active la source qui donne le paquet');
+  assert.ok(activeSourcesFor(on).includes('steam'), 'l\'option garde la source qui donne le paquet');
   assert.ok(!CLAIMABLE_STORES.includes(STORES.STEAM), 'la liste de base ne bouge pas');
 });
 
@@ -668,10 +679,18 @@ test('cycle, option active : la source Steam est interrogee, et la page tranche 
   assert.ok(r.lectures.some((u) => u.startsWith(OWNED_URL)), 'la bibliotheque a ete lue');
 });
 
-test('cycle, option coupee : la source Steam n\'est meme pas interrogee', async () => {
+test('cycle, option coupee : la source est lue, mais rien n\'est clique ni lu du compte', async () => {
+  /* Ce test exigeait jusqu'a la 2.27.0 que la source ne soit pas meme
+     interrogee. C'etait trop : ce que le contrat Steam interdit, c'est le
+     CLIC, pas la lecture d'une page de recherche publique.
+
+     Trois affirmations desormais, et la premiere a change de sens :
+     la source est bien interrogee, aucun onglet ne s'ouvre, et le compte
+     n'est pas lu -- ce dernier point etant la promesse ecrite de
+     SECURITY.md, « jamais un compte de sa propre initiative ». */
   const r = await cycleSteam({ option: false });
-  assert.equal(r.steam.appels, 0);
-  assert.equal(r.ouverts.length, 0);
+  assert.equal(r.steam.appels, 1, 'la detection tourne pour tout le monde');
+  assert.equal(r.ouverts.length, 0, 'aucun onglet, donc aucun clic');
   // Le cycle lit d'autres choses (les taux de change) : seule la bibliotheque Steam compte ici.
   assert.ok(!r.lectures.some((u) => u.startsWith(OWNED_URL)), 'bibliotheque Steam lue sans option');
 });

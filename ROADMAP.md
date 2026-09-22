@@ -84,6 +84,22 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   garde la langue du pays ; la page, elle, est bornee aux langues que les
   motifs lisent (`fr`, `en`). L'anglais n'a pas encore de capture dans ce
   depot : c'est la prochaine mesure a prendre si une fiche anglaise echoue.
+- **Une porte de sortie** (2.26.0). `npm run package` produit deux archives a
+  partir d'une liste blanche calculee, et un tag declenche la release.
+  Vingt-cinq versions n'avaient atteint personne : le seul mode d'installation
+  documente excluait quiconque n'ouvre pas le mode developpeur. La soumission
+  aux magasins reste manuelle, et `store/README.md` dit ce qui y attend une
+  main humaine.
+- **Regarder Steam n'est plus cliquer sur Steam** (2.27.0). La source Steam
+  s'activait avec l'option de RECLAMATION ; elle est desormais lue pour tout
+  le monde, par sa seule recherche publique. La lecture du compte, elle, reste
+  conditionnee a l'option -- elle demande les cookies de la session, et
+  SECURITY.md promet qu'aucun compte n'est lu sans geste.
+- **Les issues d'offres sont figees** (2.27.0). Ce qui se termine laisse une
+  trace durable : prise, ratee, ou inconnue, avec le titre et la valeur que la
+  purge du catalogue emportait a quatre-vingt-dix jours. Rien ne la lit encore
+  -- c'est la collecte qui devait partir en premier, sans quoi la page de
+  l'entree 5 s'ouvrirait sur un magasin vide.
 - **Steam, en option** (2.22.0). Recuperer aussi sur Steam, coupe par defaut et
   active seulement apres l'avertissement. La page d'une vraie offre a ete
   mesuree a blanc ; le clic lui-meme ne l'a jamais ete -- le premier sera

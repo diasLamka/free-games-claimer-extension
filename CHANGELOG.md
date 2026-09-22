@@ -4,6 +4,129 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.27.0 -- 2026-09-22
+
+**Deux choses ecrites depuis des mois, et que personne n'avait branchees**
+
+Aucune ligne de moteur ne change. Les deux sujets de cette version etaient
+deja dans le depot : l'un attendait un interrupteur separe, l'autre attendait
+qu'on decide d'ecrire ce qu'on savait deja.
+
+### Regarder Steam et cliquer sur Steam etaient le meme interrupteur
+
+La source Steam est ecrite en entier depuis la 2.22.0. Elle est la seule a
+rendre trois choses que l'agregateur ne connait pas : la date de fin EXACTE de
+l'offre, le type DLC, et le numero de paquet.
+
+Elle ne s'activait qu'avec `steamAutoClaim` -- l'option qui fait CLIQUER,
+coupee par defaut et confirmee derriere un avertissement qui cite le contrat
+Steam. Or ce contrat interdit le clic scripte, pas la lecture d'une page de
+recherche publique. Les deux etaient lies pour une raison technique : c'est la
+source Steam qui donne le paquet, sans lequel aucune reclamation n'est
+possible. La consequence n'etait pas technique du tout.
+
+Qui refusait le clic automatique -- le cas par defaut, volontairement -- ne
+voyait de Steam que ce que GamerPower en dit : des cles offertes sur des sites
+tiers, sans paquet, que le filtre rejette. Le magasin figurait dans la liste
+des magasins suivis et n'y apportait rien.
+
+Les deux questions sont desormais separees :
+
+| | Avant | Maintenant |
+|---|---|---|
+| Lire la recherche Steam | seulement avec l'option | **pour tout le monde** |
+| Lire ce que le compte possede | a chaque cycle, avec l'option | inchange : seulement avec l'option |
+| Cliquer | seulement avec l'option | inchange : seulement avec l'option |
+
+### La ligne de SECURITY.md qui commandait la forme de ce changement
+
+« L'extension ne lit jamais un compte de sa propre initiative. »
+
+Lire les possessions Steam demande les cookies de la session. Activer la
+detection pour tout le monde SANS separer cette lecture aurait donc ouvert une
+requete porteuse de cookies chez chaque utilisateur, par defaut, pour une
+fonction qui n'en a pas besoin -- et aurait fait mentir cette phrase.
+
+Le parametre qui l'evite existait deja dans la source, et personne ne le
+passait jamais : `withOwned` valait `true` par defaut et aucun appelant ne
+disait le contraire. Le cycle le transmet desormais, et il se compare a `true`
+et non a la veracite -- meme severite que `claimableStoresFor`, parce que ce
+qui declenche une requete porteuse de cookies la merite.
+
+Le mode sans compte se tait aussi sur ce qu'il ignore : `alreadyOwned` vaut
+INCONNU, jamais « non ». La nuance coute un jeu si on la rate -- un « non »
+affirme sur un jeu deja acquis ferait afficher « pas encore recupere » a
+quelqu'un qui l'a depuis des annees.
+
+### Ce qui est passe, pris ou rate
+
+Le bilan compte ce qui a ete PRIS. Rien ne gardait ce qui a ete RATE, et c'est
+pourtant la seule colonne qui apprenne quelque chose : une offre expiree sans
+avoir ete reclamee est soit un reglage trop strict, soit une panne, soit un
+choix delibere. Les trois se ressemblaient, faute de trace.
+
+Le catalogue ne pouvait pas tenir cette memoire, pour deux raisons : il est
+purge a quatre-vingt-dix jours, et le motif d'ecart n'est calcule qu'a
+l'affichage, donc jamais ecrit. Passe ce delai, l'information n'existait plus
+nulle part.
+
+`watch/outcomes.js` fige donc l'issue A L'INSTANT OU L'OFFRE SE TERMINE, seule
+fenetre pendant laquelle tout est encore connu. Meme raisonnement que le
+registre de bibliotheque pour les acquisitions, avec une difference qui
+commande le reste : une acquisition est rare et precieuse, donc le registre
+n'a pas de plafond ; une issue arrive pour CHAQUE offre qui passe, donc
+celui-ci en a un -- mille, les plus vieilles partant d'abord.
+
+**On balaie le catalogue, pas les trois listes.** Une offre devient terminale
+par trois chemins : sa date passe, elle disparait de sa source, une
+reclamation la resout. Suivre les trois separement demanderait trois cablages,
+donc trois occasions d'en oublier un -- et un oubli ici ne se verrait pas : la
+page serait simplement moins complete, sans la moindre erreur. Le balayage est
+sur parce que la premiere issue gagne, propriete qui vient du cycle lui-meme,
+rejouable par conception.
+
+**Trois issues, et la troisieme est celle qu'on refuse de deviner.** Prise,
+ratee, ou inconnue. Un echec, un defi de securite, un compte a associer :
+l'offre est finie et personne ne sait si le jeu y est. Le dire est utile ;
+trancher ne l'est pas. Le verdict brut reste fige a cote, pour qui veut la
+nuance.
+
+### La page viendra plus tard, et c'est voulu
+
+Rien dans l'interface ne lit encore ces issues. La collecte part maintenant
+parce qu'une page branchee sur un magasin vide n'apprend rien : il faut que la
+collecte ait tourne avant. C'est la meme raison qui fait que cette entree
+arrive en 2.27.0 et non en meme temps que la page.
+
+### Ce qui a change dans les tests, et pourquoi
+
+Deux tests anciens ont ete reecrits plutot que corriges, parce qu'ils
+affirmaient la promesse d'avant.
+
+Le premier exigeait que la source Steam soit inactive par defaut. C'etait lier
+regarder et cliquer dans une assertion. Il affirme desormais l'inverse pour la
+source, et la meme chose qu'avant pour la reclamation.
+
+Le second exigeait que la source ne soit meme pas interrogee sans l'option. Il
+verifie maintenant trois choses au lieu d'une : la source est interrogee,
+aucun onglet ne s'ouvre, et le compte n'est pas lu.
+
+### Mesure
+
+| | 2.26.0 | 2.27.0 |
+|---|---|---|
+| tests | 734 | 762 |
+| cles de veille | 20 | 21 |
+| requetes porteuses de cookies, reglages par defaut | 0 | 0 |
+
+`SECURITY.md` annoncait 16 cles ; le compte reel etait de 20 avant cette
+version. Corrige au passage.
+
+### Detail
+
+Le moteur est identique a celui de la 2.26.0, au numero de version pres : rien
+de cette version ne touche a `src/core`.
+
 ## 2.26.0 -- 2026-09-22
 
 **L'extension savait tout faire, sauf arriver chez quelqu'un**

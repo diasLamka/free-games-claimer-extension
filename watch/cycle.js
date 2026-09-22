@@ -16,6 +16,7 @@
  *      "nouveau". Le second se recalcule et double ; le premier est persiste.
  */
 import { integrate, purgeExpired, openOffers } from './catalog.js';
+import { noteOutcomesFromCatalog } from './outcomes.js';
 import { STATES, STORES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
 import { claimableStoresFor, activeSourcesFor } from './sources/index.js';
 import { steamGate } from './steam-claim.js';
@@ -277,6 +278,17 @@ export async function runCycle({
           now,
           country: ctx.locale && ctx.locale.country,
           lang: ctx.locale && ctx.locale.lang,
+          /* Lire ce que le compte possede demande les cookies de la session,
+             et SECURITY.md promet que l'extension ne lit jamais un compte de
+             sa propre initiative. Seule l'option de reclamation le justifie :
+             elle en a besoin pour ne pas reclamer deux fois. La detection,
+             elle, se contente d'une recherche publique.
+
+             Compare a `true`, jamais a la veracite : ce qui declenche une
+             requete porteuse de cookies merite la meme severite que
+             claimableStoresFor. Les sources qui ne connaissent pas cette
+             option l'ignorent. */
+          withOwned: ctx.settings && ctx.settings.steamAutoClaim === true,
         });
       } catch (e) {
         r = { offers: [], errors: [(e && e.message) || String(e)] };
@@ -423,10 +435,25 @@ export async function runCycle({
       base: currencyFor(ctx.locale && ctx.locale.country),
     });
 
+    /* Figer l'issue de ce qui vient de se terminer, AVANT que la purge de
+       quatre-vingt-dix jours n'emporte l'entree. Passe ce delai, ni le titre
+       ni la valeur n'existent plus nulle part : c'est la seule fenetre.
+       
+       On balaie le catalogue entier plutot que les listes rendues par
+       l'integration. Une offre devient terminale par trois chemins -- sa date
+       passe, elle disparait de sa source, une reclamation la resout -- et
+       suivre les trois separement offrirait trois occasions d'en oublier un,
+       sans que rien ne le signale. Le balayage est sur parce que la premiere
+       issue gagne : repasser sur une offre deja figee ne coute qu'une
+       comparaison. */
+    const issues = noteOutcomesFromCatalog(ctx.outcomes, catalog, { now });
+    if (issues.added) record('info', `${issues.added} issue(s) figee(s)`);
+
     // Persister AVANT de notifier. Une mort du worker entre les deux coute une
     // notification, pas une offre.
     await writeCycle(chrome, {
       catalog,
+      outcomes: issues.added ? issues.outcomes : undefined,
       sources: sourceStates,
       state: nextState,
       stats,

@@ -100,6 +100,7 @@ est declare `"type": "module"`.
 | `collection.js` | Ma collection : regrouper ce que chaque magasin dit que vous possedez |
 | `collection-import.js` | lire les bibliotheques Steam, GOG et Epic, en lecture seule et a la demande |
 | `steam-claim.js` | Steam en option : l'etape jouee dans la page, et le rythme lent |
+| `outcomes.js` | ce qui est passe, pris ou rate : l'issue figee a la fin de l'offre |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -131,6 +132,7 @@ src/
 watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
+  outcomes.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

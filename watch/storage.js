@@ -25,6 +25,11 @@ import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale
    n'a jamais ete enregistree. */
 import { KEY_CANARY } from './canary.js';
 import { KEY_LIBRARY } from './library.js';
+/* Les issues d'offres terminees. Ecrites dans la MEME transition que le
+   catalogue : une mort du worker entre les deux laisserait une offre purgee
+   sans que son issue ait ete figee, et l'information n'existe plus nulle part
+   ailleurs. */
+import { KEY_OUTCOMES } from './outcomes.js';
 
 export const PREFIX = 'veille:';
 
@@ -184,7 +189,22 @@ export async function withLease(chrome, name, job, { now, ttlMs = LEASE_TTL_MS, 
 export const DEFAULT_SETTINGS = Object.freeze({
   floorPerDay: 3,
   overrides: {},
-  activeSources: ['epic-api', 'gamerpower', 'gog'],
+  /**
+   * Les sources INTERROGEES. Regarder, pas cliquer.
+   *
+   * Steam y figure depuis la 2.27.0, et la distinction est tout le sujet.
+   * Jusque-la, lire Steam et cliquer sur Steam etaient le meme interrupteur :
+   * la source ne s'activait qu'avec `steamAutoClaim`, coupe par defaut. Qui
+   * refusait le clic -- le cas par defaut, volontairement -- ne voyait de
+   * Steam que ce que l'agregateur en dit, c'est-a-dire des cles offertes sur
+   * des sites tiers, sans numero de paquet, que le filtre rejette.
+   *
+   * La recherche Steam est publique et part SANS cookie. Lire ce que le compte
+   * possede, lui, en demande -- et cela n'a lieu qu'avec l'option de
+   * reclamation, qui en a besoin pour ne pas reclamer deux fois. Voir le
+   * `withOwned` transmis par watch/cycle.js.
+   */
+  activeSources: ['epic-api', 'gamerpower', 'gog', 'steam'],
   autonomousClaim: true,
 
   /**
@@ -287,6 +307,7 @@ export async function readContext(chrome) {
   const raw = await readKeys(chrome, [
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
     KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY, KEY_RATES,
+    KEY_OUTCOMES,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -309,6 +330,7 @@ export async function readContext(chrome) {
     canary: raw[KEY_CANARY] || {},
     library: raw[KEY_LIBRARY] || {},
     rates: raw[KEY_RATES] || null,
+    outcomes: raw[KEY_OUTCOMES] || {},
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),
       lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),
@@ -323,7 +345,7 @@ export async function readContext(chrome) {
  * deux, le service worker peut mourir. On prefere perdre une notification
  * qu'en envoyer deux, et le champ notifieLe rend la reprise possible.
  */
-export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary, rates }) {
+export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary, rates, outcomes }) {
   const obj = {};
   if (catalog !== undefined) obj[KEYS.OFFERS] = catalog;
   if (sources !== undefined) obj[KEYS.SOURCES] = sources;
@@ -332,6 +354,7 @@ export async function writeCycle(chrome, { catalog, sources, state, stats, caden
   if (cadence !== undefined) obj[KEYS.CADENCE] = cadence;
   if (canary !== undefined) obj[KEY_CANARY] = canary;
   if (rates !== undefined) obj[KEY_RATES] = rates;
+  if (outcomes !== undefined) obj[KEY_OUTCOMES] = outcomes;
   return write(chrome, obj);
 }
 
