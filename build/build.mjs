@@ -233,7 +233,7 @@ for (const fichier of ['manifest.json', 'manifest.firefox.json']) {
 const AVEC_IMPORTS = [
   'background.js', 'popup.js', 'journal.js', 'sentinel.js', 'diagnostics.js',
   'probe-offscreen.js', 'offscreen-html.js', 'i18n.js', 'collection.js',
-  'historique.js',
+  'historique.js', 'money.js',
   'overlay.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
@@ -280,11 +280,19 @@ for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.
  */
 const { undefinedRefs } = await import('./undefined-refs.mjs');
 
+const { useBeforeDeclaration } = await import('./tdz.mjs');
+
 for (const fichier of ['popup.js', 'journal.js', 'sentinel.js', 'background.js', 'diagnostics.js',
   'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js', 'historique.js',
-  'overlay.js']) {
+  'overlay.js', 'money.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
+  }
+  /* Le nom existe, mais trop tard : lu au chargement avant sa ligne, il
+     arrete tout le module. C'est ce qui a vide le popup de la 2.36.0 a la
+     2.40.0 (voir tdz.mjs). */
+  for (const { mot, ligne, declaration } of useBeforeDeclaration(join(ROOT, fichier))) {
+    problems.push(`${fichier} ligne ${ligne} : « ${mot} » est lu avant sa declaration (ligne ${declaration})`);
   }
 }
 
@@ -385,7 +393,7 @@ const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'collection.html', 'collection.js', 'historique.html', 'historique.js']);
+  'collection.html', 'collection.js', 'historique.html', 'historique.js', 'money.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -410,7 +418,7 @@ const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'collection.html', 'collection.js', 'historique.html', 'historique.js'].map((f) => {
+  'collection.html', 'collection.js', 'historique.html', 'historique.js', 'money.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

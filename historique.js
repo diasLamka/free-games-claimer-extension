@@ -14,7 +14,9 @@ import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
 import { STORE_LABELS } from './watch/offer.js';
 import { KEY_OUTCOMES, OUTCOMES } from './watch/outcomes.js';
 import { KEY_LIBRARY } from './watch/library.js';
-import { normaliseTitle } from './watch/offer.js';
+import { KEY_RATES } from './watch/rates.js';
+import { worthLabel, sumWorths } from './money.js';
+import { normaliseTitle, displayTitle } from './watch/offer.js';
 import { recurrenceIndex, recurring } from './watch/recurrence.js';
 import {
   byMonth, filterHistory, historyRows, summariseHistory,
@@ -26,6 +28,9 @@ const KEY_UI = 'veille:ui';
 
 let rows = [];
 let library = {};
+/* Le taux du jour, pose par le cycle de veille. Sans lui, les montants restent
+   dans leur devise d'origine. */
+let rates = null;
 
 /* ------------------------------------------------------------------ outils */
 
@@ -113,7 +118,10 @@ function render() {
 
   document.getElementById('rate').textContent = total.rate === null
     ? t('historyRateNone')
-    : t('historyRate', String(total.rate), total.worthMissed.toFixed(2));
+    /* La valeur ratee est reprise ligne a ligne, convertie : summariseHistory
+       additionne des nombres sans devise, et melangeait dollars et euros. */
+    : t('historyRate', String(total.rate),
+      sumWorths(rows.filter((r) => r.outcome === OUTCOMES.MISSED).map((r) => r.worth).filter(Boolean), rates, Date.now()));
 
   const corps = document.getElementById('rows');
   const lot = document.createDocumentFragment();
@@ -126,16 +134,21 @@ function render() {
        du texte : un lien mort serait pire qu'une absence de lien. */
     const titre = el('td');
     if (r.url) {
-      const a = el('a', null, r.title || r.id || '—');
+      const a = el('a', null, r.title ? displayTitle(r.title) : (r.id || '—'));
       a.href = r.url;
       a.target = '_blank';
       a.rel = 'noreferrer';
       titre.append(a);
-    } else titre.textContent = r.title || r.id || '—';
+    } else titre.textContent = r.title ? displayTitle(r.title) : (r.id || '—');
     tr.append(titre);
 
     tr.append(el('td', null, STORE_LABELS[r.store] || r.store || '—'));
-    tr.append(el('td', null, r.worth || '—'));
+    if (r.worth) {
+      const shown = worthLabel(r.worth, rates, Date.now());
+      const valeur = el('td', null, shown.text);
+      if (shown.title) valeur.title = shown.title;
+      tr.append(valeur);
+    } else tr.append(el('td', null, '—'));
 
     const issue = outcomeLabel(r.outcome);
     const cell = el('td', issue.level, issue.text);
@@ -190,7 +203,8 @@ function render() {
 }
 
 async function load() {
-  const brut = await api.storage.local.get([KEY_OUTCOMES, KEY_LIBRARY]);
+  const brut = await api.storage.local.get([KEY_OUTCOMES, KEY_LIBRARY, KEY_RATES]);
+  rates = brut[KEY_RATES] || null;
   rows = historyRows(brut[KEY_OUTCOMES]);
   /* Le registre entre ici, et pas seulement les issues : il n'est JAMAIS
      purge, donc il porte seul les passages anterieurs a la 2.27.0. */

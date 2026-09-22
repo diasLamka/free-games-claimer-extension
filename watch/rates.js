@@ -21,7 +21,7 @@
  *   3. sans taux, on affiche le montant d'origine avec sa devise. Une
  *      approximation sans taux serait un chiffre invente.
  *
- * La source est la Banque centrale europeenne, via api.frankfurter.app : pas
+ * La source est la Banque centrale europeenne, via api.frankfurter.dev : pas
  * de cle, pas de compte, un taux de reference publie chaque jour ouvre. Les
  * taux sont donnes POUR UN EURO -- « USD: 1.08 » veut dire qu'un euro vaut
  * 1,08 dollar -- donc on DIVISE pour revenir a l'euro.
@@ -31,9 +31,14 @@
 
 export const KEY_RATES = 'veille:taux';
 
-/** Une unite de la devise de base vaut combien de chaque autre devise. */
+/** Une unite de la devise de base vaut combien de chaque autre devise.
+ *
+ * L'ancien hote, api.frankfurter.app, repond desormais par une redirection 301
+ * vers api.frankfurter.dev -- un hote que le manifeste n'autorisait pas, et une
+ * redirection sans en-tete CORS. Le taux n'arrivait donc jamais, et chaque
+ * montant de l'agregateur restait en dollars. On appelle l'adresse finale. */
 export function ratesUrl(base = 'EUR') {
-  return `https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`;
+  return `https://api.frankfurter.dev/v1/latest?from=${encodeURIComponent(base)}`;
 }
 
 /** L'adresse par defaut, quand aucun pays n'a ete choisi. */

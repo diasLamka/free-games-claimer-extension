@@ -17,11 +17,12 @@
  *     which is the only way a missing translation shows up before shipping.
  */
 import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
-import { STORE_LABELS, STORES, normaliseTitle } from './watch/offer.js';
+import { STORE_LABELS, STORES, normaliseTitle, displayTitle } from './watch/offer.js';
 import {
-  preview, judge, REASONS, readWorth, readCurrency, UNKNOWN_CURRENCY,
+  preview, judge, REASONS, readWorth,
 } from './watch/filters.js';
 import { KEY_RATES, toBase, baseOf } from './watch/rates.js';
+import { money, worthLabel as worthLabelIn } from './money.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from './watch/locale.js';
 import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
@@ -145,6 +146,11 @@ const KEY_CODES = 'FGC_pending_codes';
    synchrone avant chaque clic, et il ne connait que cet espace. */
 const KEY_STOP = 'FGC_kill_switch';
 
+/* Ce que le moteur a vu et refuse, par surface. Ecrit par lui, lu ici.
+   Declaree AVANT KEYS_READ : une const lue avant sa ligne est une erreur de
+   chargement, et le popup entier restait vide depuis la 2.36.0. */
+const KEY_SEEN = 'FGC_seen_labels';
+
 /* Enumerated, not storage.local.get(null): the latter would also drag in the
    whole offer catalogue and the hourly histograms just to draw three toggles. */
 const KEYS_READ = [
@@ -176,10 +182,6 @@ const get = (all, key, fallback) => {
 
 const setValue = (key, value) => api.storage.local.set({ [key]: value });
 
-/** Presentation preferences. Never read by the service worker. */
-/* Ce que le moteur a vu et refuse, par surface. Ecrit par lui, lu ici. */
-const KEY_SEEN = 'FGC_seen_labels';
-
 /**
  * Du MAGASIN dont le canari se plaint, a la SURFACE dont le moteur lit les
  * libelles.
@@ -193,6 +195,7 @@ const TEACH_SURFACES = Object.freeze({
   gog: SURFACES.GOG,
 });
 
+/** Presentation preferences. Never read by the service worker. */
 const DEFAULT_UI = {
   theme: 'system',
   density: 'cosy',
@@ -597,7 +600,8 @@ function gameCard({ key, offer }, ctx) {
   art.append(ring);
 
   const body = el('div', 'game-body');
-  body.append(el('span', 'game-title', offer.title));
+  // Sans « (Steam) Key Giveaway » : l'etiquette dit deja le magasin.
+  body.append(el('span', 'game-title', displayTitle(offer.title)));
 
   const meta = el('span', 'game-meta');
   meta.append(storeTag(offer.store));
@@ -758,8 +762,12 @@ function gameCard({ key, offer }, ctx) {
   if (behaviour.autonomousClaim !== false) {
     const verdict = judge(offer, filters, { supportedStores: claimableStoresFor(behaviour) });
     if (!verdict.claimable) {
+      /* Dans la rangee des actions, a droite, et non sur une ligne a elle :
+         la rangee est vide tant qu'on ne survole pas, et chaque carte Steam
+         portait une ligne de plus pour le dire. Le survol la cede aux
+         boutons (voir .game:hover .why). */
       const cle = DROP_KEYS[verdict.reason];
-      if (cle) body.append(el('span', 'why', t(cle)));
+      if (cle) actions.append(el('span', 'why', t(cle)));
     }
   }
 
@@ -881,11 +889,13 @@ function renderUpcoming(all) {
   const now = Date.now();
 
   const windows = [];
-  for (const s of Object.values(sources)) {
+  for (const [name, s] of Object.entries(sources)) {
+    // Seule la source Epic annonce ses fenetres ; le nom le dit.
+    const store = name.startsWith('epic') ? STORES.EPIC : null;
     for (const w of s.announcedWindows || []) {
       // Earlier versions stored only the instant.
-      if (typeof w === 'number') { if (w > now) windows.push({ start: w, title: null }); }
-      else if (w && (w.start ?? w.debut) > now) windows.push({ ...w, start: w.start ?? w.debut });
+      if (typeof w === 'number') { if (w > now) windows.push({ start: w, title: null, store }); }
+      else if (w && (w.start ?? w.debut) > now) windows.push({ store, ...w, start: w.start ?? w.debut });
     }
   }
   windows.sort((a, b) => a.start - b.start);
@@ -922,9 +932,19 @@ function renderUpcoming(all) {
       row.title = t('upcomingOpen', w.title || '');
       row.addEventListener('click', () => openTab(w.url));
     }
-    if (w.image) row.append(thumb(w.image));
-    row.append(el('span', 'label', w.title || t('upcomingUnannounced')));
+    /* La meme grammaire qu'une carte de jeu, en plus sobre : la jaquette,
+       le titre, le magasin -- puis la date et, quand la ligne mene quelque
+       part, une fleche qui le dit sans avoir a survoler. */
+    const art = el('span', 'soon-art');
+    if (w.image) art.append(thumb(w.image));
+    else art.append(el('span', 'letter', (w.title || '?').trim().charAt(0).toUpperCase()));
+    row.append(art);
+    const body = el('span', 'soon-body');
+    body.append(el('span', 'label', w.title ? displayTitle(w.title) : t('upcomingUnannounced')));
+    if (w.store) body.append(storeTag(w.store));
+    row.append(body);
     row.append(el('span', 'aside hi', shortDateTime(w.start)));
+    if (w.url) row.append(el('span', 'soon-go', '↗'));
     host.append(row);
   }
 }
@@ -965,7 +985,8 @@ function renderLog(all) {
         ts: e.ts,
         status: e.status,
         reason: e.reason,
-        label: (known && known.title) || (opaque ? label : prettySlug(bare)),
+        label: (known && known.title) ? displayTitle(known.title) : (opaque ? label : prettySlug(bare)),
+        image: (known && known.image) || null,
       });
     }
   }
@@ -987,6 +1008,9 @@ function renderLog(all) {
     // status: "already owned" beats "claimed" when the game already was.
     const [key, css] = REASON_KEYS[row.reason] || VERDICT_KEYS[row.status] || [null, ''];
     const li = el('li');
+    // La jaquette quand le catalogue ou le registre la connait : un titre se
+    // reconnait plus vite a son image qu'a son nom.
+    if (row.image) li.append(thumb(row.image));
     li.append(el('time', null, shortDateTime(row.ts)));
     li.append(el('span', 'what', row.label));
     li.append(el('span', `st ${css}`, key ? t(key) : String(row.status || '')));
@@ -1571,55 +1595,14 @@ function renderTally(all) {
   }
 }
 
-/* Le symbole n'est jamais choisi par l'interface : il vient de la donnee.
-   Cette fonction ne fait que la MISE EN FORME -- la conversion, elle, vit dans
-   libelleValeur ci-dessous. */
-function money(n, currency) {
-  const loc = intlLocale();
-  if (!currency || currency === UNKNOWN_CURRENCY) {
-    return new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-  }
-  try {
-    return new Intl.NumberFormat(loc, { style: 'currency', currency }).format(n);
-  } catch {
-    // An ISO code Intl does not know still beats losing the amount.
-    return `${new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ${currency}`;
-  }
-}
+/* La mise en forme et la conversion des montants vivent dans money.js,
+   partage avec l'Historique. Seul le bilan, qui part de totaux par devise,
+   reste ici.
 
-/* TOUT S'AFFICHE EN EUROS -- et ce qui est converti le dit.
- *
- * Epic publie le prix DU COMPTE, donc deja en euros ici. L'agregateur ne
- * connait que le dollar : vingt montants sur vingt dans la capture reelle, et
- * pas meme un code de devise dans sa structure. Les deux se retrouvaient cote
- * a cote dans la meme liste, « 23,99 € » au-dessus de « $14.99 ».
- *
- * Trois regles, dans cet ordre :
- *   - un montant deja en euros n'est jamais touche ;
- *   - un montant converti porte le signe « environ » et, en infobulle, son
- *     montant d'origine avec la date du taux ;
- *   - sans taux utilisable, le montant d'origine est rendu INTACT. Une
- *     approximation sans taux serait un chiffre invente.
- */
-function worthLabel(raw, now) {
-  const original = String(raw);
-  const currency = readCurrency(raw);
-  /* La devise VISEE est celle de la table de taux, pas celle du reglage : une
-     table encore dans l'ancienne base ne sait pas convertir vers la nouvelle,
-     et afficher une devise qu'on n'a pas su calculer serait un chiffre
-     invente. Le cycle suivant rebase la table (`refreshRates`). */
-  const target = baseOf(ratesCache);
-  if (!currency || currency === target) return { text: original, approx: false, title: '' };
-
-  const converted = toBase(readWorth(raw), currency, ratesCache, now);
-  if (converted === null) return { text: original, approx: false, title: '' };
-
-  return {
-    text: `\u2248 ${money(converted, target)}`,
-    approx: true,
-    title: t('approxFrom', original, (ratesCache && ratesCache.date) || '?'),
-  };
-}
+   Tout s'affiche dans la devise du pays -- l'euro en France -- et ce qui est
+   converti le dit : Epic publie deja le prix du compte, l'agregateur ne connait
+   que le dollar. */
+const worthLabel = (raw, now) => worthLabelIn(raw, ratesCache, now);
 
 /**
  * Le bilan, en euros.

@@ -45,7 +45,7 @@ Rien d'autre ne part tout seul.
 | `www.gog.com` (catalogue filtre) | Rien. Anonyme **deliberement** : connecte, GOG masque ce que le compte possede deja, et la veille croirait l'offre terminee |
 | `www.gamerpower.com` | Rien |
 | `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue. **Depuis la 2.27.0, pour tout le monde** : la detection Steam ne depend plus de l'option de reclamation. Voir la note ci-dessous |
-| `api.frankfurter.app` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
+| `api.frankfurter.dev` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
 
 **Regarder Steam et y cliquer sont deux choses, depuis la 2.27.0.** La source
 Steam etait jusque-la liee a l'option de reclamation : qui refusait le clic --

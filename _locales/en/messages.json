@@ -624,7 +624,7 @@
     "message": "yours on $1 since $2"
   },
   "dropUnsupported": {
-    "message": "no claim module — open it yourself"
+    "message": "open it yourself"
   },
   "dropUnknownStore": {
     "message": "store not identified"

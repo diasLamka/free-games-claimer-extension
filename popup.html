@@ -591,7 +591,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* Dans la rangee des actions, poussee a droite. Au survol elle cede la
+       place aux boutons plutot que de les tasser. */
+    margin-left: auto;
+    min-width: 0;
+    padding-left: 6px;
   }
+  .game:hover .why, .game:focus-within .why { display: none; }
 
   .pin {
     flex: none;
@@ -655,6 +661,20 @@
     outline-offset: 1px;
     border-radius: 6px;
   }
+  /* « Bientot » : la jaquette en paysage, comme les cartes, et une fleche
+     visible sans survol quand la ligne ouvre la fiche du jeu. */
+  #upcoming .row { gap: 9px; padding: 5px 4px; }
+  .soon-art { width: 40px; height: 25px; flex: none; display: block; }
+  #upcoming .soon-art .mini, .soon-art .letter {
+    width: 100%; height: 100%; border-radius: 4px; object-fit: cover;
+    background: var(--ink-3); opacity: 1; display: grid; place-items: center;
+    font-family: var(--display); font-size: 12px; color: var(--mute);
+  }
+  .soon-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+  .soon-body .label { flex: none; }
+  .soon-body .store-tag { font-size: 8.5px; }
+  .soon-go { flex: none; color: var(--mute); font-size: 12px; width: 12px; text-align: center; }
+  .row.go:hover .soon-go { color: var(--amber); }
   .row .mini {
     width: 24px;
     height: 24px;
@@ -715,7 +735,8 @@
 
   /* --------------------------------------------------------------- log */
   .log { list-style: none; margin: 0; padding: 0; }
-  .log li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 12px; min-width: 0; }
+  .log li { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px; min-width: 0; }
+  .log .mini { width: 32px; height: 20px; flex: none; border-radius: 4px; object-fit: cover; background: var(--ink-3); }
   .log time { color: var(--mute); font-size: 10.5px; flex: none; font-variant-numeric: tabular-nums; width: 68px; }
   .log .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
   .log .st { flex: none; margin-left: auto; font-size: 11px; }

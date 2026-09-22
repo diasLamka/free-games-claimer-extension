@@ -9,6 +9,7 @@ import {
   STORES,
   STATES,
   normaliseTitle,
+  displayTitle,
   storeFromTitle,
   storeFromPlatforms,
   storeFromUrl,
@@ -426,4 +427,20 @@ test('parUrgence ne modifie pas la liste d\'origine', () => {
   const before = list.map((o) => o.title);
   byUrgency(list, T);
   assert.deepEqual(list.map((o) => o.title), before);
+});
+
+/* ------------------------------------------------------------ displayTitle */
+
+test('displayTitle retire le suffixe de l\'agregateur, et lui seul', () => {
+  assert.equal(displayTitle('Deadshot (Steam) Giveaway'), 'Deadshot');
+  assert.equal(displayTitle('Dwarven Realms (Steam) Key Giveaway'), 'Dwarven Realms');
+  assert.equal(displayTitle('Machin (Epic Games) Giveaway'), 'Machin');
+  // Une parenthese qui ne nomme pas un magasin appartient au jeu.
+  assert.equal(displayTitle('Myst (Remastered) (GOG) Giveaway'), 'Myst (Remastered)');
+  // Un titre natif n'est pas touche.
+  assert.equal(displayTitle('Shogun Showdown'), 'Shogun Showdown');
+  assert.equal(displayTitle('LISA: Definitive Edition'), 'LISA: Definitive Edition');
+  // Rien a montrer apres nettoyage : on garde l'original plutot qu'un vide.
+  assert.equal(displayTitle('Giveaway'), 'Giveaway');
+  assert.equal(displayTitle(null), '');
 });

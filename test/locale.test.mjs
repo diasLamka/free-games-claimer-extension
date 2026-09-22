@@ -270,7 +270,7 @@ test('la devise visee par la conversion suit le pays, pas l\'euro en dur', () =>
   assert.equal(currencyFor('CH'), 'CHF');
   assert.equal(currencyFor('US'), 'USD');
   assert.equal(currencyFor('GB'), 'GBP');
-  assert.equal(ratesUrl('CHF'), 'https://api.frankfurter.app/latest?from=CHF');
+  assert.equal(ratesUrl('CHF'), 'https://api.frankfurter.dev/v1/latest?from=CHF');
 });
 
 test('convertir vise la base de la table, quelle qu\'elle soit', () => {

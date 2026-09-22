@@ -4,6 +4,43 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.40.1 -- 2026-09-22
+
+**Le popup etait vide depuis la 2.36.0**
+
+La 2.36.0 a ajoute `KEY_SEEN` a la liste des cles lues par le popup, mais l'a
+declaree seize lignes plus bas. Une `const` lue avant sa declaration arrete le
+module au chargement : aucune ligne de popup.js ne s'executait, et tout ce qui
+a ete livre depuis dans le popup -- dont les liens de « Bientot » -- n'a jamais
+ete visible. Les tests ne chargent pas popup.js ; rien ne l'a signale.
+
+Le build le refuse desormais : `build/tdz.mjs` cherche, dans chaque script de
+l'extension, une liaison de haut niveau lue avant sa ligne. Il retrouve le
+defaut sur la 2.40.0 et ne signale rien d'autre.
+
+### Les dollars redeviennent des euros
+
+Le taux de change ne parvenait plus a l'extension : `api.frankfurter.app`
+repond maintenant par une redirection vers `api.frankfurter.dev`, un hote que
+le manifeste n'autorisait pas. Sans taux, chaque montant de l'agregateur
+restait en dollars. L'extension appelle directement la nouvelle adresse.
+
+L'Historique affichait les montants bruts de la source et additionnait dollars
+et euros dans sa « valeur ratee ». Il convertit desormais comme le popup, par
+un module commun (`money.js`).
+
+### Un premier onglet plus lisible
+
+- les titres de l'agregateur perdent leur suffixe : « Deadshot (Steam)
+  Giveaway » devient « Deadshot ». La donnee stockee ne change pas
+  (`displayTitle`, teste) ;
+- « a ouvrir vous-meme » passe dans la rangee des actions, a droite, au lieu
+  d'ajouter une ligne a chaque carte Steam ;
+- « Bientot » montre la jaquette en paysage, le magasin et une fleche quand la
+  ligne ouvre la fiche du jeu ;
+- « Deja recupere » montre la jaquette quand le catalogue ou le registre la
+  connait.
+
 ## 2.40.0 -- 2026-09-22
 
 **L'extension cesse d'etre un utilitaire et devient une source de verite**

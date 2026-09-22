@@ -117,6 +117,26 @@ export function storeFromTitle(title) {
 }
 
 /**
+ * Le titre tel qu'on le MONTRE : sans le suffixe de l'agregateur.
+ *
+ * « Deadshot (Steam) Giveaway », « Dwarven Realms (Steam) Key Giveaway » : le
+ * magasin est deja dit par l'etiquette de la carte, et « Giveaway » par le fait
+ * meme d'etre dans la liste. On ne retire que ce qui est sur -- une parenthese
+ * qui NOMME un magasin, et le mot final -- et une parenthese comme
+ * « (Remastered) » reste a sa place. La donnee stockee, elle, ne change pas.
+ */
+export function displayTitle(title) {
+  const brut = String(title || '');
+  const propre = brut
+    .replace(/\s*\(([^)]*)\)/g, (bloc, dedans) => (
+      TITLE_SUFFIXES.some(([motif]) => motif.test(dedans)) ? '' : bloc))
+    .replace(/\s+(key\s+)?giveaway\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return propre || brut.trim();
+}
+
+/**
  * Repli sur le champ platforms. Volontairement plus prudent : on n'y cherche
  * que les boutiques nommees explicitement. "PC" et "DRM-Free" ne designent
  * aucune boutique et ne doivent rien decider.

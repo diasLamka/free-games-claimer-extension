@@ -100,7 +100,7 @@ const MANIFESTE = [
   'https://*.epicgames.com/*',
   'https://www.gog.com/*',
   'https://store-site-backend-static.ak.epicgames.com/*',
-  'https://api.frankfurter.app/*',
+  'https://api.frankfurter.dev/*',
 ];
 const HOTES = hostMatchers(MANIFESTE);
 
