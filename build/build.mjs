@@ -341,6 +341,7 @@ const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js
      t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
+  'watch/permissions.js',
   'collection.html', 'collection.js', 'historique.html', 'historique.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
@@ -365,6 +366,7 @@ const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
      t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
+  'watch/permissions.js',
   'collection.html', 'collection.js', 'historique.html', 'historique.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')

@@ -1117,7 +1117,13 @@
         <div class="actions">
           <button class="primary" id="check-now" data-i18n="checkNow"></button>
         </div>
-        <p class="hint" data-i18n="watchNote"></p>
+        <!-- La note n'est plus ecrite en dur : elle dit l'etat REEL, qui
+             depend d'une permission qu'on peut accorder et retirer. -->
+        <label class="check" id="background-row" hidden>
+          <input type="checkbox" id="background-permission">
+          <span data-i18n="backgroundLabel"></span>
+        </label>
+        <p class="hint" id="watch-note"></p>
 
         <details>
           <summary data-i18n="predictionTitle"></summary>

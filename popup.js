@@ -33,6 +33,7 @@ import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
 import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
 import { REDEEM_URLS, addCodes, parseCodes, redeemUrlFor } from './watch/codes.js';
+import { OPTIONAL, declaresOptional, describeBackground } from './watch/permissions.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
@@ -1267,6 +1268,34 @@ function renderStores(all, behaviour) {
  * notifications. Le second est le seul cas ou ce bandeau est la DERNIERE
  * chose capable d'expliquer le silence.
  */
+/**
+ * La veille survit-elle a la fermeture de la derniere fenetre ?
+ *
+ * Trois etats, et le troisieme est celui qu'on refuse de maquiller : une
+ * plateforme qui ignore la permission n'obtient AUCUNE case. Cocher sans effet
+ * ferait croire que la veille tourne pendant que le navigateur est ferme, ce
+ * qui est pire que de ne rien proposer.
+ *
+ * La demande elle-meme exige un geste utilisateur : elle vit dans l'ecouteur
+ * du bas, jamais dans un rendu.
+ */
+async function renderBackground() {
+  const supported = Boolean(api.permissions)
+    && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
+
+  let granted = false;
+  if (supported) {
+    try {
+      granted = await api.permissions.contains({ permissions: [OPTIONAL.BACKGROUND] });
+    } catch { granted = false; }
+  }
+
+  const vue = describeBackground({ granted, supported });
+  document.getElementById('background-row').hidden = !vue.toggle;
+  document.getElementById('background-permission').checked = granted;
+  document.getElementById('watch-note').textContent = t(vue.note);
+}
+
 function renderHealth(all) {
   const host = document.getElementById('health-banner');
   host.textContent = '';
@@ -1721,6 +1750,7 @@ async function render() {
   renderTally(all);
   renderFilters(all, behaviourCache);
   renderHealth(all);
+  renderBackground();
   renderCanary(all);
   renderStores(all, behaviourCache);
   renderFallback(all);
@@ -2130,6 +2160,18 @@ document.getElementById('open-collection').addEventListener('click', (e) => {
   }
   menu.value = 'gog';
 }
+
+/* La demande DOIT partir d'un geste : Chrome refuse
+   `permissions.request` hors d'un clic, et le refus n'est pas une erreur --
+   c'est un silence, donc un interrupteur qui ne bouge pas sans rien dire. */
+document.getElementById('background-permission').addEventListener('change', async (e) => {
+  const veut = e.target.checked;
+  try {
+    if (veut) await api.permissions.request({ permissions: [OPTIONAL.BACKGROUND] });
+    else await api.permissions.remove({ permissions: [OPTIONAL.BACKGROUND] });
+  } catch { /* refus ou plateforme muette : l'etat reel est relu juste apres */ }
+  await renderBackground();
+});
 
 document.getElementById('codes-add').addEventListener('click', async () => {
   const zone = document.getElementById('codes-paste');

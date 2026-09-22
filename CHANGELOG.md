@@ -4,6 +4,82 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.34.0 -- 2026-09-22
+
+**La veille s'arretait avec la derniere fenetre, et rien ne proposait autre chose**
+
+Le depot n'avait aucune infrastructure de permission optionnelle : pas de clef
+`optional_permissions` dans les deux manifestes, pas un seul appel a
+`permissions.request`, et la note du popup annoncait « seulement tant que
+Chrome est ouvert » en dur -- un constat, jamais une offre.
+
+Qui ferme sa derniere fenetre le soir ratait donc la rotation du jeudi et le
+rappel de fin. La veille tenait tant qu'une fenetre etait ouverte, pas tant que
+l'ordinateur etait allume.
+
+### Une nuance honnete, parce qu'elle a failli etre oubliee
+
+La PREDICTION, elle, ne se degrade pas pendant l'absence : au-dela de
+vingt-quatre heures elle compte l'observation sans la situer. Le manque etait
+la couverture, pas l'apprentissage -- et ecrire l'inverse aurait fait chercher
+un bug la ou le code est deja juste.
+
+### Trois etats, et le troisieme est celui qu'on refuse de maquiller
+
+| Etat | Ce qui s'affiche |
+|---|---|
+| accordee | une case cochee, et la phrase qui dit que la veille continue |
+| pas encore | une case a cocher, et la phrase qui l'explique |
+| plateforme muette | **aucune case**, et une phrase qui dit pourquoi |
+
+Firefox n'implemente pas cette permission. Son manifeste ne la declare donc
+pas -- meme raisonnement que pour `offscreen`, deja absent la-bas.
+
+Une case a cocher sans effet serait pire qu'une case absente : elle ferait
+croire que la veille tourne pendant que le navigateur est ferme. C'est
+exactement le genre de silence qui coute trois versions a diagnostiquer.
+
+### Le manifeste est LU, pas suppose
+
+Demander une permission qui n'y figure pas echoue -- silencieusement dans
+certaines versions de Chrome, ce qui est le pire cas : la case se coche, et
+rien ne change. Le popup lit donc `optional_permissions` avant de proposer quoi
+que ce soit.
+
+### Une permission optionnelle n'est pas une permission du manifeste
+
+Celle-ci reste HORS du bloc `permissions`. Une permission du manifeste
+s'accepte en bloc a l'installation, ou l'on renonce a l'extension. Celle-ci est
+un choix pose apres coup, et retirable du meme geste.
+
+Le decochage appelle `permissions.remove` : ce qui s'accorde se retire, sans
+quoi la case serait un aller simple.
+
+### Ce que Chrome refuse, et comment on s'y prend
+
+`permissions.request` n'est accepte que depuis un geste utilisateur. Un refus
+n'est pas une erreur, c'est un SILENCE -- donc un interrupteur qui ne bouge
+pas, sans rien dire. L'etat reel est relu juste apres l'appel, dans les deux
+sens : ce qui s'affiche est ce que le navigateur dit, jamais ce que le code a
+demande.
+
+### Detail
+
+Le build scanne desormais `watch/permissions.js`, dont les phrases vivent en
+table et non en appel de traduction. `watchNote` a ete retiree des deux
+locales : la note est devenue dynamique, et une cle que plus rien ne cite coute
+une traduction, une relecture et un entretien pour rien -- l'avertissement du
+build est fait pour ca.
+
+Quatre cles par langue, une retiree (367 par locale). Le moteur est identique a
+celui de la 2.33.0.
+
+| | 2.33.0 | 2.34.0 |
+|---|---|---|
+| tests | 881 | 888 |
+| permissions optionnelles | 0 | 1 |
+| la veille tient tant que | une fenetre est ouverte | l'ordinateur est allume |
+
 ## 2.33.0 -- 2026-09-22
 
 **Sept magasins sur neuf recevaient l'adresse de Microsoft**

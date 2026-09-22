@@ -130,6 +130,7 @@ vous qui decidez.
 | `scripting` | Le clic Steam, les sondes de diagnostic. Bornee aux hotes ci-dessous |
 | `offscreen` | Lire du HTML : un service worker MV3 n'a pas de `DOMParser`. Absente sur Firefox |
 | `alarms` | Se reveiller pour verifier |
+| `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |
 
 **Ce qui est absent, et c'est le point** : pas de `tabs`, pas de `cookies`,
 pas de `webRequest`, pas de `downloads`, pas de `identity`, pas de `history`,

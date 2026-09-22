@@ -239,8 +239,17 @@
   "floorLabel": {
     "message": "Minimum checks per day"
   },
-  "watchNote": {
-    "message": "Only while Chrome is open. An alarm does not wake the computer."
+  "backgroundLabel": {
+    "message": "Keep watching after the browser closes"
+  },
+  "backgroundGranted": {
+    "message": "The watch keeps running once the last window is closed, as long as the computer is on."
+  },
+  "backgroundOffered": {
+    "message": "The watch runs only while the browser is open. Tick the box above to let it carry on."
+  },
+  "backgroundUnsupported": {
+    "message": "The watch runs only while the browser is open. This browser has no way to change that."
   },
   "predictionTitle": {
     "message": "Next 24 hours"

@@ -239,8 +239,17 @@
   "floorLabel": {
     "message": "Vérifications minimum par jour"
   },
-  "watchNote": {
-    "message": "Seulement tant que Chrome est ouvert. Une alarme ne réveille pas l’ordinateur."
+  "backgroundLabel": {
+    "message": "Continuer la veille apres la fermeture du navigateur"
+  },
+  "backgroundGranted": {
+    "message": "La veille continue une fois la derniere fenetre fermee, tant que l ordinateur est allume."
+  },
+  "backgroundOffered": {
+    "message": "La veille ne tourne que si le navigateur est ouvert. Cochez la case ci-dessus pour qu elle continue."
+  },
+  "backgroundUnsupported": {
+    "message": "La veille ne tourne que si le navigateur est ouvert. Ce navigateur n offre aucun moyen d y changer quoi que ce soit."
   },
   "predictionTitle": {
     "message": "Prochaines 24 heures"
