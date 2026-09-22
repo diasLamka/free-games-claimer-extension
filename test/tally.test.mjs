@@ -11,6 +11,7 @@ import {
   mainStore,
   buildExport,
   exportFileName,
+  alreadyYours,
 } from '../watch/tally.js';
 import { makeOffer, STORES } from '../watch/offer.js';
 
@@ -248,4 +249,43 @@ test('le nom de fichier est stable et se trie chronologiquement', () => {
   const b = exportFileName(Date.UTC(2026, 7, 27, 12, 0, 0));
   assert.match(a, /^free-games-claimer-2026-01-05-09-03-01\.json$/);
   assert.ok(a < b, 'les noms ne se trient pas dans l\'ordre chronologique');
+});
+
+/* ----------------------------------------- ce que l'extension a PRIS */
+
+test('un jeu trouve deja a vous est compte a part, sans valeur', () => {
+  /* Constate le 2026-09-22 : onze offres Luna deja prises, constatees sur la
+     liste, comptees comme des reclamations. Le bilan disait « 13 recuperes »
+     pour deux jeux reellement pris. */
+  const h = {
+    'Epic Games': {
+      'slug:cardpocalypse': { status: 'claimed', reason: 'CLAIMED', ts: T },
+      'slug:bolmn': { status: 'claimed', reason: 'ALREADY_OWNED', ts: T },
+    },
+    'Amazon Luna': {
+      'offer:amzn1.pg.item.a': { status: 'claimed', reason: 'ALREADY_CLAIMED', ts: T, title: 'Wall World 2' },
+      'offer:amzn1.pg.item.b': { status: 'claimed', reason: 'deja marque comme recupere sur la liste', ts: T },
+      'offer:amzn1.pg.item.c': { status: 'claimed', reason: 'Epic Games Store (deja reclame)', ts: T },
+      'offer:amzn1.pg.item.d': { status: 'claimed', reason: 'Amazon Games', ts: T, title: 'Thronefall' },
+    },
+  };
+  const rows = claimsMade(h, catalog);
+  const b = tally(rows);
+
+  assert.equal(b.count, 2, "Cardpocalypse et Thronefall, pris par l'extension");
+  assert.equal(b.already, 4);
+  assert.deepEqual({ ...b.totals }, { USD: 14.99 }, 'Bolmn, deja possede, ne rapporte rien');
+  assert.equal(b.byStore[STORES.EPIC].count, 1);
+  assert.equal(rows.find((r) => r.key === 'offer:amzn1.pg.item.a').title, 'Wall World 2', 'le titre du moteur sert de repli');
+});
+
+test("la regle « deja a vous » lit les motifs d'hier et d'aujourd'hui", () => {
+  assert.equal(alreadyYours({ reason: 'ALREADY_OWNED' }), true);
+  assert.equal(alreadyYours({ reason: 'ALREADY_CLAIMED' }), true);
+  assert.equal(alreadyYours({ reason: 'deja marque comme recupere sur la liste' }), true);
+  assert.equal(alreadyYours({ reason: 'GOG (deja reclame)' }), true);
+  assert.equal(alreadyYours({ reason: 'CLAIMED' }), false);
+  assert.equal(alreadyYours({ reason: 'Amazon Games' }), false);
+  assert.equal(alreadyYours({}), false);
+  assert.equal(alreadyYours(null), false);
 });

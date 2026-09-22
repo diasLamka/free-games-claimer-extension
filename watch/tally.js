@@ -21,6 +21,25 @@ import { STORE_LABELS, STORES } from './offer.js';
 /** Statuts qui signifient « le jeu est a moi ». */
 export const ACQUIRED_STATUSES = Object.freeze(['claimed', 'redeemed']);
 
+/**
+ * Une entree d'historique qui CONSTATE un jeu deja a vous, sans l'avoir pris.
+ *
+ * Le moteur l'ecrit sous le statut `claimed` -- le jeu est bien au compte --
+ * mais avec un motif qui dit que l'extension n'y est pour rien : deja dans la
+ * bibliotheque Epic, deja pris sur la liste Luna. Avant la 2.41.0, ce motif
+ * etait ecrit en toutes lettres ; il est lu de la meme facon.
+ *
+ * Le bilan les compte a part. Les additionner aux reclamations faisait dire
+ * « 340 jeux recuperes » a une extension qui en avait pris une douzaine.
+ */
+export const ALREADY_REASONS = Object.freeze(['ALREADY_OWNED', 'ALREADY_CLAIMED']);
+const LEGACY_ALREADY = /deja marque comme recupere|\(deja reclame\)$/i;
+
+export function alreadyYours(entry) {
+  const reason = String((entry && entry.reason) || '');
+  return ALREADY_REASONS.includes(reason) || LEGACY_ALREADY.test(reason);
+}
+
 /** Cles d'historique du moteur, par nom de plateforme. */
 export const PLATFORMS = Object.freeze({
   'Epic Games': STORES.EPIC,
@@ -75,11 +94,13 @@ export function claimsMade(histories = {}, catalog = {}, { since = 0, library = 
       out.push({
         key,
         store,
-        title: (known && known.title) || (frozen && frozen.title) || null,
+        // Puis le titre que le moteur a lu sur la page (2.41.0).
+        title: (known && known.title) || (frozen && frozen.title) || e.title || null,
         worth: readWorth(worth),
         currency: readCurrency(worth),
         ts: e.ts,
         status: e.status,
+        already: alreadyYours(e),
       });
     }
   }
@@ -115,7 +136,12 @@ export function tally(rows = []) {
   const byStore = {};
   const byMonth = {};
 
-  for (const l of rows) {
+  /* Ce que l'extension a PRIS, d'un cote ; ce qu'elle a trouve deja a vous, de
+     l'autre. Valeur, magasins et mois ne portent que sur le premier : un jeu
+     que vous aviez deja ne vous a rien rapporte cette semaine. */
+  const taken = rows.filter((l) => !l.already);
+
+  for (const l of taken) {
     // Une valeur lisible dont la devise ne l'est pas reste une valeur : elle
     // compte, sous une devise qui s'affiche sans symbole.
     const devise = typeof l.worth === 'number' ? (l.currency || UNKNOWN_CURRENCY) : null;
@@ -136,7 +162,10 @@ export function tally(rows = []) {
   for (const stats of Object.values(byStore)) stats.totals = roundTotals(stats.totals);
 
   return {
-    count: rows.length,
+    /** Reclamations faites par l'extension. */
+    count: taken.length,
+    /** Jeux trouves deja a vous, comptes a part. */
+    already: rows.length - taken.length,
     priced,
     totals: roundTotals(totals),
     byStore,

@@ -16,6 +16,8 @@ npm run verify    # controle de non-regression (voir plus bas)
 npm test          # build + tests unitaires
 npm run check     # verify + test, a lancer avant de livrer
 npm run package   # les deux archives publiables, dans dist/
+npm run preview   # le vrai popup dans un navigateur, sur des donnees de demo
+                  #   -- --chrome : une copie EN LECTURE de vos donnees Chrome
 ```
 
 Les modules de `src/core` sont concatenes dans l'ordre de leur nom et vivent

@@ -4,6 +4,48 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.44.0 -- 2026-09-22
+
+**Un bilan honnete, un popup vivant, et le popup visible sans l'extension**
+
+### Le bilan ne compte plus ce que l'extension n'a pas fait
+
+Un jeu trouve deja a vous -- deja dans la bibliotheque Epic, deja pris sur la
+liste Luna -- est ecrit sous le statut `claimed`, puisqu'il est bien au
+compte. Le bilan l'additionnait aux reclamations : « 13 recuperes » pour deux
+jeux reellement pris. Il les compte maintenant a part (`alreadyYours`, une
+seule regle partagee avec « Deja recupere ») : « 2 jeux recuperes, dont 1 a
+prix connu : 14,99 EUR · 11 deja a vous ». La valeur, les magasins et le
+meilleur mois ne portent que sur ce que l'extension a pris. L'export CSV gagne
+une colonne `already`, en derniere position pour ne deplacer aucune reference.
+
+Au passage : « surtout ... » affichait `[object Object]` des que deux magasins
+figuraient au bilan -- `mainStore` rend un objet, indexe tel quel dans
+`STORE_LABELS`. Le compteur « pret, N recuperes » des magasins suit la meme
+regle que le bilan.
+
+### Le popup se redessine quand le stockage change
+
+Une reclamation terminee, un cycle, un registre restaure : le popup restait sur
+l'image de son ouverture. Il ecoute desormais `storage.onChanged` sur les cles
+qu'il lit, avec une seule relecture par rafale (400 ms). Jamais sous les
+doigts : tant que le curseur de valeur, un selecteur ou un champ numerique a le
+focus, le rendu attend -- il remettrait sa valeur stockee. La recherche n'y
+est pas : le rendu ne touche pas a sa valeur.
+
+### `npm run preview`
+
+Le vrai popup.html et le vrai popup.js, dans un navigateur ordinaire, sur un
+faux `chrome.*` (build/preview.mjs). Donnees de demonstration par defaut ;
+`--data F.json` pour un export du popup ; `--chrome` pour une copie EN LECTURE
+de vos donnees, lue directement dans la base LevelDB du profil
+(build/leveldb.mjs : journal et tables, Snappy, la plus haute sequence gagne).
+La 2.36.0 aurait ete vue en une commande : son popup etait vide.
+
+Trois regles : rien n'est ecrit (les ecritures restent dans la page), le
+serveur n'ecoute que 127.0.0.1, et aucun chemin ne sort du depot -- teste avec
+un fichier place a cote du dossier servi, sous cinq encodages de « .. ».
+
 ## 2.43.0 -- 2026-09-22
 
 **Le registre vous suit d'un ordinateur a l'autre -- si vous le demandez**

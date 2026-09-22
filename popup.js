@@ -24,7 +24,7 @@ import {
 import { KEY_RATES, toBase, baseOf } from './watch/rates.js';
 import { money, worthLabel as worthLabelIn } from './money.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from './watch/locale.js';
-import { claimsMade, tally, mainStore, buildExport, exportFileName } from './watch/tally.js';
+import { claimsMade, tally, mainStore, buildExport, exportFileName, alreadyYours } from './watch/tally.js';
 import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
 import { claimableStoresFor } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
@@ -115,11 +115,6 @@ const REASON_KEYS = {
   ALREADY_CLAIMED: ['reasonAlreadyClaimed', 'ok'],
   STOP: ['reasonStop', 'wait'],
 };
-
-/* Avant la 2.41.0, le moteur notait « deja pris » en toutes lettres sous un
-   statut `claimed` : la ligne disait « recupere » pour un jeu que l'extension
-   n'avait fait que constater. Lu comme ALREADY_CLAIMED, qu'il est. */
-const LEGACY_ALREADY = /deja marque comme recupere|\(deja reclame\)$/i;
 
 /* Pourquoi une offre ne sera pas prise pour vous. Les motifs viennent de
    judge(), la meme fonction que la veille utilise : la puce ne peut donc pas
@@ -1005,7 +1000,11 @@ function renderLog(all) {
       rows.push({
         ts: e.ts,
         status: e.status,
-        reason: LEGACY_ALREADY.test(e.reason || '') ? 'ALREADY_CLAIMED' : e.reason,
+        /* Avant la 2.41.0, le moteur notait « deja pris » en toutes lettres :
+           la ligne disait « recupere » pour un jeu seulement constate. La
+           regle est celle du bilan (alreadyYours), pour que les deux disent
+           la meme chose. */
+        reason: REASON_KEYS[e.reason] ? e.reason : (alreadyYours(e) ? 'ALREADY_CLAIMED' : e.reason),
         label: title ? displayTitle(title) : (opaque ? label : prettySlug(bare.replace(/^card:/, ''))),
         image: (known && known.image) || null,
       });
@@ -1330,7 +1329,7 @@ function renderStores(all, behaviour) {
     row.append(name);
 
     const claimed = store.history
-      ? Object.values(get(all, store.history, {})).filter((e) => e && (e.status === 'claimed' || e.status === 'redeemed')).length
+      ? Object.values(get(all, store.history, {})).filter((e) => e && (e.status === 'claimed' || e.status === 'redeemed') && !alreadyYours(e)).length
       : 0;
 
     // The risky opt-in shows on the row itself: nobody should have to open
@@ -1567,22 +1566,25 @@ function renderTally(all) {
   const zone = document.getElementById('tally');
   zone.textContent = '';
 
-  foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count)) : '');
+  foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))
+    : b.already ? t('foldTallyAlready', String(b.already)) : '');
 
-  if (!b.count) {
+  if (!b.count && !b.already) {
     zone.className = 'empty';
     zone.textContent = t('tallyNone');
     document.getElementById('tally-stores').textContent = '';
     return;
   }
   zone.className = 'tally';
-  zone.textContent = t(b.count > 1 ? 'tallyMany' : 'tallyOne', String(b.count));
+  zone.textContent = b.count ? t(b.count > 1 ? 'tallyMany' : 'tallyOne', String(b.count)) : t('tallyNoneTaken');
 
   // Honest about what it ignores: many claims predate the watcher and never had
   // a known worth.
   if (b.priced) {
     zone.append(t('tallyValued', String(b.priced), moneyTotals(b.totals)));
   }
+  // And about what it did not do: a game you already had is counted apart.
+  if (b.already) zone.append(t('tallyAlready', String(b.already)));
 
   /* Le mois le plus riche et le magasin dominant.
    *
@@ -1602,7 +1604,9 @@ function renderTally(all) {
     lignes.push(t('tallyBestMonth', nom, String(combien)));
   }
   if (dominant && Object.keys(b.byStore).length > 1) {
-    lignes.push(t('tallyMainStore', STORE_LABELS[dominant] || dominant));
+    // mainStore rend un objet : l'indexer dans STORE_LABELS affichait
+    // « [object Object] » des qu'il y avait deux magasins.
+    lignes.push(t('tallyMainStore', dominant.libelle));
   }
   document.getElementById('tally-extra').textContent = lignes.join(' · ');
 
@@ -2202,7 +2206,9 @@ document.getElementById('export-csv').addEventListener('click', async () => {
 
   // La devise a sa colonne : une valeur sans devise n'est pas exploitable dans
   // un tableur, et les deux ne se melangent pas dans la meme cellule.
-  const header = ['date', 'title', 'store', 'worth', 'currency', 'status'];
+  // `already` en derniere colonne : les tableurs existants gardent leurs
+  // references, et un jeu trouve deja a vous se distingue d'une reclamation.
+  const header = ['date', 'title', 'store', 'worth', 'currency', 'status', 'already'];
   const lines = [header.join(',')];
   for (const r of rows) {
     lines.push([
@@ -2212,6 +2218,7 @@ document.getElementById('export-csv').addEventListener('click', async () => {
       r.worth ?? '',
       r.currency || '',
       r.status || '',
+      r.already ? 'yes' : '',
     ].map(csvCell).join(','));
   }
   // A BOM, so Excel opens UTF-8 without mangling accented titles.
@@ -2373,6 +2380,38 @@ document.addEventListener('keydown', (e) => {
     showTab(TAB_NAMES[n - 1]);
     document.getElementById(`tab-${TAB_NAMES[n - 1]}`).focus();
   }
+});
+
+/* --- le popup suit ce qui change pendant qu'il est ouvert
+
+   Une reclamation qui se termine, un cycle qui ramene une offre, un registre
+   restaure : tout cela s'ecrit dans le stockage pendant que le popup est
+   ouvert, et il restait sur l'image de son ouverture -- il fallait le fermer
+   pour voir le resultat de ce qu'on venait de demander.
+
+   Les ecritures d'un cycle arrivent en rafale : une seule relecture pour le
+   lot. Et jamais sous les doigts : un champ en cours de saisie ou le curseur
+   de valeur tenu reprendraient leur valeur stockee au rendu suivant. On
+   repasse alors un peu plus tard. Les preferences d'affichage (veille:ui)
+   n'y entrent pas : seul le popup les ecrit, et il se redessine deja apres. */
+const WATCHED_KEYS = new Set(KEYS_READ.filter((k) => k !== KEY_UI));
+// La recherche n'y est pas : le rendu ne touche pas a sa valeur, et bloquer
+// tant qu'elle garde le focus figerait le popup pour rien.
+const EDITING = 'input[type="range"], input[type="number"], input[type="time"], textarea, select';
+let refreshTimer = null;
+
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    const active = document.activeElement;
+    if (active && active.matches && active.matches(EDITING)) { scheduleRefresh(); return; }
+    load();
+  }, 400);
+}
+
+api.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (Object.keys(changes).some((k) => WATCHED_KEYS.has(k))) scheduleRefresh();
 });
 
 /* --- boot */

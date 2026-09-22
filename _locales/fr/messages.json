@@ -176,6 +176,15 @@
   "tallyValued": {
     "message": ", dont $1 à prix connu : $2"
   },
+  "foldTallyAlready": {
+    "message": "$1 déjà à vous"
+  },
+  "tallyNoneTaken": {
+    "message": "Rien de pris par l'extension pour l'instant"
+  },
+  "tallyAlready": {
+    "message": " · $1 déjà à vous"
+  },
   "claimForMe": {
     "message": "Récupérer sans moi"
   },

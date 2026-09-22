@@ -1,6 +1,6 @@
 {
   "name": "free-games-claimer-extension",
-  "version": "2.43.0",
+  "version": "2.44.0",
   "private": true,
   "type": "module",
   "description": "MV3 extension and userscript that claims free games on Epic, GOG, Amazon Luna, and spots them on Steam.",
@@ -10,6 +10,7 @@
     "verify:rename": "node build/verify-rename.mjs",
     "test": "node build/build.mjs && node --test \"test/*.test.mjs\"",
     "check": "npm run verify && npm run verify:rename && npm test",
-    "package": "node build/build.mjs && node build/package.mjs"
+    "package": "node build/build.mjs && node build/package.mjs",
+    "preview": "node build/preview.mjs"
   }
 }
