@@ -103,6 +103,7 @@ est declare `"type": "module"`.
 | `outcomes.js` | ce qui est passe, pris ou rate : l'issue figee a la fin de l'offre |
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
+| `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -134,7 +135,7 @@ src/
 watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
-  outcomes.js incidents.js health.js
+  outcomes.js incidents.js health.js notify-actions.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

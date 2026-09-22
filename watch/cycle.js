@@ -17,6 +17,7 @@
  */
 import { integrate, purgeExpired, openOffers } from './catalog.js';
 import { noteOutcomesFromCatalog } from './outcomes.js';
+import { NOTICE } from './notify-actions.js';
 import { STATES, STORES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
 import { claimableStoresFor, activeSourcesFor } from './sources/index.js';
 import { steamGate } from './steam-claim.js';
@@ -488,6 +489,12 @@ export async function runCycle({
         text,
         id: `veille-${now}`,
         url: first.url || first.resolveUrl || null,
+        /* Le genre commande les boutons, la cle designe SUR QUOI ils agissent.
+           Sans la seconde, un bouton « Recuperer » cliqué trois heures plus
+           tard ne saurait pas de quelle offre on parle : le service worker a
+           tout oublie entre-temps. */
+        kind: NOTICE.OFFER,
+        catalogKey: first.catalogKey,
       });
     }
 
@@ -524,6 +531,11 @@ export async function runCycle({
         text: t('notifyEndingBody', left),
         id: `expire-${now}`,
         url: closing[0].url || closing[0].resolveUrl || null,
+        /* Un rappel ne propose PAS de reporter : l'offre se termine dans
+           quelques heures, et reporter reviendrait a la refuser en croyant
+           gagner du temps. Voir watch/notify-actions.js. */
+        kind: NOTICE.REMINDER,
+        catalogKey: closing[0].catalogKey,
       });
     }
 

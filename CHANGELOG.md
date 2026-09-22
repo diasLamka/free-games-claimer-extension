@@ -4,6 +4,95 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.30.0 -- 2026-09-22
+
+**Le canal qui joint le plus souvent ne servait qu'a informer**
+
+Le service worker ne construisait que des notifications de type « basic »,
+sans boutons, et aucun `onButtonClicked` n'etait enregistre. Une offre
+annoncee demandait donc d'ouvrir le popup pour en faire quoi que ce soit --
+alors que la notification etait deja sous les yeux.
+
+Cette version attendait la 2.29.0, et pas par prudence : ses boutons utiles
+demandent une commande a l'unite et un report, qui n'existaient pas avant
+elle. Livres plus tot, ils auraient ete decoratifs -- c'est-a-dire pires que
+pas de boutons.
+
+### Ce qui manquait n'etait pas les boutons, c'etait la memoire
+
+La table retenue ne gardait qu'un couple identifiant vers URL. Rien ne savait
+donc sur QUELLE offre agir.
+
+Et « plus tard » est le cas normal : le service worker meurt trente secondes
+apres le dernier evenement, et le clic arrive quand l'utilisateur revient. Un
+bouton « Recuperer » sans cette memoire aurait su qu'on a clique, sans savoir
+sur quoi.
+
+La table porte desormais l'URL, la cle de catalogue et le genre de
+notification. **Les entrees ecrites avant cette version restent lisibles** :
+les ignorer ferait que le premier clic apres la mise a jour retombe sur le
+popup au lieu de l'offre. Un bug minuscule, une seule fois, et parfaitement
+evitable.
+
+### Un numero n'est pas une intention
+
+`onButtonClicked` ne rend qu'un INDEX. Sans une table qui dise, pour chaque
+genre de notification, ce que cette position signifie, le second bouton d'un
+rappel declencherait l'action du second bouton d'une annonce : une mise en
+pause au lieu d'une reclamation, sur la notification meme qui dit que l'offre
+se termine.
+
+Cette table est un module pur, donc testable sans navigateur -- ce qui est
+exactement ce qu'il fallait, puisque le bug qu'elle evite ne se verrait jamais
+a la lecture.
+
+**Un index hors de la liste ne declenche rien.** Retomber sur la premiere
+action serait agir dans le doute sur un vrai compte, ce que l'extension evite
+partout ailleurs.
+
+### Les boutons, et celui qui est absent
+
+| Notification | Boutons |
+|---|---|
+| offre reperee | Recuperer, Plus tard |
+| fin proche | Recuperer |
+| incident | Ouvrir le journal |
+
+**Deux au maximum**, parce que Chrome n'en affiche jamais plus et qu'un
+troisieme serait ignore en silence -- donc une action que le code croit offrir
+et que personne ne voit.
+
+**Le rappel n'a pas de « Plus tard », et c'est le sujet.** Reporter une offre
+qui se termine dans quelques heures, c'est la refuser en croyant gagner du
+temps. Un bouton absent est un bouton qui ne peut pas couter un jeu.
+
+**L'incident ne mene qu'a ce qui l'explique.** Le chien de garde aboie, il ne
+repare pas : un bouton « reparer » sur une panne dont la cause est inconnue
+serait un mensonge.
+
+### Firefox
+
+Son implementation ignore les boutons et REJETTE la creation qui en porte.
+Detecter le navigateur serait fragile et se perimerait ; on essaie, et on
+recommence sans. Une extension qui n'afficherait plus aucune notification sur
+Firefox serait un prix absurde pour deux boutons sur Chrome.
+
+### Detail
+
+Le build scanne desormais `watch/notify-actions.js`, dont les libelles vivent
+en TABLE et non en appel de traduction. Le balayage laxiste les reconnait, le
+strict les ignore : c'est exactement le cas que la distinction entre les deux
+prevoyait.
+
+Trois cles de libelle par langue (319 par locale). Le moteur est identique a
+celui de la 2.29.0.
+
+| | 2.29.0 | 2.30.0 |
+|---|---|---|
+| tests | 819 | 830 |
+| ce qu'une notification retient | une URL | URL, offre, genre |
+| actions possibles sans ouvrir le popup | 1 | 4 |
+
 ## 2.29.0 -- 2026-09-22
 
 **Entre « ne rien faire » et « tout prendre », il n'y avait rien**

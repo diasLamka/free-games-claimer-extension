@@ -336,6 +336,10 @@ const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js
      2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
      une faute de frappe y serait restee invisible. */
   'watch/health.js',
+  /* Les libelles des boutons de notification y vivent en TABLE, pas en appel
+     t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
+     exactement le cas que la distinction entre les deux prevoit. */
+  'watch/notify-actions.js',
   'collection.html', 'collection.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
@@ -356,6 +360,10 @@ const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
      2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
      une faute de frappe y serait restee invisible. */
   'watch/health.js',
+  /* Les libelles des boutons de notification y vivent en TABLE, pas en appel
+     t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
+     exactement le cas que la distinction entre les deux prevoit. */
+  'watch/notify-actions.js',
   'collection.html', 'collection.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')

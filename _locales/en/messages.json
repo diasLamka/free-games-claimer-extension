@@ -503,6 +503,15 @@
   "incidentManyTitle": {
     "message": "$1 problems to look at"
   },
+  "notifyActionClaim": {
+    "message": "Claim"
+  },
+  "notifyActionSnooze": {
+    "message": "Later"
+  },
+  "notifyActionJournal": {
+    "message": "Open log"
+  },
   "healthStalled": {
     "message": "Background watch stopped running $1."
   },

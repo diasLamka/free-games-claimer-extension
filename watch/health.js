@@ -22,6 +22,7 @@ import {
   KEY_INCIDENTS, incidentLine, markNotified, observe, pendingNotices, reconcile,
 } from './incidents.js';
 import { ALERTS, badgeState, decideAlert } from './notify-policy.js';
+import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
 import { t } from '../i18n.js';
 
@@ -97,6 +98,7 @@ export async function inspectHealth({
         id: `incident-${now}`,
         title: titre,
         message: incidentLine(aDire[0]),
+        kind: NOTICE.INCIDENT,
       });
       suivant = markNotified(incidents, aDire.map((i) => i.id), { now });
       notified = aDire.length;

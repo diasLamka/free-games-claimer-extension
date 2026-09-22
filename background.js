@@ -33,7 +33,7 @@ import { runCycle } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
 import {
   readState, readKeys, readSettings, write, KEYS,
-  rememberNotificationLink, readNotificationLink,
+  rememberNotification, readNotification, readNotificationLink,
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import {
@@ -54,6 +54,7 @@ import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
 import { badgeState } from './watch/notify-policy.js';
+import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
@@ -178,6 +179,81 @@ async function ensureSchedule(now = Date.now()) {
   return null;
 }
 
+/* --------------------------------------------------------- notifications */
+
+/**
+ * Affiche une notification, avec ses boutons quand la plateforme les accepte.
+ *
+ * Firefox ignore `buttons` et REJETTE la creation qui en porte. Detecter le
+ * navigateur serait fragile ; on essaie, et on recommence sans. Une extension
+ * qui n'afficherait plus aucune notification sur Firefox serait un prix absurde
+ * pour deux boutons sur Chrome.
+ *
+ * Ce qu'il faut pour agir est retenu AVANT l'affichage : le clic peut arriver
+ * des heures plus tard, sur un service worker qui a tout oublie.
+ */
+async function showNotice({ id, title, message, url = null, kind = null, catalogKey = null }) {
+  try {
+    await rememberNotification(api, id, { url, catalogKey, kind });
+
+    const base = { type: 'basic', iconUrl: 'icon128.png', title, message };
+    const boutons = buttonsFor(kind).map((b) => ({ title: t(b.label) }));
+
+    if (!boutons.length) {
+      await api.notifications.create(id, base);
+      return;
+    }
+
+    try {
+      await api.notifications.create(id, { ...base, buttons: boutons });
+    } catch (e) {
+      record('info', 'boutons de notification refuses, repli sans boutons', e);
+      await api.notifications.create(id, base);
+    }
+  } catch (e) {
+    record('warn', 'notification impossible', e);
+  }
+}
+
+/**
+ * Ce qu'un bouton de notification declenche.
+ *
+ * `onButtonClicked` ne rend qu'un NUMERO : c'est la table de
+ * watch/notify-actions.js qui dit ce que cette position signifie POUR CE
+ * GENRE de notification. Sans elle, le second bouton d'un rappel declencherait
+ * l'action du second bouton d'une annonce.
+ *
+ * Un index inconnu ne declenche rien : agir dans le doute sur un vrai compte
+ * est exactement ce qu'on evite partout ailleurs.
+ */
+async function runNoticeAction(id, index) {
+  const retenu = await readNotification(api, id);
+  if (!retenu) return;
+
+  const action = actionAt(retenu.kind, index);
+  if (!action) return;
+
+  if (action === ACTIONS.JOURNAL) {
+    await api.tabs.create({ url: api.runtime.getURL('journal.html'), active: true });
+    return;
+  }
+  if (!retenu.catalogKey) return;
+
+  if (action === ACTIONS.CLAIM) {
+    const r = await claimOneNow({
+      chrome: api,
+      catalogKey: retenu.catalogKey,
+      claimableStores: CLAIMABLE_STORES,
+      record,
+    });
+    record('info', `reclamation depuis une notification : ${r.claimed} prise(s)`);
+    return;
+  }
+  if (action === ACTIONS.SNOOZE) {
+    await snooze({ chrome: api, catalogKey: retenu.catalogKey });
+  }
+}
+
 /* ------------------------------------------------------- tour d'inspection */
 
 /**
@@ -261,20 +337,8 @@ async function startCycle(origine, options = {}) {
         now,
         sources: SOURCES,
         fetch: (url, init) => fetch(url, init),
-        notify: async ({ title, text, id, url }) => {
-          try {
-            // Le lien est retenu AVANT l'affichage : le clic peut arriver des
-            // heures plus tard, sur un service worker qui a tout oublie.
-            if (url) await rememberNotificationLink(api, id, url);
-            await api.notifications.create(id, {
-              type: 'basic',
-              iconUrl: 'icon128.png',
-              title: title,
-              message: text,
-            });
-          } catch (e) {
-            record('warn', 'notification impossible', e);
-          }
+        notify: async ({ title, text, id, url, kind, catalogKey }) => {
+          await showNotice({ id, title, message: text, url, kind, catalogKey });
         },
         updateBadge: async (n) => {
           try {
@@ -524,6 +588,15 @@ api.tabs.onRemoved.addListener((tabId) => {
 api.tabs.onReplaced.addListener((ajoute, retire) => {
   const resolus = tabVanished(retire);
   if (resolus) record('warn', `onglet ${retire} remplace par ${ajoute} : ${resolus} attente(s) resolue(s)`);
+});
+
+/* Enregistre au niveau racine, comme tous les autres : le clic arrive sur un
+   service worker qui vient de demarrer, et un listener pose apres un await ne
+   le recevrait jamais. */
+api.notifications.onButtonClicked.addListener((id, index) => {
+  runNoticeAction(id, index)
+    .catch((e) => record('warn', 'action de notification impossible', e));
+  api.notifications.clear(id).catch(() => { /* deja fermee */ });
 });
 
 api.notifications.onClicked.addListener((id) => {

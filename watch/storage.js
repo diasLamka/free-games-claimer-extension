@@ -397,10 +397,25 @@ const MAX_LINKS = 30;
  * survenir des heures plus tard.
  */
 export async function rememberNotificationLink(chrome, id, url) {
-  if (!id || !url) return;
+  return rememberNotification(chrome, id, { url });
+}
+
+/**
+ * Retient DE QUOI AGIR sur une notification, pas seulement ou aller.
+ *
+ * La table ne gardait qu'un couple identifiant -> URL. Rien ne savait donc sur
+ * QUELLE offre agir des heures plus tard -- et des heures plus tard est le cas
+ * normal : le service worker meurt trente secondes apres le dernier evenement,
+ * et le clic arrive quand l'utilisateur revient.
+ *
+ * Une entree sans rien a retenir n'est pas ecrite : elle consommerait une
+ * place du plafond et chasserait un lien utile.
+ */
+export async function rememberNotification(chrome, id, { url = null, catalogKey = null, kind = null } = {}) {
+  if (!id || (!url && !catalogKey)) return;
   const zone = chrome.storage.session || chrome.storage.local;
   const { [KEYS.NOTIFICATION_LINKS]: links } = await zone.get(KEYS.NOTIFICATION_LINKS);
-  const following = { ...(links || {}), [id]: url };
+  const following = { ...(links || {}), [id]: { url, catalogKey, kind } };
 
   const keys = Object.keys(following);
   if (keys.length > MAX_LINKS) for (const k of keys.slice(0, keys.length - MAX_LINKS)) delete following[k];
@@ -408,10 +423,27 @@ export async function rememberNotificationLink(chrome, id, url) {
   await zone.set({ [KEYS.NOTIFICATION_LINKS]: following });
 }
 
-export async function readNotificationLink(chrome, id) {
+/**
+ * Ce qu'une notification a retenu, sous sa forme complete.
+ *
+ * Les entrees ecrites avant la 2.30.0 ne portaient qu'une chaine. Les ignorer
+ * ferait que le premier clic apres une mise a jour retombe sur le popup au
+ * lieu de l'offre : un bug minuscule, une seule fois, et parfaitement
+ * evitable.
+ */
+export async function readNotification(chrome, id) {
   const zone = chrome.storage.session || chrome.storage.local;
   const { [KEYS.NOTIFICATION_LINKS]: links } = await zone.get(KEYS.NOTIFICATION_LINKS);
-  return (links && links[id]) || null;
+  const brut = links && links[id];
+  if (!brut) return null;
+  if (typeof brut === 'string') return { url: brut, catalogKey: null, kind: null };
+  return { url: brut.url || null, catalogKey: brut.catalogKey || null, kind: brut.kind || null };
+}
+
+/** L'URL seule. Conservee pour le clic sur le corps de la notification. */
+export async function readNotificationLink(chrome, id) {
+  const lu = await readNotification(chrome, id);
+  return (lu && lu.url) || null;
 }
 
 /* ------------------------------------------------------------------ mesure */

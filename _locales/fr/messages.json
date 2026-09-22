@@ -503,6 +503,15 @@
   "incidentManyTitle": {
     "message": "$1 problemes a regarder"
   },
+  "notifyActionClaim": {
+    "message": "Recuperer"
+  },
+  "notifyActionSnooze": {
+    "message": "Plus tard"
+  },
+  "notifyActionJournal": {
+    "message": "Ouvrir le journal"
+  },
   "healthStalled": {
     "message": "La veille de fond ne tourne plus $1."
   },
