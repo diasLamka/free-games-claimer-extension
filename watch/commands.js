@@ -16,6 +16,8 @@ import { KEY_LIBRARY } from './library.js';
 import { STATES, isExpired } from './offer.js';
 import { MAX_PER_HOUR } from './claim.js';
 import { claimableStoresFor } from './sources/index.js';
+import { normaliseTitle } from './offer.js';
+import { KEY_WISHLIST, addWish, removeWish } from './wishlist.js';
 
 /**
  * Reclame tout ce qui peut l'etre, maintenant, a la demande.
@@ -256,4 +258,27 @@ export async function claimOneNow({
 
   const claimed = r.claims.filter((c) => c.verdict === 'claimed').length;
   return { claimed, claims: r.claims };
+}
+
+/**
+ * Ajoute ou retire un souhait.
+ *
+ * Passe par le service worker plutot que d'etre ecrit depuis le popup, et pour
+ * une raison precise : la liste est LUE a chaque cycle. Deux ecrivains sur une
+ * cle que le worker relit, sans transaction, c'est la perte silencieuse d'un
+ * des deux -- et ce qui serait perdu ici est un choix que l'utilisateur vient
+ * d'exprimer.
+ *
+ * La normalisation passee est celle du modele d'offre, la seule avec laquelle
+ * le rapprochement veut dire quelque chose.
+ */
+export async function wish({ chrome, title, on = true }) {
+  const raw = await readKeys(chrome, [KEY_WISHLIST]);
+  const avant = raw[KEY_WISHLIST] || [];
+  const apres = on
+    ? addWish(avant, title, normaliseTitle)
+    : removeWish(avant, title, normaliseTitle);
+
+  await write(chrome, { [KEY_WISHLIST]: apres });
+  return { wishes: apres.length };
 }

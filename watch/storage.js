@@ -30,6 +30,7 @@ import { KEY_LIBRARY } from './library.js';
    sans que son issue ait ete figee, et l'information n'existe plus nulle part
    ailleurs. */
 import { KEY_OUTCOMES } from './outcomes.js';
+import { KEY_WISHLIST } from './wishlist.js';
 
 export const PREFIX = 'veille:';
 
@@ -357,6 +358,7 @@ export async function readContext(chrome) {
     library: raw[KEY_LIBRARY] || {},
     rates: raw[KEY_RATES] || null,
     outcomes: raw[KEY_OUTCOMES] || {},
+    wishlist: raw[KEY_WISHLIST] || [],
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),
       lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),

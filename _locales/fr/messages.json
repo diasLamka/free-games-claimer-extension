@@ -122,6 +122,12 @@
   "unpinTitle": {
     "message": "Ne plus garder en tête"
   },
+  "wishTitle": {
+    "message": "Guetter ce titre"
+  },
+  "unwishTitle": {
+    "message": "Ne plus guetter ce titre"
+  },
   "claimThisTitle": {
     "message": "Recuperer celle-ci maintenant"
   },
@@ -892,6 +898,39 @@
   },
   "collectionNote": {
     "message": "Steam : jeux possédés et leurs noms publics. GOG : la liste de jeux de votre compte. Epic : votre historique de commandes, jeux gratuits compris (un DLC y ressemble à un jeu). Un titre présent sur deux magasins est rapproché par son nom : c'est un indice, pas une preuve, et rien ne s'en sert pour décider d'une récupération."
+  },
+  "backlogColStatus": {
+    "message": "Backlog"
+  },
+  "backlogFilterLabel": {
+    "message": "Filtrer par etat"
+  },
+  "backlogAll": {
+    "message": "Tous les etats"
+  },
+  "backlogUntouched": {
+    "message": "Non renseigne"
+  },
+  "backlogToTry": {
+    "message": "A essayer"
+  },
+  "backlogPlaying": {
+    "message": "En cours"
+  },
+  "backlogDone": {
+    "message": "Fini"
+  },
+  "backlogDropped": {
+    "message": "Abandonne"
+  },
+  "backlogSurprise": {
+    "message": "Tire au sort"
+  },
+  "backlogNothingToTry": {
+    "message": "Aucun jeu n est marque a essayer."
+  },
+  "backlogPicked": {
+    "message": "Ce soir : $1"
   },
   "collectionUntitled": {
     "message": "Sans titre (n° $1)"

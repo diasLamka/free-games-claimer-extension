@@ -18,6 +18,7 @@
 import { integrate, purgeExpired, openOffers } from './catalog.js';
 import { noteOutcomesFromCatalog } from './outcomes.js';
 import { NOTICE } from './notify-actions.js';
+import { markWished } from './wishlist.js';
 import { STATES, STORES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
 import { claimableStoresFor, activeSourcesFor } from './sources/index.js';
 import { steamGate } from './steam-claim.js';
@@ -412,7 +413,10 @@ export async function runCycle({
       nextState.booted = true;
       record('info', `amorcage : ${pending.length} offre(s) enregistrees sans notification`);
     } else {
-      announcements = byUrgency(pending, now);
+      /* Ce que l'utilisateur ATTENDAIT passe devant, et echappe au resume :
+         un jeu guette depuis des mois ne se noie pas dans « 5 jeux gratuits ».
+         Le drapeau est derive a la lecture, jamais persiste. */
+      announcements = byUrgency(markWished(pending, ctx.wishlist, normaliseTitle), now);
     }
 
     const unseen = openOffers(catalog, now).filter((o) => !o.seen).length;
@@ -476,6 +480,19 @@ export async function runCycle({
       count: watched.length,
       lastDigestAt: ctx.state.lastDigestAt ?? null,
     });
+
+    /* Un jeu ATTENDU ne se noie pas dans « 5 jeux gratuits ».
+     *
+     * C'est la difference entre savoir qu'il y a des offres et savoir que
+     * CELLE-LA est arrivee. Le resume quotidien reste le bon comportement pour
+     * le tout-venant ; il devient le mauvais des l'instant ou la liste porte
+     * quelque chose que l'utilisateur guettait. `byUrgency` l'a deja mis en
+     * tete, donc la notification individuelle parle bien de lui. */
+    const attendu = watched.some((o) => o.wished);
+    if (attendu && decision.digest) {
+      decision.digest = false;
+      record('info', 'un jeu attendu est annonce a part');
+    }
 
     if (decision.notify) {
       const first = watched[0];

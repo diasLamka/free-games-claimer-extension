@@ -530,6 +530,14 @@ export function byUrgency(offers, now) {
     const pb = b.priority === true ? 0 : 1;
     if (pa !== pb) return pa - pb;
 
+    /* Puis ce qu'il ATTENDAIT, avant meme de l'avoir vu passer. Le drapeau est
+       derive de la liste de souhaits a chaque lecture, jamais persiste : la
+       liste change, et une offre marquee une fois pour toutes resterait
+       prioritaire apres le retrait du souhait. */
+    const wa = a.wished === true ? 0 : 1;
+    const wb = b.wished === true ? 0 : 1;
+    if (wa !== wb) return wa - wb;
+
     const ua = urgency(a, now);
     const ub = urgency(b, now);
     if (ua !== ub) return ua - ub;

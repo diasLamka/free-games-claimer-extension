@@ -12,6 +12,9 @@ import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
 import { STORE_LABELS } from './watch/offer.js';
 import { KEY_LIBRARY } from './watch/library.js';
 import {
+  KEY_ANNOTATIONS, STATUS, annotationKey, pickToTry, readAnnotation, setStatus,
+} from './watch/annotations.js';
+import {
   KEY_COLLECTION,
   COLLECTION_STORES,
   IMPORTABLE_STORES,
@@ -48,6 +51,9 @@ const SIGN_IN = Object.freeze({
 
 let collection = sanitiseCollection(null);
 let library = {};
+/* Ce que l'utilisateur a dit de ses jeux. Cette page en est SEULE ecrivaine :
+   le service worker n'y touche jamais, donc aucune transaction n'est en jeu. */
+let annotations = {};
 let rows = [];
 let importing = false;
 
@@ -172,6 +178,29 @@ function badge(store, copy) {
   return wrap;
 }
 
+/**
+ * La cle d'annotation d'une ligne.
+ *
+ * Le PREMIER magasin de la ligne, dans l'ordre fixe de COLLECTION_STORES. Une
+ * ligne regroupe le meme titre sur plusieurs magasins ; annoter separement
+ * chacun d'eux demanderait a l'utilisateur de choisir ou poser son avis, alors
+ * qu'il parle du jeu. L'ordre fixe garantit que la meme ligne rend toujours la
+ * meme cle, quel que soit l'ordre d'importation.
+ */
+function rowKey(r) {
+  for (const store of COLLECTION_STORES) {
+    if (r.stores[store]) return annotationKey(store, r.stores[store].id);
+  }
+  return annotationKey('?', r.title || '');
+}
+
+/** Ecrit, puis redessine. La page est seule ecrivaine de cette cle. */
+async function writeAnnotations(next) {
+  annotations = next;
+  await api.storage.local.set({ [KEY_ANNOTATIONS]: annotations });
+  renderRows();
+}
+
 function renderRows() {
   const kind = document.getElementById('kind').value || 'game';
   const filters = {
@@ -181,6 +210,12 @@ function renderRows() {
     duplicatesOnly: document.getElementById('duplicates').checked,
   };
 
+  /* Le filtre d'etat s'applique APRES les autres, et separement : il porte sur
+     ce que l'utilisateur a dit, pas sur ce que les magasins rendent. Le
+     melanger aux filtres de collection brouillerait les deux, et les compteurs
+     ci-dessous cesseraient de decrire la collection. */
+  const etatVoulu = document.getElementById('status').value || '';
+
   // Les compteurs suivent le genre choisi, pas la recherche : ils decrivent
   // la collection, pas ce qu'on est en train d'y chercher.
   const totaux = summarise(filterRows(rows, { kind }));
@@ -188,7 +223,8 @@ function renderRows() {
   document.getElementById('count-duplicates').textContent = String(totaux.duplicates);
   document.getElementById('count-claimed').textContent = String(totaux.claimed);
 
-  const shown = sortRows(filterRows(rows, filters), document.getElementById('sort').value || 'title', intlLocale());
+  let shown = sortRows(filterRows(rows, filters), document.getElementById('sort').value || 'title', intlLocale());
+  if (etatVoulu) shown = shown.filter((r) => readAnnotation(annotations, rowKey(r)).status === etatVoulu);
   const corps = document.getElementById('rows');
   const lot = document.createDocumentFragment();
 
@@ -299,7 +335,22 @@ async function boot() {
 }
 
 document.getElementById('search').addEventListener('input', renderRows);
-for (const id of ['store', 'sort', 'duplicates']) document.getElementById(id).addEventListener('change', renderRows);
+for (const id of ['store', 'sort', 'duplicates', 'status']) document.getElementById(id).addEventListener('change', renderRows);
+
+/* Le tirage au sort : le premier maillon « jouer » apres « retrouver ».
+ *
+ * Il ne tire que parmi les jeux marques « a essayer ». Tirer dans la
+ * collection entiere ressortirait un jeu deja fini, ce qui est exactement le
+ * contraire du service rendu. Sans rien de marque, il le dit plutot que de
+ * faire semblant. */
+document.getElementById('surprise').addEventListener('click', () => {
+  const cles = rows.map(rowKey);
+  const tire = pickToTry(cles, annotations);
+  if (!tire) { flash(t('backlogNothingToTry')); return; }
+
+  const ligne = rows.find((r) => rowKey(r) === tire);
+  flash(t('backlogPicked', (ligne && ligne.title) || tire));
+});
 // Le genre change aussi les compteurs des cartes, pas seulement la liste.
 document.getElementById('kind').addEventListener('change', render);
 document.getElementById('import-all').addEventListener('click', () => startImport(IMPORTABLE_STORES));

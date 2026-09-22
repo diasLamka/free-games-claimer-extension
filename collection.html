@@ -278,7 +278,16 @@
         <option value="since" data-i18n="collectionSortSince"></option>
         <option value="stores" data-i18n="collectionSortStores"></option>
       </select>
+      <select id="status" data-i18n-attr="aria-label:backlogFilterLabel">
+        <option value="" data-i18n="backlogAll"></option>
+        <option value="toTry" data-i18n="backlogToTry"></option>
+        <option value="playing" data-i18n="backlogPlaying"></option>
+        <option value="done" data-i18n="backlogDone"></option>
+        <option value="dropped" data-i18n="backlogDropped"></option>
+        <option value="none" data-i18n="backlogUntouched"></option>
+      </select>
       <label class="check"><input type="checkbox" id="duplicates"> <span data-i18n="collectionDuplicatesOnly"></span></label>
+      <button id="surprise" data-i18n="backlogSurprise"></button>
       <span class="spacer"></span>
       <button id="import-all" class="primary" data-i18n="collectionImportAll"></button>
     </div>
@@ -290,6 +299,7 @@
             <th data-i18n="collectionColTitle"></th>
             <th data-i18n="collectionColStores"></th>
             <th data-i18n="collectionColSince"></th>
+            <th data-i18n="backlogColStatus"></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>

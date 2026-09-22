@@ -37,7 +37,7 @@ import {
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import {
-  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze,
+  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze, wish,
 } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import {
@@ -800,6 +800,13 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     prioritise({ chrome: api, catalogKey: msg.catalogKey, on: msg.on === true })
       .then(sendResponse)
       .catch(() => sendResponse({ changed: false }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-wish') {
+    wish({ chrome: api, title: msg.title, on: msg.on === true })
+      .then(sendResponse)
+      .catch(() => sendResponse({ wishes: 0 }));
     return true;
   }
 

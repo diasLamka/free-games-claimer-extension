@@ -61,6 +61,9 @@ export const UI_COMMANDS = Object.freeze([
      reporter. Les trois agissent sur le catalogue ou sur un vrai compte, donc
      elles sont reservees aux pages de l'extension comme les precedentes. */
   'fgc-claim-one', 'fgc-prioritise', 'fgc-snooze',
+  /* La liste de souhaits (2.31.0). Elle est lue a chaque cycle : le popup
+     demande, le worker ecrit. */
+  'fgc-wish',
 ]);
 
 /**

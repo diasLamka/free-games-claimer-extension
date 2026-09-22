@@ -31,6 +31,7 @@ import { DEFAULT_SETTINGS } from './watch/storage.js';
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
+import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
@@ -156,6 +157,7 @@ const KEYS_READ = [
   KEY_COUNTRY, KEY_LANG,
   KEY_SESSIONS,
   KEY_INCIDENTS,
+  KEY_WISHLIST,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -622,6 +624,19 @@ function gameCard({ key, offer }, ctx) {
   /* L'etoile ecrit sur le CATALOGUE, via le worker qui en est seul ecrivain.
      Elle vivait dans `veille:ui`, que le worker ne lit jamais : elle ordonnait
      la liste et ne changeait rien a ce qui etait reclame en premier. */
+  /* Le souhait porte sur le TITRE, pas sur cette offre : c'est ce qui lui
+     permet de reconnaitre le meme jeu quand il repassera sur un autre magasin,
+     dans six mois. Un coeur accroche a l'offre disparaitrait avec elle. */
+  const wished = isWished(ctx.wishlist, offer, normaliseTitle);
+  const heart = el('button', `pin${wished ? ' on' : ''}`, wished ? '♥' : '♡');
+  heart.title = t(wished ? 'unwishTitle' : 'wishTitle');
+  heart.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await tell('fgc-wish', { title: offer.title, on: !wished });
+    await load();
+  });
+  meta.append(heart);
+
   const pinned = offer.priority === true;
   const pin = el('button', `pin${pinned ? ' on' : ''}`, pinned ? '★' : '☆');
   pin.title = t(pinned ? 'unpinTitle' : 'pinTitle');
@@ -737,6 +752,7 @@ function renderGames(all, behaviour) {
     alsoOn: crossStore(rows),
     owned: ownedTitles(library, normaliseTitle),
     fresh: markFresh(rows),
+    wishlist: get(all, KEY_WISHLIST, []),
   };
 
   document.getElementById('n-games').textContent = rows.length || '';

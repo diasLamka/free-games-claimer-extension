@@ -104,6 +104,8 @@ est declare `"type": "module"`.
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
+| `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre |
+| `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -136,6 +138,7 @@ watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
+  wishlist.js annotations.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

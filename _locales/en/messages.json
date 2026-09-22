@@ -122,6 +122,12 @@
   "unpinTitle": {
     "message": "Stop keeping at the top"
   },
+  "wishTitle": {
+    "message": "Watch for this title"
+  },
+  "unwishTitle": {
+    "message": "Stop watching this title"
+  },
   "claimThisTitle": {
     "message": "Claim this one now"
   },
@@ -892,6 +898,39 @@
   },
   "collectionNote": {
     "message": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim."
+  },
+  "backlogColStatus": {
+    "message": "Backlog"
+  },
+  "backlogFilterLabel": {
+    "message": "Filter by backlog status"
+  },
+  "backlogAll": {
+    "message": "Any status"
+  },
+  "backlogUntouched": {
+    "message": "Not set"
+  },
+  "backlogToTry": {
+    "message": "To try"
+  },
+  "backlogPlaying": {
+    "message": "Playing"
+  },
+  "backlogDone": {
+    "message": "Finished"
+  },
+  "backlogDropped": {
+    "message": "Dropped"
+  },
+  "backlogSurprise": {
+    "message": "Pick one for me"
+  },
+  "backlogNothingToTry": {
+    "message": "Nothing is marked to try yet."
+  },
+  "backlogPicked": {
+    "message": "Tonight: $1"
   },
   "collectionUntitled": {
     "message": "Untitled (#$1)"

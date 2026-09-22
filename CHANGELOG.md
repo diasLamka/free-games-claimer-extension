@@ -4,6 +4,104 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.31.0 -- 2026-09-22
+
+**L'utilisateur ne pouvait exprimer qu'un refus**
+
+Trente versions, et pas une seule ou il dise ce qu'il VEUT. Le seul geste
+disponible etait la croix, qui exclut un titre pour toujours : l'extension
+savait tout de ce qu'il ne voulait pas, et rien de ce qu'il attendait.
+
+Deux donnees nouvelles, et ce sont les deux premieres du depot a ne venir ni
+d'un magasin ni du moteur.
+
+### La liste de souhaits
+
+**Un souhait porte sur un TITRE, jamais sur une offre.** C'est precisement son
+interet : le jeu attendu depuis des mois n'est dans aucun catalogue. Un
+souhait accroche a une offre disparaitrait avec elle ; accroche a un titre, il
+survit a son absence et se reconnait le jour ou il parait, sur n'importe quel
+magasin -- y compris celui auquel personne ne pensait.
+
+Ce qu'il change, une fois pose :
+
+- **L'ordre.** Ce qui etait attendu passe devant, apres seulement ce que
+  l'utilisateur a explicitement priorise. Le calcul d'urgence garde le reste.
+- **L'annonce.** Un jeu attendu ECHAPPE au resume quotidien. C'est toute la
+  difference entre savoir qu'il y a des offres et savoir que CELLE-LA est
+  arrivee -- et le resume, bon comportement pour le tout-venant, devient le
+  mauvais a l'instant ou la liste porte quelque chose qu'on guettait.
+
+**Le drapeau est derive, jamais persiste.** La liste change ; une offre marquee
+une fois pour toutes resterait prioritaire longtemps apres le retrait du
+souhait, sans que rien ne l'explique.
+
+### La normalisation par defaut a ete supprimee, pas amelioree
+
+Le module acceptait au depart une normalisation optionnelle, avec un repli
+faible : minuscules et espaces, sans la ponctuation. Le premier test l'a prise
+en flagrant delit -- « Hollow Knight: Silksong » et « hollow knight silksong »
+devenaient deux souhaits.
+
+L'erreur ne levait rien. Elle aurait produit deux annonces prioritaires pour un
+seul jeu, ou pire, un souhait qui ne reconnait jamais l'offre qu'il attend.
+
+Le repli a donc ete retire plutot que corrige : la fonction est desormais
+OBLIGATOIRE, ce qui force chaque appelant a passer celle du modele d'offre --
+la seule avec laquelle le rapprochement veut dire quelque chose.
+
+### Le backlog
+
+La page Ma collection savait filtrer, trier, et poser un lien de lancement.
+Aucune donnee produite par l'utilisateur ne s'y accrochait : elle etait un
+inventaire, pas un outil.
+
+Cinq etats -- non renseigne, a essayer, en cours, fini, abandonne -- un filtre,
+et un tirage au sort parmi ce qui est marque « a essayer ». C'est le premier
+maillon « jouer » apres « retrouver ».
+
+Trois decisions que le code porte, chacune pour une raison :
+
+**Un etat inconnu est refuse, pas ecrit.** Il ne casserait rien a l'ecriture,
+et casserait tous les comptes et tous les filtres a la lecture, sans jamais
+lever d'erreur.
+
+**Une entree qui ne dit plus rien est effacee.** Revenir a « non renseigne »
+apres avoir efface la note ne laisse pas une coquille dans le stockage.
+
+**Le tirage recoit son hasard.** Un `Math.random` en dur rendrait la fonction
+impossible a verifier, et une fonction de tirage non testee finit toujours par
+rendre le premier element. Il ne tire que parmi les jeux marques « a essayer » :
+tirer dans la collection entiere ressortirait un jeu deja fini.
+
+### Ce que ces deux donnees n'atteignent jamais
+
+**Les annotations ne touchent pas a la reclamation.** Un jeu marque
+« abandonne » sur Epic n'empeche pas de prendre le meme offert sur GOG : c'est
+un jugement sur une partie jouee, pas une consigne d'acquisition. Le seul
+endroit qui refuse une offre reste le filtre, et il ne lit pas d'ici.
+
+### Deux cles, deux ecrivains differents, et ce n'est pas une incoherence
+
+La liste de souhaits passe par le service worker ; les annotations sont
+ecrites directement par la page.
+
+La regle est la meme dans les deux cas : **on route par le worker exactement
+quand le worker ecrit aussi.** La liste de souhaits est lue a chaque cycle,
+donc deux ecrivains sans transaction y perdraient silencieusement un choix que
+l'utilisateur vient d'exprimer. Les annotations, le worker n'y touche jamais.
+
+### Mesure
+
+| | 2.30.0 | 2.31.0 |
+|---|---|---|
+| tests | 830 | 854 |
+| cles de veille | 22 | 24 |
+| donnees venant de l'utilisateur | 0 | 2 |
+
+Quatorze cles de libelle par langue (332 par locale). Le moteur est identique a
+celui de la 2.30.0.
+
 ## 2.30.0 -- 2026-09-22
 
 **Le canal qui joint le plus souvent ne servait qu'a informer**
