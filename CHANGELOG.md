@@ -4,6 +4,44 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.35.1 -- 2026-09-22
+
+**Trois tests verts sur une seule machine au monde**
+
+La 2.35.0 est partie avec 894 tests au vert en local et une integration continue
+rouge. Les trois tests de permissions lisaient les manifestes par un chemin
+Windows ecrit en dur.
+
+C'est le pire symptome qu'un test puisse avoir : vert la ou on l'ecrit, rouge
+partout ailleurs. Il ne signale rien tant qu'on reste sur la meme machine, et
+il ment sur exactement ce qu'il est cense garantir.
+
+Le chemin se RESOUT desormais depuis le fichier de test lui-meme.
+`import.meta.url` connait sa propre position, et c'est la seule reference qui
+voyage.
+
+### Le correctif seul n'aurait servi qu'une fois
+
+Rien n'empechait de recommencer. Un garde-fou de plus au build refuse tout
+chemin absolu dans `test/` et `build/` -- lettre de lecteur Windows, ou racine
+Unix dans une chaine de caracteres.
+
+Il a ete verifie de la seule facon qui vaille : en remettant la faute, en
+constatant que le build la refuse, puis en la retirant.
+
+**Pourquoi au build plutot qu'en test.** L'integration continue l'avait bien
+attrape, et c'est deja tard : elle tourne apres le commit, apres la poussee, et
+apres avoir cru le travail fini. Un garde au build refuse avant.
+
+C'est le meme raisonnement que les trois contraintes du moteur -- ASCII pur,
+aucun litteral de gabarit, fins de ligne CRLF -- qui sont toutes la parce
+qu'elles ont casse quelque chose en production une fois.
+
+### Detail
+
+Aucun fichier d'execution ne change : le moteur, l'interface et la veille sont
+identiques a la 2.35.0. Seuls un test et le build bougent.
+
 ## 2.35.0 -- 2026-09-22
 
 **« Bientot » annoncait des jeux sans jamais y mener**

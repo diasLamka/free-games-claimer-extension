@@ -18,7 +18,13 @@ import {
   OPTIONAL, PERMISSION, declaresOptional, describeBackground,
 } from '../watch/permissions.js';
 
-const manifeste = (f) => JSON.parse(readFileSync(`C:/Perso/free-games-claimer-extension/${f}`, 'utf8'));
+/* Le chemin se RESOUT depuis ce fichier, il ne s'ecrit pas.
+ *
+ * Un chemin absolu passe sur la machine ou il a ete ecrit et nulle part
+ * ailleurs : ces trois tests etaient verts en local et rouges des le premier
+ * push, sur une machine dont le disque ne s'appelle pas pareil. `import.meta.url`
+ * connait sa propre position, et c'est la seule reference qui voyage. */
+const manifeste = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), 'utf8'));
 
 /* -------------------------------------------------------- les manifestes */
 

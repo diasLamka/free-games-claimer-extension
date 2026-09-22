@@ -122,6 +122,47 @@ function verifierServiceWorker(fichier) {
 
 problems.push(...verifierServiceWorker('background.js'));
 
+/* --- garde-fou des chemins absolus ------------------------------------------ */
+
+/**
+ * Aucun chemin absolu, nulle part.
+ *
+ * Un chemin comme « C:/Perso/... » ou « /home/moi/... » passe sur la machine
+ * ou il a ete ecrit, et sur aucune autre. Le symptome est le pire qui soit pour
+ * un test : VERT en local, ROUGE des le premier push, sur une machine dont le
+ * disque ne s'appelle pas pareil.
+ *
+ * C'est arrive en 2.35.0 -- trois tests de permissions lisaient les manifestes
+ * par un chemin Windows en dur. L'integration continue les a attrapes, ce qui
+ * est deja tard : elle tourne apres le commit, apres la poussee, et apres avoir
+ * cru le travail fini.
+ *
+ * `import.meta.url` connait sa propre position ; c'est la seule reference qui
+ * voyage.
+ */
+function cheminsAbsolus(fichier) {
+  const src = readFileSync(join(ROOT, fichier), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+  const ennuis = [];
+  // Une lettre de lecteur Windows, ou une racine Unix dans une chaine de
+  // caracteres. Les motifs d'URL (« https://... ») ne sont pas concernes.
+  const re = /(['"`])(?:[A-Za-z]:[\\/]|\/(?:home|Users|tmp|var)\/)[^'"`\n]*\1/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    ennuis.push(`${fichier} : chemin absolu ${m[0].slice(0, 60)}`);
+  }
+  return ennuis;
+}
+
+for (const fichier of [
+  ...readdirSync(join(ROOT, 'test')).filter((f) => f.endsWith('.mjs')).map((f) => `test/${f}`),
+  ...readdirSync(join(ROOT, 'build')).filter((f) => f.endsWith('.mjs')).map((f) => `build/${f}`),
+]) {
+  problems.push(...cheminsAbsolus(fichier));
+}
+
 /* --- garde-fous des references de fichiers ---------------------------------- */
 
 /**
