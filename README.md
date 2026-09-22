@@ -15,6 +15,7 @@ npm run build     # regenere les artefacts
 npm run verify    # controle de non-regression (voir plus bas)
 npm test          # build + tests unitaires
 npm run check     # verify + test, a lancer avant de livrer
+npm run package   # les deux archives publiables, dans dist/
 ```
 
 Les modules de `src/core` sont concatenes dans l'ordre de leur nom et vivent
@@ -134,6 +135,7 @@ watch/             la veille de fond, en ES modules
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/
   build.mjs                 build et controles
+  package.mjs               les archives publiables : liste blanche, zip, garde anti-oubli
   reference.json            designe le temoin fige du moteur (build/reference-v*.js)
 test/
   harness.mjs               chargement du moteur ES5 en vm
@@ -141,7 +143,9 @@ test/
   fixtures/                 captures reelles des deux API
   *.test.mjs                tests unitaires (node --test)
 docs/superpowers/specs/     design de la veille, constats V0 et V6-V7
-.github/workflows/          npm run check a chaque push
+.github/workflows/          check.yml a chaque push, release.yml sur un tag
+store/                      fiches, permissions et confidentialite pour les magasins
+dist/                       les archives produites, ignore par git
 gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
@@ -158,12 +162,46 @@ ROADMAP.md                  ce qui n'est pas encore fait, et pourquoi
 
 ## Installation
 
-**Chrome / Edge** -- `chrome://extensions` -> Mode developpeur -> *Charger
-l'extension non empaquetee* -> choisir ce dossier.
+**Depuis une archive** -- `npm run package` ecrit dans `dist/` une archive par
+navigateur. Un tag `vX.Y.Z` pousse sur le depot produit les memes archives sur
+une release GitHub.
 
-**Firefox** -- remplacer `manifest.json` par `manifest.firefox.json`, puis
-`about:debugging#/runtime/this-firefox` -> *Charger un module temporaire*. Un
-chargement permanent demande une extension signee (compte AMO).
+**Chrome / Edge, depuis les sources** -- `chrome://extensions` -> Mode
+developpeur -> *Charger l'extension non empaquetee* -> choisir ce dossier.
+
+**Firefox, depuis les sources** -- remplacer `manifest.json` par
+`manifest.firefox.json`, puis `about:debugging#/runtime/this-firefox` ->
+*Charger un module temporaire*. Un chargement permanent demande une extension
+signee (compte AMO).
+
+## Publication
+
+`npm run package` produit deux archives a partir d'une **liste blanche
+calculee**, jamais du contenu du dossier : le depot porte le moteur en deux
+exemplaires, plus le build, les tests, les temoins figes et la documentation.
+
+La liste part de deux sortes de points d'entree, et la seconde est celle qui
+piege :
+
+- ce qu'un manifeste designe (worker, scripts de contenu, popup, icones) ;
+- ce qui s'ouvre **a l'execution** par `chrome.tabs.create` ou
+  `chrome.offscreen.createDocument`, depuis une chaine litterale qu'aucun
+  manifeste ne mentionne. Six pages sont dans ce cas.
+
+Un garde refuse l'empaquetage tant qu'un `.js` ou un `.html` du depot n'est
+joint par personne, et il tourne dans `npm run check`. Sans lui, une page
+ajoutee demain marcherait en mode developpeur -- ou le dossier entier est
+charge -- et **seulement la**.
+
+Les archives sont reproductibles : l'horodatage interne est fige, donc deux
+personnes qui empaquettent le meme commit obtiennent la meme empreinte
+SHA256. C'est la promesse du controle de non-regression du moteur, etendue
+jusqu'au fichier que l'utilisateur telecharge.
+
+Ce qu'un magasin demande et que le code ne contient pas vit dans `store/` :
+fiches en deux langues, justification par permission, politique de
+confidentialite. La soumission elle-meme reste manuelle, et `store/README.md`
+dit ce qui y attend encore une main humaine.
 
 ## Le popup
 

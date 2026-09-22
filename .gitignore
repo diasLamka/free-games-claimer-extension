@@ -1,0 +1,4 @@
+# Les archives publiables. Reproductibles a partir d'un commit -- `npm run
+# package` rend le meme octet pour le meme code -- donc les versionner
+# n'ajouterait rien et ferait grossir le depot d'un tiers de mega par version.
+dist/

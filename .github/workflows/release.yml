@@ -1,0 +1,76 @@
+# Publier une version.
+#
+#   git tag v2.26.0 && git push origin v2.26.0
+#
+# Ce workflow empaquette et depose les deux archives sur une release GitHub.
+# Il ne soumet rien aux stores : une soumission passe par un compte
+# developpeur et une relecture humaine, et automatiser l'envoi sans relire ce
+# qui part n'est pas un gain, c'est une facon de publier une erreur plus vite.
+#
+# Deux verrous avant l'empaquetage, dans cet ordre :
+#
+#   1. LE TAG DOIT DIRE LA MEME CHOSE QUE package.json. Sans ce controle, un
+#      tag v2.27.0 pose sur un depot encore en 2.26.0 publierait une archive
+#      dont le manifeste annonce 2.26.0. Le navigateur refuserait alors la
+#      mise a jour suivante -- il compare les numeros du MANIFESTE, pas ceux
+#      du depot -- et le diagnostic prendrait des heures.
+#
+#   2. `npm run check` EN ENTIER. Une archive est definitive : elle part chez
+#      des gens qui ne reviendront pas verifier. Publier sans le controle de
+#      non-regression du moteur, c'est publier un moteur qu'on n'a pas relu.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# Deposer une release demande le droit d'ecrire sur le depot. Rien de plus :
+# le jeton par defaut est en lecture seule depuis que GitHub a resserre la
+# valeur par defaut, et l'oubli se manifeste par un echec a la derniere etape,
+# apres tout le travail.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Le tag et package.json doivent dire la meme version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          paquet="$(node -p "require('./package.json').version")"
+          echo "tag         : $tag"
+          echo "package.json: $paquet"
+          if [ "$tag" != "$paquet" ]; then
+            echo "::error::le tag dit $tag, package.json dit $paquet"
+            exit 1
+          fi
+
+      - name: Controle de non-regression
+        run: npm run check
+
+      - name: Empaqueter
+        run: npm run package
+
+      - name: Deposer la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Voir CHANGELOG.md pour le detail de cette version.
+
+          | Archive | Pour |
+          |---|---|
+          | \`free-games-claimer-chrome-$GITHUB_REF_NAME.zip\` | Chrome, Edge |
+          | \`free-games-claimer-firefox-$GITHUB_REF_NAME.zip\` | Firefox |
+
+          Les archives sont reproductibles : \`npm run package\` sur ce tag rend le meme octet, donc la meme empreinte SHA256." \
+            dist/*.zip

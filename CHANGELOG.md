@@ -4,6 +4,130 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.26.0 -- 2026-09-22
+
+**L'extension savait tout faire, sauf arriver chez quelqu'un**
+
+Vingt-cinq versions, 734 tests, deux audits de securite -- et un seul mode
+d'installation documente : « Mode developpeur, charger l'extension non
+empaquetee ». Autrement dit personne, sauf un developpeur devant ce depot.
+
+La consequence n'est pas theorique. La 2.24.0 a ferme quatre faiblesses de
+defense en profondeur. Elle n'a atteint aucune installation, parce qu'aucune
+installation n'a de moyen d'apprendre qu'elle existe. Un correctif qui ne
+part pas est un correctif qui n'a pas ete ecrit.
+
+Cette version ne change rien a ce que fait l'extension. Elle lui donne une
+porte de sortie.
+
+### Deux archives, et une liste blanche plutot qu'un dossier
+
+`npm run package` ecrit `dist/free-games-claimer-chrome-vX.Y.Z.zip` et sa
+jumelle Firefox. Ce qui part est une liste **calculee**, jamais le contenu du
+dossier : le depot porte le moteur en deux exemplaires -- les 34 modules de
+`src/core` et l'artefact genere -- plus le build, les tests, les vingt-deux
+temoins figes et la documentation.
+
+La liste part de points d'entree et suit les references. Les points d'entree
+sont de deux natures, et oublier la seconde etait le piege.
+
+**Ce que le manifeste designe** : le worker, les scripts de contenu, le popup,
+les icones. C'est la partie facile, et le build savait deja la lire.
+
+**Ce qui s'ouvre a l'execution**, par `chrome.tabs.create` ou
+`chrome.offscreen.createDocument`, depuis une chaine litterale qu'aucun
+manifeste ne mentionne. Six pages sont dans ce cas : le journal, Ma
+collection, la sentinelle, le diagnostic, et les deux documents hors ecran.
+Une fermeture calculee depuis le seul manifeste les aurait oubliees toutes
+les six -- et le symptome aurait ete celui d'`ERR_FILE_NOT_FOUND`, revenu
+trois fois ici : Chrome charge l'extension sans broncher, puis la page
+s'ouvre vide.
+
+### Le garde qui compte pour demain
+
+La liste des six pages est tenue a la main, et c'est assume. Ce qui ne l'est
+pas, c'est qu'une septieme puisse etre ajoutee sans que personne le remarque.
+
+L'empaquetage refuse donc de produire une archive tant qu'un `.js` ou un
+`.html` du depot -- hors atelier -- n'est joint par personne. Le controle
+tourne dans `npm run check`, a chaque commit.
+
+C'est le seul garde qui valait vraiment d'etre ecrit, parce que le bug qu'il
+attrape est invisible la ou on travaille : en mode developpeur le dossier
+entier est charge, donc la page oubliee marche. Elle ne casse que chez
+l'utilisateur. Vert en developpement, casse en production, sans aucun message.
+
+### Ce que les tests ont trouve avant la premiere publication
+
+Le test de la variante Firefox a echoue du premier coup, et pour une bonne
+raison : Chrome declare son fond par `service_worker`, Firefox par une liste
+`scripts`. La lecture du manifeste ne connaissait que la premiere forme.
+
+L'archive Firefox serait donc partie **sans `background.js`** -- et sans rien
+de ce que ce fichier importe, c'est-a-dire toute la veille. Une extension qui
+s'installe proprement, qui affiche son popup, et qui ne surveille rien. Le
+genre de panne qu'on met une soiree a comprendre parce que tout a l'air
+normal.
+
+### Une archive reproductible
+
+L'horodatage interne est fige a 1980-01-01, plancher du format. Deux
+personnes qui empaquettent le meme commit obtiennent le meme octet et la meme
+empreinte, ce qui permet de verifier qu'un zip publie correspond bien au code
+du depot.
+
+Ce n'est pas une coquetterie dans un depot qui compare deja le moteur au bit
+pres a chaque build : c'est la meme promesse, etendue jusqu'au fichier que
+l'utilisateur telecharge.
+
+### La release, et ou elle s'arrete volontairement
+
+Un tag `vX.Y.Z` declenche `.github/workflows/release.yml` : controle que le
+tag et `package.json` disent la meme version, `npm run check` en entier,
+empaquetage, depot des deux archives sur une release GitHub.
+
+Le premier controle merite son existence. Sans lui, un tag `v2.27.0` pose sur
+un depot encore en 2.26.0 publierait une archive dont le manifeste annonce
+2.26.0 -- et le navigateur refuserait la mise a jour suivante, puisqu'il
+compare les numeros du manifeste et non ceux du depot.
+
+La chaine s'arrete avant la soumission aux magasins, et c'est un choix.
+Envoyer sans relire ce qui part fait publier une erreur plus vite, pas mieux.
+
+### Ce qu'il reste a faire a la main
+
+`store/` porte ce qu'un magasin demande et que le code ne contient pas : la
+fiche en deux langues, une justification par permission derivee de
+`SECURITY.md`, une politique de confidentialite. Trois choses y attendent
+encore une main humaine : les captures d'ecran, l'adresse de contact, et la
+soumission elle-meme.
+
+Un point propre a Firefox y est note pour ne pas etre decouvert pendant la
+relecture : `free-games-claimer.js` est un fichier **genere**, et AMO exige la
+source et les instructions de construction de tout code genere.
+
+### Mesure
+
+| | Chrome | Firefox |
+|---|---|---|
+| fichiers dans l'archive | 60 | 60 |
+| taille | 316 683 octets | 316 723 octets |
+| fichiers du depot laisses de cote | 0 | 0 |
+
+Archives extraites par un decompresseur tiers, hors du code qui les ecrit :
+60 fichiers, moteur et icones identiques a l'octet pres aux fichiers du
+depot.
+
+### Detail
+
+Vingt et un tests nouveaux, dont un lecteur de ZIP ecrit dans le test plutot
+qu'en production -- relire avec notre propre ecrivain n'aurait prouve que sa
+coherence avec lui-meme. `dist/` est ignore par git : reproductible depuis un
+commit, donc inutile a versionner.
+
+Aucun fichier d'execution n'a change. Le moteur est identique a celui de la
+2.25.2, au numero de version pres.
+
 ## 2.25.2 -- 2026-09-20
 
 **Les huit sections se replient, et un pli qui a une alerte s'ouvre tout seul**
