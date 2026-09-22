@@ -4,6 +4,68 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.41.0 -- 2026-09-22
+
+**« Deja recupere » disait « recupere » pour des jeux que l'extension n'avait pas pris**
+
+Constate sur une vraie installation : onze lignes « Amazon Luna -- recupere »,
+et une « Card:Wall World 2 Recuperer L... ». Trois defauts, un seul symptome :
+la liste ne pouvait pas dire la verite, ni sur cet ordinateur, ni sur un autre.
+
+### Le nom du jeu est note avec son sort
+
+L'historique du moteur ne gardait qu'une cle -- `offer:amzn1.pg.item...` pour
+Luna -- et le popup allait chercher le titre dans le catalogue ou le registre,
+qui ne connaissent presque jamais ces identifiants opaques. Chaque entree porte
+desormais le titre lu sur la page, et une ecriture qui l'ignore ne fait pas
+oublier celui deja note.
+
+Les anciennes entrees se nomment toutes seules : a la prochaine visite de la
+liste Luna, chaque offre deja connue recoit son titre, sans que sa date ni son
+statut bougent -- c'est une correction d'etiquette, pas un nouvel evenement.
+
+Le registre (`watch/library.js`) prend ce titre quand le catalogue n'en a pas.
+Sans lui, une acquisition Luna restait sans nom, et le filtre qui evite de
+rouvrir un onglet sur un jeu possede ne pouvait pas la reconnaitre.
+
+### « Deja recupere » n'est plus « recupere »
+
+Une offre que la liste Luna montre deja prise, ou dont la fiche dit deja
+reclame, etait ecrite comme une reclamation. Elle porte maintenant le motif
+`ALREADY_CLAIMED`, et le popup l'affiche « deja recupere ». Les entrees ecrites
+avant cette version sont lues de la meme facon.
+
+Une carte sans lien de fiche etait rangee sous son TEXTE, libelle du bouton
+compris : la cle changeait quand « Recuperer le jeu » devenait « Recupere », et
+c'est elle qui s'affichait. Elle est rangee sous son titre (`card:wall-world-2`).
+
+### Un jeu deja pris ne finit plus en echec
+
+C'est le cas d'un autre ordinateur, ou d'un historique vide :
+
+- sur Epic, « Dans la bibliotheque » n'etait cherche qu'une fois, souvent avant
+  que la fiche ait rendu ses boutons. Le moteur attendait douze secondes un
+  bouton d'achat qui n'existe pas. Il guette maintenant la possession pendant
+  toute l'attente -- sur la fiche de CE jeu seulement : pendant une navigation,
+  la page encore affichee est celle d'ou l'on vient ;
+- en mode pilote, une fiche que le moteur sait deja traitee n'ecrivait rien, et
+  l'orchestrateur concluait « failed, delai depasse » apres cinq minutes. Une
+  fois le module termine, l'entree existante de la fiche fait verdict.
+
+### Repartir de zero
+
+Un lien sous « Deja recupere » vide la liste et les pauses de verification. Elle
+se reconstruit a la prochaine visite de chaque magasin, avec les titres. Ni les
+codes, ni le registre, ni la collection ne sont touches. Annulable douze
+secondes.
+
+### « Bientot » redevient cliquable apres la mise a jour
+
+Les fenetres annoncees ecrites avant la 2.35.0 n'avaient pas d'adresse, et la
+source Epic ne serait reinterrogee que des jours plus tard. A la mise a jour,
+une source dont les fenetres n'ont pas d'adresse est interrogee tout de suite,
+une fois (`windowsLackLinks`).
+
 ## 2.40.1 -- 2026-09-22
 
 **Le popup etait vide depuis la 2.36.0**

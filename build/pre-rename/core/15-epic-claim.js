@@ -15,7 +15,10 @@
       return settleEpicClaim(PLATFORM).then(function () { return 'CLAIMED'; });
     }
 
-    if (startEl && startEl !== document) robustClick(startEl);
+    // La fiche d'ou part le clic, pour ne pas lui attribuer ce qui suit.
+    var clickedAway = !!startEl && startEl !== document;
+    var slugBeforeClick = clickedAway ? extractEpicSlug(location.href) : null;
+    if (clickedAway) robustClick(startEl);
 
     var alreadyOwned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
     if (alreadyOwned) {
@@ -36,7 +39,21 @@
     // On accepte donc les deux d'entree, et on branche selon celui qui apparait.
     // Le repli non ancre couvre les balisages imbriques : un span invisible
     // dans le bouton suffit a faire echouer un motif ^...$.
+    //
+    // "Dans la bibliotheque" est guette pendant la meme attente. Le controle
+    // ci-dessus ne regarde qu'une fois, souvent avant que la fiche ait rendu
+    // ses boutons : un jeu deja pris -- depuis un autre ordinateur, ou avec un
+    // historique remis a zero -- attendait alors douze secondes un bouton
+    // d'achat qui n'existe pas, et finissait en echec. Sur la fiche de CE jeu
+    // seulement : pendant la navigation, la page affichee est encore celle
+    // d'ou l'on vient -- la liste, ou la fiche d'un autre jeu deja possede --
+    // et un libelle croise la ne dit rien de celui-ci.
+    var ownedEl = null;
     return waitForElement(function () {
+      var slugNow = extractEpicSlug(location.href);
+      var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
+      ownedEl = onThisGame ? findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }) : null;
+      if (ownedEl) return ownedEl;
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
@@ -46,6 +63,11 @@
       var labels = visibleActionLabels(8);
       throw new Error('bouton d\'acquisition introuvable en 12 s. Boutons visibles : ' + (labels.length ? labels.join(' | ') : 'aucun'));
     }).then(function (btn) {
+      if (btn === ownedEl) {
+        log(PLATFORM, 'info', '"' + title + '" est deja dans la bibliotheque, rien a reclamer.');
+        return 'ALREADY_OWNED';
+      }
+
       var challenge = detectSecurityChallenge();
       if (challenge) throw new Error('Defi de securite (' + challenge.type + ') detecte avant le clic initial.');
 
@@ -55,8 +77,8 @@
       log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
       robustClick(btn);
 
-      return direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM);
-    }).then(function () { return 'CLAIMED'; });
+      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () { return 'CLAIMED'; });
+    });
   }
 
   // Parcours DIRECT : le bouton "Ajouter a la bibliotheque" vient d'etre

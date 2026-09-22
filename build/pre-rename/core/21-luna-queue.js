@@ -40,13 +40,27 @@
     return false;
   }
 
-  function recordLunaFailure(offerId, reason) {
+  function recordLunaFailure(offerId, reason, title) {
     var history = getHistory('Amazon Luna');
     var previous = history[lunaHistoryKey(offerId)];
     var attempts = (previous && previous.status === 'failed' ? (previous.attempts || 0) : 0) + 1;
-    history[lunaHistoryKey(offerId)] = { status: 'failed', reason: reason || '', ts: Date.now(), attempts: attempts };
+    var entry = { status: 'failed', reason: reason || '', ts: Date.now(), attempts: attempts };
+    var name = historyTitle(title) || (previous && previous.title) || null;
+    if (name) entry.title = name;
+    history[lunaHistoryKey(offerId)] = entry;
     GM_setValue('FGC_history_Amazon Luna', JSON.stringify(history));
     return attempts;
+  }
+
+  // Identite d'une carte sans lien de fiche : son TITRE, pas son texte. Le
+  // texte porte aussi le libelle du bouton, qui change une fois le jeu pris
+  // ("Recuperer le jeu" puis "Recupere") : la meme offre changeait de cle, et
+  // "card:Wall World 2 Recuperer le jeu" finissait affiche a la place du nom.
+  function lunaCardKey(title, text) {
+    var base = String(title || text || '').slice(0, 80).toLowerCase();
+    try { base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    base = base.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return 'card:' + (base || 'sans-titre');
   }
 
   // Amazon peut redemander une confirmation de connexion avant de finaliser

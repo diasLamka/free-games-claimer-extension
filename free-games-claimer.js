@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.40.1
+ * FREE GAMES AUTO-CLAIMER -- v2.41.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -968,10 +968,42 @@
     }
   }
 
-  function saveHistoryEntry(platform, gameKey, status, reason) {
+  // Le titre du jeu, tel que la page l'affiche. Sans lui, une cle opaque
+  // ("offer:amzn1.pg.item...") ne se lisait nulle part : le popup montrait
+  // "Amazon Luna" a la place du nom, et le registre ne pouvait rien rapprocher.
+  function historyTitle(title) {
+    var t = String(title || '').replace(/\s+/g, ' ').trim();
+    return t ? t.slice(0, 200) : null;
+  }
+
+  function saveHistoryEntry(platform, gameKey, status, reason, title) {
     var history = getHistory(platform);
-    history[gameKey] = { status: status, reason: reason || '', ts: Date.now() };
+    var previous = history[gameKey];
+    var entry = { status: status, reason: reason || '', ts: Date.now() };
+    // Une ecriture qui ne connait pas le titre ne fait pas oublier celui deja note.
+    var name = historyTitle(title) || (previous && previous.title) || null;
+    if (name) entry.title = name;
+    history[gameKey] = entry;
     GM_setValue('FGC_history_' + platform, JSON.stringify(history));
+  }
+
+  // Complete le titre d'entrees existantes, sans toucher a leur statut ni a
+  // leur date : c'est une correction d'etiquette, pas un nouvel evenement. Le
+  // mode pilote et le registre reperent les nouveautes a leur date, et une
+  // date rafraichie ici passerait pour une reclamation qui vient d'avoir lieu.
+  // Une seule ecriture pour tout le lot.
+  function rememberHistoryTitles(platform, titlesByKey) {
+    var history = getHistory(platform);
+    var changed = false;
+    Object.keys(titlesByKey || {}).forEach(function (k) {
+      var entry = history[k];
+      var name = historyTitle(titlesByKey[k]);
+      if (!entry || entry.title || !name) return;
+      entry.title = name;
+      changed = true;
+    });
+    if (changed) GM_setValue('FGC_history_' + platform, JSON.stringify(history));
+    return changed;
   }
 
   function removeHistoryEntry(platform, gameKey) {
@@ -1912,7 +1944,10 @@
       return settleEpicClaim(PLATFORM).then(function () { return 'CLAIMED'; });
     }
 
-    if (startEl && startEl !== document) robustClick(startEl);
+    // La fiche d'ou part le clic, pour ne pas lui attribuer ce qui suit.
+    var clickedAway = !!startEl && startEl !== document;
+    var slugBeforeClick = clickedAway ? extractEpicSlug(location.href) : null;
+    if (clickedAway) robustClick(startEl);
 
     var alreadyOwned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
     if (alreadyOwned) {
@@ -1933,7 +1968,21 @@
     // On accepte donc les deux d'entree, et on branche selon celui qui apparait.
     // Le repli non ancre couvre les balisages imbriques : un span invisible
     // dans le bouton suffit a faire echouer un motif ^...$.
+    //
+    // "Dans la bibliotheque" est guette pendant la meme attente. Le controle
+    // ci-dessus ne regarde qu'une fois, souvent avant que la fiche ait rendu
+    // ses boutons : un jeu deja pris -- depuis un autre ordinateur, ou avec un
+    // historique remis a zero -- attendait alors douze secondes un bouton
+    // d'achat qui n'existe pas, et finissait en echec. Sur la fiche de CE jeu
+    // seulement : pendant la navigation, la page affichee est encore celle
+    // d'ou l'on vient -- la liste, ou la fiche d'un autre jeu deja possede --
+    // et un libelle croise la ne dit rien de celui-ci.
+    var ownedEl = null;
     return waitForElement(function () {
+      var slugNow = extractEpicSlug(location.href);
+      var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
+      ownedEl = onThisGame ? findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }) : null;
+      if (ownedEl) return ownedEl;
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
@@ -1943,6 +1992,11 @@
       var labels = visibleActionLabels(8);
       throw new Error('bouton d\'acquisition introuvable en 12 s. Boutons visibles : ' + (labels.length ? labels.join(' | ') : 'aucun'));
     }).then(function (btn) {
+      if (btn === ownedEl) {
+        log(PLATFORM, 'info', '"' + title + '" est deja dans la bibliotheque, rien a reclamer.');
+        return 'ALREADY_OWNED';
+      }
+
       var challenge = detectSecurityChallenge();
       if (challenge) throw new Error('Defi de securite (' + challenge.type + ') detecte avant le clic initial.');
 
@@ -1952,8 +2006,8 @@
       log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
       robustClick(btn);
 
-      return direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM);
-    }).then(function () { return 'CLAIMED'; });
+      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () { return 'CLAIMED'; });
+    });
   }
 
   // Parcours DIRECT : le bouton "Ajouter a la bibliotheque" vient d'etre
@@ -2276,7 +2330,7 @@
                 updateUiState('error', 'Epic : non confirme (' + currentMatch.title + ')');
                 return;
               }
-              saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result);
+              saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result, currentMatch.title);
               updateUiState('ok', 'Epic : ' + currentMatch.title + ' recupere');
               log(PLATFORM, 'info', 'OK Recupere avec succes : ' + currentMatch.title + ' (' + result + ')');
             });
@@ -2324,7 +2378,7 @@
               return withRetry(function () {
                 return claimEpicGame(anchor, game.title, PLATFORM);
               }, { label: 'recuperation Epic (' + game.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
-                saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(game.slug), 'claimed', result);
+                saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(game.slug), 'claimed', result, game.title);
                 successCount++;
                 log(PLATFORM, 'info', 'OK Recupere avec succes : ' + game.title + ' (' + result + ')');
               }).catch(function (err) {
@@ -2394,7 +2448,7 @@
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);
         }, { label: 'recuperation Epic (' + title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
-          saveHistoryEntry(PLATFORM, gameKey, 'claimed', result);
+          saveHistoryEntry(PLATFORM, gameKey, 'claimed', result, title);
           successCount2++;
           log(PLATFORM, 'info', 'OK Recupere avec succes : ' + title);
         }).catch(function (err) {
@@ -2775,13 +2829,27 @@
     return false;
   }
 
-  function recordLunaFailure(offerId, reason) {
+  function recordLunaFailure(offerId, reason, title) {
     var history = getHistory('Amazon Luna');
     var previous = history[lunaHistoryKey(offerId)];
     var attempts = (previous && previous.status === 'failed' ? (previous.attempts || 0) : 0) + 1;
-    history[lunaHistoryKey(offerId)] = { status: 'failed', reason: reason || '', ts: Date.now(), attempts: attempts };
+    var entry = { status: 'failed', reason: reason || '', ts: Date.now(), attempts: attempts };
+    var name = historyTitle(title) || (previous && previous.title) || null;
+    if (name) entry.title = name;
+    history[lunaHistoryKey(offerId)] = entry;
     GM_setValue('FGC_history_Amazon Luna', JSON.stringify(history));
     return attempts;
+  }
+
+  // Identite d'une carte sans lien de fiche : son TITRE, pas son texte. Le
+  // texte porte aussi le libelle du bouton, qui change une fois le jeu pris
+  // ("Recuperer le jeu" puis "Recupere") : la meme offre changeait de cle, et
+  // "card:Wall World 2 Recuperer le jeu" finissait affiche a la place du nom.
+  function lunaCardKey(title, text) {
+    var base = String(title || text || '').slice(0, 80).toLowerCase();
+    try { base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    base = base.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return 'card:' + (base || 'sans-titre');
   }
 
   // Amazon peut redemander une confirmation de connexion avant de finaliser
@@ -2966,13 +3034,17 @@
       var text = spacedText(card);
       var hasCta = !!(card.querySelector('[data-a-target="FGWPOffer"]') || findActionElement(card, LUNA_CLAIM_PATTERNS, { mustBeEnabled: false }));
       if (!id && !button) return;
-      var key = id || ('card:' + text.slice(0, 60));
+      var title = cardTitle(card);
+      var key = id || lunaCardKey(title, text);
       if (seen[key]) return;
       seen[key] = true;
       offers.push({
         id: key,
         url: href ? href.split('?')[0] : null,
-        title: cardTitle(card) || text.slice(0, 60),
+        title: title || text.slice(0, 60),
+        // Le titre lu dans la carte, et lui seul, entre dans l'historique : le
+        // repli sur le texte embarque le libelle du bouton.
+        knownTitle: title,
         store: href ? detectLunaStore(href, '') : 'amazon',
         button: button,
         card: card,
@@ -3031,7 +3103,7 @@
     var label = lunaStoreLabel(store);
 
     if (outcome.type === 'claimed') {
-      saveHistoryEntry(PLATFORM, key, 'claimed', label);
+      saveHistoryEntry(PLATFORM, key, 'claimed', label, title);
       bumpLunaBatch('claimed');
       log(PLATFORM, 'info', 'OK Reclame : "' + title + '" (' + label + ').');
       updateUiState('ok', 'Luna : ' + title + ' reclame');
@@ -3049,13 +3121,13 @@
         // sait le retirer une fois echange. L'historique, lui, n'est jamais
         // purge et part dans l'export -- un porteur y dormait pour toujours,
         // en double, sans que rien ne le relise.
-        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange');
+        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange', title);
         log(PLATFORM, 'info', 'Code GOG pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers)' : '') + '. Echange automatique sur gog.com/redeem a la fin de la serie.');
         updateUiState('ok', 'Luna : code GOG obtenu pour ' + title);
         return;
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
-      saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''));
+      saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''), title);
       var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
@@ -3073,7 +3145,7 @@
     }
 
     if (outcome.type === 'needs_link') {
-      saveHistoryEntry(PLATFORM, key, 'needs_link', label);
+      saveHistoryEntry(PLATFORM, key, 'needs_link', label, title);
       bumpLunaBatch('skipped');
       log(PLATFORM, 'warn', '"' + title + '" : liaison du compte ' + label + ' requise (parametres Luna > Associer un compte). Offre passee.');
       notifyUser('Free Games Claimer -- Amazon Luna', '"' + title + '" : associez d\'abord votre compte ' + label + ' dans les parametres Luna, puis relancez.');
@@ -3081,7 +3153,7 @@
       return;
     }
 
-    var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')');
+    var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')', title);
     bumpLunaBatch('failed');
     log(PLATFORM, 'error', 'ECHEC pour "' + title + '" (' + label + ') : aucun resultat identifiable apres le clic (essai ' + attempts + '/' + CONFIG.lunaMaxAttemptsPerOffer + ').');
     updateUiState('error', 'Luna : echec (' + title + ')');
@@ -3119,19 +3191,22 @@
       log(PLATFORM, 'info', 'Fiche : "' + title + '" -> ' + label + ' (' + offerId + ').');
 
       if (isLunaStoreSkipped(store)) {
-        saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label);
+        saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label, title);
         if (partOfSeries) bumpLunaBatch('skipped');
         log(PLATFORM, 'info', 'Offre ignoree (plateforme ' + label + ' exclue par configuration) : ' + title);
         return proceed('Luna : plateforme ' + label + ' ignoree');
       }
 
       if (lunaOfferDone(offerId)) {
+        var named = {};
+        named[lunaHistoryKey(offerId)] = title;
+        rememberHistoryTitles(PLATFORM, named);
         log(PLATFORM, 'info', 'Offre deja traitee : ' + title);
         return proceed();
       }
 
       if (!buyBox) {
-        recordLunaFailure(offerId, 'buy-box introuvable');
+        recordLunaFailure(offerId, 'buy-box introuvable', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'error', 'Bloc "buy-box" introuvable sur la fiche "' + title + '" (structure de page differente ?).');
         return proceed('Luna : fiche illisible (' + title + ')');
@@ -3150,7 +3225,7 @@
         // La trace : ce libelle devient une proposition dans l'interface, au
         // lieu d'une ligne de journal que personne ne peut utiliser.
         noteSeenLabel('luna', actionText(cta));
-        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"');
+        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
           + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
@@ -3165,11 +3240,14 @@
             handleLunaClaimOutcome(PLATFORM, offerId, title, store, { type: 'code', code: lateCode });
             return proceed('Luna : code recupere pour ' + title);
           }
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', label + ' (deja reclame)');
+          // Deja pris avant nous -- plus tot, a la main, ou depuis un autre
+          // ordinateur : c'est un constat, pas une reclamation. Le motif le dit,
+          // et le popup affiche "deja recupere" au lieu de "recupere".
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', 'ALREADY_CLAIMED', title);
           log(PLATFORM, 'info', 'Offre deja reclamee : ' + title);
           return proceed('Luna : deja reclame (' + title + ')');
         }
-        recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive');
+        recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton "Obtenir le jeu" introuvable ou desactive pour "' + title + '".');
         return proceed('Luna : bouton introuvable (' + title + ')');
@@ -3185,7 +3263,7 @@
          bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
       if (!robustClick(cta)) {
-        recordLunaFailure(offerId, 'clic refuse par les garde-fous');
+        recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
         return proceed('Luna : clic refuse (' + title + ')');
@@ -3240,20 +3318,26 @@
 
       var internal = [];
       var external = [];
+      // Les offres deja connues recoivent leur titre au passage : les entrees
+      // ecrites avant qu'il soit note s'affichaient "Amazon Luna".
+      var named = {};
       offers.forEach(function (o) {
         if (o.collected) {
-          if (!lunaOfferDone(o.id)) saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'deja marque comme recupere sur la liste');
+          // Deja pris avant ce passage : ALREADY_CLAIMED, pas une reclamation.
+          if (!lunaOfferDone(o.id)) saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'ALREADY_CLAIMED', o.knownTitle);
+          else named[lunaHistoryKey(o.id)] = o.knownTitle;
           return;
         }
-        if (lunaOfferDone(o.id)) return;
+        if (lunaOfferDone(o.id)) { named[lunaHistoryKey(o.id)] = o.knownTitle; return; }
         if (isLunaStoreSkipped(o.store)) {
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'skipped', 'Plateforme ignoree : ' + lunaStoreLabel(o.store));
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'skipped', 'Plateforme ignoree : ' + lunaStoreLabel(o.store), o.knownTitle);
           log(PLATFORM, 'info', 'Ignore (' + lunaStoreLabel(o.store) + ') : ' + o.title);
           return;
         }
         if (o.button) internal.push(o);
         else if (o.url && o.hasCta) external.push(o);
       });
+      rememberHistoryTitles(PLATFORM, named);
 
       log(PLATFORM, 'info', internal.length + ' offre(s) directe(s) et ' + external.length + ' fiche(s) a visiter.', external.map(function (o) { return o.title + ' [' + o.store + ']'; }));
 
@@ -3279,7 +3363,7 @@
         /* Un echec ne doit pas arreter le lot : on le compte et on passe a
            l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
         function skipInternal(reason, detail) {
-          recordLunaFailure(o.id, reason);
+          recordLunaFailure(o.id, reason, o.knownTitle);
           bumpLunaBatch('failed');
           log(PLATFORM, 'warn', detail);
           return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax).then(function () { return claimInternal(index + 1); });
@@ -3302,12 +3386,12 @@
           var text = spacedText(o.card);
           return LUNA_CLAIMED_TEXT.test(text) || lunaSuccessVisible(o.card) ? o.card : null;
         }, { timeout: 12000 }).then(function () {
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games');
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games', o.knownTitle);
           bumpLunaBatch('claimed');
           log(PLATFORM, 'info', 'OK Reclame : ' + o.title);
         }).catch(function (err) {
           if (err && err.message === 'MANUAL_LOGIN_REQUIRED') throw err;
-          recordLunaFailure(o.id, 'confirmation non detectee apres le clic direct');
+          recordLunaFailure(o.id, 'confirmation non detectee apres le clic direct', o.knownTitle);
           bumpLunaBatch('failed');
           log(PLATFORM, 'warn', 'Confirmation non detectee pour "' + o.title + '" apres le clic direct.');
         }).then(function () {
@@ -3711,7 +3795,8 @@
         updateUiState('error', 'Domaine non pris en charge');
         return;
       }
-      Promise.resolve(result).catch(function (err) {
+      // Rendue pour le mode pilote, qui doit savoir quand le module a fini.
+      return Promise.resolve(result).catch(function (err) {
         // 'STOP' est un arret volontaire deja journalise par le module.
         if (err === 'STOP') return;
         log('CORE', 'error', 'Erreur non interceptee dans un module.', err);
@@ -3918,10 +4003,39 @@
     return null;
   }
 
+  var PILOT_SETTLE_MS = 3000;
+  var PILOT_DONE_STATUSES = { claimed: true, redeemed: true, code_copied: true, code_pending_gog: true, skipped: true };
+
+  // L'entree d'historique de la fiche ouverte, quand elle est deja traitee.
+  //
+  // Le verdict pilote est une entree NOUVELLE. Un jeu que le moteur sait deja
+  // pris n'en produit aucune -- il n'y a rien a faire -- et l'orchestrateur
+  // attendait alors tout son budget pour conclure "failed, delai depasse" :
+  // un echec affiche pour un jeu qui est bel et bien au compte.
+  function standingEntry(platform, href) {
+    var key = null;
+    if (platform === 'Epic Games') {
+      var slug = extractEpicSlug(href);
+      key = slug ? epicHistoryKeyForSlug(slug) : null;
+    } else if (platform === 'Amazon Luna') {
+      var offerId = extractLunaOfferId(href);
+      key = offerId ? lunaHistoryKey(offerId) : null;
+    }
+    if (!key) return null;
+    var e = getHistory(platform)[key];
+    if (!e || !PILOT_DONE_STATUSES[e.status]) return null;
+    return {
+      key: key,
+      statusLine: e.status,
+      reasonText: e.status === 'claimed' ? 'ALREADY_CLAIMED' : (e.reason || null)
+    };
+  }
+
   function runClaimOrder(budgetMs) {
     var platform = platformNameForHost(location.hostname);
     var before = historyFingerprint(platform);
     var debut = Date.now();
+    var moduleDoneAt = 0;
 
     // Deux arrets nets, avant meme d'essayer : inutile de cliquer sur une page
     // deconnectee, et un defi de securite demande un humain.
@@ -3934,10 +4048,15 @@
       return;
     }
 
-    dispatch();
+    var markDone = function () { moduleDoneAt = Date.now(); };
+    Promise.resolve(dispatch()).then(markDone, markDone);
 
     var timer = setInterval(function () {
-      var found = freshEntry(platform, before);
+      // Une entree nouvelle d'abord ; a defaut, et seulement une fois le
+      // module termine, l'entree deja la. Le delai laisse passer une ecriture
+      // tardive, qui dirait mieux ce qui vient de se passer.
+      var found = freshEntry(platform, before)
+        || (moduleDoneAt && Date.now() - moduleDoneAt >= PILOT_SETTLE_MS ? standingEntry(platform, location.href) : null);
       if (found) {
         clearInterval(timer);
         sendToPilot({
@@ -4042,6 +4161,13 @@
       taughtLabels: taughtLabels,
       redeemCodePattern: function () { return REDEEM_CODE_PATTERN; },
       isLunaStoreSkipped: isLunaStoreSkipped,
+      getHistory: getHistory,
+      saveHistoryEntry: saveHistoryEntry,
+      rememberHistoryTitles: rememberHistoryTitles,
+      recordLunaFailure: recordLunaFailure,
+      lunaCardKey: lunaCardKey,
+      standingEntry: standingEntry,
+      claimEpicGame: claimEpicGame,
       parseRedeemCode: parseRedeemCode,
       parseRedeemDeadline: parseRedeemDeadline,
       getPendingRedeemCodes: getPendingRedeemCodes,

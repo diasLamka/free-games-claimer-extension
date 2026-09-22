@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
-sha256  : FE053628D06565B9F4955364578EE0996384EF4140D72CEFBF8C7D97307E7098
-motif   : 2.36.0 : taughtLabels, matchesTaught et noteSeenLabel ajoutes a 18-luna-patterns.js
+sha256  : CF6A09E3DC1818BA4EDDD63C01D0E2D4BB30A25217166DA88546D30A7FF688C2
+motif   : 2.41.0 : titre dans l'historique, ALREADY_CLAIMED sur Luna, cle de carte par titre, possession Epic guettee pendant l'attente sur la fiche du jeu, verdict pilote pour une fiche deja traitee
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

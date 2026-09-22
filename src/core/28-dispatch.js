@@ -17,7 +17,8 @@
         updateUiState('error', 'Domaine non pris en charge');
         return;
       }
-      Promise.resolve(result).catch(function (err) {
+      // Rendue pour le mode pilote, qui doit savoir quand le module a fini.
+      return Promise.resolve(result).catch(function (err) {
         // 'STOP' est un arret volontaire deja journalise par le module.
         if (err === 'STOP') return;
         log('CORE', 'error', 'Erreur non interceptee dans un module.', err);

@@ -103,7 +103,7 @@
                 updateUiState('error', 'Epic : non confirme (' + currentMatch.title + ')');
                 return;
               }
-              saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result);
+              saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result, currentMatch.title);
               updateUiState('ok', 'Epic : ' + currentMatch.title + ' recupere');
               log(PLATFORM, 'info', 'OK Recupere avec succes : ' + currentMatch.title + ' (' + result + ')');
             });
@@ -151,7 +151,7 @@
               return withRetry(function () {
                 return claimEpicGame(anchor, game.title, PLATFORM);
               }, { label: 'recuperation Epic (' + game.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
-                saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(game.slug), 'claimed', result);
+                saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(game.slug), 'claimed', result, game.title);
                 successCount++;
                 log(PLATFORM, 'info', 'OK Recupere avec succes : ' + game.title + ' (' + result + ')');
               }).catch(function (err) {
@@ -221,7 +221,7 @@
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);
         }, { label: 'recuperation Epic (' + title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
-          saveHistoryEntry(PLATFORM, gameKey, 'claimed', result);
+          saveHistoryEntry(PLATFORM, gameKey, 'claimed', result, title);
           successCount2++;
           log(PLATFORM, 'info', 'OK Recupere avec succes : ' + title);
         }).catch(function (err) {

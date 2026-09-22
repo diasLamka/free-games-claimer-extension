@@ -151,7 +151,12 @@ export function integrateHistory(library, { platform, added, catalog = {} }) {
     const fresh = makeEntry({
       store,
       id: key,
-      title: known ? known.title : null,
+      /* Le titre que le moteur a lu sur la page, a defaut du catalogue. Une
+         offre Luna n'y est presque jamais rangee sous son identifiant opaque :
+         sans ce repli, l'entree restait sans titre, et `ownedKeys` -- qui
+         ignore les entrees sans titre -- ne pouvait pas empecher de rouvrir un
+         onglet sur un jeu deja pris. */
+      title: (known && known.title) || entry.title || null,
       url: known ? (known.url || known.resolveUrl) : null,
       worth: known ? known.worth : null,
       image: known ? known.image : null,

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.36.0.js",
-  "sha256": "43EF67863BF63E1B65C0225C9DF931157ECC9007F6E8E42A3D0379FB66791ECC",
-  "octets": 213318,
-  "version": "2.36.0",
-  "motif": "2.36.0 : libelles appris par l'utilisateur, lus apres looksPaid ; trace des libelles refuses"
+  "fichier": "reference-v2.41.0.js",
+  "sha256": "5D14D7F400E1EDE05973CE9B548ED6541EF26ACDE0431122FD8DBF77679A2D51",
+  "octets": 220017,
+  "version": "2.41.0",
+  "motif": "2.41.0 : titre dans l'historique, ALREADY_CLAIMED sur Luna, cle de carte par titre, possession Epic guettee pendant l'attente sur la fiche du jeu, verdict pilote pour une fiche deja traitee"
 }

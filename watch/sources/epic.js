@@ -171,6 +171,22 @@ export function upcomingWindows(el, now) {
 }
 
 /**
+ * Des fenetres annoncees ont-elles ete ecrites sans leur adresse ?
+ *
+ * Celles d'avant la 2.35.0 n'en portaient pas, et elles restent en stockage
+ * jusqu'a ce que la source soit reinterrogee -- ce que le budget peut repousser
+ * de plusieurs jours quand la prochaine ouverture est lointaine. Pendant ce
+ * temps, « Bientot » affiche des lignes qu'on ne peut pas ouvrir, alors que le
+ * code qui sait les rendre cliquables est deja installe.
+ *
+ * L'ancienne forme (un simple instant) ne compte pas : elle n'a jamais eu de
+ * titre a montrer, donc rien a rendre cliquable.
+ */
+export function windowsLackLinks(windows) {
+  return (windows || []).some((w) => Boolean(w) && typeof w === 'object' && Boolean(w.title) && !w.url);
+}
+
+/**
  * Toutes les ouvertures a venir annoncees par l'API, du plus proche au plus
  * lointain. L'ordonnanceur arme son alarme sur la premiere.
  */

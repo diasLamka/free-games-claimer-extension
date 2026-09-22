@@ -114,6 +114,11 @@ const REASON_KEYS = {
   STOP: ['reasonStop', 'wait'],
 };
 
+/* Avant la 2.41.0, le moteur notait « deja pris » en toutes lettres sous un
+   statut `claimed` : la ligne disait « recupere » pour un jeu que l'extension
+   n'avait fait que constater. Lu comme ALREADY_CLAIMED, qu'il est. */
+const LEGACY_ALREADY = /deja marque comme recupere|\(deja reclame\)$/i;
+
 /* Pourquoi une offre ne sera pas prise pour vous. Les motifs viennent de
    judge(), la meme fonction que la veille utilise : la puce ne peut donc pas
    dire quelque chose que le moteur contredirait. */
@@ -981,11 +986,16 @@ function renderLog(all) {
       // An opaque identifier does not get dressed up as a title: "Amzn1.pg.item.abc"
       // teaches nothing. Naming the store honestly is better.
       const opaque = /^amzn1\./i.test(bare) || /^[0-9a-f]{16,}$/i.test(bare);
+      /* Le titre que le moteur a lu sur la page passe en premier : c'est le
+         seul que connait une offre Luna, rangee sous un identifiant opaque que
+         ni le catalogue ni le registre n'indexent. */
+      const own = typeof e.title === 'string' && e.title.trim() ? e.title : null;
+      const title = own || (known && known.title) || null;
       rows.push({
         ts: e.ts,
         status: e.status,
-        reason: e.reason,
-        label: (known && known.title) ? displayTitle(known.title) : (opaque ? label : prettySlug(bare)),
+        reason: LEGACY_ALREADY.test(e.reason || '') ? 'ALREADY_CLAIMED' : e.reason,
+        label: title ? displayTitle(title) : (opaque ? label : prettySlug(bare.replace(/^card:/, ''))),
         image: (known && known.image) || null,
       });
     }
@@ -996,6 +1006,7 @@ function renderLog(all) {
   const toggle = document.getElementById('show-all-log');
   toggle.hidden = rows.length <= 8;
   toggle.textContent = t(ui.showAllLog ? 'seeLess' : 'seeAll');
+  document.getElementById('reset-log').hidden = !rows.length;
 
   if (!rows.length) {
     const empty = el('li', 'empty', t('emptyLog'));
@@ -1977,6 +1988,30 @@ document.getElementById('epic-country').addEventListener('change', async (e) => 
 document.getElementById('hide-owned').addEventListener('change', (e) => writeUi({ hideOwned: e.target.checked }));
 
 document.getElementById('show-all-log').addEventListener('click', () => writeUi({ showAllLog: !ui.showAllLog }));
+
+/* Repartir de zero.
+ *
+ * Efface ce que le moteur a note sur chaque magasin -- l'historique qui
+ * nourrit « Deja recupere » -- et les pauses de verification, pour que la
+ * prochaine visite d'un magasin reconstruise la liste aussitot, titres
+ * compris. C'est exactement ce que vit une installation neuve sur un autre
+ * ordinateur : un jeu deja pris y revient « deja recupere » ou « deja
+ * possede », pas en echec.
+ *
+ * Ni les codes, ni le registre, ni la collection : un code perdu est un jeu
+ * perdu, et le registre sait ce que vous possedez. Annulable douze secondes,
+ * comme le retrait d'un code. */
+document.getElementById('reset-log').addEventListener('click', async () => {
+  const keys = [...Object.values(HISTORY_KEYS), 'FGC_auto_state'];
+  const before = await api.storage.local.get(keys);
+  await api.storage.local.set(Object.fromEntries(keys.map((k) => [k, JSON.stringify({})])));
+  offerUndo(t('undoResetLog'), async () => {
+    const absent = keys.filter((k) => !(k in before));
+    if (absent.length) await api.storage.local.remove(absent);
+    await api.storage.local.set(before);
+  });
+  await load();
+});
 
 document.getElementById('undo-do').addEventListener('click', async () => {
   const action = undoAction;

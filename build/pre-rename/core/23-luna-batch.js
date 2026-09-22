@@ -26,13 +26,17 @@
       var text = spacedText(card);
       var hasCta = !!(card.querySelector('[data-a-target="FGWPOffer"]') || findActionElement(card, LUNA_CLAIM_PATTERNS, { mustBeEnabled: false }));
       if (!id && !button) return;
-      var key = id || ('card:' + text.slice(0, 60));
+      var title = cardTitle(card);
+      var key = id || lunaCardKey(title, text);
       if (seen[key]) return;
       seen[key] = true;
       offers.push({
         id: key,
         url: href ? href.split('?')[0] : null,
-        title: cardTitle(card) || text.slice(0, 60),
+        title: title || text.slice(0, 60),
+        // Le titre lu dans la carte, et lui seul, entre dans l'historique : le
+        // repli sur le texte embarque le libelle du bouton.
+        knownTitle: title,
         store: href ? detectLunaStore(href, '') : 'amazon',
         button: button,
         card: card,
@@ -91,7 +95,7 @@
     var label = lunaStoreLabel(store);
 
     if (outcome.type === 'claimed') {
-      saveHistoryEntry(PLATFORM, key, 'claimed', label);
+      saveHistoryEntry(PLATFORM, key, 'claimed', label, title);
       bumpLunaBatch('claimed');
       log(PLATFORM, 'info', 'OK Reclame : "' + title + '" (' + label + ').');
       updateUiState('ok', 'Luna : ' + title + ' reclame');
@@ -109,13 +113,13 @@
         // sait le retirer une fois echange. L'historique, lui, n'est jamais
         // purge et part dans l'export -- un porteur y dormait pour toujours,
         // en double, sans que rien ne le relise.
-        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange');
+        saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange', title);
         log(PLATFORM, 'info', 'Code GOG pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers)' : '') + '. Echange automatique sur gog.com/redeem a la fin de la serie.');
         updateUiState('ok', 'Luna : code GOG obtenu pour ' + title);
         return;
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
-      saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''));
+      saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''), title);
       var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
@@ -133,7 +137,7 @@
     }
 
     if (outcome.type === 'needs_link') {
-      saveHistoryEntry(PLATFORM, key, 'needs_link', label);
+      saveHistoryEntry(PLATFORM, key, 'needs_link', label, title);
       bumpLunaBatch('skipped');
       log(PLATFORM, 'warn', '"' + title + '" : liaison du compte ' + label + ' requise (parametres Luna > Associer un compte). Offre passee.');
       notifyUser('Free Games Claimer -- Amazon Luna', '"' + title + '" : associez d\'abord votre compte ' + label + ' dans les parametres Luna, puis relancez.');
@@ -141,7 +145,7 @@
       return;
     }
 
-    var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')');
+    var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')', title);
     bumpLunaBatch('failed');
     log(PLATFORM, 'error', 'ECHEC pour "' + title + '" (' + label + ') : aucun resultat identifiable apres le clic (essai ' + attempts + '/' + CONFIG.lunaMaxAttemptsPerOffer + ').');
     updateUiState('error', 'Luna : echec (' + title + ')');

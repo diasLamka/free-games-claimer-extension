@@ -61,6 +61,7 @@ import { normaliseTitle } from './watch/offer.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
+import { windowsLackLinks } from './watch/sources/epic.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -482,6 +483,28 @@ api.runtime.onStartup.addListener(() => planifier('demarrage'));
 
 // Une mise a jour efface les alarmes : 'update' compte autant que 'install'.
 api.runtime.onInstalled.addListener(() => planifier('installation'));
+
+/* « Bientot » restait sans liens apres la mise a jour qui les a ajoutes.
+ *
+ * Les fenetres annoncees ne sont reecrites qu'a la prochaine interrogation de
+ * la source, et le budget peut la repousser de plusieurs jours. Une mise a jour
+ * qui trouve des fenetres sans adresse interroge donc ces sources-la tout de
+ * suite -- elles seules, une fois, comme le fait la sentinelle. */
+async function refreshLinklessWindows() {
+  const raw = await readKeys(api, KEYS.SOURCES);
+  const states = raw[KEYS.SOURCES] || {};
+  const names = Object.keys(states).filter((n) => SOURCES[n] && windowsLackLinks(states[n] && states[n].announcedWindows));
+  if (!names.length) return;
+  // Un cycle deja lance ignorerait la demande : on attend qu'il se termine.
+  if (cycleRunning) await cycleRunning;
+  record('info', `fenetres annoncees sans adresse : ${names.join(', ')} interrogee(s) a nouveau`);
+  await startCycle('fenetres sans adresse', { force: names });
+}
+
+api.runtime.onInstalled.addListener((details) => {
+  if (!details || details.reason !== 'update') return;
+  refreshLinklessWindows().catch((e) => record('warn', 'rafraichissement des fenetres annoncees impossible', e));
+});
 
 /* La sauvegarde des codes.
  *

@@ -30,19 +30,22 @@
       log(PLATFORM, 'info', 'Fiche : "' + title + '" -> ' + label + ' (' + offerId + ').');
 
       if (isLunaStoreSkipped(store)) {
-        saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label);
+        saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label, title);
         if (partOfSeries) bumpLunaBatch('skipped');
         log(PLATFORM, 'info', 'Offre ignoree (plateforme ' + label + ' exclue par configuration) : ' + title);
         return proceed('Luna : plateforme ' + label + ' ignoree');
       }
 
       if (lunaOfferDone(offerId)) {
+        var named = {};
+        named[lunaHistoryKey(offerId)] = title;
+        rememberHistoryTitles(PLATFORM, named);
         log(PLATFORM, 'info', 'Offre deja traitee : ' + title);
         return proceed();
       }
 
       if (!buyBox) {
-        recordLunaFailure(offerId, 'buy-box introuvable');
+        recordLunaFailure(offerId, 'buy-box introuvable', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'error', 'Bloc "buy-box" introuvable sur la fiche "' + title + '" (structure de page differente ?).');
         return proceed('Luna : fiche illisible (' + title + ')');
@@ -61,7 +64,7 @@
         // La trace : ce libelle devient une proposition dans l'interface, au
         // lieu d'une ligne de journal que personne ne peut utiliser.
         noteSeenLabel('luna', actionText(cta));
-        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"');
+        recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
           + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
@@ -76,11 +79,14 @@
             handleLunaClaimOutcome(PLATFORM, offerId, title, store, { type: 'code', code: lateCode });
             return proceed('Luna : code recupere pour ' + title);
           }
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', label + ' (deja reclame)');
+          // Deja pris avant nous -- plus tot, a la main, ou depuis un autre
+          // ordinateur : c'est un constat, pas une reclamation. Le motif le dit,
+          // et le popup affiche "deja recupere" au lieu de "recupere".
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', 'ALREADY_CLAIMED', title);
           log(PLATFORM, 'info', 'Offre deja reclamee : ' + title);
           return proceed('Luna : deja reclame (' + title + ')');
         }
-        recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive');
+        recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton "Obtenir le jeu" introuvable ou desactive pour "' + title + '".');
         return proceed('Luna : bouton introuvable (' + title + ')');
@@ -96,7 +102,7 @@
          bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
       if (!robustClick(cta)) {
-        recordLunaFailure(offerId, 'clic refuse par les garde-fous');
+        recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
         return proceed('Luna : clic refuse (' + title + ')');
@@ -151,20 +157,26 @@
 
       var internal = [];
       var external = [];
+      // Les offres deja connues recoivent leur titre au passage : les entrees
+      // ecrites avant qu'il soit note s'affichaient "Amazon Luna".
+      var named = {};
       offers.forEach(function (o) {
         if (o.collected) {
-          if (!lunaOfferDone(o.id)) saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'deja marque comme recupere sur la liste');
+          // Deja pris avant ce passage : ALREADY_CLAIMED, pas une reclamation.
+          if (!lunaOfferDone(o.id)) saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'ALREADY_CLAIMED', o.knownTitle);
+          else named[lunaHistoryKey(o.id)] = o.knownTitle;
           return;
         }
-        if (lunaOfferDone(o.id)) return;
+        if (lunaOfferDone(o.id)) { named[lunaHistoryKey(o.id)] = o.knownTitle; return; }
         if (isLunaStoreSkipped(o.store)) {
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'skipped', 'Plateforme ignoree : ' + lunaStoreLabel(o.store));
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'skipped', 'Plateforme ignoree : ' + lunaStoreLabel(o.store), o.knownTitle);
           log(PLATFORM, 'info', 'Ignore (' + lunaStoreLabel(o.store) + ') : ' + o.title);
           return;
         }
         if (o.button) internal.push(o);
         else if (o.url && o.hasCta) external.push(o);
       });
+      rememberHistoryTitles(PLATFORM, named);
 
       log(PLATFORM, 'info', internal.length + ' offre(s) directe(s) et ' + external.length + ' fiche(s) a visiter.', external.map(function (o) { return o.title + ' [' + o.store + ']'; }));
 
@@ -190,7 +202,7 @@
         /* Un echec ne doit pas arreter le lot : on le compte et on passe a
            l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
         function skipInternal(reason, detail) {
-          recordLunaFailure(o.id, reason);
+          recordLunaFailure(o.id, reason, o.knownTitle);
           bumpLunaBatch('failed');
           log(PLATFORM, 'warn', detail);
           return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax).then(function () { return claimInternal(index + 1); });
@@ -213,12 +225,12 @@
           var text = spacedText(o.card);
           return LUNA_CLAIMED_TEXT.test(text) || lunaSuccessVisible(o.card) ? o.card : null;
         }, { timeout: 12000 }).then(function () {
-          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games');
+          saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games', o.knownTitle);
           bumpLunaBatch('claimed');
           log(PLATFORM, 'info', 'OK Reclame : ' + o.title);
         }).catch(function (err) {
           if (err && err.message === 'MANUAL_LOGIN_REQUIRED') throw err;
-          recordLunaFailure(o.id, 'confirmation non detectee apres le clic direct');
+          recordLunaFailure(o.id, 'confirmation non detectee apres le clic direct', o.knownTitle);
           bumpLunaBatch('failed');
           log(PLATFORM, 'warn', 'Confirmation non detectee pour "' + o.title + '" apres le clic direct.');
         }).then(function () {

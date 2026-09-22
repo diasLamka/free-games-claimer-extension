@@ -65,10 +65,39 @@
     return null;
   }
 
+  var PILOT_SETTLE_MS = 3000;
+  var PILOT_DONE_STATUSES = { claimed: true, redeemed: true, code_copied: true, code_pending_gog: true, skipped: true };
+
+  // L'entree d'historique de la fiche ouverte, quand elle est deja traitee.
+  //
+  // Le verdict pilote est une entree NOUVELLE. Un jeu que le moteur sait deja
+  // pris n'en produit aucune -- il n'y a rien a faire -- et l'orchestrateur
+  // attendait alors tout son budget pour conclure "failed, delai depasse" :
+  // un echec affiche pour un jeu qui est bel et bien au compte.
+  function standingEntry(platform, href) {
+    var key = null;
+    if (platform === 'Epic Games') {
+      var slug = extractEpicSlug(href);
+      key = slug ? epicHistoryKeyForSlug(slug) : null;
+    } else if (platform === 'Amazon Luna') {
+      var offerId = extractLunaOfferId(href);
+      key = offerId ? lunaHistoryKey(offerId) : null;
+    }
+    if (!key) return null;
+    var e = getHistory(platform)[key];
+    if (!e || !PILOT_DONE_STATUSES[e.status]) return null;
+    return {
+      key: key,
+      statusLine: e.status,
+      reasonText: e.status === 'claimed' ? 'ALREADY_CLAIMED' : (e.reason || null)
+    };
+  }
+
   function runClaimOrder(budgetMs) {
     var platform = platformNameForHost(location.hostname);
     var before = historyFingerprint(platform);
     var debut = Date.now();
+    var moduleDoneAt = 0;
 
     // Deux arrets nets, avant meme d'essayer : inutile de cliquer sur une page
     // deconnectee, et un defi de securite demande un humain.
@@ -81,10 +110,15 @@
       return;
     }
 
-    dispatch();
+    var markDone = function () { moduleDoneAt = Date.now(); };
+    Promise.resolve(dispatch()).then(markDone, markDone);
 
     var timer = setInterval(function () {
-      var found = freshEntry(platform, before);
+      // Une entree nouvelle d'abord ; a defaut, et seulement une fois le
+      // module termine, l'entree deja la. Le delai laisse passer une ecriture
+      // tardive, qui dirait mieux ce qui vient de se passer.
+      var found = freshEntry(platform, before)
+        || (moduleDoneAt && Date.now() - moduleDoneAt >= PILOT_SETTLE_MS ? standingEntry(platform, location.href) : null);
       if (found) {
         clearInterval(timer);
         sendToPilot({

@@ -56,6 +56,15 @@
   "seeLess": {
     "message": "See less"
   },
+  "resetLog": {
+    "message": "Start over"
+  },
+  "resetLogHint": {
+    "message": "Clears this list. It rebuilds on your next visit to each store: games you already have come back as already claimed, not as failures."
+  },
+  "undoResetLog": {
+    "message": "List cleared. It rebuilds on your next store visit."
+  },
   "codesToRedeem": {
     "message": "Codes to redeem"
   },

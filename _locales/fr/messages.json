@@ -56,6 +56,15 @@
   "seeLess": {
     "message": "Réduire"
   },
+  "resetLog": {
+    "message": "Repartir de zéro"
+  },
+  "resetLogHint": {
+    "message": "Vide cette liste. Elle se reconstruit à la prochaine visite de chaque magasin : les jeux que vous avez déjà reviennent « déjà récupéré », pas en échec."
+  },
+  "undoResetLog": {
+    "message": "Liste vidée. Elle se reconstruit à la prochaine visite des magasins."
+  },
   "codesToRedeem": {
     "message": "Codes à échanger"
   },

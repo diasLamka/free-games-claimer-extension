@@ -740,6 +740,8 @@
   .log time { color: var(--mute); font-size: 10.5px; flex: none; font-variant-numeric: tabular-nums; width: 68px; }
   .log .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
   .log .st { flex: none; margin-left: auto; font-size: 11px; }
+  .log-foot { display: flex; justify-content: flex-end; }
+  .log-foot button.link { font-size: 11px; }
 
   /* ------------------------------------------------- signature: tickets */
   .ticket {
@@ -1086,6 +1088,7 @@
     <section>
       <h2><span data-i18n="alreadyClaimed"></span><button class="link side" id="show-all-log" data-i18n="seeAll"></button></h2>
       <ul class="log" id="log"></ul>
+      <div class="log-foot"><button class="link" id="reset-log" data-i18n="resetLog" data-i18n-attr="title:resetLogHint" hidden></button></div>
     </section>
   </div>
 

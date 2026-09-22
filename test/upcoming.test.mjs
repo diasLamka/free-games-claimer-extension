@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { nextWindows, upcomingWindows } from '../watch/sources/epic.js';
+import { nextWindows, upcomingWindows, windowsLackLinks } from '../watch/sources/epic.js';
 
 const T = Date.UTC(2026, 8, 22, 12, 0, 0);
 const JOUR = 86400000;
@@ -89,4 +89,20 @@ test('l\'adresse traverse le regroupement de toutes les sources', () => {
 
   assert.equal(toutes.length, 1);
   assert.ok(toutes[0].url);
+});
+
+test('des fenetres ecrites avant la 2.35.0 sont reperees', () => {
+  /* Constate le 2026-09-22 : la mise a jour etait installee, mais les fenetres
+     stockees dataient d'avant elle, et la source ne serait reinterrogee que
+     des jours plus tard. « Bientot » restait sans liens tout ce temps. */
+  const anciennes = [{ title: 'Mechabellum', image: 'https://cdn/m.jpg', start: T, end: T + JOUR }];
+  assert.equal(windowsLackLinks(anciennes), true);
+});
+
+test('des fenetres a jour, ou sans titre a montrer, ne demandent rien', () => {
+  assert.equal(windowsLackLinks(nextWindows([element()], T)), false);
+  // L'ancienne forme, un simple instant, n'a jamais eu de ligne cliquable.
+  assert.equal(windowsLackLinks([T + JOUR]), false);
+  assert.equal(windowsLackLinks([]), false);
+  assert.equal(windowsLackLinks(undefined), false);
 });
