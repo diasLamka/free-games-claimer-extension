@@ -857,6 +857,18 @@
   "syncCodesEmpty": {
     "message": "Nothing backed up yet."
   },
+  "syncLibraryLabel": {
+    "message": "Recognise my claimed games on my other computers"
+  },
+  "syncLibraryHint": {
+    "message": "Copies the name and store of each claimed game into your browser account, so another computer does not reopen what is already taken. Turn it on on each computer; turning it off removes the copy."
+  },
+  "syncLibraryState": {
+    "message": "$1 game(s) shared with your other computers"
+  },
+  "syncLibraryEmpty": {
+    "message": "Nothing shared yet."
+  },
   "syncUnavailable": {
     "message": "This browser has no sync storage available."
   },

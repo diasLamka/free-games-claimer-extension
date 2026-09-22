@@ -95,6 +95,7 @@ est declare `"type": "module"`.
 | `journal.js` | 500 entrees qui survivent a la mort du service worker |
 | `canary.js` | compte les echecs de selecteur : un magasin qui a bouge le dit |
 | `backup.js` | les codes en attente, recopies dans la zone synchronisee |
+| `library-sync.js` | le registre des jeux recuperes, d'un ordinateur a l'autre (en option) |
 | `offscreen.js` | lire une page HTML depuis un contexte qui n'a pas de DOM |
 | `sentinel.js` | quand proposer le repli, et comment il rend la main tout seul |
 | `collection.js` | Ma collection : regrouper ce que chaque magasin dit que vous possedez |

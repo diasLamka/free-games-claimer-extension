@@ -49,6 +49,7 @@ import { webUrl } from './watch/offer.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
+import { mirrorLibrary, restoreLibrary, clearLibraryMirror } from './watch/library-sync.js';
 import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
 import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
 import { importStore, probeSession } from './watch/collection-import.js';
@@ -560,6 +561,12 @@ api.storage.onChanged.addListener((changes, area) => {
     })().catch((e) => record('warn', 'sauvegarde des codes impossible', e));
   }
 
+  if (changes[KEY_LIBRARY]) {
+    mirrorRegistre(changes[KEY_LIBRARY].newValue || {})
+      .catch((e) => record('warn', 'sauvegarde du registre impossible', e));
+  }
+  if (changes[KEYS.SETTINGS]) toggleRegistre(changes[KEYS.SETTINGS]);
+
   const lots = Object.entries(changes)
     .filter(([key]) => key.startsWith('FGC_history_'))
     .map(([key, change]) => ({
@@ -616,9 +623,53 @@ async function backfillLibrary(origine) {
   if (lots.length) await integrateIntoLibrary(lots, `rattrapee(s) depuis l'historique (${origine})`);
 }
 
-const rattraper = (origine) => backfillLibrary(origine).catch((e) => record('warn', 'rattrapage du registre impossible', e));
-api.runtime.onStartup.addListener(() => rattraper('demarrage'));
-api.runtime.onInstalled.addListener(() => rattraper('installation'));
+/* Le registre, d'un ordinateur a l'autre (watch/library-sync.js).
+ *
+ * Coupe par defaut, comme la sauvegarde des codes : la zone sync traverse le
+ * compte du navigateur. Active, il suit les memes moments -- MIROITER a chaque
+ * ecriture du registre, RESTAURER au demarrage et a l'installation -- plus
+ * celui de l'activation, ou les deux se font d'un coup. Le rattrapage de
+ * l'historique passe AVANT la restauration : deux ecritures croisees du
+ * registre perdraient l'une des deux. */
+async function mirrorRegistre(library) {
+  const { syncLibrary } = await readSettings(api);
+  if (!syncLibrary || !hasSync(api)) return;
+  const { ok, kept, dropped } = await mirrorLibrary(api, library);
+  if (!ok) record('warn', 'sauvegarde du registre refusee par le navigateur');
+  else if (dropped) record('warn', `${dropped} jeu(x) trop ancien(s) hors sauvegarde du registre, ${kept} garde(s)`);
+}
+
+async function restaurerRegistre(origine) {
+  const { syncLibrary } = await readSettings(api);
+  if (!syncLibrary || !hasSync(api)) return;
+  const { restored, changed } = await restoreLibrary(api);
+  if (restored) record('info', `registre : ${restored} jeu(x) pris ailleurs ajoute(s) (${origine})`);
+  // Rien d'ecrit ici, donc pas de miroir declenche : ce que CET ordinateur
+  // sait doit quand meme partir.
+  if (!changed) {
+    const raw = await readKeys(api, KEY_LIBRARY);
+    await mirrorRegistre(raw[KEY_LIBRARY] || {});
+  }
+}
+
+function toggleRegistre(change) {
+  const avant = Boolean(change.oldValue && change.oldValue.syncLibrary === true);
+  const apres = Boolean(change.newValue && change.newValue.syncLibrary === true);
+  if (!avant && apres) {
+    restaurerRegistre('activation').catch((e) => record('warn', 'restauration du registre impossible', e));
+  } else if (avant && !apres) {
+    clearLibraryMirror(api)
+      .then((ok) => record(ok ? 'info' : 'warn', ok ? 'registre retire du compte' : 'registre non retire du compte'))
+      .catch((e) => record('warn', 'retrait du registre impossible', e));
+  }
+}
+
+const demarrerRegistre = (origine) => backfillLibrary(origine)
+  .catch((e) => record('warn', 'rattrapage du registre impossible', e))
+  .then(() => restaurerRegistre(origine))
+  .catch((e) => record('warn', 'restauration du registre impossible', e));
+api.runtime.onStartup.addListener(() => demarrerRegistre('demarrage'));
+api.runtime.onInstalled.addListener(() => demarrerRegistre('installation'));
 
 /* Un onglet pilote qui disparait resout ses attentes tout de suite.
  *

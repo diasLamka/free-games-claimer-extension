@@ -251,6 +251,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * lui demander serait prendre une decision a sa place. Voir watch/backup.js.
    */
   syncCodes: false,
+
+  /**
+   * Recopier le registre des jeux recuperes dans chrome.storage.sync, pour
+   * qu'un autre ordinateur du meme compte ne rouvre pas ce qui est deja pris.
+   * Coupe par defaut pour la meme raison que les codes. Voir
+   * watch/library-sync.js.
+   */
+  syncLibrary: false,
 });
 
 /**

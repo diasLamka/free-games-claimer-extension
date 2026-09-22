@@ -857,6 +857,18 @@
   "syncCodesEmpty": {
     "message": "Rien de sauvegardé pour l'instant."
   },
+  "syncLibraryLabel": {
+    "message": "Retrouver mes jeux récupérés sur mes autres ordinateurs"
+  },
+  "syncLibraryHint": {
+    "message": "Recopie le nom et le magasin de chaque jeu récupéré dans votre compte navigateur : un autre ordinateur ne rouvre pas ce qui est déjà pris. À activer sur chaque ordinateur ; le couper retire la copie."
+  },
+  "syncLibraryState": {
+    "message": "$1 jeu(x) partagé(s) avec vos autres ordinateurs"
+  },
+  "syncLibraryEmpty": {
+    "message": "Rien de partagé pour l'instant."
+  },
   "syncUnavailable": {
     "message": "Ce navigateur n'a pas de stockage synchronisé disponible."
   },

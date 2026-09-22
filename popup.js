@@ -38,6 +38,7 @@ import { REDEEM_URLS, addCodes, parseCodes, redeemUrlFor } from './watch/codes.j
 import { OPTIONAL, declaresOptional, describeBackground } from './watch/permissions.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from './watch/teaching.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
+import { readLibraryMirror } from './watch/library-sync.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
@@ -1702,6 +1703,21 @@ function renderSyncCodes(behaviour) {
   });
 }
 
+/* Meme regle que pour les codes : l'etat dit ce que le compte garde
+   REELLEMENT, relu dans la zone sync, pas ce que l'interrupteur promet. */
+function renderSyncLibrary(behaviour) {
+  const on = behaviour.syncLibrary === true;
+  document.getElementById('sync-library').checked = on;
+
+  const zone = document.getElementById('sync-library-state');
+  if (!api.storage.sync) { zone.textContent = t('syncUnavailable'); return; }
+  if (!on) { zone.textContent = ''; return; }
+
+  readLibraryMirror(api).then((entries) => {
+    zone.textContent = entries.length ? t('syncLibraryState', String(entries.length)) : t('syncLibraryEmpty');
+  });
+}
+
 /* ----------------------------------------------------------------- filters */
 
 function renderFilters(all, behaviour) {
@@ -1851,6 +1867,7 @@ async function render() {
   renderPrediction(all);
   renderNotifications(behaviourCache);
   renderSyncCodes(behaviourCache);
+  renderSyncLibrary(behaviourCache);
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
   document.getElementById('luna-auto').checked = all.FGC_luna_auto_mode !== false;
@@ -1881,9 +1898,10 @@ async function writeBehaviour(patch) {
   const next = { ...behaviourCache, ...patch, updatedAt: Date.now() };
   await setValue(KEY_SETTINGS, next);
 
-  /* Settings only, and only when asked. Codes and history never leave this
-     machine: chrome.storage.sync is replicated through the user's Google
-     account, and a redeem code is a bearer token. */
+  /* Settings only, and only when asked. Codes and the claimed-games list
+     leave this machine only through their own switches (backup.js,
+     library-sync.js): chrome.storage.sync is replicated through the user's
+     Google account, and a redeem code is a bearer token. */
   if (ui.syncSettings && api.storage.sync) {
     try { await api.storage.sync.set({ [KEY_SETTINGS]: next }); } catch { /* quota, offline */ }
   }
@@ -2084,6 +2102,7 @@ document.getElementById('steam-cancel').addEventListener('click', () => {
   document.getElementById('steam-warn').hidden = true;
 });
 document.getElementById('sync-codes').addEventListener('change', (e) => writeBehaviour({ syncCodes: e.target.checked }));
+document.getElementById('sync-library').addEventListener('change', (e) => writeBehaviour({ syncLibrary: e.target.checked }));
 
 document.getElementById('notify-mode').addEventListener('change', (e) => writeBehaviour({ notifyMode: e.target.value }));
 document.getElementById('quiet-on').addEventListener('change', (e) => writeBehaviour({

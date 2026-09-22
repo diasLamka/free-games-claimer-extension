@@ -4,6 +4,41 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.43.0 -- 2026-09-22
+
+**Le registre vous suit d'un ordinateur a l'autre -- si vous le demandez**
+
+Ma collection rattrape Epic, GOG et Steam sur un nouvel ordinateur, a
+condition d'etre importee. Pas Luna, dont la bibliotheque ne s'importe pas. Un
+second interrupteur, dans Reglages -> Sauvegarde, recopie le registre des jeux
+recuperes dans `chrome.storage.sync` : un autre ordinateur du meme compte le
+fusionne au sien, et ne rouvre pas ce qui est deja pris.
+
+### Ce qui part
+
+Quatre champs par jeu : magasin, identifiant, titre, date -- ce que le filtre
+« deja dans la bibliotheque » lit, rien de plus. Ni valeur, ni vignette, ni
+lien, et jamais un code : les codes gardent leur propre sauvegarde, avec leur
+propre interrupteur. Coupe par defaut, pour la meme raison qu'eux : la zone
+sync traverse le compte du navigateur. Couper l'option retire la copie.
+
+### Ce qui ne peut pas se perdre
+
+- **Le quota.** Un element de la zone sync fait 8 Ko et un depassement est
+  REJETE, pas tronque. Le registre est coupe en tranches, huit au plus, les
+  plus recentes d'abord : ce sont les offres en cours qu'il faut ne pas
+  rouvrir. Ce qui reste dehors est journalise.
+- **Deux ordinateurs qui ecrivent.** Le miroir recoit l'UNION de ce qu'il
+  contient et du registre local, jamais le registre seul. Sans cela, un
+  ordinateur qui n'a pas encore fusionne effacerait, en ecrivant, ce que
+  l'autre avait sauvegarde.
+- **La restauration.** Au demarrage, a l'installation et a l'activation, elle
+  FUSIONNE (premiere date gardee, aucun champ vide), apres le rattrapage de
+  l'historique : deux ecritures croisees du registre perdraient l'une des deux.
+
+SECURITY.md et store/privacy.md disent desormais « deux choses » peuvent
+quitter la machine, chacune derriere son interrupteur.
+
 ## 2.42.0 -- 2026-09-22
 
 **Un nouvel ordinateur ne rouvre plus ce que vous possedez deja**

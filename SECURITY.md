@@ -26,12 +26,18 @@ liste des onglets pilotes.
 
 ## Ce qui peut quitter la machine
 
-**Une seule chose, et elle est coupee par defaut.**
+**Deux choses, chacune coupee par defaut et par son propre interrupteur.**
 
-Le reglage `syncCodes` (Reglages -> Sauvegarde, `watch/storage.js:216`) recopie
+Le reglage `syncCodes` (Reglages -> Sauvegarde, `watch/storage.js`) recopie
 les codes en attente dans `chrome.storage.sync`, qui transite par votre compte
 navigateur. Le chiffrement applique est alors celui de Chrome Sync ou de
 Firefox Sync -- **pas le notre**, puisque nous n'en avons aucun.
+
+Le reglage `syncLibrary` (meme section, depuis la 2.43.0) y recopie le
+registre des jeux recuperes, reduit a quatre champs : magasin, identifiant,
+titre, date (`watch/library-sync.js`). Aucun code, aucune valeur, aucun lien.
+Il sert a ce qu'un autre ordinateur du meme compte ne rouvre pas ce qui est deja
+pris. Le couper retire la copie du compte.
 
 Rien d'autre ne part tout seul.
 

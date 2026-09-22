@@ -28,11 +28,14 @@ protection, et elle ne depend pas de nous.
 
 ### Ce qui peut quitter la machine
 
-Une seule chose, **coupee par defaut** : le reglage « recopier les codes dans
-la zone synchronisee » place les codes de rachat en attente dans le stockage
-synchronise du navigateur, qui transite alors par le compte Google ou Mozilla
-de l'utilisateur. Le chiffrement applique est celui de ce service, pas le
-notre. Tant que ce reglage reste coupe, rien ne sort.
+Deux choses, **chacune coupee par defaut** : le reglage « recopier les codes
+dans la zone synchronisee » place les codes de rachat en attente dans le
+stockage synchronise du navigateur, et le reglage « retrouver mes jeux
+recuperes sur mes autres ordinateurs » y place la liste des jeux recuperes
+(magasin, identifiant, titre, date -- aucun code). Ce stockage transite par le
+compte Google ou Mozilla de l'utilisateur ; le chiffrement applique est celui
+de ce service, pas le notre. Couper le second retire la copie. Tant que les
+deux reglages restent coupes, rien ne sort.
 
 ### Requetes reseau
 
