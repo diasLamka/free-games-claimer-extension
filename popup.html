@@ -428,7 +428,12 @@
   }
   .game:hover { background: var(--ink-2); border-color: var(--line); }
 
-  .art { position: relative; width: 40px; height: 40px; flex: none; }
+  /* La jaquette est PAYSAGE depuis la 2.35.0.
+     Les trois magasins servent des visuels larges -- vignettes Epic, en-tetes
+     Steam, jaquettes GOG. Les recadrer en carre a 40 px coupait le titre du
+     jeu peint dessus, et il ne restait qu'une texture. Le format 8:5 montre
+     l'illustration telle qu'elle a ete dessinee, pour douze pixels de plus. */
+  .art { position: relative; width: 64px; height: 40px; flex: none; }
   .art > img, .art > .letter {
     width: 100%;
     height: 100%;
@@ -475,6 +480,21 @@
   .game-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
   .game-title { font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .game-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+  /* Ce que l'offre EST, et ce qu'on peut en FAIRE : deux natures, deux
+     rangees. Les cinq actions vivaient dans la ligne ci-dessus, a cote du
+     magasin, de la valeur et du compte a rebours -- a 328 px de large, plus
+     rien ne s'y lisait.
+
+     La rangee garde sa hauteur meme vide : sans cela, survoler une carte la
+     ferait grandir, et toute la liste sauterait sous le curseur. */
+  .game-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 20px;
+    margin-left: -4px;
+  }
 
   .store-tag {
     font-family: var(--display);
@@ -577,14 +597,29 @@
     flex: none;
     background: none;
     border: 0;
-    padding: 2px 4px;
+    /* Une cible de 20 px de haut : assez pour viser sans que cinq boutons ne
+       poussent la carte plus haut qu'une ligne de texte. */
+    padding: 3px 5px;
     color: var(--mute);
     font-size: 12px;
     opacity: 0;
     border-radius: 5px;
+    line-height: 1;
   }
-  .game:hover .pin, .pin.on, .pin:focus-visible { opacity: 1; }
+  /* Une action qui EXPRIME un choix deja fait reste visible : l'etoile posee,
+     le coeur pose. Les autres s'effacent tant que la carte n'est pas survolee
+     -- une liste de vingt offres avec cent boutons allumes ne se lit plus. */
+  .game:hover .pin, .game:focus-within .pin, .pin.on, .pin:focus-visible { opacity: 1; }
+  .pin:hover { background: var(--ink-3); color: var(--paper); }
   .pin.on { color: var(--amber); }
+  .pin:disabled { opacity: .35; }
+
+  /* La reclamation a l'unite est la seule action qui AGISSE sur un compte :
+     elle se distingue des quatre autres, qui ne font que trier. */
+  .pin.go { color: var(--jade); font-size: 13px; }
+  .pin.go:hover { background: color-mix(in srgb, var(--jade) 18%, transparent); color: var(--jade); }
+  /* Le refus est le seul geste irreversible de la rangee. */
+  .pin.drop:hover { background: color-mix(in srgb, var(--rose) 18%, transparent); color: var(--rose); }
 
   /* ---------------------------------------------------------- plain rows */
   .row {
@@ -604,6 +639,22 @@
   }
   .row:last-child { border-bottom: 0; }
   .row:hover { background: none; }
+
+  /* Une ligne qui MENE quelque part le montre.
+     Sans ce retour, la section « Bientot » aurait des lignes cliquables
+     impossibles a distinguer de celles qui ne le sont pas -- et on n'essaie
+     pas de cliquer ce qui n'a pas l'air cliquable. */
+  .row.go { cursor: pointer; }
+  .row.go:hover {
+    background: color-mix(in srgb, var(--amber) 12%, transparent);
+    border-radius: 6px;
+  }
+  .row.go:hover .label { color: var(--amber); }
+  .row.go:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 1px;
+    border-radius: 6px;
+  }
   .row .mini {
     width: 24px;
     height: 24px;

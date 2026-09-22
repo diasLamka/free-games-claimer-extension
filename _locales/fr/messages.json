@@ -146,6 +146,9 @@
   "upcomingUnannounced": {
     "message": "Titre pas encore annoncé"
   },
+  "upcomingOpen": {
+    "message": "Ouvrir $1 sur la boutique"
+  },
   "summary": {
     "message": "Bilan"
   },

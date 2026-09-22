@@ -623,6 +623,17 @@ function gameCard({ key, offer }, ctx) {
     meta.append(el('span', 'aside', t('snoozedFor', readableDelay(offer.snoozedUntil - now))));
   }
 
+  /* Les actions ont leur propre rangee depuis la 2.35.0.
+   *
+   * Elles vivaient dans la ligne d'information, a cote du magasin, de la
+   * valeur et du compte a rebours. Deux suffisaient a l'etroit ; cinq -- le
+   * souhait, la priorite, la reclamation, le report, le refus -- ne laissaient
+   * plus rien se lire a 328 px de large.
+   *
+   * Separer les deux rangees separe aussi deux natures : ce que l'offre EST,
+   * et ce qu'on peut en FAIRE. */
+  const actions = el('span', 'game-actions');
+
   /* L'etoile ecrit sur le CATALOGUE, via le worker qui en est seul ecrivain.
      Elle vivait dans `veille:ui`, que le worker ne lit jamais : elle ordonnait
      la liste et ne changeait rien a ce qui etait reclame en premier. */
@@ -637,7 +648,7 @@ function gameCard({ key, offer }, ctx) {
     await tell('fgc-wish', { title: offer.title, on: !wished });
     await load();
   });
-  meta.append(heart);
+  actions.append(heart);
 
   const pinned = offer.priority === true;
   const pin = el('button', `pin${pinned ? ' on' : ''}`, pinned ? '★' : '☆');
@@ -647,7 +658,7 @@ function gameCard({ key, offer }, ctx) {
     await tell('fgc-prioritise', { catalogKey: key, on: !pinned });
     await load();
   });
-  meta.append(pin);
+  actions.append(pin);
 
   /* « Celle-ci, maintenant. »
    *
@@ -668,7 +679,7 @@ function gameCard({ key, offer }, ctx) {
       await withWorking(() => tell('fgc-claim-one', { catalogKey: key }), { immediate: true });
       await load();
     });
-    meta.append(takeIt);
+    actions.append(takeIt);
 
     /* « Plus tard », qui n'est pas « jamais ». La croix exclut le TITRE pour
        toujours ; ceci pose une echeance qui se perime toute seule. Les deux
@@ -682,7 +693,7 @@ function gameCard({ key, offer }, ctx) {
         await tell('fgc-snooze', { catalogKey: key });
         await load();
       });
-      meta.append(later);
+      actions.append(later);
     }
   }
 
@@ -714,9 +725,10 @@ function gameCard({ key, offer }, ctx) {
       await writeUi(avantUi);
     });
   });
-  meta.append(drop);
+  actions.append(drop);
 
   body.append(meta);
+  body.append(actions);
 
   /* Why this one will not be taken for you.
    *
@@ -877,7 +889,20 @@ function renderUpcoming(all) {
   section.hidden = false;
 
   for (const w of next.slice(0, 6)) {
-    const row = el('div', 'row');
+    /* La ligne mene a la fiche quand l'adresse existe.
+     *
+     * C'est ce qu'on veut faire en lisant « Cardpocalypse, jeudi 17:00 » :
+     * aller voir de quoi il s'agit. La section l'annoncait depuis des versions
+     * sans jamais y mener, parce que la source ne gardait pas l'adresse -- ce
+     * que la 2.35.0 corrige en amont.
+     *
+     * Sans adresse, la ligne reste un div : un bouton qui n'ouvre rien
+     * apprendrait a se mefier de tous les autres. */
+    const row = el(w.url ? 'button' : 'div', `row${w.url ? ' go' : ''}`);
+    if (w.url) {
+      row.title = t('upcomingOpen', w.title || '');
+      row.addEventListener('click', () => openTab(w.url));
+    }
     if (w.image) row.append(thumb(w.image));
     row.append(el('span', 'label', w.title || t('upcomingUnannounced')));
     row.append(el('span', 'aside hi', shortDateTime(w.start)));

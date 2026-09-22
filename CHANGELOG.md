@@ -4,6 +4,82 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.35.0 -- 2026-09-22
+
+**« Bientot » annoncait des jeux sans jamais y mener**
+
+La section publie les ouvertures a venir qu'Epic annonce lui-meme : un titre,
+une vignette, une heure. Trois informations, et aucun moyen d'aller voir le
+jeu -- alors que c'est exactement ce qu'on veut faire en lisant la ligne.
+
+La cause n'etait pas dans l'interface. `upcomingWindows` ne gardait ni le slug
+ni l'adresse de la fiche : le popup n'avait rien a rendre cliquable, et aucun
+arrangement d'affichage n'aurait pu l'inventer.
+
+L'adresse est desormais construite par les MEMES fonctions que celle d'une
+offre en cours : meme base de chemin, meme slug, meme parametre de langue. Deux
+facons de construire l'URL d'une meme page seraient deux facons de se tromper.
+
+**Une ligne sans adresse reste un simple element de liste.** Un lien mort est
+pire qu'une absence de lien : il fait cliquer pour rien, et donne l'impression
+que l'extension s'est trompee de jeu. Et une ligne qui mene quelque part le
+MONTRE -- survol, curseur, contour au clavier : on n'essaie pas de cliquer ce
+qui n'a pas l'air cliquable.
+
+### Cinq boutons sur la ligne qui portait deja trois informations
+
+Les quatre versions precedentes ont ajoute a la carte de jeu le souhait, la
+priorite, la reclamation a l'unite et le report. Avec le refus deja present,
+cela faisait cinq boutons dans la MEME ligne que le magasin, la valeur et le
+compte a rebours.
+
+A 328 pixels de large, plus rien ne s'y lisait.
+
+**Deux rangees, deux natures.** Ce que l'offre EST -- magasin, valeur, temps
+restant -- et ce qu'on peut en FAIRE. La rangee d'actions garde sa hauteur meme
+vide : sans cela, survoler une carte la ferait grandir, et toute la liste
+sauterait sous le curseur.
+
+**Trois actions se distinguent.** Celles qui expriment un choix deja fait --
+l'etoile posee, le coeur pose -- restent visibles ; les autres s'effacent tant
+que la carte n'est pas survolee, parce qu'une liste de vingt offres avec cent
+boutons allumes ne se lit plus. La reclamation est verte : c'est la seule qui
+AGISSE sur un compte, les quatre autres ne font que trier. Le refus vire au
+rouge au survol : c'est le seul geste irreversible de la rangee.
+
+### La jaquette passe en paysage
+
+Les trois magasins servent des visuels larges : vignettes Epic, en-tetes Steam,
+jaquettes GOG. Les recadrer dans un carre de 40 pixels coupait le titre du jeu
+peint dessus, et il ne restait qu'une texture.
+
+Le format 8:5 montre l'illustration telle qu'elle a ete dessinee, pour
+vingt-quatre pixels de largeur en plus. L'anneau de compte a rebours reste : il
+epouse le nouveau rectangle sans rien changer a son calcul.
+
+### Ce qui n'a pas ete verifie, et il faut le dire
+
+Cette version touche a la mise en page, et la mise en page se REGARDE. Un banc
+d'essai a ete monte pour cela -- la feuille de style reelle du popup, des
+cartes ecrites dans la forme exacte que le code produit, a la largeur reelle --
+mais l'extension de navigateur n'etait pas connectee au moment de le lancer.
+
+Ce qui est verifie : la feuille de style est equilibree, les 894 tests passent,
+et le controle de references du build ne trouve aucun nom inconnu. Ce qui ne
+l'est pas : l'allure. Les proportions annoncees ci-dessus sont raisonnees, pas
+constatees.
+
+### Detail
+
+Le moteur est identique a celui de la 2.34.0. Une cle de libelle par langue
+(368 par locale).
+
+| | 2.34.0 | 2.35.0 |
+|---|---|---|
+| tests | 888 | 894 |
+| lignes « Bientot » cliquables | 0 | toutes celles qui ont une adresse |
+| rangees sur une carte de jeu | 2 | 3 |
+
 ## 2.34.0 -- 2026-09-22
 
 **La veille s'arretait avec la derniere fenetre, et rien ne proposait autre chose**

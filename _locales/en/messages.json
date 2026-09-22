@@ -146,6 +146,9 @@
   "upcomingUnannounced": {
     "message": "Title not announced yet"
   },
+  "upcomingOpen": {
+    "message": "Open $1 on the store"
+  },
   "summary": {
     "message": "Summary"
   },

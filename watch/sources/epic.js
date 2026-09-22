@@ -139,6 +139,19 @@ export function activeWindow(el, now) {
 export function upcomingWindows(el, now) {
   const batches = (el && el.promotions && el.promotions.upcomingPromotionalOffers) || [];
   const windows = [];
+
+  /* L'adresse de la fiche, construite par les MEMES fonctions que celle d'une
+     offre en cours : meme base de chemin, meme slug, meme parametre de langue.
+     Deux facons de construire l'URL d'une meme page seraient deux facons de se
+     tromper.
+
+     Elle vaut null quand le slug n'est pas exploitable, et la section
+     « Bientot » n'affiche alors pas de lien. Un lien mort est pire qu'une
+     absence de lien : il fait cliquer pour rien, et donne l'impression que
+     l'extension s'est trompee de jeu. */
+  const slug = resolveSlug(el);
+  const url = slug ? buildUrl(pathBase(el), slug) : null;
+
   for (const batch of batches) {
     for (const offer of (batch && batch.promotionalOffers) || []) {
       if (!offer || !offer.startDate) continue;
@@ -148,6 +161,7 @@ export function upcomingWindows(el, now) {
       windows.push({
         title: (el && el.title) || null,
         image: offerImage(el),
+        url,
         start,
         end: Number.isNaN(end) ? null : end,
       });
