@@ -53,6 +53,10 @@ import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunn
 import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
+import { lookup } from './watch/lookup.js';
+import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
+import { KEY_OUTCOMES } from './watch/outcomes.js';
+import { normaliseTitle } from './watch/offer.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -800,6 +804,30 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     prioritise({ chrome: api, catalogKey: msg.catalogKey, on: msg.on === true })
       .then(sendResponse)
       .catch(() => sendResponse({ changed: false }));
+    return true;
+  }
+
+  /* La surcouche demande ce qu'on sait d'un titre. Lecture seule, et la
+     reponse ne porte QUE des faits deja connus de l'utilisateur : rien n'est
+     divulgue a la page, qui n'apprend rien qu'il ne sache deja lui-meme. */
+  if (msg.type === 'fgc-lookup') {
+    (async () => {
+      const raw = await readKeys(api, [
+        KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_OUTCOMES,
+      ]);
+      sendResponse({
+        facts: lookup({
+          title: msg.title,
+          store: msg.store || null,
+          catalog: raw[KEYS.OFFERS] || {},
+          library: raw[KEY_LIBRARY] || {},
+          collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
+          outcomes: raw[KEY_OUTCOMES] || {},
+          normalise: normaliseTitle,
+          now: Date.now(),
+        }),
+      });
+    })().catch(() => sendResponse({ facts: [] }));
     return true;
   }
 

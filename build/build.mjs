@@ -234,6 +234,7 @@ const AVEC_IMPORTS = [
   'background.js', 'popup.js', 'journal.js', 'sentinel.js', 'diagnostics.js',
   'probe-offscreen.js', 'offscreen-html.js', 'i18n.js', 'collection.js',
   'historique.js',
+  'overlay.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'sources')).map((f) => `watch/sources/${f}`),
@@ -280,7 +281,8 @@ for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.
 const { undefinedRefs } = await import('./undefined-refs.mjs');
 
 for (const fichier of ['popup.js', 'journal.js', 'sentinel.js', 'background.js', 'diagnostics.js',
-  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js', 'historique.js']) {
+  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js', 'historique.js',
+  'overlay.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }

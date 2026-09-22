@@ -110,6 +110,7 @@ est declare `"type": "module"`.
 | `codes.js` | ou echanger un code, par magasin, et ou il en est |
 | `permissions.js` | ce qui se demande apres l'installation, et ce qui s'affiche alors |
 | `teaching.js` | apprendre un libelle de bouton, sans jamais apprendre a payer |
+| `lookup.js` | ce que l'extension sait d'un titre, repondu a une page de magasin |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -143,6 +144,7 @@ watch/             la veille de fond, en ES modules
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
   wishlist.js annotations.js history.js codes.js permissions.js teaching.js
+  lookup.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/
@@ -158,6 +160,7 @@ docs/superpowers/specs/     design de la veille, constats V0 et V6-V7
 .github/workflows/          check.yml a chaque push, release.yml sur un tag
 store/                      fiches, permissions et confidentialite pour les magasins
 dist/                       les archives produites, ignore par git
+overlay.js                  la surcouche des pages de magasin : elle lit, elle n'agit jamais
 gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup

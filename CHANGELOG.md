@@ -4,6 +4,86 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.37.0 -- 2026-09-22
+
+**Toute la connaissance de l'extension vivait dans son popup**
+
+Sur la fiche d'un jeu, chez Epic, GOG ou Steam, elle ne disait rien. C'est
+pourtant la qu'on se demande si on l'a deja, et si on ferait mieux d'attendre.
+
+Un bandeau discret y repond desormais, en bas a droite, et il dit quatre
+choses au plus : vous le possedez deja, et ou ; il est offert en ce moment, y
+compris sur un autre magasin ; vous l'avez recupere a telle date ; il a deja
+ete offert une fois et vous l'avez manque.
+
+Augmented Steam connait Steam. Les extensions GOG connaissent GOG. Aucune ne
+connait vos quatre magasins PLUS ce que vous avez reclame, parce qu'aucune ne
+les lit toutes.
+
+### Quatre choses que ce bandeau ne fait jamais
+
+**Aucun `innerHTML`.** Le depot n'en compte pas un seul, et ses deux audits le
+disent. Ici la regle vaut double : le titre affiche vient du catalogue, donc
+d'une API tierce.
+
+**Rien quand il n'y a rien a dire.** L'immense majorite des fiches sont
+inconnues de l'extension. Un bandeau vide sur chaque page de magasin serait une
+nuisance permanente, et la premiere raison de desinstaller.
+
+**Aucune ecriture, aucun clic.** Le script LIT et affiche. C'est pour cela
+qu'il a le droit de venir d'un script de contenu, contrairement aux commandes
+du worker, qui sont reservees aux pages de l'extension.
+
+**Aucune feuille de style injectee.** Le style est pose propriete par
+propriete : une feuille inseree dans une page tierce peut en modifier le rendu,
+et ce script n'a le droit de rien casser.
+
+### Il est SEPARE du moteur, et c'est delibere
+
+Le moteur agit sur trois hotes. La surcouche informe sur quatre. Les melanger
+dans la meme entree de manifeste injecterait le moteur sur le magasin Steam, ou
+il n'a rien a faire.
+
+Deux entrees, deux jeux de droits. Celui qui agit et celui qui informe ne se
+confondent pas.
+
+### « Deja offert » : d'ou vient l'histoire
+
+La mesure a ete prise avant d'ecrire, et elle a change le plan.
+
+**L'agregateur public n'expose que les offres ACTIVES.** Verifie le 2026-09-22 :
+le seul statut present dans sa reponse est « Active », et aucun champ ne
+designe une offre passee. Il n'existe donc aucune archive a interroger.
+
+La source du fait « deja offert » est donc ce que l'extension a ELLE-MEME
+observe : les issues figees depuis la 2.27.0. C'est plus pauvre au debut,
+puisque cela part de rien et grandit. C'est plus honnete ensuite, parce que
+chaque ligne est verifiable dans votre propre historique, et qu'une histoire
+inventee aurait valu moins que rien.
+
+### Un defaut trouve avant la premiere page ouverte
+
+Le module lisait la collection sous une forme qu'il avait imaginee : des lignes
+regroupees par titre, avec leurs magasins. Le stockage, lui, garde une carte
+PLATE d'articles portant chacun son magasin.
+
+Le bandeau n'aurait jamais dit « vous le possedez deja ». Il n'aurait rien dit
+du tout, sans erreur ni message, ce qui est exactement le genre de panne qu'on
+met une soiree a comprendre.
+
+Lire la forme d'affichage aurait par ailleurs oblige a rejouer ici le
+regroupement de la page Ma collection, donc a le maintenir en double.
+
+### Mesure
+
+| | 2.36.0 | 2.37.0 |
+|---|---|---|
+| tests | 916 | 929 |
+| fichiers empaquetes | 72 | 74 |
+| endroits ou l'extension parle | le popup et ses pages | plus les fiches de quatre magasins |
+
+Le moteur est identique a celui de la 2.36.0.
+
 ## 2.36.0 -- 2026-09-22
 
 **L'extension se fait montrer le bouton**
