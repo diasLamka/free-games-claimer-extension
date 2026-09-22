@@ -67,6 +67,9 @@ export const UI_COMMANDS = Object.freeze([
   /* L'apprentissage d'un libelle (2.36.0). Il ecrit une cle que le MOTEUR
      lit avant chaque clic : un script de contenu n'a rien a y faire. */
   'fgc-teach',
+  /* Le temps de jeu Steam (2.39.0). Lecture authentifiee sur un hote demande
+     en permission optionnelle : reservee aux pages, comme l'import. */
+  'fgc-playtime',
 ]);
 
 /**

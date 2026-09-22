@@ -1031,6 +1031,24 @@
   "collectionNote": {
     "message": "Steam: owned games and their public names. GOG: your account's game list. Epic: your order history, free games included (a DLC looks like a game there). A title found on two stores is matched by its name: that is a hint, not proof, and nothing uses it to decide a claim."
   },
+  "mirrorRead": {
+    "message": "Read Steam playtime"
+  },
+  "mirrorReading": {
+    "message": "Reading your Steam playtime..."
+  },
+  "mirrorDenied": {
+    "message": "Permission refused. Nothing was read."
+  },
+  "mirrorDone": {
+    "message": "$1 games read."
+  },
+  "mirrorFailed": {
+    "message": "Could not read: $1"
+  },
+  "mirrorLine": {
+    "message": "$1 games claimed. Of the $2 Steam can measure, $3 were launched and $4 never were."
+  },
   "backlogColStatus": {
     "message": "Backlog"
   },

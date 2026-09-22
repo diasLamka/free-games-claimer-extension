@@ -19,6 +19,7 @@ import { claimableStoresFor } from './sources/index.js';
 import { normaliseTitle } from './offer.js';
 import { KEY_WISHLIST, addWish, removeWish } from './wishlist.js';
 import { KEY_TAUGHT, forget, learn } from './teaching.js';
+import { GAMES_URL, KEY_PLAYTIME, parseGamesXml, playtimeTable } from './playtime.js';
 
 /**
  * Reclame tout ce qui peut l'etre, maintenant, a la demande.
@@ -309,4 +310,43 @@ export async function teach({ chrome, surface, label, on = true, now = Date.now(
   const r = learn(avant, { surface, label, now });
   if (r.learned) await write(chrome, { [KEY_TAUGHT]: r.taught });
   return { learned: r.learned, forgotten: false, reason: r.reason };
+}
+
+/**
+ * Lit le temps de jeu Steam, SUR UN GESTE et jamais autrement.
+ *
+ * Cette lecture emporte les cookies de la session et touche un hote qui n'est
+ * pas dans le manifeste : il est demande en permission optionnelle au moment
+ * du clic, et retirable ensuite. C'est la meme posture que l'import de
+ * collection, et la meme phrase de SECURITY.md qu'elle respecte -- l'extension
+ * ne lit jamais un compte de sa propre initiative.
+ *
+ * Rend un rapport meme en cas d'echec : la forme d'une reponse CONNECTEE n'a
+ * jamais ete mesuree dans ce depot, et le premier utilisateur a cliquer sera
+ * celui qui la mesure. Un echec muet lui ferait croire a une panne de son
+ * compte ; un rapport lui donne de quoi corriger le lecteur du premier coup.
+ */
+export async function readPlaytime({ chrome, fetch: fetchImpl = fetch, now = Date.now() }) {
+  let texte;
+  try {
+    const r = await fetchImpl(GAMES_URL, {
+      credentials: 'include',
+      headers: { Accept: 'text/xml,application/xml' },
+    });
+    if (!r.ok) return { ok: false, reason: `HTTP ${r.status}`, count: 0 };
+    texte = await r.text();
+  } catch (e) {
+    return { ok: false, reason: (e && e.message) || String(e), count: 0 };
+  }
+
+  const jeux = parseGamesXml(texte);
+  if (!jeux.length) {
+    /* Zero jeu lu veut dire soit « profil prive », soit « forme inattendue ».
+       Les deux se corrigent par un geste de l'utilisateur, et aucun des deux
+       ne doit effacer ce qu'on savait deja. */
+    return { ok: false, reason: 'aucun jeu lu : profil prive, ou forme inattendue', count: 0 };
+  }
+
+  await write(chrome, { [KEY_PLAYTIME]: { at: now, games: playtimeTable(jeux) } });
+  return { ok: true, reason: null, count: jeux.length };
 }

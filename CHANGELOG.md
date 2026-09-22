@@ -4,6 +4,78 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.39.0 -- 2026-09-22
+
+**340 jeux recuperes, 12 lances**
+
+Toutes les autres phrases de ce produit disent d'en prendre plus. Celle-ci dit
+de jouer a ce qu'on a, et c'est la seule qui retourne sa proposition.
+
+Aucun lanceur ne peut la dire, parce qu'aucun ne couvre les quatre magasins.
+
+### Ce qu'il faut dire tout de suite
+
+**Seul Steam publie un temps de jeu lisible.** GOG et Epic n'en exposent aucun.
+Le miroir ne couvre donc qu'un magasin sur quatre.
+
+Il le dit plutot que de laisser croire au contraire, et le code le fait deux
+fois :
+
+- une acquisition GOG ou Epic n'est PAS comptee « jamais lancee », elle est
+  HORS PORTEE. Les confondre accuserait quelqu'un de ne pas jouer a des jeux
+  qu'on ne sait tout simplement pas mesurer ;
+- le ratio porte sur ce qui est COUVERT, jamais sur le total. Le calculer sur
+  le total ferait passer trois magasins sans temps de jeu pour trois magasins
+  de jeux ignores.
+
+### Le geste, et l'hote qui n'est pas dans le manifeste
+
+`steamcommunity.com` n'y figure pas, et n'y figurera pas. Il est demande en
+permission OPTIONNELLE, au moment du clic, et retirable ensuite -- exactement
+l'infrastructure posee en 2.34.0 pour la veille de fond, qui ressert ici pour
+la premiere fois.
+
+L'adresse passe par `/my/`, que Steam resout cote serveur vers le profil
+connecte : aucun identifiant de profil n'est demande, aucun n'est stocke.
+
+C'est la meme posture que l'import de collection, et la meme phrase de
+`SECURITY.md` qu'elle respecte : l'extension ne lit jamais un compte de sa
+propre initiative.
+
+### Deux details du format qui coutent cher si on les rate
+
+**Steam OMET `hoursOnRecord` pour un jeu jamais lance.** Le lire comme zero
+confondrait deux etats differents : zero peut vouloir dire « lance deux
+minutes ». Le champ absent vaut donc `null`, et les deux se distinguent.
+
+**Steam ecrit les milliers avec une virgule : « 1,204.2 ».** Un `parseFloat`
+naif s'arrete a 1 et transforme mille deux cents heures de jeu en une seule --
+donc un joueur assidu en quelqu'un qui n'a jamais lance le jeu.
+
+### La forme d'une reponse connectee n'a jamais ete mesuree ici
+
+Et c'est assume, avec le meme precedent que l'import de collection : le premier
+utilisateur a cliquer sera celui qui la mesure.
+
+La commande rend donc un rapport meme en cas d'echec. Un echec muet ferait
+croire a une panne de compte ; un motif -- « profil prive », « forme
+inattendue », un code HTTP -- donne de quoi corriger le lecteur du premier
+coup. Et rien n'est efface sur un echec.
+
+### Detail
+
+La lecture se fait par expression reguliere et non par analyse de document : un
+service worker MV3 n'a pas de DOMParser, le format est plat, et une expression
+se teste sans monter un navigateur.
+
+Six cles de libelle par langue (382 par locale). Le moteur est identique a celui
+de la 2.38.0.
+
+| | 2.38.0 | 2.39.0 |
+|---|---|---|
+| tests | 941 | 956 |
+| permissions optionnelles | 1 | 2 |
+
 ## 2.38.0 -- 2026-09-22
 
 **Le seul signal de l'extension qui puisse vous faire ne PAS acheter**

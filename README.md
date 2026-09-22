@@ -112,6 +112,7 @@ est declare `"type": "module"`.
 | `teaching.js` | apprendre un libelle de bouton, sans jamais apprendre a payer |
 | `lookup.js` | ce que l'extension sait d'un titre, repondu a une page de magasin |
 | `recurrence.js` | ce qui revient : les titres deja offerts plus d'une fois |
+| `playtime.js` | le miroir : recupere contre lance, pour ce que Steam sait mesurer |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -145,7 +146,7 @@ watch/             la veille de fond, en ES modules
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
   wishlist.js annotations.js history.js codes.js permissions.js teaching.js
-  lookup.js recurrence.js
+  lookup.js recurrence.js playtime.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

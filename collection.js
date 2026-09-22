@@ -14,6 +14,7 @@ import { KEY_LIBRARY } from './watch/library.js';
 import {
   KEY_ANNOTATIONS, STATUS, annotationKey, pickToTry, readAnnotation, setStatus,
 } from './watch/annotations.js';
+import { GAMES_ORIGIN, KEY_PLAYTIME, mirror } from './watch/playtime.js';
 import {
   KEY_COLLECTION,
   COLLECTION_STORES,
@@ -54,6 +55,7 @@ let library = {};
 /* Ce que l'utilisateur a dit de ses jeux. Cette page en est SEULE ecrivaine :
    le service worker n'y touche jamais, donc aucune transaction n'est en jeu. */
 let annotations = {};
+let playtime = {};
 let rows = [];
 let importing = false;
 
@@ -354,6 +356,32 @@ document.getElementById('surprise').addEventListener('click', () => {
 // Le genre change aussi les compteurs des cartes, pas seulement la liste.
 document.getElementById('kind').addEventListener('change', render);
 document.getElementById('import-all').addEventListener('click', () => startImport(IMPORTABLE_STORES));
+
+/* Le temps de jeu, sur un geste et seulement sur un geste.
+ *
+ * L'hote n'est pas dans le manifeste : la permission est demandee ICI, dans
+ * l'ecouteur du clic, parce que Chrome refuse la demande hors d'un geste. Un
+ * refus n'est pas une erreur, c'est un silence -- on relit donc l'etat reel
+ * plutot que de supposer que la demande a abouti. */
+document.getElementById('playtime').addEventListener('click', async () => {
+  let accorde = false;
+  try {
+    accorde = await api.permissions.request({ origins: [GAMES_ORIGIN] });
+  } catch { accorde = false; }
+
+  if (!accorde) { flash(t('mirrorDenied')); return; }
+
+  flash(t('mirrorReading'));
+  const r = await new Promise((resolve) => {
+    api.runtime.sendMessage({ type: 'fgc-playtime' }, (reponse) => {
+      void api.runtime.lastError;
+      resolve(reponse || { ok: false, reason: 'aucune reponse' });
+    });
+  });
+
+  flash(r.ok ? t('mirrorDone', String(r.count)) : t('mirrorFailed', r.reason || '?'));
+  await load();
+});
 
 api.storage.onChanged.addListener((changes, zone) => {
   if (zone === 'local' && (changes[KEY_COLLECTION] || changes[KEY_LIBRARY])) load();

@@ -37,7 +37,8 @@ import {
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import {
-  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze, teach, wish,
+  claimAllNow, claimOneNow, prioritise, pruneNow, readPlaytime, retryNow, snooze,
+  teach, wish,
 } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import {
@@ -828,6 +829,13 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         }),
       });
     })().catch(() => sendResponse({ facts: [] }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-playtime') {
+    readPlaytime({ chrome: api, fetch: (u, i) => fetch(u, i) })
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, reason: String((e && e.message) || e), count: 0 }));
     return true;
   }
 
