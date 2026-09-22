@@ -15,6 +15,7 @@ import {
   KEY_ANNOTATIONS, STATUS, annotationKey, pickToTry, readAnnotation, setStatus,
 } from './watch/annotations.js';
 import { GAMES_ORIGIN, KEY_PLAYTIME, mirror } from './watch/playtime.js';
+import { BRIDGE_PERMISSION } from './watch/bridge.js';
 import {
   KEY_COLLECTION,
   COLLECTION_STORES,
@@ -388,3 +389,27 @@ api.storage.onChanged.addListener((changes, zone) => {
 });
 
 boot();
+
+/* La passerelle locale : un geste, une permission, un fichier.
+ *
+ * La permission est demandee ICI parce que Chrome refuse la demande hors d'un
+ * clic. Un refus n'est pas une erreur, c'est un silence : on relit donc ce que
+ * le navigateur a reellement accorde. */
+document.getElementById('bridge').addEventListener('click', async () => {
+  let accorde = false;
+  try {
+    accorde = await api.permissions.request({ permissions: [BRIDGE_PERMISSION] });
+  } catch { accorde = false; }
+
+  if (!accorde) { flash(t('bridgeDenied')); return; }
+
+  flash(t('bridgeSending'));
+  const r = await new Promise((resolve) => {
+    api.runtime.sendMessage({ type: 'fgc-bridge' }, (reponse) => {
+      void api.runtime.lastError;
+      resolve(reponse || { ok: false, reason: 'aucune reponse' });
+    });
+  });
+
+  flash(r.ok ? t('bridgeDone', r.written || '?') : t('bridgeFailed', r.reason || '?'));
+});

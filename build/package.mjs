@@ -172,7 +172,12 @@ export function fichiersDuPaquet(variante) {
  * DEJA, concatene dans free-games-claimer.js. Le compter pour manquant
  * refuserait tout empaquetage a jamais.
  */
-const ATELIER = Object.freeze(['src', 'build', 'test', 'docs', '.github', '.git', 'dist', 'store']);
+const ATELIER = Object.freeze([
+  'src', 'build', 'test', 'docs', '.github', '.git', 'dist', 'store',
+  /* Le programme de la passerelle tourne HORS du navigateur : il s'installe
+     a la main et n'a rien a faire dans l'archive de l'extension. */
+  'host',
+]);
 
 /**
  * Les fichiers d'execution du depot, que l'archive DEVRAIT porter.

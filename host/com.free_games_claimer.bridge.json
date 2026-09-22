@@ -1,0 +1,9 @@
+{
+  "name": "com.free_games_claimer.bridge",
+  "description": "Recoit un instantane de la ludotheque gratuite et l'ecrit dans un fichier local.",
+  "path": "A_REMPLIR",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://A_REMPLIR/"
+  ]
+}

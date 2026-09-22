@@ -1049,6 +1049,21 @@
   "mirrorLine": {
     "message": "$1 games claimed. Of the $2 Steam can measure, $3 were launched and $4 never were."
   },
+  "bridgeSend": {
+    "message": "Send to local bridge"
+  },
+  "bridgeSending": {
+    "message": "Sending to the local bridge..."
+  },
+  "bridgeDenied": {
+    "message": "Permission refused. Nothing was sent."
+  },
+  "bridgeDone": {
+    "message": "Written to $1"
+  },
+  "bridgeFailed": {
+    "message": "Bridge unreachable: $1"
+  },
   "backlogColStatus": {
     "message": "Backlog"
   },

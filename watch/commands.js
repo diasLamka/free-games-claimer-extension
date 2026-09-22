@@ -20,6 +20,9 @@ import { normaliseTitle } from './offer.js';
 import { KEY_WISHLIST, addWish, removeWish } from './wishlist.js';
 import { KEY_TAUGHT, forget, learn } from './teaching.js';
 import { GAMES_URL, KEY_PLAYTIME, parseGamesXml, playtimeTable } from './playtime.js';
+import { BRIDGE_NAME, makeSnapshot } from './bridge.js';
+import { KEY_COLLECTION } from './collection.js';
+import { KEY_OUTCOMES } from './outcomes.js';
 
 /**
  * Reclame tout ce qui peut l'etre, maintenant, a la demande.
@@ -349,4 +352,65 @@ export async function readPlaytime({ chrome, fetch: fetchImpl = fetch, now = Dat
 
   await write(chrome, { [KEY_PLAYTIME]: { at: now, games: playtimeTable(jeux) } });
   return { ok: true, reason: null, count: jeux.length };
+}
+
+/**
+ * Envoie un instantane a la passerelle locale.
+ *
+ * Le navigateur DEMARRE le programme hote a la connexion et le tue a la
+ * fermeture : rien ne tourne en permanence, rien n'ecoute sur un port.
+ *
+ * On se deconnecte des l'accuse de reception, ou apres un delai. Laisser la
+ * connexion ouverte garderait un processus vivant sur la machine de quelqu'un
+ * pour rien -- et un canal ouvert qu'on a oublie est le genre de chose qu'on
+ * ne remarque que le jour ou elle pose probleme.
+ */
+export async function sendToBridge({ chrome, now = Date.now(), timeoutMs = 5000 }) {
+  const raw = await readKeys(chrome, [KEY_COLLECTION, KEY_LIBRARY, KEY_OUTCOMES, KEY_PLAYTIME]);
+
+  const instantane = makeSnapshot({
+    collection: (raw[KEY_COLLECTION] || {}).items || {},
+    library: raw[KEY_LIBRARY] || {},
+    outcomes: raw[KEY_OUTCOMES] || {},
+    playtime: (raw[KEY_PLAYTIME] || {}).games || {},
+    now,
+  });
+
+  return new Promise((resolve) => {
+    let port;
+    let fini = false;
+
+    const finir = (resultat) => {
+      if (fini) return;
+      fini = true;
+      try { if (port) port.disconnect(); } catch { /* deja fermee */ }
+      resolve(resultat);
+    };
+
+    try {
+      port = chrome.runtime.connectNative(BRIDGE_NAME);
+    } catch (e) {
+      return finir({ ok: false, reason: (e && e.message) || String(e) });
+    }
+
+    /* Un hote absent ou mal declare ne produit PAS d'erreur : il produit une
+       deconnexion immediate. C'est le symptome le plus frequent, et le moins
+       explicite du navigateur -- d'ou le motif recopie tel quel. */
+    port.onDisconnect.addListener(() => {
+      const erreur = chrome.runtime.lastError;
+      finir({ ok: false, reason: (erreur && erreur.message) || 'passerelle absente ou mal declaree' });
+    });
+
+    port.onMessage.addListener((reponse) => {
+      finir(reponse && reponse.ok
+        ? { ok: true, written: reponse.written || null, sent: instantane.owned.length + instantane.claimed.length }
+        : { ok: false, reason: (reponse && reponse.error) || 'reponse inattendue' });
+    });
+
+    setTimeout(() => finir({ ok: false, reason: 'aucune reponse de la passerelle' }), timeoutMs);
+
+    try { port.postMessage(instantane); } catch (e) {
+      finir({ ok: false, reason: (e && e.message) || String(e) });
+    }
+  });
 }

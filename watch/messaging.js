@@ -70,6 +70,10 @@ export const UI_COMMANDS = Object.freeze([
   /* Le temps de jeu Steam (2.39.0). Lecture authentifiee sur un hote demande
      en permission optionnelle : reservee aux pages, comme l'import. */
   'fgc-playtime',
+  /* La passerelle locale (2.40.0). Elle ouvre un canal vers un PROGRAMME de
+     la machine : c'est la commande la plus puissante du lot, et elle est
+     donc reservee aux pages de l'extension comme toutes les autres. */
+  'fgc-bridge',
 ]);
 
 /**

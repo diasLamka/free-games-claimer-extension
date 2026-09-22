@@ -4,6 +4,93 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.40.0 -- 2026-09-22
+
+**L'extension cesse d'etre un utilitaire et devient une source de verite**
+
+Elle sait ce que vous possedez sur quatre magasins, ce que vous avez recupere,
+ce qui est passe et ce que vous avez lance. Cette connaissance ne sortait de
+nulle part : ni Playnite, ni Heroic, ni un script maison ne pouvaient la lire.
+
+Elle la depose desormais dans un fichier, sur votre machine, quand vous le
+demandez.
+
+### Trois choses que cette passerelle n'est pas
+
+**Pas un serveur.** Rien n'ecoute sur un port, rien n'est joignable depuis le
+reseau. Le navigateur demarre un programme local, lui parle sur l'entree
+standard, et le tue quand la connexion se ferme.
+
+**Pas une mise en commun.** Le non-objectif du design tient : aucune donnee ne
+quitte la machine, et aucun utilisateur ne voit celle d'un autre.
+
+**Pas automatique.** Trois obstacles, et les trois sont voulus : l'envoi part
+d'un geste, la permission est optionnelle, et le programme doit avoir ete
+installe a la main. Un canal vers un programme local est la chose la plus
+puissante qu'une extension puisse demander.
+
+### Ce que l'instantane ne contient pas
+
+**Les codes de rachat.** Ils n'y sont pas et n'y seront pas. Un code est un
+PORTEUR -- qui l'a, l'utilise -- et il n'a aucune raison de traverser une
+frontiere de processus pour peupler une ludotheque.
+
+Un test le verifie en cherchant le mot dans le JSON entier, pas seulement dans
+la liste des champs : c'est le genre de fuite qui arrive par un champ ajoute
+sans y penser.
+
+### Le piege du protocole, et pourquoi l'hote est teste pour de vrai
+
+Le format de Chrome est quatre octets de longueur suivis du JSON. Deux details
+decident si cela marche, et aucun des deux ne leve d'erreur quand on le rate.
+
+**Le boutisme est NATIF, pas petit.** Sur toutes les machines qui comptent
+aujourd'hui il est petit, mais l'ecrire en dur ferait un hote qui marche
+partout sauf la ou il ne marche pas.
+
+**L'entree standard arrive par morceaux qui ne respectent aucune frontiere de
+message.** Un lecteur qui supposerait un message par morceau perdrait la moitie
+de ce qu'on lui envoie, en silence. Un instantane de quatre cents jeux n'arrive
+jamais d'un seul bloc.
+
+L'hote est donc lance dans les tests comme le navigateur le lance : un
+programme, un flux sur l'entree standard, un fichier a la sortie. Une
+comparaison de code source n'aurait rien prouve.
+
+### Un fichier seul, et une copie verifiee
+
+`host/fgc-host.mjs` n'importe rien du depot, parce qu'on le copie hors du
+depot : un import relatif le casserait au premier deplacement. Son cadrage est
+donc recopie depuis `watch/bridge.js`, et le test verifie que les deux copies
+s'accordent -- meme promesse que celle qui garde le pays de la boutique, la
+table d'echange et les libelles appris.
+
+### L'instantane porte sa version
+
+`protocol: 1` accompagne chaque envoi, et pas seulement la documentation. Un
+outil tiers doit pouvoir REFUSER un format qu'il ne connait pas, plutot que
+d'en deviner les champs.
+
+### Ce qui reste a votre charge
+
+L'installation. Elle demande Node, un chemin absolu, l'identifiant de
+l'extension, et un depot de fichier a un emplacement qui depend du systeme.
+`host/README.md` la decrit, et se termine par les quatre causes reelles d'un
+silence -- dans l'ordre ou elles se produisent, la barre oblique finale
+manquante en tete.
+
+### Detail
+
+Sept cles de libelle par langue (387 par locale). Le moteur est identique a
+celui de la 2.39.0. Le dossier `host/` est exclu de l'archive : il tourne hors
+du navigateur.
+
+| | 2.39.0 | 2.40.0 |
+|---|---|---|
+| tests | 956 | 968 |
+| permissions optionnelles | 2 | 3 |
+| outils qui peuvent lire votre ludotheque | 0 | tous ceux qui lisent un fichier |
+
 ## 2.39.0 -- 2026-09-22
 
 **340 jeux recuperes, 12 lances**
