@@ -4,6 +4,87 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.33.0 -- 2026-09-22
+
+**Sept magasins sur neuf recevaient l'adresse de Microsoft**
+
+La destination d'un code se decidait par un ternaire binaire : GOG d'un cote,
+l'URL de Microsoft pour TOUT le reste. Ecrit en double, dans le moteur et dans
+le popup.
+
+Amazon Luna distribue des cles pour neuf plateformes. Une cle Ubisoft, EA ou
+Battle.net menait donc a un formulaire qui la refuse -- et le message qui
+l'accompagnait affirmait le contraire.
+
+### Une table, et ce qu'elle refuse de contenir
+
+`REDEEM_URLS` vit desormais a un seul endroit logique, en deux exemplaires
+techniques : un module ES pour le popup, et son jumeau ES5 dans le moteur, qui
+tourne aussi en userscript sans modules. La duplication ne peut pas
+disparaitre ; un test de parite verifie qu'elle ne derive pas, exactement comme
+celui qui garde le pays de la boutique depuis la 2.20.0.
+
+**Deux entrees renseignees, sept a `null`.** Ce sont les deux seules adresses
+que ce depot ait jamais utilisees, donc les deux seules dont il puisse
+repondre. Les autres attendent une mesure -- ouvrir la page, constater qu'elle
+demande bien un code.
+
+`null` n'est pas un trou : c'est le mot juste. Le bouton d'echange disparait, et
+le message dit « collez-le sur le site de X » sans promettre d'adresse.
+Inventer une URL plausible aurait coute un onglet ouvert sur une erreur, et la
+confiance dans toutes les autres.
+
+L'URL de la page Epic a bien ete interrogee pour cette version : le serveur
+repond 403 a toute requete qui ne vient pas d'un navigateur. Ce n'est ni une
+confirmation ni un dementi, donc l'entree reste vide.
+
+### Les cles recues ailleurs ont enfin un endroit ou entrer
+
+Humble Choice, IndieGala, Fanatical : rien de tout cela ne passe par Luna, et
+l'onglet Codes ne savait donc rien en faire.
+
+Le champ accepte un COLLAGE entier -- titres, puces, lignes vides. Une
+expression reguliere sait ignorer ce bruit, et demander a l'utilisateur de
+nettoyer serait lui faire faire le travail de la machine. Un code colle en
+minuscules est accepte : le motif ne reconnait que les capitales, et le refuser
+sans explication serait incomprehensible.
+
+Le motif est recopie a l'identique depuis le moteur, et le test de parite le
+verifie aussi. Deux motifs qui divergent feraient accepter dans le popup un
+code que le moteur refuse, sans que personne puisse savoir lequel a raison.
+
+### « Echange » et « invalide » cessaient de se ressembler
+
+Un code ne portait que son nombre d'essais, sa derniere tentative et sa
+derniere erreur : de quoi savoir qu'on avait essaye, jamais ce qui s'etait
+passe. Quatre etats les separent desormais, et l'un veut dire « c'est fait »
+quand l'autre veut dire « celui-la ne servira plus jamais ».
+
+### Ce que cette version NE fait pas, et pourquoi c'est ecrit
+
+Elle n'ajoute aucun second moteur d'echange. GOG en a un, mesure : libelles
+autorises, detection de page payante, captcha rendu a l'humain, classification
+des reponses. Rien d'equivalent n'existe ailleurs, et un parcours qui clique
+sur un vrai compte ne s'ecrit pas avant d'avoir mesure la page visee.
+
+C'est la regle du projet, et c'est la seule qui protege un compte.
+
+### Detail
+
+Le moteur change, donc un nouveau temoin de non-regression est fige, avec son
+motif, et la base du renommage est rebasee. Le controle du build a attrape deux
+violations dans l'ajout avant qu'elles ne sortent : deux accents graves dans un
+commentaire -- interdits parce qu'ils cassent le linter de Tampermonkey -- et
+des fins de ligne LF dans un depot en CRLF.
+
+Neuf cles de libelle par langue (364 par locale).
+
+| | 2.32.0 | 2.33.0 |
+|---|---|---|
+| tests | 866 | 881 |
+| magasins avec une destination juste | 2 sur 9 | 2 mesures, 7 honnetes |
+| endroits ou la destination est ecrite | 2 ternaires | 1 table, 2 copies verifiees |
+
 ## 2.32.0 -- 2026-09-22
 
 **Le bilan etait un tableau de chasse. Voici la colonne d'a cote**

@@ -32,6 +32,7 @@ import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
 import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
+import { REDEEM_URLS, addCodes, parseCodes, redeemUrlFor } from './watch/codes.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
@@ -950,6 +951,42 @@ function renderLog(all) {
 
 /* ------------------------------------------------------------------- codes */
 
+/**
+ * Ajoute a la main les cles recues ailleurs.
+ *
+ * Humble Choice, IndieGala, Fanatical : rien de tout cela ne passe par Luna, et
+ * ces cles n'avaient donc aucun endroit ou entrer. Le champ accepte un COLLAGE
+ * entier -- titres, puces, lignes vides -- parce qu'une expression reguliere
+ * sait ignorer ce bruit, et que demander a l'utilisateur de nettoyer serait lui
+ * faire faire le travail de la machine.
+ */
+async function addCodesByHand(texte, store) {
+  const trouves = parseCodes(texte);
+  if (!trouves.length) { flashCodes(t('codesNoneFound')); return; }
+
+  const avant = get(await readAll(), KEY_CODES, []);
+  const apres = addCodes(avant, trouves.map((code) => ({
+    store,
+    code,
+    title: null,
+    ts: Date.now(),
+    attempts: 0,
+    manual: true,
+  })));
+
+  const ajoutes = apres.length - avant.length;
+  await setValue(KEY_CODES, JSON.stringify(apres));
+  flashCodes(ajoutes ? t('codesAdded', String(ajoutes)) : t('codesAllKnown'));
+  await load();
+}
+
+function flashCodes(message) {
+  const zone = document.getElementById('codes-flash');
+  if (!zone) return;
+  zone.textContent = message;
+  setTimeout(() => { zone.textContent = ''; }, 4000);
+}
+
 function renderCodes(codes) {
   const host = document.getElementById('codes');
   host.textContent = '';
@@ -995,11 +1032,19 @@ function renderCodes(codes) {
 
     const actions = el('div', 'code-row');
     actions.style.marginTop = '8px';
+
+    /* La destination vient de la TABLE, plus d'un ternaire binaire.
+     *
+     * Jusqu'a la 2.33.0, tout ce qui n'etait pas GOG ouvrait la page de
+     * Microsoft : un code Ubisoft, EA ou Battle.net menait donc a un formulaire
+     * qui le refuse. Un magasin dont l'adresse n'a pas ete mesuree n'a plus de
+     * bouton du tout -- ne rien promettre vaut mieux que promettre a cote. */
+    const cible = redeemUrlFor(entry.store);
     const go = el('button', null, t(entry.store === 'gog' ? 'redeemOnGog' : 'openRedeemPage'));
     go.style.flex = '1';
-    go.addEventListener('click', () => openTab(
-      entry.store === 'gog' ? 'https://www.gog.com/redeem' : 'https://account.microsoft.com/billing/redeem',
-    ));
+    go.disabled = !cible;
+    if (!cible) go.title = t('redeemUnknownHint');
+    go.addEventListener('click', () => { if (cible) openTab(cible); });
 
     const drop = el('button', 'link', t('remove'));
     drop.addEventListener('click', async () => {
@@ -2071,6 +2116,26 @@ document.getElementById('open-collection').addEventListener('click', (e) => {
 });
 
 /* --- the watch log, on its own page: 500 lines do not fit in 328 px */
+
+/* Le menu des magasins de saisie est construit depuis la TABLE, pas ecrit a
+   la main : ajouter un magasin ne doit demander qu'une ligne, au meme endroit
+   que sa destination d'echange. */
+{
+  const menu = document.getElementById('codes-store');
+  for (const store of Object.keys(REDEEM_URLS)) {
+    if (store === 'unknown') continue;
+    const option = el('option', null, STORE_LABELS[store] || store);
+    option.value = store;
+    menu.append(option);
+  }
+  menu.value = 'gog';
+}
+
+document.getElementById('codes-add').addEventListener('click', async () => {
+  const zone = document.getElementById('codes-paste');
+  await addCodesByHand(zone.value, document.getElementById('codes-store').value);
+  zone.value = '';
+});
 
 document.getElementById('open-history').addEventListener('click', () => openTab(api.runtime.getURL('historique.html')));
 document.getElementById('open-journal').addEventListener('click', (e) => {

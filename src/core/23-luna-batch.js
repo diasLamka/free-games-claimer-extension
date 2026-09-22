@@ -116,7 +116,7 @@
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
       saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''));
-      var redeemUrl = store === 'microsoft' ? CONFIG.microsoftRedeemUrl : null;
+      var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
       updateUiState('ok', 'Luna : code ' + label + ' copie (' + title + ')');

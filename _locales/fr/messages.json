@@ -401,6 +401,33 @@
   "openRedeemPage": {
     "message": "Ouvrir la page d’échange"
   },
+  "redeemUnknownHint": {
+    "message": "Aucune page d echange n a encore ete mesuree pour ce magasin. Collez le code sur son site."
+  },
+  "codesAddTitle": {
+    "message": "Ajouter des cles a la main"
+  },
+  "codesAddHint": {
+    "message": "Collez n importe quoi : titres, puces et lignes vides sont ignores."
+  },
+  "codesAddPlaceholder": {
+    "message": "ABCDE-12345-FGHIJ"
+  },
+  "codesAddStore": {
+    "message": "Magasin de ces cles"
+  },
+  "codesAddButton": {
+    "message": "Ajouter"
+  },
+  "codesNoneFound": {
+    "message": "Aucune cle trouvee dans ce texte."
+  },
+  "codesAdded": {
+    "message": "$1 cle(s) ajoutee(s)."
+  },
+  "codesAllKnown": {
+    "message": "Toutes ces cles etaient deja listees."
+  },
   "remove": {
     "message": "Retirer"
   },

@@ -107,6 +107,7 @@ est declare `"type": "module"`.
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 | `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |
+| `codes.js` | ou echanger un code, par magasin, et ou il en est |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -139,7 +140,7 @@ watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
-  wishlist.js annotations.js history.js
+  wishlist.js annotations.js history.js codes.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/

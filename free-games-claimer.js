@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.32.0
+ * FREE GAMES AUTO-CLAIMER -- v2.33.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -128,6 +128,40 @@
     gogRedeemOutcomeTimeout: 20000,
     microsoftRedeemUrl: 'https://account.microsoft.com/billing/redeem'
   };
+
+  /* Ou echanger un code, par magasin.
+   *
+   * Jusqu'a la 2.33.0, la destination se decidait par un ternaire binaire :
+   * GOG d'un cote, l'URL Microsoft pour TOUT le reste. Les sept autres
+   * magasins que Luna sait distribuer recevaient donc l'adresse de Microsoft,
+   * qui refuse leurs codes.
+   *
+   * DEUX ENTREES RENSEIGNEES SEULEMENT, et c'est un choix. Ce sont les deux
+   * seules adresses que ce depot ait jamais utilisees, donc les deux seules
+   * dont il puisse repondre. Les autres attendent une mesure, et "null" veut
+   * dire exactement cela -- le message dit alors "collez-le sur le site de X"
+   * sans promettre une adresse. Inventer une URL plausible couterait un onglet
+   * ouvert sur une erreur, et la confiance dans toutes les autres.
+   *
+   * Jumelle de REDEEM_URLS dans watch/codes.js. La duplication ne peut pas
+   * disparaitre -- ce fichier tourne aussi en userscript, sans modules -- et
+   * test/codes.test.mjs verifie qu'elle ne derive pas.
+   */
+  var REDEEM_URLS = {
+    gog: CONFIG.gogRedeemUrl,
+    microsoft: CONFIG.microsoftRedeemUrl,
+    epic: null,
+    amazon: null,
+    ubisoft: null,
+    ea: null,
+    blizzard: null,
+    legacy: null,
+    unknown: null
+  };
+
+  function redeemUrlFor(store) {
+    return REDEEM_URLS[store] || null;
+  }
 
   var IS_EPIC_HOST = /(^|\.)epicgames\.com$/i.test(location.hostname);
   var IS_EPIC_PCI_FRAME = /payment-website-pci/i.test(location.hostname) && IS_EPIC_HOST;
@@ -2950,7 +2984,7 @@
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
       saveHistoryEntry(PLATFORM, key, 'code_copied', label + (deadline ? ' (avant le ' + deadline + ')' : ''));
-      var redeemUrl = store === 'microsoft' ? CONFIG.microsoftRedeemUrl : null;
+      var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
       updateUiState('ok', 'Luna : code ' + label + ' copie (' + title + ')');
@@ -3924,6 +3958,8 @@
       extractLunaOfferId: extractLunaOfferId,
       detectLunaStore: detectLunaStore,
       lunaStoreLabel: lunaStoreLabel,
+      redeemUrlFor: redeemUrlFor,
+      redeemCodePattern: function () { return REDEEM_CODE_PATTERN; },
       isLunaStoreSkipped: isLunaStoreSkipped,
       parseRedeemCode: parseRedeemCode,
       parseRedeemDeadline: parseRedeemDeadline,

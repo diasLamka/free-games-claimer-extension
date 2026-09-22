@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.24.0.js",
-  "sha256": "B95076ACAB2B9095AB14FE66A1438418D1308173CBFF7E5C4A0A18DFDE7A4EED",
-  "octets": 208008,
-  "version": "2.24.0",
-  "motif": "2.24.0 : le code de rachat sort de l'historique, qui n'est jamais purge"
+  "fichier": "reference-v2.33.0.js",
+  "sha256": "DEA63FC10758DA24D715A3E12138F4CCCA6A2820F3051BC7D2E63CD3F270DE82",
+  "octets": 209397,
+  "version": "2.33.0",
+  "motif": "2.33.0 : table de destinations d'echange, une par magasin au lieu d'un ternaire binaire"
 }

@@ -401,6 +401,33 @@
   "openRedeemPage": {
     "message": "Open the redeem page"
   },
+  "redeemUnknownHint": {
+    "message": "No redemption page has been measured for this store yet. Paste the code on the store website."
+  },
+  "codesAddTitle": {
+    "message": "Add keys by hand"
+  },
+  "codesAddHint": {
+    "message": "Paste anything: titles, bullets and blank lines are ignored."
+  },
+  "codesAddPlaceholder": {
+    "message": "ABCDE-12345-FGHIJ"
+  },
+  "codesAddStore": {
+    "message": "Store for these keys"
+  },
+  "codesAddButton": {
+    "message": "Add"
+  },
+  "codesNoneFound": {
+    "message": "No key found in that text."
+  },
+  "codesAdded": {
+    "message": "$1 key(s) added."
+  },
+  "codesAllKnown": {
+    "message": "Every key there was already listed."
+  },
   "remove": {
     "message": "Remove"
   },

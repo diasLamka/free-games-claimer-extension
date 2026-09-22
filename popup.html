@@ -1023,6 +1023,20 @@
       <h2><span data-i18n="codesToRedeem"></span><span class="count" id="codes-count"></span></h2>
       <div id="codes"></div>
     </section>
+
+    <!-- Les cles recues ailleurs : Humble, IndieGala, Fanatical. Rien de tout
+         cela ne passe par Luna, et elles n'avaient donc aucun endroit ou
+         entrer. Le champ accepte un collage entier. -->
+    <details>
+      <summary data-i18n="codesAddTitle"></summary>
+      <p class="hint" data-i18n="codesAddHint"></p>
+      <textarea id="codes-paste" rows="3" data-i18n-attr="placeholder:codesAddPlaceholder"></textarea>
+      <div class="row">
+        <select id="codes-store" data-i18n-attr="aria-label:codesAddStore"></select>
+        <button id="codes-add" data-i18n="codesAddButton"></button>
+      </div>
+      <p class="hint" id="codes-flash" role="status"></p>
+    </details>
   </div>
 
   <!-- --------------------------------------------------------- settings -->

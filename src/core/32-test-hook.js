@@ -20,6 +20,8 @@
       extractLunaOfferId: extractLunaOfferId,
       detectLunaStore: detectLunaStore,
       lunaStoreLabel: lunaStoreLabel,
+      redeemUrlFor: redeemUrlFor,
+      redeemCodePattern: function () { return REDEEM_CODE_PATTERN; },
       isLunaStoreSkipped: isLunaStoreSkipped,
       parseRedeemCode: parseRedeemCode,
       parseRedeemDeadline: parseRedeemDeadline,
