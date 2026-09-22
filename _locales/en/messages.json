@@ -692,8 +692,77 @@
   "journalNote": {
     "message": "Attach the downloaded file to a bug report: it reads in the order things happened."
   },
+  "historyTitle": {
+    "message": "History"
+  },
+  "historySub": {
+    "message": "What went by, taken or missed. Frozen when each offer ended, so it survives the catalogue purge."
+  },
+  "historyTaken": {
+    "message": "taken"
+  },
+  "historyMissed": {
+    "message": "missed"
+  },
+  "historyUnknown": {
+    "message": "unclear"
+  },
+  "historyAll": {
+    "message": "Any outcome"
+  },
+  "historyAllStores": {
+    "message": "Any store"
+  },
+  "historySearch": {
+    "message": "Search a title"
+  },
+  "historyRefresh": {
+    "message": "Refresh"
+  },
+  "historyDownload": {
+    "message": "Download CSV"
+  },
+  "historyWhen": {
+    "message": "Ended"
+  },
+  "historyGame": {
+    "message": "Game"
+  },
+  "historyStore": {
+    "message": "Store"
+  },
+  "historyWorth": {
+    "message": "Worth"
+  },
+  "historyOutcome": {
+    "message": "Outcome"
+  },
+  "historyByMonth": {
+    "message": "Month by month"
+  },
+  "historyMonth": {
+    "message": "Month"
+  },
+  "historyRate": {
+    "message": "$1% of judged offers ended up on your account. Missed: $2 worth."
+  },
+  "historyRateNone": {
+    "message": "Nothing has ended yet. Come back once an offer has run its course."
+  },
+  "historyEmpty": {
+    "message": "No offer has ended since this version was installed."
+  },
+  "historyNoMatch": {
+    "message": "No entry matches these filters."
+  },
+  "historyNote": {
+    "message": "Read only. Kept for the last 1000 offers that ended."
+  },
   "openJournal": {
     "message": "Watch log"
+  },
+  "openHistory": {
+    "message": "History"
   },
   "canaryStreak": {
     "message": "$1 failures in a row"

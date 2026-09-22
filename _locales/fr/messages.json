@@ -692,8 +692,77 @@
   "journalNote": {
     "message": "Joignez le fichier téléchargé à un rapport de bug : il se lit dans le sens où les choses se sont produites."
   },
+  "historyTitle": {
+    "message": "Historique"
+  },
+  "historySub": {
+    "message": "Ce qui est passe, pris ou rate. Fige a la fin de chaque offre, donc il survit a la purge du catalogue."
+  },
+  "historyTaken": {
+    "message": "pris"
+  },
+  "historyMissed": {
+    "message": "rates"
+  },
+  "historyUnknown": {
+    "message": "incertains"
+  },
+  "historyAll": {
+    "message": "Toutes les issues"
+  },
+  "historyAllStores": {
+    "message": "Tous les magasins"
+  },
+  "historySearch": {
+    "message": "Chercher un titre"
+  },
+  "historyRefresh": {
+    "message": "Rafraichir"
+  },
+  "historyDownload": {
+    "message": "Telecharger en CSV"
+  },
+  "historyWhen": {
+    "message": "Termine"
+  },
+  "historyGame": {
+    "message": "Jeu"
+  },
+  "historyStore": {
+    "message": "Magasin"
+  },
+  "historyWorth": {
+    "message": "Valeur"
+  },
+  "historyOutcome": {
+    "message": "Issue"
+  },
+  "historyByMonth": {
+    "message": "Mois par mois"
+  },
+  "historyMonth": {
+    "message": "Mois"
+  },
+  "historyRate": {
+    "message": "$1 % des offres tranchees ont fini sur votre compte. Rate : $2 de valeur."
+  },
+  "historyRateNone": {
+    "message": "Rien ne s est encore termine. Revenez quand une offre aura suivi son cours."
+  },
+  "historyEmpty": {
+    "message": "Aucune offre ne s est terminee depuis l installation de cette version."
+  },
+  "historyNoMatch": {
+    "message": "Aucune entree ne correspond a ces filtres."
+  },
+  "historyNote": {
+    "message": "Lecture seule. Les 1000 dernieres offres terminees sont conservees."
+  },
   "openJournal": {
     "message": "Journal de la veille"
+  },
+  "openHistory": {
+    "message": "Historique"
   },
   "canaryStreak": {
     "message": "$1 échecs d'affilée"

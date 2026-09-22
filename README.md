@@ -106,6 +106,7 @@ est declare `"type": "module"`.
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
+| `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |
 
 Trois regles de ce sous-systeme, chacune payee par un bug :
 
@@ -138,7 +139,7 @@ watch/             la veille de fond, en ES modules
   offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
-  wishlist.js annotations.js
+  wishlist.js annotations.js history.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
 build/
@@ -158,6 +159,7 @@ gm-shim.js                  passerelle GM_* -> API d'extension
 background.js               service worker (module ES) : relais + veille
 popup.html / popup.js       popup
 journal.html / journal.js   le journal de la veille, 500 entrees persistees
+historique.html / .js       ce qui est passe, pris ou rate, et ce que cela valait
 sentinel.html / sentinel.js le mode repli : reessayer une source en panne, sous surveillance
 collection.html / .js       Ma collection : vos jeux des quatre magasins, en une page
 offscreen-html.html / .js   lecture de HTML pour le service worker, qui n'a pas de DOM

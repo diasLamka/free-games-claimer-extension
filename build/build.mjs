@@ -192,6 +192,7 @@ for (const fichier of ['manifest.json', 'manifest.firefox.json']) {
 const AVEC_IMPORTS = [
   'background.js', 'popup.js', 'journal.js', 'sentinel.js', 'diagnostics.js',
   'probe-offscreen.js', 'offscreen-html.js', 'i18n.js', 'collection.js',
+  'historique.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'sources')).map((f) => `watch/sources/${f}`),
@@ -210,7 +211,7 @@ for (const fichier of AVEC_IMPORTS) {
 
 /** Sources locales citees par une page HTML de l'extension. */
 for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.html',
-  'probe-offscreen.html', 'offscreen-html.html', 'collection.html']) {
+  'probe-offscreen.html', 'offscreen-html.html', 'collection.html', 'historique.html']) {
   if (!existe(page)) { problems.push(`page attendue absente : ${page}`); continue; }
   const src = readFileSync(join(ROOT, page), 'utf8');
   const re = /(?:src|href)="([^"#:]+)"/g;
@@ -238,7 +239,7 @@ for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.
 const { undefinedRefs } = await import('./undefined-refs.mjs');
 
 for (const fichier of ['popup.js', 'journal.js', 'sentinel.js', 'background.js', 'diagnostics.js',
-  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js']) {
+  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js', 'historique.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }
@@ -340,7 +341,7 @@ const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js
      t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
-  'collection.html', 'collection.js']);
+  'collection.html', 'collection.js', 'historique.html', 'historique.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -364,7 +365,7 @@ const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
      t(). Le balayage laxiste les reconnait, le strict les ignore : c'est
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
-  'collection.html', 'collection.js'].map((f) => {
+  'collection.html', 'collection.js', 'historique.html', 'historique.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

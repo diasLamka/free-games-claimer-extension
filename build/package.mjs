@@ -40,6 +40,7 @@ const PAGES_A_L_EXECUTION = Object.freeze([
   'collection.html',
   'sentinel.html',
   'diagnostics.html',
+  'historique.html',
   'offscreen-html.html',
   'probe-offscreen.html',
 ]);

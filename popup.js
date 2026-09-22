@@ -2072,6 +2072,7 @@ document.getElementById('open-collection').addEventListener('click', (e) => {
 
 /* --- the watch log, on its own page: 500 lines do not fit in 328 px */
 
+document.getElementById('open-history').addEventListener('click', () => openTab(api.runtime.getURL('historique.html')));
 document.getElementById('open-journal').addEventListener('click', (e) => {
   e.preventDefault();
   openTab(api.runtime.getURL('journal.html'));

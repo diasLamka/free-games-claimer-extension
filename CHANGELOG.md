@@ -4,6 +4,85 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.32.0 -- 2026-09-22
+
+**Le bilan etait un tableau de chasse. Voici la colonne d'a cote**
+
+Ce qui a ete pris se comptait depuis longtemps. Ce qui a ete rate ne laissait
+aucune trace -- et c'est pourtant la seule colonne qui apprenne quelque chose :
+un taux de capture qui s'effondre est soit un reglage trop strict, soit une
+panne, et les deux se corrigent a condition de les voir.
+
+La page arrive cinq versions apres la collecte, et ce n'etait pas un retard.
+Les issues sont figees depuis la 2.27.0 : ouvrir cette page le meme jour
+l'aurait montree vide, ce qui n'apprend rien a personne.
+
+### Deux chiffres, et ce qu'ils refusent de dire
+
+**Les issues INCERTAINES sortent du taux.** Une reclamation arretee par un
+defi de securite ne dit pas si le jeu est au compte. La compter comme ratee
+accuserait l'extension a tort ; la compter comme prise la flatterait. Leur
+nombre reste affiche a cote, pour qu'on sache ce qu'on ne sait pas.
+
+**Un historique vide ne rend pas zero pour cent.** Zero sur rien du tout ferait
+croire a une panne le premier jour. L'absence de taux se dit, elle ne
+s'invente pas.
+
+**Une valeur illisible vaut zero, jamais NaN.** Un « gratuit » dans le champ
+valeur suffirait a contaminer la somme entiere et a rendre la page illisible --
+pas fausse, illisible, ce qui est pire parce qu'on ne sait plus quoi corriger.
+
+### Les compteurs ne suivent pas le filtre
+
+Ils decrivent tout l'historique, pas la vue. Ils repondent a « comment ca se
+passe », pas a « qu'est-ce que je regarde » -- et les faire suivre le filtre
+rendrait le taux de capture absurde des l'instant ou l'on ne regarde que les
+offres ratees.
+
+### Trois details qui ne se voient qu'a l'usage
+
+**Le titre mene a la fiche quand l'URL a survecu au figement, et reste du texte
+sinon.** Un lien mort est pire qu'une absence de lien.
+
+**Le verdict brut est en infobulle.** « needs_login » n'a rien a faire dans une
+colonne, et tout a faire a portee de souris le jour ou on cherche pourquoi une
+offre est passee a cote.
+
+**La liste des magasins du filtre vient des donnees.** Un magasin qui n'a
+jamais rien laisse passer n'encombre pas le menu.
+
+**Les mois se trient sur une cle « AAAA-MM » en UTC**, pas sur un libelle
+localise. Un tri sur des dates reconstruites depuis un nom de mois se casse la
+premiere fois qu'on change de langue.
+
+### La page reprend la feuille de style du journal, entiere
+
+Les jetons de couleur, la barre de defilement en ticket, les etats de tableau
+y sont deja. Une seconde copie divergerait au premier ajustement, et deux
+pages de la meme extension finiraient par ne plus se ressembler.
+
+### L'export
+
+En CSV, champs entoures de guillemets et guillemets internes doubles : un titre
+de jeu contient des virgules bien plus souvent qu'on ne le croit, et une seule
+ligne mal echappee decale toutes les colonnes du fichier.
+
+### Detail
+
+La page est declaree a quatre endroits du build et dans la liste blanche
+d'empaquetage. Sans ce dernier point elle aurait marche en mode developpeur --
+ou le dossier entier est charge -- et seulement la : exactement le garde pose
+en 2.26.0.
+
+Vingt-trois cles de libelle par langue (355 par locale). Le moteur est
+identique a celui de la 2.31.0.
+
+| | 2.31.0 | 2.32.0 |
+|---|---|---|
+| tests | 854 | 866 |
+| fichiers empaquetes | 66 | 69 |
+| pages | 6 | 7 |
+
 ## 2.31.0 -- 2026-09-22
 
 **L'utilisateur ne pouvait exprimer qu'un refus**
