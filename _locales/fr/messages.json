@@ -488,6 +488,18 @@
   "notifyManyTitle": {
     "message": "$1 jeux gratuits repérés"
   },
+  "incidentOneTitle": {
+    "message": "Quelque chose est casse"
+  },
+  "incidentManyTitle": {
+    "message": "$1 problemes a regarder"
+  },
+  "healthStalled": {
+    "message": "La veille de fond ne tourne plus $1."
+  },
+  "healthMuted": {
+    "message": "Votre systeme bloque les notifications de l extension."
+  },
   "notifyManyBody": {
     "message": "$1, et $2 autre(s)"
   },

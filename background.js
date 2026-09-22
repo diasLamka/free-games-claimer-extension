@@ -50,6 +50,9 @@ import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
 import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
 import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
+import { KEY_INCIDENTS } from './watch/incidents.js';
+import { badgeState } from './watch/notify-policy.js';
+import { inspectHealth as inspectHealthOf } from './watch/health.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -129,6 +132,22 @@ async function ensureSchedule(now = Date.now()) {
     if (closed) record('warn', `${closed} onglet(s) de reclamation abandonne(s) referme(s)`);
   } catch (e) { record('warn', 'balayage des onglets impossible', e); }
 
+  /* Le tour d'inspection, ICI et pas dans le cycle.
+   *
+   * C'est la decision centrale du chien de garde. Quand la veille est morte,
+   * le cycle ne tourne pas -- donc un detecteur qui y vivrait ne se
+   * declencherait jamais, precisement pour la panne qu'il est cense voir. Un
+   * chien de garde qui dort avec le chien qu'il garde ne garde rien.
+   *
+   * `ensureSchedule` est appelee par l'alarme filet periodique, au demarrage
+   * et a l'installation. L'alarme filet existe deja et survit a la mort du
+   * service worker : c'est exactement la propriete dont ce detecteur a besoin,
+   * et elle etait deja payee.
+   */
+  try {
+    await inspectHealth(now);
+  } catch (e) { record('warn', 'tour d\'inspection impossible', e); }
+
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
     await api.alarms.create(ALARM_NET, { periodInMinutes: NET_PERIOD_MIN });
@@ -155,6 +174,53 @@ async function ensureSchedule(now = Date.now()) {
     await armMain(state.nextCycle, now);
   }
   return null;
+}
+
+/* ------------------------------------------------------- tour d'inspection */
+
+/**
+ * Ce que le systeme repond quand on lui demande s'il nous laisse parler.
+ *
+ * Firefox n'implemente pas `getPermissionLevel`. Son absence n'est pas un
+ * refus : conclure « coupe » sur une API manquante ferait afficher un
+ * avertissement permanent et faux a tous les utilisateurs Firefox.
+ */
+async function notificationLevel() {
+  try {
+    if (!api.notifications || typeof api.notifications.getPermissionLevel !== 'function') return 'granted';
+    return await new Promise((resolve) => {
+      api.notifications.getPermissionLevel((level) => resolve(level || 'granted'));
+    });
+  } catch { return 'granted'; }
+}
+
+/**
+ * Le tour d'inspection, delegue au module qui le tient.
+ *
+ * La logique vit dans watch/health.js, testable de bout en bout : ce qu'elle
+ * observe est justement l'ABSENCE de cycle, donc elle ne peut pas etre testee
+ * a travers un cycle. Ici ne reste que le branchement des quatre choses qui
+ * touchent la plateforme.
+ */
+async function inspectHealth(now) {
+  return inspectHealthOf({
+    chrome: api,
+    now,
+    permissionLevel: await notificationLevel(),
+    notify: async ({ id, title, message }) => {
+      await api.notifications.create(id, {
+        type: 'basic',
+        iconUrl: 'icon128.png',
+        title,
+        message,
+      });
+    },
+    setBadge: async ({ text, color }) => {
+      await api.action.setBadgeText({ text });
+      await api.action.setBadgeBackgroundColor({ color });
+    },
+    record,
+  });
 }
 
 /* -------------------------------------------------------------------- cycle */
@@ -210,8 +276,14 @@ async function startCycle(origine, options = {}) {
         },
         updateBadge: async (n) => {
           try {
-            await api.action.setBadgeText({ text: n > 0 ? String(n) : '' });
-            await api.action.setBadgeBackgroundColor({ color: '#FF8A3D' });
+            /* Le compte d'offres ne doit pas effacer une marque d'incident.
+               Sans cette relecture, un cycle qui se termine bien repeindrait
+               « 4 » par-dessus le « ! » d'un selecteur mort -- et la seule
+               alerte visible disparaitrait au premier reveil suivant. */
+            const { [KEY_INCIDENTS]: incidents } = await readKeys(api, KEY_INCIDENTS);
+            const b = badgeState({ unseen: n, incidents: incidents || {}, now: Date.now() });
+            await api.action.setBadgeText({ text: b.text });
+            await api.action.setBadgeBackgroundColor({ color: b.color });
           } catch (e) { /* le badge est un bonus */ }
         },
         record,

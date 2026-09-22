@@ -488,6 +488,18 @@
   "notifyManyTitle": {
     "message": "$1 free games spotted"
   },
+  "incidentOneTitle": {
+    "message": "Something is broken"
+  },
+  "incidentManyTitle": {
+    "message": "$1 problems to look at"
+  },
+  "healthStalled": {
+    "message": "Background watch stopped running $1."
+  },
+  "healthMuted": {
+    "message": "Your system is blocking this extension notifications."
+  },
   "notifyManyBody": {
     "message": "$1, and $2 more"
   },

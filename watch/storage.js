@@ -217,6 +217,21 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
   /** 'every' | 'digest' | 'off'. Voir watch/notify-policy.js. */
   notifyMode: 'every',
+
+  /**
+   * Le canal des INCIDENTS : selecteur mort, source en repli, session perdue,
+   * veille arretee. 'on' | 'off'.
+   *
+   * Separe de `notifyMode`, et actif par defaut. Quelqu'un qui ne veut plus
+   * etre prevenu des jeux gratuits veut probablement savoir que son extension
+   * est cassee -- ce sont deux questions differentes.
+   *
+   * Mais lui envoyer des notifications apres qu'il les a coupees serait la
+   * trahison que ce depot nomme deja. D'ou la traduction unique dans
+   * `normaliseSettings` : un `notifyMode: 'off'` deja choisi eteint aussi ce
+   * canal-la, une fois, apres quoi les deux sont independants.
+   */
+  alertMode: 'on',
   /** 'unseen' | 'endingToday' | 'off'. */
   badgeMode: 'unseen',
   /** Plage ou les annonces sont DIFFEREES, jamais supprimees. */
@@ -253,6 +268,17 @@ export function normaliseSettings(raw) {
      Une preference perdue en silence est une trahison silencieuse. */
   if (raw && raw.notifications === false && raw.notifyMode === undefined) {
     settings.notifyMode = 'off';
+  }
+
+  /* Le canal des incidents arrive en 2.28.0, apres que des gens ont deja
+     choisi le silence. Le leur imposer serait exactement la trahison
+     ci-dessus : ils ont coupe les notifications, pas demande un genre nouveau.
+
+     La condition porte sur l'ABSENCE de choix explicite -- `alertMode ===
+     undefined`. Sans elle, il serait impossible de couper les offres et de
+     garder les alertes, qui est precisement la combinaison la plus utile. */
+  if (raw && raw.alertMode === undefined && settings.notifyMode === 'off') {
+    settings.alertMode = 'off';
   }
 
   /* Une source livree APRES coup doit s'activer chez ceux qui ont deja des

@@ -30,6 +30,7 @@ import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
+import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
@@ -154,6 +155,7 @@ const KEYS_READ = [
   KEY_CANARY,
   KEY_COUNTRY, KEY_LANG,
   KEY_SESSIONS,
+  KEY_INCIDENTS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -1140,6 +1142,45 @@ function renderStores(all, behaviour) {
 
 /* ----------------------------------------------------------------- sources */
 
+/**
+ * Les deux incidents que rien d'autre ne sait dire.
+ *
+ * Trois des cinq genres ont deja leur bandeau, avec leur geste propre : le
+ * selecteur mort s'acquitte, la source en repli ouvre la sentinelle, la
+ * session perdue mene a la page de connexion. Les repeter ici ferait deux
+ * alertes pour une panne, et la seconde userait la premiere.
+ *
+ * Restent les deux qui parlent de l'extension ELLE-MEME, et qui n'avaient
+ * aucune voix : la veille arretee, et le systeme qui bloque nos
+ * notifications. Le second est le seul cas ou ce bandeau est la DERNIERE
+ * chose capable d'expliquer le silence.
+ */
+function renderHealth(all) {
+  const host = document.getElementById('health-banner');
+  host.textContent = '';
+
+  const propres = new Set([INCIDENT_KINDS.STALLED, INCIDENT_KINDS.MUTED]);
+  const ouverts = openIncidents(get(all, KEY_INCIDENTS, {})).filter((i) => propres.has(i.kind));
+
+  host.hidden = ouverts.length === 0;
+  if (!ouverts.length) return;
+
+  for (const i of ouverts) {
+    if (i.kind === INCIDENT_KINDS.MUTED) {
+      host.append(el('span', null, t('healthMuted')));
+      continue;
+    }
+    host.append(el('span', null, t('healthStalled', since(i.openedAt) || '')));
+  }
+
+  /* Le journal plutot qu'un bouton de reparation : le chien de garde aboie, il
+     ne repare pas. Ce qui s'est passe avant l'arret y est ecrit, et c'est cela
+     qu'il faut lire. */
+  const voir = el('button', null, t('openJournal'));
+  voir.addEventListener('click', () => openTab(api.runtime.getURL('journal.html')));
+  host.append(voir);
+}
+
 /* Le repli, propose et jamais impose.
  *
  * Trois echecs consecutifs endorment une source pendant des heures : c'est le
@@ -1549,6 +1590,7 @@ async function render() {
   renderCodes(get(all, KEY_CODES, []));
   renderTally(all);
   renderFilters(all, behaviourCache);
+  renderHealth(all);
   renderCanary(all);
   renderStores(all, behaviourCache);
   renderFallback(all);

@@ -4,6 +4,147 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.28.0 -- 2026-09-22
+
+**L'extension savait deja qu'elle etait cassee. Elle ne savait pas le dire**
+
+Trois detecteurs existaient, complets et testes : le canari de selecteurs, la
+source en repli, la session perdue. Leurs constats allaient au journal -- une
+page qu'on ouvre quand on soupconne deja quelque chose -- ou a un bandeau du
+popup, qu'on voit en l'ouvrant. Ni l'un ni l'autre ne PREVIENT.
+
+Quatre constats de code disaient ce qui manquait. Les quatre appels a
+`notify()` parlaient tous d'offres. Le badge ne savait rendre qu'un nombre.
+Aucune cle ne se souvenait d'une panne. Et personne ne comparait la date du
+dernier cycle a l'intervalle prevu, alors que les deux valeurs etaient ecrites
+a chaque reveil.
+
+### Une panne cesse d'etre un compteur
+
+C'est le changement de fond, et tout le reste en decoule. Une panne etait un
+compteur qui monte ; elle devient un INCIDENT, avec une ouverture, une
+derniere observation, et une cloture.
+
+De la viennent les trois choses qui manquaient : dire depuis quand, ne le dire
+qu'une fois, et savoir que c'est fini.
+
+**La cloture est implicite.** Un incident que le tour d'inspection ne
+reconstate pas disparait. Demander a chaque detecteur de fermer ce qu'il a
+ouvert aurait fini par un oubli, et un incident fantome fait chercher une
+panne qui n'existe plus -- ce qui use la confiance plus vite qu'un silence.
+
+**Et rien n'annonce le retour a la normale.** Un probleme resolu n'interrompt
+personne.
+
+### La panne qui n'avait aucun detecteur
+
+Deux genres d'incident sont nouveaux. Le premier est la raison d'etre de cette
+version : la veille qui cesse de tourner. C'est la seule panne qui dise
+« l'extension est morte », et elle n'avait aucune voix.
+
+Le seuil laisse passer un cycle manque -- un portable ferme une nuit ne doit
+rien declencher -- avec un plancher de six heures, qui est le pas nominal d'un
+reglage par defaut.
+
+**Et voici ce qui a commande toute la conception.** Un detecteur qui vivrait
+dans le cycle ne se declencherait JAMAIS pour cette panne : quand la veille est
+morte, le cycle ne tourne pas, donc le detecteur non plus. Un chien de garde
+qui dort avec le chien qu'il garde ne garde rien.
+
+Le tour d'inspection vit donc dans le gestionnaire d'alarme, que l'alarme filet
+periodique reveille. Cette alarme existait deja, et sa propriete de survivre a
+la mort du service worker etait deja payee : c'est exactement celle dont ce
+detecteur avait besoin.
+
+Le second genre nouveau lit une permission que le depot n'interrogeait nulle
+part : `getPermissionLevel`. Si le systeme refuse nos notifications, tout ce
+qui precede est inaudible, et personne ne le savait.
+
+### Ce que le test a trouve, et qui aurait coute l'alerte entiere
+
+Une alerte partait quand meme vers un canal bloque. Le cout n'etait pas l'appel
+inutile : elle etait marquee DITE alors qu'elle n'etait arrivee nulle part, et
+elle aurait ete perdue pour toujours -- y compris apres le retour de la
+permission, moment ou elle serait enfin utile.
+
+Un canal coupe se traite donc comme les heures calmes : silence, et rien de
+marque. Ce qui attend part des que la permission revient.
+
+### Le reglage qui ne devait trahir personne
+
+Un incident n'est pas une offre. Quelqu'un qui ne veut plus etre prevenu des
+jeux gratuits veut probablement savoir que son extension est cassee. Mais lui
+envoyer des notifications apres qu'il les a coupees serait exactement la
+trahison que ce depot nomme deja : « une preference perdue en silence est une
+trahison silencieuse ».
+
+`alertMode` est donc un reglage separe, actif par defaut, avec une traduction
+UNIQUE : un `notifyMode: 'off'` deja choisi eteint aussi ce canal-la, une seule
+fois, exactement comme `notifications: false` devenait `notifyMode: 'off'`
+depuis la 2.10. Ensuite les deux sont independants -- et couper les offres en
+gardant les alertes est precisement la combinaison la plus utile.
+
+**Heures calmes et silence ne sont pas la meme chose**, et la difference est
+codee. Les heures calmes DIFFERENT : rien n'est marque, l'alerte repart au
+matin. Le mode coupe SUPPRIME : ce qui attendait est marque dit sans etre dit,
+sinon tout partirait d'un coup le jour ou l'utilisateur rallume.
+
+### Le badge, et pourquoi il ignore son propre reglage
+
+Un incident ouvert remplace le compte d'offres par une marque. Une panne prime
+sur un decompte, que le popup affiche de toute facon.
+
+Il ignore `badgeMode`, et c'est delibere : ce reglage dit « ne me compte pas
+les offres », pas « ne me dis jamais rien ». Les confondre enterrerait la
+derniere voix disponible quand le systeme bloque les notifications.
+
+Le badge est aussi peint par le tour d'inspection, et pas seulement en fin de
+cycle -- sans quoi il serait muet dans le cas ou il sert le plus.
+
+### Dans le popup, deux incidents et pas cinq
+
+Trois des cinq genres ont deja leur bandeau, avec leur geste propre : le
+selecteur mort s'acquitte, la source en repli ouvre la sentinelle, la session
+perdue mene a la page de connexion. Les repeter ferait deux alertes pour une
+panne, et la seconde userait la premiere.
+
+Le bandeau nouveau ne porte donc que les deux qui parlent de l'extension
+elle-meme. Il mene au journal, pas a un bouton de reparation : le chien de
+garde aboie, il ne repare pas.
+
+### Ce que la conception a change dans le plan
+
+Cette version devait aussi porter les notifications actionnables. La
+conception a montre que non : leurs seuls boutons utiles -- « Recuperer »,
+« Me rappeler » -- demandent une commande et un champ qui n'existent pas
+encore et qui appartiennent a la file de reclamation pilotable. Livrer avant
+elle aurait donne des boutons decoratifs, c'est-a-dire pire que pas de
+boutons.
+
+La file passe devant. Rien n'est abandonne.
+
+### Mesure
+
+| | 2.27.0 | 2.28.0 |
+|---|---|---|
+| tests | 762 | 806 |
+| cles de veille | 21 | 22 |
+| genres d'incident detectes | 0 | 5 |
+| pannes qui previennent l'utilisateur | 0 | 4 |
+
+Le cinquieme genre ne previent pas : c'est celui qui dit que le canal est
+coupe.
+
+### Detail
+
+`watch/health.js` est sorti de `background.js` pour une raison qui n'est pas de
+style : ce qu'il observe est l'ABSENCE de cycle, donc il ne peut pas etre teste
+a travers un cycle. Il lui fallait un point d'entree a lui, jouable sans rien
+demarrer. Le service worker n'en garde que le branchement.
+
+Deux cles de libelle ajoutees par langue, plus deux pour le bandeau du popup
+(313 par locale). Le moteur est identique a celui de la 2.27.0.
+
 ## 2.27.0 -- 2026-09-22
 
 **Deux choses ecrites depuis des mois, et que personne n'avait branchees**

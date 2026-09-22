@@ -151,3 +151,63 @@ export function onlyWatched(offers, watched) {
   if (!Array.isArray(watched) || !watched.length) return offers || [];
   return (offers || []).filter((o) => o && watched.includes(o.store));
 }
+
+/* ------------------------------------------------- le canal de fonctionnement */
+
+/**
+ * Le canal des incidents. Deux valeurs seulement, et c'est voulu.
+ *
+ * Un incident n'a pas de « resume quotidien » : il y en a zero ou un, il dure,
+ * et le grouper n'aurait aucun sens. Trois modes la ou deux suffisent
+ * inviteraient a inventer un troisieme comportement pour l'occuper.
+ */
+export const ALERTS = Object.freeze({
+  ON: 'on',
+  OFF: 'off',
+});
+
+/**
+ * Faut-il dire cet incident maintenant ?
+ *
+ * Meme forme que `decideAnnouncement`, et la meme distinction cruciale entre
+ * `hold` et rien :
+ *
+ *   - HEURES CALMES -> differe. Un selecteur mort a trois heures du matin
+ *     n'appelle aucun geste avant le lever, mais l'oublier ferait disparaitre
+ *     la seule alerte qu'on aura jamais pour cette panne.
+ *   - MODE COUPE -> supprime. L'utilisateur n'a pas demande un report, il a
+ *     demande le silence ; retenir ferait tout partir d'un coup le jour ou il
+ *     rallume.
+ */
+export function decideAlert({ mode = ALERTS.ON, quiet, zone, now, count } = {}) {
+  if (!count) return { notify: false, hold: false };
+  if (mode !== ALERTS.ON) return { notify: false, hold: false };
+  if (inQuietHours(quiet, now, zone)) return { notify: false, hold: true };
+  return { notify: true, hold: false };
+}
+
+/* ------------------------------------------------------------------ badge */
+
+/** Couleur ordinaire du badge : le compte d'offres. */
+export const BADGE_COLOR = '#FF8A3D';
+
+/** Couleur d'un incident ouvert. Distincte, et pas seulement plus foncee. */
+export const BADGE_ALERT_COLOR = '#C0392B';
+
+/**
+ * Ce qu'il faut peindre sur l'icone.
+ *
+ * Un incident ouvert PRIME sur le compte : une panne compte plus qu'un
+ * decompte, que le popup affiche de toute facon. C'est aussi le seul canal qui
+ * reste quand le systeme refuse nos notifications -- d'ou le fait qu'il
+ * ignore `badgeMode`. Ce reglage dit « ne me compte pas les offres », pas
+ * « ne me dis jamais rien », et confondre les deux enterrerait la derniere
+ * voix disponible.
+ */
+export function badgeState({ mode = BADGES.UNSEEN, unseen = 0, offers = [], now, incidents } = {}) {
+  if (incidents && Object.keys(incidents).length) {
+    return { text: '!', color: BADGE_ALERT_COLOR };
+  }
+  const n = badgeCount({ mode, unseen, offers, now });
+  return { text: n > 0 ? String(n) : '', color: BADGE_COLOR };
+}

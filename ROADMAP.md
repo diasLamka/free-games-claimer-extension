@@ -90,6 +90,13 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   documente excluait quiconque n'ouvre pas le mode developpeur. La soumission
   aux magasins reste manuelle, et `store/README.md` dit ce qui y attend une
   main humaine.
+- **Le chien de garde** (2.28.0). Une panne cesse d'etre un compteur : elle
+  a une ouverture, un dernier constat et une cloture implicite. Cinq genres
+  detectes, dont deux qui n'avaient aucune voix -- la veille arretee et le
+  systeme qui bloque nos notifications. Le tour d'inspection vit HORS du
+  cycle : un detecteur de veille morte qui tournerait dans le cycle ne se
+  declencherait jamais. Un reglage separe, actif par defaut, qui reste muet
+  pour qui avait deja coupe les notifications.
 - **Regarder Steam n'est plus cliquer sur Steam** (2.27.0). La source Steam
   s'activait avec l'option de RECLAMATION ; elle est desormais lue pour tout
   le monde, par sa seule recherche publique. La lecture du compte, elle, reste
