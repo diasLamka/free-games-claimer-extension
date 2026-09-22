@@ -812,6 +812,18 @@
   "canaryHint": {
     "message": "Ce magasin a probablement changé sa page. La réclamation continue d'être retentée avec un recul ; le message ci-dessus nomme ce que le moteur n'a pas trouvé."
   },
+  "teachAsk": {
+    "message": "Lequel de ces boutons fallait-il cliquer ?"
+  },
+  "teachRefused": {
+    "message": "Ce libelle parle d argent. Il ne peut pas etre appris."
+  },
+  "teachLearned": {
+    "message": "Appris : $1."
+  },
+  "teachForget": {
+    "message": "oublier"
+  },
   "syncCodesLabel": {
     "message": "Sauvegarder mes codes en attente"
   },

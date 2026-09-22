@@ -29,6 +29,11 @@
     'FGC_epic_country',
     'FGC_epic_lang',
     'FGC_pending_codes',
+    // Les libelles appris par l'utilisateur : lus de facon SYNCHRONE avant
+    // chaque clic, comme l'arret d'urgence. Une lecture asynchrone arriverait
+    // apres le clic qu'elle devait autoriser.
+    'FGC_taught_labels',
+    'FGC_seen_labels',
     'FGC_schema_version',
     // platformNameForHost() : ces trois noms couvrent tous les hotes injectes.
     'FGC_history_Epic Games',

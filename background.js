@@ -37,7 +37,7 @@ import {
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import {
-  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze, wish,
+  claimAllNow, claimOneNow, prioritise, pruneNow, retryNow, snooze, teach, wish,
 } from './watch/commands.js';
 import { KEY_LIBRARY, addedEntries, integrateHistory } from './watch/library.js';
 import {
@@ -800,6 +800,13 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     prioritise({ chrome: api, catalogKey: msg.catalogKey, on: msg.on === true })
       .then(sendResponse)
       .catch(() => sendResponse({ changed: false }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-teach') {
+    teach({ chrome: api, surface: msg.surface, label: msg.label, on: msg.on !== false })
+      .then(sendResponse)
+      .catch(() => sendResponse({ learned: false, reason: 'erreur' }));
     return true;
   }
 

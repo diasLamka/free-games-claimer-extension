@@ -58,6 +58,9 @@
          bouton. */
       var cta = buyBox.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(buyBox, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true });
       if (cta && !lunaClaimLabelAllowed(cta)) {
+        // La trace : ce libelle devient une proposition dans l'interface, au
+        // lieu d'une ligne de journal que personne ne peut utiliser.
+        noteSeenLabel('luna', actionText(cta));
         recordLunaFailure(offerId, 'libelle inattendu sur le bouton principal : "' + actionText(cta) + '"');
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
@@ -196,6 +199,7 @@
         /* Meme regle que sur la fiche : la carte a ete trouvee par un
            attribut, c'est son LIBELLE qui autorise le clic. */
         if (!lunaClaimLabelAllowed(o.button)) {
+          noteSeenLabel('luna', actionText(o.button));
           return skipInternal('libelle inattendu sur la carte : "' + actionText(o.button) + '"',
             'Bouton de carte non reconnu pour "' + o.title + '" : "' + actionText(o.button) + '". Rien n\'est clique.');
         }

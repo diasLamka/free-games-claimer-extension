@@ -4,6 +4,99 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.36.0 -- 2026-09-22
+
+**L'extension se fait montrer le bouton**
+
+Quand un magasin refait sa page, le moteur ne reconnait plus son bouton. Le
+canari compte les echecs, une alerte part, et ensuite plus rien : il faut
+attendre une version. Un claimer dans un conteneur attend, lui, une nouvelle
+image.
+
+Cette version supprime cette attente. Un clic suffit.
+
+### Pourquoi c'est faisable ici, et nulle part ailleurs
+
+Une decision prise bien avant rend la chose possible : **le moteur ne reconnait
+pas les boutons par leur forme dans le document, mais par leur TEXTE.**
+`lunaClaimLabelAllowed` et `gogSubmitLabelAllowed` sont deja des listes
+blanches de libelles, ecrites ainsi parce que les formes changent a chaque
+refonte et pas les mots.
+
+Apprendre, c'est donc ajouter un mot a une liste. Pas capturer un chemin CSS
+qui casserait au rendu suivant, pas enregistrer une position a l'ecran, pas
+piloter un navigateur. Une ligne de texte, dans le stockage local.
+
+### La trace, sans laquelle personne n'apprendrait rien
+
+Un libelle refuse etait une ligne de journal : quelque chose qu'on lit apres
+coup et qu'on ne peut pas utiliser. Le moteur retient desormais les huit
+derniers boutons qu'il a vus et refuses, par parcours.
+
+L'interface peut alors poser la seule question qui vaille : « lequel de ces
+boutons fallait-il cliquer ? » Un clic, pas une saisie. Personne ne recopie a
+la main le libelle exact d'un bouton qu'il ne voit plus.
+
+### Tout le danger est la, et il occupe la moitie du code
+
+Un libelle appris trop large ferait cliquer un bouton PAYANT, sur un vrai
+compte, sans que personne ne l'ait demande.
+
+**Deux gardes, et il faut que les deux cedent.**
+
+Le premier refuse d'ECRIRE. `watch/teaching.js` rejette tout libelle parlant
+d'argent, dans les deux langues, montants et devises compris. Il rejette aussi
+ce qui est trop court, donc sans pouvoir discriminant, et ce qui est
+demesure, donc colle depuis une page entiere.
+
+Le second refuse de CLIQUER. `looksPaid` passe AVANT la liste apprise, et
+l'ordre des lignes le garantit. Un test verifie cela precisement : on ecrit
+« acheter maintenant » dans le stockage en contournant volontairement le
+module, le lecteur le voit bien, et le clic est refuse quand meme.
+
+Deux gardes qui disent la meme chose ne sont pas une redondance : l'un empeche
+d'ecrire, l'autre empeche de cliquer.
+
+### Trois autres refus, plus discrets
+
+**Une surface inconnue est refusee.** Ecrire sous un nom que le moteur ne lit
+pas produirait un apprentissage qui ne repare rien, sans le dire.
+
+**La liste est bornee a douze par parcours.** Cent libelles autorises
+reviendraient a n'en autoriser aucun : la liste blanche cesserait d'en etre
+une.
+
+**Ce qui s'apprend se desapprend.** Sans cela, un libelle appris par erreur
+resterait pour toujours, et la seule issue serait de tout effacer -- donc de
+perdre aussi ce qui marchait. Ce qui a ete appris s'affiche : un apprentissage
+invisible serait une regle secrete appliquee a chaque clic.
+
+### Ce que le developpement a rencontre
+
+Trois gardes du depot ont arrete une erreur avant qu'elle ne sorte, et les
+trois valaient leur cout.
+
+Le controle ASCII a refuse deux guillemets francais, puis six accents graves
+dans un commentaire. Le controle de renommage a refuse une variable nommee
+`reste`, que la table historique transforme en `leftChip` : un nom present dans
+cette table casse la comparaison avec la base d'origine.
+
+Et le piege du harnais, documente dans le README, a coute deux tests : le
+moteur tourne dans un autre realm, ses tableaux n'ont pas les memes prototypes
+que ceux du test, et `deepEqual` les rejette. La reponse etait ecrite depuis
+longtemps : passer par `Array.from`.
+
+### Mesure
+
+| | 2.35.1 | 2.36.0 |
+|---|---|---|
+| tests | 894 | 916 |
+| delai de reparation apres une refonte de magasin | une version | un clic |
+| gardes entre un libelle appris et un achat | 1 | 2 |
+
+Nouveau temoin fige et base de renommage rebasee. Quatre cles de libelle par
+langue (372 par locale).
+
 ## 2.35.1 -- 2026-09-22
 
 **Trois tests verts sur une seule machine au monde**

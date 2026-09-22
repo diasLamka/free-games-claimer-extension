@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.33.0.js",
-  "sha256": "DEA63FC10758DA24D715A3E12138F4CCCA6A2820F3051BC7D2E63CD3F270DE82",
-  "octets": 209397,
-  "version": "2.33.0",
-  "motif": "2.33.0 : table de destinations d'echange, une par magasin au lieu d'un ternaire binaire"
+  "fichier": "reference-v2.36.0.js",
+  "sha256": "43EF67863BF63E1B65C0225C9DF931157ECC9007F6E8E42A3D0379FB66791ECC",
+  "octets": 213318,
+  "version": "2.36.0",
+  "motif": "2.36.0 : libelles appris par l'utilisateur, lus apres looksPaid ; trace des libelles refuses"
 }

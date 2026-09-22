@@ -65,7 +65,9 @@
     if (looksPaid(text)) return false;
     if (!text) return true;
     return GOG_SUBMIT_PATTERNS.some(function (p) { return p.test(text); })
-      || GOG_REDEEM_CONFIRM_PATTERNS.some(function (p) { return p.test(text); });
+      || GOG_REDEEM_CONFIRM_PATTERNS.some(function (p) { return p.test(text); })
+      // Apres looksPaid, jamais avant. Voir taughtLabels dans 18-luna-patterns.
+      || matchesTaught(text, 'gog');
   }
 
   function gogRedeemRoot(form) {

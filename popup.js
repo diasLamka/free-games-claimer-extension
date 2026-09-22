@@ -34,6 +34,7 @@ import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/i
 import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
 import { REDEEM_URLS, addCodes, parseCodes, redeemUrlFor } from './watch/codes.js';
 import { OPTIONAL, declaresOptional, describeBackground } from './watch/permissions.js';
+import { KEY_TAUGHT, SURFACES, wouldAccept } from './watch/teaching.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { failingSources, reasonText } from './watch/sentinel.js';
 import {
@@ -160,6 +161,8 @@ const KEYS_READ = [
   KEY_SESSIONS,
   KEY_INCIDENTS,
   KEY_WISHLIST,
+  KEY_TAUGHT,
+  KEY_SEEN,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -174,6 +177,22 @@ const get = (all, key, fallback) => {
 const setValue = (key, value) => api.storage.local.set({ [key]: value });
 
 /** Presentation preferences. Never read by the service worker. */
+/* Ce que le moteur a vu et refuse, par surface. Ecrit par lui, lu ici. */
+const KEY_SEEN = 'FGC_seen_labels';
+
+/**
+ * Du MAGASIN dont le canari se plaint, a la SURFACE dont le moteur lit les
+ * libelles.
+ *
+ * Les deux ne coincident pas : le canari raisonne par magasin de destination,
+ * le moteur par parcours. Une offre Luna destinee a GOG casse sur la page
+ * Luna, donc c'est le libelle Luna qu'il faut apprendre.
+ */
+const TEACH_SURFACES = Object.freeze({
+  amazon: SURFACES.LUNA,
+  gog: SURFACES.GOG,
+});
+
 const DEFAULT_UI = {
   theme: 'system',
   density: 'cosy',
@@ -1142,6 +1161,50 @@ function renderCanary(all) {
 
     if (a.lastDetails) bloc.append(el('p', 'canary-why', a.lastDetails));
     bloc.append(el('p', 'hint', t('canaryHint')));
+
+    /* « Voici les boutons que j'ai vus. Lequel fallait-il cliquer ? »
+     *
+     * C'est le seul endroit du produit ou l'utilisateur REPARE l'extension.
+     * Quand un magasin refait sa page, le moteur ne reconnait plus son bouton
+     * et il n'y a plus rien a faire jusqu'a la version suivante. Ici, un clic
+     * suffit -- parce que le moteur reconnait les boutons par leur TEXTE, et
+     * qu'il a garde ceux qu'il a refuses.
+     *
+     * Le libelle propose n'est jamais accepte aveuglement : `learn` refuse
+     * tout ce qui parle d'argent, et le moteur refuse une seconde fois au
+     * moment du clic. Il faut que les deux cedent pour qu'un achat parte. */
+    const surface = TEACH_SURFACES[a.store];
+    const vus = surface ? (get(all, KEY_SEEN, {})[surface] || []) : [];
+
+    if (surface && vus.length) {
+      bloc.append(el('p', 'hint', t('teachAsk')));
+      for (const libelle of vus.slice(0, 5)) {
+        const essai = wouldAccept(surface, libelle);
+        const choix = el('button', 'link', `« ${libelle} »`);
+        choix.disabled = !essai.ok;
+        if (!essai.ok) choix.title = t('teachRefused');
+        choix.addEventListener('click', async () => {
+          await tell('fgc-teach', { surface, label: libelle });
+          await load();
+        });
+        bloc.append(choix);
+      }
+    }
+
+    /* Ce qui a ete appris se voit, et se retire. Un apprentissage invisible
+       serait une regle secrete appliquee a chaque clic. */
+    const appris = surface ? (get(all, KEY_TAUGHT, {})[surface] || []) : [];
+    for (const libelle of appris) {
+      const ligne = el('p', 'hint', t('teachLearned', libelle));
+      const oubli = el('button', 'link', t('teachForget'));
+      oubli.addEventListener('click', async () => {
+        await tell('fgc-teach', { surface, label: libelle, on: false });
+        await load();
+      });
+      ligne.append(' ');
+      ligne.append(oubli);
+      bloc.append(ligne);
+    }
     host.append(bloc);
   }
 }

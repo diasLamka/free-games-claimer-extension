@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
-sha256  : B5E3738FE8D48E945E39C8B0DD9864665A4A080F2C772B9C58F2C63A537090E6
-motif   : 2.33.0 : table de destinations d'echange ajoutee a 01-config.js, hook de test elargi, ternaire retire de 23-luna-batch.js
+sha256  : FE053628D06565B9F4955364578EE0996384EF4140D72CEFBF8C7D97307E7098
+motif   : 2.36.0 : taughtLabels, matchesTaught et noteSeenLabel ajoutes a 18-luna-patterns.js
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

@@ -18,6 +18,7 @@ import { MAX_PER_HOUR } from './claim.js';
 import { claimableStoresFor } from './sources/index.js';
 import { normaliseTitle } from './offer.js';
 import { KEY_WISHLIST, addWish, removeWish } from './wishlist.js';
+import { KEY_TAUGHT, forget, learn } from './teaching.js';
 
 /**
  * Reclame tout ce qui peut l'etre, maintenant, a la demande.
@@ -281,4 +282,31 @@ export async function wish({ chrome, title, on = true }) {
 
   await write(chrome, { [KEY_WISHLIST]: apres });
   return { wishes: apres.length };
+}
+
+/**
+ * Apprend, ou oublie, un libelle de bouton.
+ *
+ * Passe par le service worker et non par le popup, pour la meme raison que la
+ * liste de souhaits : le MOTEUR lit cette cle de facon synchrone avant chaque
+ * clic. Deux ecrivains sans transaction y perdraient silencieusement un
+ * apprentissage -- et ce qui serait perdu ici est la seule chose qui repare
+ * l'extension.
+ *
+ * Le refus remonte tel quel : un apprentissage refuse en silence ferait croire
+ * a une reparation qui n'a pas eu lieu.
+ */
+export async function teach({ chrome, surface, label, on = true, now = Date.now() }) {
+  const raw = await readKeys(chrome, [KEY_TAUGHT]);
+  const avant = raw[KEY_TAUGHT] || {};
+
+  if (!on) {
+    const apres = forget(avant, surface, label);
+    await write(chrome, { [KEY_TAUGHT]: apres });
+    return { learned: false, forgotten: true, reason: null };
+  }
+
+  const r = learn(avant, { surface, label, now });
+  if (r.learned) await write(chrome, { [KEY_TAUGHT]: r.taught });
+  return { learned: r.learned, forgotten: false, reason: r.reason };
 }

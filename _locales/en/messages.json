@@ -812,6 +812,18 @@
   "canaryHint": {
     "message": "This store most likely changed its page. Claiming is retried on a backoff; the message above names what the engine could not find."
   },
+  "teachAsk": {
+    "message": "Which button should have been clicked?"
+  },
+  "teachRefused": {
+    "message": "This label mentions money. It cannot be learned."
+  },
+  "teachLearned": {
+    "message": "Learned: $1."
+  },
+  "teachForget": {
+    "message": "forget"
+  },
   "syncCodesLabel": {
     "message": "Back up my pending codes"
   },

@@ -64,6 +64,9 @@ export const UI_COMMANDS = Object.freeze([
   /* La liste de souhaits (2.31.0). Elle est lue a chaque cycle : le popup
      demande, le worker ecrit. */
   'fgc-wish',
+  /* L'apprentissage d'un libelle (2.36.0). Il ecrit une cle que le MOTEUR
+     lit avant chaque clic : un script de contenu n'a rien a y faire. */
+  'fgc-teach',
 ]);
 
 /**
