@@ -638,3 +638,33 @@ test('avant un rechargement, le lanceur dit si son moteur est en pleine reclamat
   assert.deepEqual(p.demander({ type: 'fgc-occupe' }), { occupe: false });
   assert.equal(p.demander({ type: 'autre' }), undefined, 'les autres messages ne le regardent pas');
 });
+
+/* ------------------------------------------------------------ textes du moteur (2.55.0) */
+
+test('l\'etat du moteur se compose dans la langue du lecteur, avec ses valeurs', () => {
+  const p = charger({
+    hostname: 'store.epicgames.com', pathname: '/fr/free-games',
+    reponse: { facts: [], lines: [], engine: { engEpicClaimed: 'Epic : $1 récupéré', engEpicTally: 'Epic : $1 sur $2 récupéré(s)', '<b>': 'x' } },
+  });
+  p.api.engine(moteur().spec);
+  p.api.status('ok', { key: 'engEpicClaimed', args: ['Tyranny'] });
+  p.jouerJusqua(700);
+  assert.equal(p.parts().bulle.textContent, 'Epic : Tyranny récupéré');
+  p.parts().bouton.fire('click');
+  assert.equal(p.parts().statut.textContent, 'Epic : Tyranny récupéré', 'et dans le panneau');
+
+  p.api.status('error', { key: 'engEpicTally', args: ['0', '2'] });
+  assert.equal(p.parts().statut.textContent, 'Epic : 0 sur 2 récupéré(s)');
+});
+
+test('sans modele du worker, le navigateur ; une phrase d\'avant passe telle quelle', () => {
+  const p = charger({ reponse: null });
+  p.api.engine(moteur().spec);
+  p.parts().bouton.fire('click');
+  p.api.status('error', { key: 'engCaptcha', args: [] });
+  assert.equal(p.parts().statut.textContent, 'nav:engCaptcha');
+  p.api.status('error', [{ key: 'engCaptcha' }, 'suite']);
+  assert.equal(p.parts().statut.textContent, 'nav:engCaptcha suite');
+  p.api.status('error', 'Ancienne phrase');
+  assert.equal(p.parts().statut.textContent, 'Ancienne phrase');
+});

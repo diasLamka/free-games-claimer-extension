@@ -13,7 +13,7 @@
     if (landedOnPendingProduct) {
       log('Epic Games', 'info', 'Arrivee sur la fiche "' + currentSlug + '" via le script : lancement de la reclamation.');
       setTimeout(function () {
-        updateUiState('running', 'Epic : reclamation en cours...');
+        updateUiState('running', uiText('engEpicClaiming'));
         runEpicGamesModule();
       }, 2000);
     } else {
@@ -35,7 +35,7 @@
     if (cameFromAutoRedirect && /\/free-games/.test(location.pathname)) {
       log('Epic Games', 'info', 'Arrivee via redirection automatique : lancement du claim sans action utilisateur.');
       setTimeout(function () {
-        updateUiState('running', 'Auto hebdo : reclamation en cours...');
+        updateUiState('running', uiText('engAutoWeeklyRunning'));
         runEpicGamesModule();
       }, 2000);
     }

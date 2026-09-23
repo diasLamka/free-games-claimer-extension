@@ -12,8 +12,8 @@
       lunaModuleRunSince = 0;
       if (err && err.message === 'MANUAL_LOGIN_REQUIRED') {
         log(PLATFORM, 'warn', 'Amazon demande une reconnexion : arret, aucune manipulation d\'identifiants. La serie reprendra au prochain chargement de /claims apres connexion.');
-        notifyUser('Free Games Claimer -- Amazon Luna', 'Reconnexion Amazon demandee : connectez-vous, la reclamation reprendra ensuite.');
-        updateUiState('error', 'Luna : reconnexion Amazon requise');
+        notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonRelogin'));
+        updateUiState('error', uiText('engLunaRelogin'));
         return;
       }
       throw err;
@@ -23,19 +23,19 @@
   function runAmazonLunaModuleInner() {
     var PLATFORM = 'Amazon Luna';
     log(PLATFORM, 'info', 'Demarrage du module Amazon Luna.');
-    updateUiState('running', 'Luna : verification...');
+    updateUiState('running', uiText('engLunaChecking'));
 
     if (location.hostname.indexOf('gaming.amazon.com') !== -1) {
       log(PLATFORM, 'warn', 'gaming.amazon.com est l\'ancien domaine Prime Gaming, retire depuis le passage a Amazon Luna.');
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Domaine obsolete. Rendez-vous sur luna.amazon.com' + CONFIG.lunaClaimsPath + ' (ou votre variante locale, ex. luna.amazon.fr).');
-      updateUiState('error', 'Domaine obsolete, allez sur luna.amazon.*');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyLunaOldDomain', CONFIG.lunaClaimsPath));
+      updateUiState('error', uiText('engLunaOldDomain'));
       return Promise.resolve();
     }
 
     if (document.querySelector('[data-a-target="sign-in-button"]') || isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Session Amazon/Luna non detectee (bouton "Se connecter" visible).');
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Connexion Amazon requise : connectez-vous sur Luna, la reclamation demarrera au prochain chargement.');
-      updateUiState('error', 'Non connecte sur Amazon');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonLogin'));
+      updateUiState('error', uiText('engAmazonNotLoggedIn'));
       return Promise.resolve();
     }
 
@@ -44,8 +44,8 @@
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ').', challenge.detail);
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Captcha/2FA Amazon detecte : action manuelle requise.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonCaptcha'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -53,7 +53,7 @@
     if (isLunaClaimsListPage(location.pathname)) return runLunaListPage(PLATFORM);
 
     log(PLATFORM, 'info', 'Page actuelle (' + location.pathname + ') hors du parcours de reclamation. Rendez-vous sur ' + CONFIG.lunaClaimsPath + '.');
-    updateUiState('ok', 'Rendez-vous sur ' + CONFIG.lunaClaimsPath);
+    updateUiState('ok', uiText('engGoTo', CONFIG.lunaClaimsPath));
     return Promise.resolve();
   }
 
@@ -67,7 +67,7 @@
       if (!queue.length && !finishPending) setAutoCooldown('luna', CONFIG.autoCooldownMs);
       log('Amazon Luna', 'info', queue.length ? 'File Luna en cours (' + queue.length + ' fiche(s)) : reprise automatique.' : 'Mode auto Luna actif : verification des offres.');
       setTimeout(function () {
-        updateUiState('running', 'Luna : verification automatique...');
+        updateUiState('running', uiText('engLunaAutoChecking'));
         dispatch();
       }, 2000);
     }

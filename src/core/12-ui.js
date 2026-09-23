@@ -42,7 +42,7 @@
         // Action manuelle : on ignore et on remet a zero le delai de repos.
         clearAutoCooldown('epic');
         clearAutoCooldown('luna');
-        updateUiState('running', 'Recherche en cours...');
+        updateUiState('running', uiText('engSearching'));
         dispatch();
       },
       auto: autoModeSwitch()

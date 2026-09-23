@@ -437,6 +437,15 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
     : src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 });
 
+/* Les textes du moteur (2.55.0). Il ne compose plus de phrase : il nomme une
+   cle, `uiText('engX', ...)`. Une cle mal orthographiee ne se verrait qu'a
+   l'ecran, en clair, au milieu d'une reclamation ; elle se voit ici. */
+for (const [, cle] of code.matchAll(/uiText\('([A-Za-z0-9]+)'/g)) {
+  if (!clesReference.has(cle)) problems.push(`src/core : cle i18n inconnue « ${cle} »`);
+  if (!cle.startsWith('eng')) problems.push(`src/core : « ${cle} » -- les cles du moteur commencent par eng`);
+}
+SOURCES_I18N.push(code);
+
 const orphelines = [...clesReference].filter(
   (c) => !MSG_MANIFESTE.has(c) && !citeeQuelquePart(c, SOURCES_I18N),
 );

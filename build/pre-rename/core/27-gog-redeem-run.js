@@ -28,17 +28,17 @@
     if (!pending.length) {
       if (exhausted.length) {
         log(PLATFORM, 'warn', exhausted.length + ' code(s) GOG ont depasse le nombre d\'essais automatiques. A saisir manuellement :\n' + describePendingCodes());
-        updateUiState('error', 'GOG : ' + exhausted.length + ' code(s) a saisir manuellement (voir console)');
+        updateUiState('error', uiText('engGogManualCodes', exhausted.length));
       } else {
         log(PLATFORM, 'info', 'Aucun code GOG en attente d\'echange.');
-        updateUiState('ok', 'GOG : aucun code en attente');
+        updateUiState('ok', uiText('engGogNoPendingCode'));
       }
       return Promise.resolve();
     }
 
     var entry = pending[0];
     log(PLATFORM, 'info', 'Echange du code GOG pour "' + entry.title + '" (' + pending.length + ' en attente, essai ' + ((entry.attempts || 0) + 1) + '/' + CONFIG.gogRedeemMaxAttempts + ').');
-    updateUiState('running', 'GOG : echange du code pour ' + entry.title + '...');
+    updateUiState('running', uiText('engGogRedeeming', entry.title));
 
     var form = null;
     var submit = null;
@@ -48,8 +48,8 @@
     }).then(function (input) {
       if (isLikelyLoggedOut()) {
         log(PLATFORM, 'warn', 'Session GOG non detectee : connectez-vous sur GOG puis revenez sur ' + CONFIG.gogRedeemUrl + '.');
-        notifyUser('Free Games Claimer -- GOG', 'Connectez-vous sur GOG puis rouvrez gog.com/redeem : ' + pending.length + ' code(s) en attente.');
-        updateUiState('error', 'GOG : connexion requise');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogReopen', pending.length));
+        updateUiState('error', uiText('engGogLoginNeeded'));
         return Promise.reject('STOP');
       }
       form = input.closest('form') || document;
@@ -70,12 +70,12 @@
       }
       if (!gogSubmitLabelAllowed(submit)) {
         return giveAttemptBack('Bouton d\'envoi non reconnu sur ' + location.href + ' : "' + submitLabel
-          + '". Rien n\'est clique, le code reste en attente.', 'GOG : bouton d\'envoi non reconnu');
+          + '". Rien n\'est clique, le code reste en attente.', uiText('engGogSubmitUnknown'));
       }
       log(PLATFORM, 'info', 'Code saisi, clic sur "' + submitLabel + '".');
       if (!robustClick(submit)) {
         return giveAttemptBack('Clic refuse sur le bouton d\'envoi GOG (arret d\'urgence, libelle payant ou reclic).',
-          'GOG : clic refuse');
+          uiText('engGogClickRefused'));
       }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, false);
     }).then(function (outcome) {
@@ -106,20 +106,20 @@
         saveHistoryEntry(PLATFORM, 'code:' + entry.code, 'redeemed', entry.title);
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         log(PLATFORM, 'info', 'OK "' + entry.title + '" ajoute a votre bibliotheque GOG. ' + remaining.length + ' code(s) restant(s).');
-        notifyUser('Free Games Claimer -- GOG', '"' + entry.title + '" ajoute a votre bibliotheque GOG.');
-        updateUiState('ok', 'GOG : ' + entry.title + ' ajoute');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogAdded', entry.title));
+        updateUiState('ok', uiText('engGogAdded', entry.title));
       } else if (outcome.type === 'used') {
         removePendingRedeemCode(entry.code);
         saveHistoryEntry(PLATFORM, 'code:' + entry.code, 'already_redeemed', entry.title);
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         log(PLATFORM, 'info', 'Le code de "' + entry.title + '" avait deja ete utilise (' + outcome.detail + '). Retire de la file.');
-        updateUiState('ok', 'GOG : code deja utilise (' + entry.title + ')');
+        updateUiState('ok', uiText('engGogCodeUsed', entry.title));
       } else if (outcome.type === 'captcha') {
         // Un captcha n'est pas un echec du code : on ne compte pas l'essai.
         updatePendingRedeemCode(entry.code, { attempts: entry.attempts || 0 });
         log(PLATFORM, 'warn', 'Captcha GOG visible : validez-le manuellement puis relancez via le menu Tampermonkey ("Echanger les codes GOG en attente").');
-        notifyUser('Free Games Claimer -- GOG', 'Captcha GOG : validez-le puis relancez l\'echange (menu Tampermonkey).');
-        updateUiState('error', 'GOG : captcha a valider manuellement');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCaptcha'));
+        updateUiState('error', uiText('engGogCaptcha'));
         return;
       } else {
         var attempts = (entry.attempts || 0) + 1;
@@ -130,10 +130,10 @@
         }
         log(PLATFORM, 'error', 'Echange non confirme pour "' + entry.title + '" (' + outcome.type + (outcome.detail ? ' : ' + outcome.detail : '') + '), essai ' + attempts + '/' + CONFIG.gogRedeemMaxAttempts + '.');
         if (attempts >= CONFIG.gogRedeemMaxAttempts) {
-          notifyUser('Free Games Claimer -- GOG', 'Impossible d\'echanger automatiquement le code de "' + entry.title + '" : ' + entry.code + ' (copie dans le presse-papiers). Saisissez-le sur gog.com/redeem.', 20000);
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogManual', entry.title, entry.code), 20000);
           copyToClipboard(entry.code);
         }
-        updateUiState('error', 'GOG : echange non confirme (' + entry.title + ')');
+        updateUiState('error', uiText('engGogUnconfirmed', entry.title));
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts && c.code !== entry.code; });
         if (outcome.type === 'timeout') return;
       }
@@ -144,7 +144,7 @@
     }).catch(function (err) {
       if (err === 'STOP') return;
       log(PLATFORM, 'error', 'Erreur pendant l\'echange du code GOG : ' + (err && err.message));
-      updateUiState('error', 'GOG : ' + (err && err.message));
+      updateUiState('error', uiText('engGogError', err && err.message));
     });
   }
 
@@ -154,7 +154,7 @@
     if (!pending.length) return;
     log('GOG', 'info', pending.length + ' code(s) GOG en attente : echange automatique dans 2s.');
     setTimeout(function () {
-      updateUiState('running', 'GOG : echange automatique des codes...');
+      updateUiState('running', uiText('engGogAutoRedeem'));
       dispatch();
     }, 2000);
   }

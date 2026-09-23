@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.54.0
+ * FREE GAMES AUTO-CLAIMER -- v2.55.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -232,6 +232,17 @@
     var extraArgs = Array.prototype.slice.call(arguments, 2);
     var callArgs = [prefix, new Date().toISOString()].concat(extraArgs);
     fn.apply(console, callArgs);
+  }
+
+  /* Un texte pour l'utilisateur (2.55.0) : une cle de _locales et ses
+     valeurs, jamais une phrase. Le moteur est en ASCII et ne sait pas quelle
+     langue lit l'utilisateur ; le lanceur (etat du moteur) et le worker
+     (notifications) composent la phrase, accentuee, dans la langue choisie.
+     Plusieurs morceaux se passent en tableau, mis bout a bout. */
+  function uiText(key) {
+    var args = [];
+    for (var i = 1; i < arguments.length; i++) args.push(String(arguments[i]));
+    return { key: key, args: args };
   }
 
   function notifyUser(title, text, timeout) {
@@ -1504,8 +1515,7 @@
     log(EPIC_PAYMENT_PLATFORM, 'warn', 'La frame d\'achat n\'a pas bouge depuis '
       + Math.round((now - epicPaymentActionAt) / 1000) + 's alors que "' + text
       + '" est toujours a l\'ecran. Ecran : ' + epicPaymentScreen);
-    notifyUser('Free Games Claimer -- Epic Games',
-      'Une fenetre Epic attend un clic sur "' + text + '". Terminez-la dans l\'onglet.');
+    notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicWaitingClick', text));
   }
 
   // Une passe. Rend true quand elle a REELLEMENT clique quelque chose.
@@ -1518,7 +1528,7 @@
       epicPaymentStopped = true;
       epicPaymentSawSomethingAt = 0;
       log(EPIC_PAYMENT_PLATFORM, 'warn', 'Defi de securite (' + challenge.type + ') dans la frame d\'achat. Sentinelle arretee.', challenge.detail);
-      notifyUser('Free Games Claimer -- Epic Games', 'Verification de securite dans le paiement : action manuelle requise.');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPaymentCheck'));
       return false;
     }
 
@@ -1647,7 +1657,7 @@
     return Promise.resolve();
   }
 
-  var UI_STATE = { status: 'idle', message: 'Pret' };
+  var UI_STATE = { status: 'idle', message: uiText('engReady') };
 
   function getEpicAutoModeEnabled() { return GM_getValue('FGC_epic_auto_mode', true); }
   function setEpicAutoModeEnabled(val) { GM_setValue('FGC_epic_auto_mode', !!val); }
@@ -1693,7 +1703,7 @@
         // Action manuelle : on ignore et on remet a zero le delai de repos.
         clearAutoCooldown('epic');
         clearAutoCooldown('luna');
-        updateUiState('running', 'Recherche en cours...');
+        updateUiState('running', uiText('engSearching'));
         dispatch();
       },
       auto: autoModeSwitch()
@@ -1753,13 +1763,13 @@
       }
 
       if (!auto) {
-        notifyUser('Free Games Claimer -- Epic Games', unclaimed.length + ' jeu(x) gratuit(s) detecte(s) : ' + titles.join(', ') + '.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFound', unclaimed.length, titles.join(', ')));
         return;
       }
 
       if (!getEpicAutoModeEnabled()) {
         log('Epic Games', 'info', 'Mode auto hebdo desactive : notification seule, pas de redirection automatique.');
-        notifyUser('Free Games Claimer -- Epic Games', unclaimed.length + ' nouveau(x) jeu(x) gratuit(s) -- mode auto desactive, cliquez sur Claim manuellement.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicAutoOff', unclaimed.length));
         return;
       }
 
@@ -1770,7 +1780,7 @@
 
       if (isLikelyLoggedOut()) {
         log('Epic Games', 'warn', 'Jeux gratuits detectes mais session non connectee : impossible de rediriger/reclamer automatiquement.');
-        notifyUser('Free Games Claimer -- Epic Games', 'Nouveaux jeux gratuits disponibles, mais vous devez vous reconnecter.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicRelogin'));
         return;
       }
 
@@ -1787,7 +1797,7 @@
         return;
       }
 
-      updateUiState('running', 'Auto hebdo : reclamation en cours...');
+      updateUiState('running', uiText('engAutoWeeklyRunning'));
       return runEpicGamesModule();
     });
   }
@@ -1818,8 +1828,8 @@
       sessionStorage.setItem('FGC_epic_redirect_counts', JSON.stringify(counts));
     } catch (e) {}
     log(PLATFORM, 'error', 'La fiche construite pour le slug "' + pendingSlug + '" n\'existe pas (' + location.href + '). Slug bloque pendant ' + Math.round(CONFIG.epicBadUrlTtlMs / 86400000) + ' jour(s), retour sur /free-games.');
-    notifyUser('Free Games Claimer -- Epic Games', 'URL introuvable pour "' + pendingSlug + '". Reclamez ce jeu manuellement depuis la page des jeux gratuits.');
-    updateUiState('error', 'URL introuvable : ' + pendingSlug);
+    notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyUrlNotFound', pendingSlug));
+    updateUiState('error', uiText('engUrlNotFound', pendingSlug));
     setTimeout(function () { location.assign(epicStoreUrl('/free-games')); }, 1500);
     return true;
   }
@@ -1839,7 +1849,7 @@
     if (landedOnPendingProduct) {
       log('Epic Games', 'info', 'Arrivee sur la fiche "' + currentSlug + '" via le script : lancement de la reclamation.');
       setTimeout(function () {
-        updateUiState('running', 'Epic : reclamation en cours...');
+        updateUiState('running', uiText('engEpicClaiming'));
         runEpicGamesModule();
       }, 2000);
     } else {
@@ -1861,7 +1871,7 @@
     if (cameFromAutoRedirect && /\/free-games/.test(location.pathname)) {
       log('Epic Games', 'info', 'Arrivee via redirection automatique : lancement du claim sans action utilisateur.');
       setTimeout(function () {
-        updateUiState('running', 'Auto hebdo : reclamation en cours...');
+        updateUiState('running', uiText('engAutoWeeklyRunning'));
         runEpicGamesModule();
       }, 2000);
     }
@@ -2124,9 +2134,8 @@
             + 's : la sentinelle de la frame a la main, on continue d\'attendre.');
           if (!epicSettleNoticeSent && elapsed >= CONFIG.epicPurchaseStuckNoticeMs) {
             epicSettleNoticeSent = true;
-            updateUiState('running', 'Epic : fenetre d\'achat ouverte, en attente...');
-            notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic attend une confirmation depuis '
-              + Math.round(elapsed / 1000) + 's. Jetez-y un oeil si elle reste bloquee.');
+            updateUiState('running', uiText('engEpicPurchaseWaiting'));
+            notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPurchaseWaiting', Math.round(elapsed / 1000)));
           }
           return round();
         }
@@ -2168,8 +2177,8 @@
     }).catch(function () {
       log(PLATFORM, 'warn', 'Fenetre d\'achat toujours ouverte apres '
         + Math.round(CONFIG.epicPurchaseSettleMaxMs / 1000) + 's : on passe au suivant. Terminez-la manuellement.');
-      notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic est restee ouverte : terminez-la manuellement.');
-      updateUiState('error', 'Epic : fenetre d\'achat restee ouverte');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPurchaseStuck'));
+      updateUiState('error', uiText('engEpicPurchaseStuck'));
       return null;
     });
   }
@@ -2211,22 +2220,22 @@
 
     if (isEpicNotFoundPage(location.pathname)) {
       log(PLATFORM, 'warn', 'Page /not-found : aucune reclamation possible ici. Rendez-vous sur ' + epicStoreUrl('/free-games') + '.');
-      updateUiState('error', 'Page introuvable -- retournez sur /free-games');
+      updateUiState('error', uiText('engEpicWrongPage'));
       return Promise.resolve();
     }
 
     if (isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Aucune session active detectee. Connectez-vous manuellement puis relancez.');
-      notifyUser('Free Games Claimer -- Epic Games', 'Connexion requise. Connectez-vous manuellement puis relancez le script.');
-      updateUiState('error', 'Non connecte sur Epic');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicLogin'));
+      updateUiState('error', uiText('engEpicNotLoggedIn'));
       return Promise.resolve();
     }
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ') avant meme le chargement de la page. Arret.', challenge.detail);
-      notifyUser('Free Games Claimer -- Epic Games', 'Captcha/2FA detecte : intervention manuelle necessaire.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyCaptcha'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -2234,7 +2243,7 @@
       return waitForElement(function () { return document.querySelector('main'); }, { timeout: 12000 });
     }, { label: 'chargement de la page Epic Games Store' }).catch(function (e) {
       log(PLATFORM, 'error', 'La page principale ne s\'est pas chargee a temps.', e);
-      updateUiState('error', 'Page Epic non chargee');
+      updateUiState('error', uiText('engEpicPageNotLoaded'));
       return Promise.reject('STOP');
     }).then(function () {
       return fetchCurrentEpicFreebies().catch(function (e) {
@@ -2269,7 +2278,7 @@
 
         if (unclaimed.length === 0) {
           setAutoCooldown('epic', CONFIG.autoIdleCooldownMs);
-          updateUiState('ok', 'Tous les jeux gratuits de la semaine sont deja recuperes');
+          updateUiState('ok', uiText('engEpicAllClaimed'));
           log(PLATFORM, 'info', 'Aucun jeu gratuit restant a reclamer selon l\'API.');
           return;
         }
@@ -2279,7 +2288,7 @@
           try { sessionStorage.removeItem('FGC_epic_redirect_counts'); } catch (e) {}
 
           log(PLATFORM, 'info', 'Fiche produit courante identifiee comme jeu gratuit non reclame : ' + currentMatch.title);
-          updateUiState('running', 'Epic : ' + currentMatch.title + '...');
+          updateUiState('running', uiText('engEpicWorking', currentMatch.title));
           resetEpicSettleClock();
           return withRetry(function () {
             return claimEpicGame(document, currentMatch.title, PLATFORM);
@@ -2289,18 +2298,18 @@
             return sleep(CONFIG.epicClaimVerifyDelayMs).then(function () {
               if (result !== 'ALREADY_OWNED' && isEpicGameUnownedOnCurrentPage()) {
                 log(PLATFORM, 'warn', 'Verification : "' + currentMatch.title + '" affiche encore le bouton d\'achat. Rien enregistre, nouvelle tentative au prochain passage.');
-                notifyUser('Free Games Claimer -- Epic Games', 'Reclamation non confirmee pour "' + currentMatch.title + '" : terminez-la manuellement si besoin.');
-                updateUiState('error', 'Epic : non confirme (' + currentMatch.title + ')');
+                notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicUnconfirmed', currentMatch.title));
+                updateUiState('error', uiText('engEpicUnconfirmed', currentMatch.title));
                 return;
               }
               saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result, currentMatch.title);
-              updateUiState('ok', 'Epic : ' + currentMatch.title + ' recupere');
+              updateUiState('ok', uiText('engEpicClaimed', currentMatch.title));
               log(PLATFORM, 'info', 'OK Recupere avec succes : ' + currentMatch.title + ' (' + result + ')');
             });
           }).catch(function (err) {
-            updateUiState('error', 'Epic : echec (' + currentMatch.title + ') -- ' + err.message);
+            updateUiState('error', uiText('engEpicFailed', currentMatch.title, err.message));
             log(PLATFORM, 'error', 'ECHEC de la recuperation pour "' + currentMatch.title + '" : ' + err.message + '. Aucune entree "claimed" enregistree.');
-            notifyUser('Free Games Claimer -- Epic Games', 'Echec pour "' + currentMatch.title + '" : ' + err.message);
+            notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFailed', currentMatch.title, err.message));
           });
         }
 
@@ -2319,13 +2328,13 @@
 
         function processNextInner(index) {
           if (index >= unclaimed.length) {
-            updateUiState(successCount > 0 ? 'ok' : 'error', 'Epic : ' + successCount + '/' + unclaimed.length + ' recupere(s)');
+            updateUiState(successCount > 0 ? 'ok' : 'error', uiText('engEpicTally', successCount, unclaimed.length));
             log(PLATFORM, 'info', 'Module Epic Games termine (detection API).');
             return;
           }
 
           var game = unclaimed[index];
-          updateUiState('running', 'Epic : recherche de la carte "' + game.title + '"...');
+          updateUiState('running', uiText('engEpicFindingCard', game.title));
 
           // Les cartes de /free-games sont rendues cote client : on attend
           // leur apparition avant de decider qu'il faut rediriger.
@@ -2333,7 +2342,7 @@
           return waitForEpicAnchor(game.slug, waitMs).then(function (anchor) {
             if (anchor) {
               log(PLATFORM, 'info', 'Carte trouvee par slug pour : ' + game.title + ' (' + anchor.getAttribute('href') + ')');
-              updateUiState('running', 'Epic : ' + game.title + '...');
+              updateUiState('running', uiText('engEpicWorking', game.title));
               // Si le clic sur la carte provoque un rechargement complet (et
               // non une navigation SPA), la fiche reprendra la reclamation.
               setEpicPendingSlug(game.slug);
@@ -2357,8 +2366,8 @@
             var redirectCount = getRedirectCount(game.slug);
             if (redirectCount >= CONFIG.epicMaxRedirectsPerSlug) {
               log(PLATFORM, 'error', 'Trop de redirections deja tentees pour "' + game.title + '" (' + redirectCount + ') sans succes. Abandon automatique : reclamez-le manuellement via ' + game.url + '.');
-              notifyUser('Free Games Claimer -- Epic Games', 'Impossible de reclamer automatiquement "' + game.title + '". Cliquez sur Claim manuellement sur sa page.');
-              updateUiState('error', 'Echec repete : ' + game.title);
+              notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicCannotClaim', game.title));
+              updateUiState('error', uiText('engRepeatedFailure', game.title));
               return processNext(index + 1);
             }
             incrementRedirectCount(game.slug);
@@ -2374,7 +2383,7 @@
 
       if (cards.length === 0) {
         log(PLATFORM, 'info', 'Aucun jeu gratuit detecte (ni via l\'API, ni via le DOM). Verifiez que vous etes bien sur ' + epicStoreUrl('/free-games') + ' et que vous etes connecte.');
-        updateUiState('ok', 'Aucun jeu gratuit ici');
+        updateUiState('ok', uiText('engNoFreeGameHere'));
         return;
       }
 
@@ -2390,7 +2399,7 @@
 
       function processCardInner(index) {
         if (index >= cards.length) {
-          updateUiState(successCount2 > 0 ? 'ok' : 'error', 'Epic : ' + successCount2 + '/' + cards.length + ' recupere(s)');
+          updateUiState(successCount2 > 0 ? 'ok' : 'error', uiText('engEpicTally', successCount2, cards.length));
           log(PLATFORM, 'info', 'Module Epic Games termine (repli DOM).');
           return;
         }
@@ -2406,7 +2415,7 @@
         }
 
         log(PLATFORM, 'info', 'Traitement de : ' + title);
-        updateUiState('running', 'Epic : ' + title + '...');
+        updateUiState('running', uiText('engEpicWorking', title));
         resetEpicSettleClock();
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);
@@ -2428,20 +2437,20 @@
   function runGogModule() {
     var PLATFORM = 'GOG';
     log(PLATFORM, 'info', 'Demarrage du module GOG.');
-    updateUiState('running', 'GOG : verification...');
+    updateUiState('running', uiText('engGogChecking'));
 
     if (isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Session GOG non detectee.');
-      notifyUser('Free Games Claimer -- GOG', 'Connexion requise sur GOG.');
-      updateUiState('error', 'Non connecte sur GOG');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogLogin'));
+      updateUiState('error', uiText('engGogNotLoggedIn'));
       return Promise.resolve();
     }
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ').', challenge.detail);
-      notifyUser('Free Games Claimer -- GOG', 'Verification de securite detectee : action manuelle requise.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifySecurityCheck'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -2449,7 +2458,7 @@
 
     if (!claimBtn) {
       log(PLATFORM, 'info', 'Aucun bouton de recuperation visible (peut-etre deja reclame, ou pas de giveaway actif, ou le texte du bouton a change).');
-      updateUiState('ok', 'Aucun giveaway actif ici');
+      updateUiState('ok', uiText('engGogNoGiveaway'));
       return Promise.resolve();
     }
 
@@ -2457,7 +2466,7 @@
     var title = (titleEl && titleEl.textContent && titleEl.textContent.trim()) || location.href;
     if (alreadyHandled(PLATFORM, title)) {
       log(PLATFORM, 'info', 'Deja recupere : ' + title);
-      updateUiState('ok', 'Deja recupere');
+      updateUiState('ok', uiText('engAlreadyClaimed'));
       return Promise.resolve();
     }
 
@@ -2469,10 +2478,10 @@
     }, { label: 'recuperation GOG (' + title + ')', retries: 3 }).then(function () {
       saveHistoryEntry(PLATFORM, title, 'claimed');
       log(PLATFORM, 'info', 'OK Recupere : ' + title);
-      updateUiState('ok', 'GOG : ' + title + ' recupere');
+      updateUiState('ok', uiText('engGogClaimed', title));
     }).catch(function (err) {
       log(PLATFORM, 'error', 'ECHEC pour "' + title + '" : ' + err.message);
-      updateUiState('error', 'GOG : echec (' + title + ')');
+      updateUiState('error', uiText('engGogFailed', title));
     });
   }
 
@@ -3021,9 +3030,10 @@
   function finishLunaBatch(PLATFORM) {
     var batch = getLunaBatch();
     var summary = 'Luna : ' + batch.claimed + ' reclame(s), ' + batch.codes + ' code(s), ' + batch.skipped + ' ignore(s), ' + batch.failed + ' echec(s)';
-    updateUiState(batch.failed > 0 && batch.claimed + batch.codes === 0 ? 'error' : 'ok', summary);
+    var summaryText = uiText('engLunaSummary', batch.claimed, batch.codes, batch.skipped, batch.failed);
+    updateUiState(batch.failed > 0 && batch.claimed + batch.codes === 0 ? 'error' : 'ok', summaryText);
     log(PLATFORM, 'info', 'Serie Luna terminee. ' + summary + '.');
-    if (batch.total > 0) notifyUser('Free Games Claimer -- Amazon Luna', summary + '.');
+    if (batch.total > 0) notifyUser('Free Games Claimer -- Amazon Luna', summaryText);
     setAutoCooldown('luna', batch.failed > 0 ? CONFIG.autoFailureCooldownMs : CONFIG.autoIdleCooldownMs);
 
     var gogCodes = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
@@ -3031,7 +3041,7 @@
       batch.gogHandoffDone = true;
       saveLunaBatch(batch);
       log(PLATFORM, 'info', gogCodes.length + ' code(s) GOG en attente : ouverture de ' + CONFIG.gogRedeemUrl + ' pour l\'echange automatique.');
-      notifyUser('Free Games Claimer -- GOG', gogCodes.length + ' code(s) GOG a echanger : la page gog.com/redeem s\'ouvre, l\'echange est automatique si vous etes connecte sur GOG.');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpen', gogCodes.length));
       openInTab(CONFIG.gogRedeemUrl, true);
     }
     saveLunaQueue([]);
@@ -3045,7 +3055,7 @@
     saveLunaQueue(queue);
     if (queue.length) {
       log(PLATFORM, 'info', queue.length + ' fiche(s) restante(s), navigation vers : ' + queue[0].title + ' (' + queue[0].url + ')');
-      updateUiState('running', 'Luna : ' + queue.length + ' offre(s) restante(s)...');
+      updateUiState('running', uiText('engLunaRemaining', queue.length));
       setTimeout(function () { location.assign(queue[0].url); }, 1200);
       return;
     }
@@ -3069,7 +3079,7 @@
       saveHistoryEntry(PLATFORM, key, 'claimed', label, title);
       bumpLunaBatch('claimed');
       log(PLATFORM, 'info', 'OK Reclame : "' + title + '" (' + label + ').');
-      updateUiState('ok', 'Luna : ' + title + ' reclame');
+      updateUiState('ok', uiText('engLunaClaimed', title));
       return;
     }
 
@@ -3086,7 +3096,7 @@
         // en double, sans que rien ne le relise.
         saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange', title);
         log(PLATFORM, 'info', 'Code GOG pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers)' : '') + '. Echange automatique sur gog.com/redeem a la fin de la serie.');
-        updateUiState('ok', 'Luna : code GOG obtenu pour ' + title);
+        updateUiState('ok', uiText('engLunaGogCode', title));
         return;
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
@@ -3094,16 +3104,15 @@
       var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
-      updateUiState('ok', 'Luna : code ' + label + ' copie (' + title + ')');
-      try {
-        if (typeof GM_notification === 'function') {
-          GM_notification({ title: 'Free Games Claimer -- Amazon Luna', text: msg + (redeemUrl ? ' (cliquez pour ouvrir la page d\'echange)' : ''), timeout: 20000, silent: false, onclick: function () { if (redeemUrl) openInTab(redeemUrl, true); } });
-        } else {
-          notifyUser('Free Games Claimer -- Amazon Luna', msg, 20000);
-        }
-      } catch (e) {
-        notifyUser('Free Games Claimer -- Amazon Luna', msg, 20000);
-      }
+      updateUiState('ok', uiText('engLunaCodeCopied', label, title));
+      /* La notification en morceaux : chacun se traduit. Plus de "cliquez
+         pour ouvrir" -- dans l'extension, un clic sur la notification n'a
+         jamais rien ouvert. */
+      var notice = [uiText('engNotifyLunaCode', label, title, code)];
+      if (copied) notice.push(uiText('engNotifyCopied'));
+      if (deadline) notice.push(uiText('engNotifyDeadline', deadline));
+      notice.push(redeemUrl ? uiText('engNotifyPasteAt', redeemUrl) : uiText('engNotifyPasteOnSite', label));
+      notifyUser('Free Games Claimer -- Amazon Luna', notice, 20000);
       return;
     }
 
@@ -3111,15 +3120,15 @@
       saveHistoryEntry(PLATFORM, key, 'needs_link', label, title);
       bumpLunaBatch('skipped');
       log(PLATFORM, 'warn', '"' + title + '" : liaison du compte ' + label + ' requise (parametres Luna > Associer un compte). Offre passee.');
-      notifyUser('Free Games Claimer -- Amazon Luna', '"' + title + '" : associez d\'abord votre compte ' + label + ' dans les parametres Luna, puis relancez.');
-      updateUiState('error', 'Luna : liaison ' + label + ' requise (' + title + ')');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyLunaLink', title, label));
+      updateUiState('error', uiText('engLunaLinkNeeded', label, title));
       return;
     }
 
     var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')', title);
     bumpLunaBatch('failed');
     log(PLATFORM, 'error', 'ECHEC pour "' + title + '" (' + label + ') : aucun resultat identifiable apres le clic (essai ' + attempts + '/' + CONFIG.lunaMaxAttemptsPerOffer + ').');
-    updateUiState('error', 'Luna : echec (' + title + ')');
+    updateUiState('error', uiText('engLunaFailed', title));
   }
 
   function runLunaDetailPage(PLATFORM) {
@@ -3129,7 +3138,7 @@
        file est conservee telle quelle, pour pouvoir reprendre. */
     if (emergencyStopped()) {
       log(PLATFORM, 'error', 'Arret d\'urgence actif : la serie Luna s\'arrete ici (la file est conservee).');
-      updateUiState('error', 'Luna : arret d\'urgence actif');
+      updateUiState('error', uiText('engLunaEmergency'));
       return Promise.resolve();
     }
 
@@ -3142,7 +3151,7 @@
     var partOfSeries = inQueue || queue.length > 0;
     function proceed(uiMsg) {
       if (partOfSeries) return advanceLunaQueue(PLATFORM, offerId);
-      updateUiState('ok', uiMsg || 'Luna : fiche deja traitee, rien a faire');
+      updateUiState('ok', uiMsg || uiText('engLunaPageDone'));
     }
 
     return waitForElement('[data-a-target="buy-box"]', { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (buyBox) {
@@ -3157,7 +3166,7 @@
         saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label, title);
         if (partOfSeries) bumpLunaBatch('skipped');
         log(PLATFORM, 'info', 'Offre ignoree (plateforme ' + label + ' exclue par configuration) : ' + title);
-        return proceed('Luna : plateforme ' + label + ' ignoree');
+        return proceed(uiText('engLunaPlatformSkipped', label));
       }
 
       if (lunaOfferDone(offerId)) {
@@ -3172,7 +3181,7 @@
         recordLunaFailure(offerId, 'buy-box introuvable', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'error', 'Bloc "buy-box" introuvable sur la fiche "' + title + '" (structure de page differente ?).');
-        return proceed('Luna : fiche illisible (' + title + ')');
+        return proceed(uiText('engLunaPageUnreadable', title));
       }
 
       /* Le bouton est trouve par son ATTRIBUT, et c'est ce qui rend la
@@ -3192,7 +3201,7 @@
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
           + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
-        return proceed('Luna : libelle inattendu (' + title + ')');
+        return proceed(uiText('engLunaUnexpectedLabel', title));
       }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
@@ -3201,22 +3210,22 @@
           var lateCode = findLunaRevealedCode();
           if (lateCode && !lunaOfferDone(offerId)) {
             handleLunaClaimOutcome(PLATFORM, offerId, title, store, { type: 'code', code: lateCode });
-            return proceed('Luna : code recupere pour ' + title);
+            return proceed(uiText('engLunaCodeReceived', title));
           }
           // Deja pris avant nous -- plus tot, a la main, ou depuis un autre
           // ordinateur : c'est un constat, pas une reclamation. Le motif le dit,
           // et le popup affiche "deja recupere" au lieu de "recupere".
           saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', 'ALREADY_CLAIMED', title);
           log(PLATFORM, 'info', 'Offre deja reclamee : ' + title);
-          return proceed('Luna : deja reclame (' + title + ')');
+          return proceed(uiText('engLunaAlreadyClaimed', title));
         }
         recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton "Obtenir le jeu" introuvable ou desactive pour "' + title + '".');
-        return proceed('Luna : bouton introuvable (' + title + ')');
+        return proceed(uiText('engLunaButtonMissing', title));
       }
 
-      updateUiState('running', 'Luna : ' + title + ' (' + label + ')...');
+      updateUiState('running', uiText('engLunaWorkingOn', title, label));
       log(PLATFORM, 'info', 'Clic sur "' + actionText(cta) + '" pour "' + title + '".');
       /* Par robustClick, comme Epic.
          L'ancien commentaire justifiait le clic direct par une posture -- ne
@@ -3229,7 +3238,7 @@
         recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
-        return proceed('Luna : clic refuse (' + title + ')');
+        return proceed(uiText('engLunaClickRefused', title));
       }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
@@ -3239,7 +3248,7 @@
         if (inQueue || queue.length) return advanceLunaQueue(PLATFORM, offerId);
         var pendingGog = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         if (pendingGog.length && store === 'gog') {
-          notifyUser('Free Games Claimer -- GOG', pendingGog.length + ' code(s) GOG a echanger : la page gog.com/redeem s\'ouvre.');
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpenShort', pendingGog.length));
           openInTab(CONFIG.gogRedeemUrl, true);
         }
       });
@@ -3274,7 +3283,7 @@
       }
       if (!root && !offers.length) {
         log(PLATFORM, 'info', 'Aucune carte d\'offre trouvee sur la liste (structure differente ou chargement trop long).');
-        updateUiState('ok', 'Luna : aucune offre detectee');
+        updateUiState('ok', uiText('engLunaNoOffer'));
         return;
       }
       log(PLATFORM, 'info', offers.length + ' carte(s) FGWP detectee(s).');
@@ -3306,7 +3315,7 @@
 
       if (!internal.length && !external.length) {
         setAutoCooldown('luna', CONFIG.autoIdleCooldownMs);
-      updateUiState('ok', 'Luna : rien de nouveau a reclamer');
+      updateUiState('ok', uiText('engLunaNothingNew'));
         log(PLATFORM, 'info', 'Rien de nouveau a reclamer sur Luna.');
         return;
       }
@@ -3317,11 +3326,11 @@
         if (index >= internal.length) return Promise.resolve();
         if (emergencyStopped()) {
           log(PLATFORM, 'error', 'Arret d\'urgence actif : ' + (internal.length - index) + ' offre(s) directe(s) non traitee(s).');
-          updateUiState('error', 'Luna : arret d\'urgence actif');
+          updateUiState('error', uiText('engLunaEmergency'));
           return Promise.resolve();
         }
         var o = internal[index];
-        updateUiState('running', 'Luna : ' + o.title + '...');
+        updateUiState('running', uiText('engLunaWorking', o.title));
 
         /* Un echec ne doit pas arreter le lot : on le compte et on passe a
            l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
@@ -3369,7 +3378,7 @@
           return;
         }
         log(PLATFORM, 'info', 'Navigation vers la premiere fiche : ' + external[0].title + ' (' + external[0].url + ')');
-        updateUiState('running', 'Luna : ' + external.length + ' fiche(s) a traiter...');
+        updateUiState('running', uiText('engLunaPagesToDo', external.length));
         setTimeout(function () { location.assign(external[0].url); }, 1000);
       });
     });
@@ -3391,8 +3400,8 @@
       lunaModuleRunSince = 0;
       if (err && err.message === 'MANUAL_LOGIN_REQUIRED') {
         log(PLATFORM, 'warn', 'Amazon demande une reconnexion : arret, aucune manipulation d\'identifiants. La serie reprendra au prochain chargement de /claims apres connexion.');
-        notifyUser('Free Games Claimer -- Amazon Luna', 'Reconnexion Amazon demandee : connectez-vous, la reclamation reprendra ensuite.');
-        updateUiState('error', 'Luna : reconnexion Amazon requise');
+        notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonRelogin'));
+        updateUiState('error', uiText('engLunaRelogin'));
         return;
       }
       throw err;
@@ -3402,19 +3411,19 @@
   function runAmazonLunaModuleInner() {
     var PLATFORM = 'Amazon Luna';
     log(PLATFORM, 'info', 'Demarrage du module Amazon Luna.');
-    updateUiState('running', 'Luna : verification...');
+    updateUiState('running', uiText('engLunaChecking'));
 
     if (location.hostname.indexOf('gaming.amazon.com') !== -1) {
       log(PLATFORM, 'warn', 'gaming.amazon.com est l\'ancien domaine Prime Gaming, retire depuis le passage a Amazon Luna.');
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Domaine obsolete. Rendez-vous sur luna.amazon.com' + CONFIG.lunaClaimsPath + ' (ou votre variante locale, ex. luna.amazon.fr).');
-      updateUiState('error', 'Domaine obsolete, allez sur luna.amazon.*');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyLunaOldDomain', CONFIG.lunaClaimsPath));
+      updateUiState('error', uiText('engLunaOldDomain'));
       return Promise.resolve();
     }
 
     if (document.querySelector('[data-a-target="sign-in-button"]') || isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Session Amazon/Luna non detectee (bouton "Se connecter" visible).');
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Connexion Amazon requise : connectez-vous sur Luna, la reclamation demarrera au prochain chargement.');
-      updateUiState('error', 'Non connecte sur Amazon');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonLogin'));
+      updateUiState('error', uiText('engAmazonNotLoggedIn'));
       return Promise.resolve();
     }
 
@@ -3423,8 +3432,8 @@
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ').', challenge.detail);
-      notifyUser('Free Games Claimer -- Amazon Luna', 'Captcha/2FA Amazon detecte : action manuelle requise.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyAmazonCaptcha'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -3432,7 +3441,7 @@
     if (isLunaClaimsListPage(location.pathname)) return runLunaListPage(PLATFORM);
 
     log(PLATFORM, 'info', 'Page actuelle (' + location.pathname + ') hors du parcours de reclamation. Rendez-vous sur ' + CONFIG.lunaClaimsPath + '.');
-    updateUiState('ok', 'Rendez-vous sur ' + CONFIG.lunaClaimsPath);
+    updateUiState('ok', uiText('engGoTo', CONFIG.lunaClaimsPath));
     return Promise.resolve();
   }
 
@@ -3446,7 +3455,7 @@
       if (!queue.length && !finishPending) setAutoCooldown('luna', CONFIG.autoCooldownMs);
       log('Amazon Luna', 'info', queue.length ? 'File Luna en cours (' + queue.length + ' fiche(s)) : reprise automatique.' : 'Mode auto Luna actif : verification des offres.');
       setTimeout(function () {
-        updateUiState('running', 'Luna : verification automatique...');
+        updateUiState('running', uiText('engLunaAutoChecking'));
         dispatch();
       }, 2000);
     }
@@ -3608,17 +3617,17 @@
     if (!pending.length) {
       if (exhausted.length) {
         log(PLATFORM, 'warn', exhausted.length + ' code(s) GOG ont depasse le nombre d\'essais automatiques. A saisir manuellement :\n' + describePendingCodes());
-        updateUiState('error', 'GOG : ' + exhausted.length + ' code(s) a saisir manuellement (voir console)');
+        updateUiState('error', uiText('engGogManualCodes', exhausted.length));
       } else {
         log(PLATFORM, 'info', 'Aucun code GOG en attente d\'echange.');
-        updateUiState('ok', 'GOG : aucun code en attente');
+        updateUiState('ok', uiText('engGogNoPendingCode'));
       }
       return Promise.resolve();
     }
 
     var entry = pending[0];
     log(PLATFORM, 'info', 'Echange du code GOG pour "' + entry.title + '" (' + pending.length + ' en attente, essai ' + ((entry.attempts || 0) + 1) + '/' + CONFIG.gogRedeemMaxAttempts + ').');
-    updateUiState('running', 'GOG : echange du code pour ' + entry.title + '...');
+    updateUiState('running', uiText('engGogRedeeming', entry.title));
 
     var form = null;
     var submit = null;
@@ -3628,8 +3637,8 @@
     }).then(function (input) {
       if (isLikelyLoggedOut()) {
         log(PLATFORM, 'warn', 'Session GOG non detectee : connectez-vous sur GOG puis revenez sur ' + CONFIG.gogRedeemUrl + '.');
-        notifyUser('Free Games Claimer -- GOG', 'Connectez-vous sur GOG puis rouvrez gog.com/redeem : ' + pending.length + ' code(s) en attente.');
-        updateUiState('error', 'GOG : connexion requise');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogReopen', pending.length));
+        updateUiState('error', uiText('engGogLoginNeeded'));
         return Promise.reject('STOP');
       }
       form = input.closest('form') || document;
@@ -3650,12 +3659,12 @@
       }
       if (!gogSubmitLabelAllowed(submit)) {
         return giveAttemptBack('Bouton d\'envoi non reconnu sur ' + location.href + ' : "' + submitLabel
-          + '". Rien n\'est clique, le code reste en attente.', 'GOG : bouton d\'envoi non reconnu');
+          + '". Rien n\'est clique, le code reste en attente.', uiText('engGogSubmitUnknown'));
       }
       log(PLATFORM, 'info', 'Code saisi, clic sur "' + submitLabel + '".');
       if (!robustClick(submit)) {
         return giveAttemptBack('Clic refuse sur le bouton d\'envoi GOG (arret d\'urgence, libelle payant ou reclic).',
-          'GOG : clic refuse');
+          uiText('engGogClickRefused'));
       }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, false);
     }).then(function (outcome) {
@@ -3686,20 +3695,20 @@
         saveHistoryEntry(PLATFORM, 'code:' + entry.code, 'redeemed', entry.title);
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         log(PLATFORM, 'info', 'OK "' + entry.title + '" ajoute a votre bibliotheque GOG. ' + remaining.length + ' code(s) restant(s).');
-        notifyUser('Free Games Claimer -- GOG', '"' + entry.title + '" ajoute a votre bibliotheque GOG.');
-        updateUiState('ok', 'GOG : ' + entry.title + ' ajoute');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogAdded', entry.title));
+        updateUiState('ok', uiText('engGogAdded', entry.title));
       } else if (outcome.type === 'used') {
         removePendingRedeemCode(entry.code);
         saveHistoryEntry(PLATFORM, 'code:' + entry.code, 'already_redeemed', entry.title);
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         log(PLATFORM, 'info', 'Le code de "' + entry.title + '" avait deja ete utilise (' + outcome.detail + '). Retire de la file.');
-        updateUiState('ok', 'GOG : code deja utilise (' + entry.title + ')');
+        updateUiState('ok', uiText('engGogCodeUsed', entry.title));
       } else if (outcome.type === 'captcha') {
         // Un captcha n'est pas un echec du code : on ne compte pas l'essai.
         updatePendingRedeemCode(entry.code, { attempts: entry.attempts || 0 });
         log(PLATFORM, 'warn', 'Captcha GOG visible : validez-le manuellement puis relancez via le menu Tampermonkey ("Echanger les codes GOG en attente").');
-        notifyUser('Free Games Claimer -- GOG', 'Captcha GOG : validez-le puis relancez l\'echange (menu Tampermonkey).');
-        updateUiState('error', 'GOG : captcha a valider manuellement');
+        notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCaptcha'));
+        updateUiState('error', uiText('engGogCaptcha'));
         return;
       } else {
         var attempts = (entry.attempts || 0) + 1;
@@ -3710,10 +3719,10 @@
         }
         log(PLATFORM, 'error', 'Echange non confirme pour "' + entry.title + '" (' + outcome.type + (outcome.detail ? ' : ' + outcome.detail : '') + '), essai ' + attempts + '/' + CONFIG.gogRedeemMaxAttempts + '.');
         if (attempts >= CONFIG.gogRedeemMaxAttempts) {
-          notifyUser('Free Games Claimer -- GOG', 'Impossible d\'echanger automatiquement le code de "' + entry.title + '" : ' + entry.code + ' (copie dans le presse-papiers). Saisissez-le sur gog.com/redeem.', 20000);
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogManual', entry.title, entry.code), 20000);
           copyToClipboard(entry.code);
         }
-        updateUiState('error', 'GOG : echange non confirme (' + entry.title + ')');
+        updateUiState('error', uiText('engGogUnconfirmed', entry.title));
         remaining = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts && c.code !== entry.code; });
         if (outcome.type === 'timeout') return;
       }
@@ -3724,7 +3733,7 @@
     }).catch(function (err) {
       if (err === 'STOP') return;
       log(PLATFORM, 'error', 'Erreur pendant l\'echange du code GOG : ' + (err && err.message));
-      updateUiState('error', 'GOG : ' + (err && err.message));
+      updateUiState('error', uiText('engGogError', err && err.message));
     });
   }
 
@@ -3734,7 +3743,7 @@
     if (!pending.length) return;
     log('GOG', 'info', pending.length + ' code(s) GOG en attente : echange automatique dans 2s.');
     setTimeout(function () {
-      updateUiState('running', 'GOG : echange automatique des codes...');
+      updateUiState('running', uiText('engGogAutoRedeem'));
       dispatch();
     }, 2000);
   }
@@ -3755,7 +3764,7 @@
       else if (host.indexOf('luna.amazon.') !== -1 || host.indexOf('gaming.amazon.com') !== -1) result = runAmazonLunaModule();
       else {
         log('CORE', 'warn', 'Domaine non pris en charge par le dispatcher : ' + host);
-        updateUiState('error', 'Domaine non pris en charge');
+        updateUiState('error', uiText('engUnsupportedDomain'));
         return;
       }
       // Rendue pour le mode pilote, qui doit savoir quand le module a fini.
@@ -3763,11 +3772,11 @@
         // 'STOP' est un arret volontaire deja journalise par le module.
         if (err === 'STOP') return;
         log('CORE', 'error', 'Erreur non interceptee dans un module.', err);
-        updateUiState('error', 'Erreur : ' + (err && err.message));
+        updateUiState('error', uiText('engError', err && err.message));
       });
     } catch (err) {
       log('CORE', 'error', 'Erreur non interceptee dans le dispatcher principal.', err);
-      updateUiState('error', 'Erreur : ' + err.message);
+      updateUiState('error', uiText('engError', err.message));
     }
   }
 
@@ -4105,7 +4114,7 @@
   function demarrerNormalement() {
     setTimeout(function () {
       injectFloatingButton();
-      updateUiState('idle', 'Pret -- cliquez sur Claim');
+      updateUiState('idle', uiText('engReady'));
       scheduleEpicAutoWatcher();
       startEpicPostPurchaseModalWatcher();
       var pauseEpic = autoCooldownRemaining('epic');

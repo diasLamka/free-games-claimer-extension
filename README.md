@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
+| `engine-text.js` | les phrases du moteur : il envoie une cle et ses valeurs, le lanceur et le worker composent dans la langue du lecteur |
 | `self-update.js` | installee depuis un dossier : se recharge quand une version plus recente y arrive, jamais en pleine reclamation |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 | `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |

@@ -43,13 +43,13 @@
       }
 
       if (!auto) {
-        notifyUser('Free Games Claimer -- Epic Games', unclaimed.length + ' jeu(x) gratuit(s) detecte(s) : ' + titles.join(', ') + '.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFound', unclaimed.length, titles.join(', ')));
         return;
       }
 
       if (!getEpicAutoModeEnabled()) {
         log('Epic Games', 'info', 'Mode auto hebdo desactive : notification seule, pas de redirection automatique.');
-        notifyUser('Free Games Claimer -- Epic Games', unclaimed.length + ' nouveau(x) jeu(x) gratuit(s) -- mode auto desactive, cliquez sur Claim manuellement.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicAutoOff', unclaimed.length));
         return;
       }
 
@@ -60,7 +60,7 @@
 
       if (isLikelyLoggedOut()) {
         log('Epic Games', 'warn', 'Jeux gratuits detectes mais session non connectee : impossible de rediriger/reclamer automatiquement.');
-        notifyUser('Free Games Claimer -- Epic Games', 'Nouveaux jeux gratuits disponibles, mais vous devez vous reconnecter.');
+        notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicRelogin'));
         return;
       }
 
@@ -77,7 +77,7 @@
         return;
       }
 
-      updateUiState('running', 'Auto hebdo : reclamation en cours...');
+      updateUiState('running', uiText('engAutoWeeklyRunning'));
       return runEpicGamesModule();
     });
   }
@@ -108,8 +108,8 @@
       sessionStorage.setItem('FGC_epic_redirect_counts', JSON.stringify(counts));
     } catch (e) {}
     log(PLATFORM, 'error', 'La fiche construite pour le slug "' + pendingSlug + '" n\'existe pas (' + location.href + '). Slug bloque pendant ' + Math.round(CONFIG.epicBadUrlTtlMs / 86400000) + ' jour(s), retour sur /free-games.');
-    notifyUser('Free Games Claimer -- Epic Games', 'URL introuvable pour "' + pendingSlug + '". Reclamez ce jeu manuellement depuis la page des jeux gratuits.');
-    updateUiState('error', 'URL introuvable : ' + pendingSlug);
+    notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyUrlNotFound', pendingSlug));
+    updateUiState('error', uiText('engUrlNotFound', pendingSlug));
     setTimeout(function () { location.assign(epicStoreUrl('/free-games')); }, 1500);
     return true;
   }

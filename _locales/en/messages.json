@@ -557,6 +557,300 @@
   "updatedBody": {
     "message": "Version $1 is now running."
   },
+  "engReady": {
+    "message": "Ready"
+  },
+  "engSearching": {
+    "message": "Searching…"
+  },
+  "engAutoWeeklyRunning": {
+    "message": "Weekly rotation: claiming…"
+  },
+  "engUrlNotFound": {
+    "message": "Address not found: $1"
+  },
+  "engEpicClaiming": {
+    "message": "Epic: claiming…"
+  },
+  "engEpicPurchaseWaiting": {
+    "message": "Epic: checkout window open, waiting…"
+  },
+  "engEpicPurchaseStuck": {
+    "message": "Epic: the checkout window stayed open"
+  },
+  "engEpicWrongPage": {
+    "message": "Page not found: go back to /free-games"
+  },
+  "engEpicNotLoggedIn": {
+    "message": "Not signed in to Epic"
+  },
+  "engCaptcha": {
+    "message": "Captcha or two-step check detected"
+  },
+  "engEpicPageNotLoaded": {
+    "message": "The Epic page did not load"
+  },
+  "engEpicAllClaimed": {
+    "message": "All of this week's free games are already claimed"
+  },
+  "engEpicWorking": {
+    "message": "Epic: $1…"
+  },
+  "engEpicUnconfirmed": {
+    "message": "Epic: not confirmed ($1)"
+  },
+  "engEpicClaimed": {
+    "message": "Epic: $1 claimed"
+  },
+  "engEpicFailed": {
+    "message": "Epic: failed ($1) — $2"
+  },
+  "engEpicTally": {
+    "message": "Epic: $1 of $2 claimed"
+  },
+  "engEpicFindingCard": {
+    "message": "Epic: looking for “$1”…"
+  },
+  "engRepeatedFailure": {
+    "message": "Failed again: $1"
+  },
+  "engNoFreeGameHere": {
+    "message": "No free game here"
+  },
+  "engGogChecking": {
+    "message": "GOG: checking…"
+  },
+  "engGogNotLoggedIn": {
+    "message": "Not signed in to GOG"
+  },
+  "engGogNoGiveaway": {
+    "message": "No giveaway running here"
+  },
+  "engAlreadyClaimed": {
+    "message": "Already claimed"
+  },
+  "engGogClaimed": {
+    "message": "GOG: $1 claimed"
+  },
+  "engGogFailed": {
+    "message": "GOG: failed ($1)"
+  },
+  "engLunaSummary": {
+    "message": "Luna: $1 claimed, $2 code(s), $3 skipped, $4 failed"
+  },
+  "engLunaRemaining": {
+    "message": "Luna: $1 offer(s) left…"
+  },
+  "engLunaClaimed": {
+    "message": "Luna: $1 claimed"
+  },
+  "engLunaGogCode": {
+    "message": "Luna: GOG code received for $1"
+  },
+  "engLunaCodeCopied": {
+    "message": "Luna: $1 code copied ($2)"
+  },
+  "engLunaLinkNeeded": {
+    "message": "Luna: link your $1 account ($2)"
+  },
+  "engLunaFailed": {
+    "message": "Luna: failed ($1)"
+  },
+  "engLunaEmergency": {
+    "message": "Luna: emergency stop is on"
+  },
+  "engLunaPageDone": {
+    "message": "Luna: page already handled, nothing to do"
+  },
+  "engLunaPlatformSkipped": {
+    "message": "Luna: $1 platform skipped"
+  },
+  "engLunaPageUnreadable": {
+    "message": "Luna: unreadable page ($1)"
+  },
+  "engLunaUnexpectedLabel": {
+    "message": "Luna: unexpected button label ($1)"
+  },
+  "engLunaCodeReceived": {
+    "message": "Luna: code received for $1"
+  },
+  "engLunaAlreadyClaimed": {
+    "message": "Luna: already claimed ($1)"
+  },
+  "engLunaButtonMissing": {
+    "message": "Luna: button not found ($1)"
+  },
+  "engLunaClickRefused": {
+    "message": "Luna: click refused ($1)"
+  },
+  "engLunaWorkingOn": {
+    "message": "Luna: $1 ($2)…"
+  },
+  "engLunaNoOffer": {
+    "message": "Luna: no offer found"
+  },
+  "engLunaNothingNew": {
+    "message": "Luna: nothing new to claim"
+  },
+  "engLunaWorking": {
+    "message": "Luna: $1…"
+  },
+  "engLunaPagesToDo": {
+    "message": "Luna: $1 page(s) to go…"
+  },
+  "engLunaRelogin": {
+    "message": "Luna: sign in to Amazon again"
+  },
+  "engLunaChecking": {
+    "message": "Luna: checking…"
+  },
+  "engLunaOldDomain": {
+    "message": "Old domain: go to luna.amazon.*"
+  },
+  "engAmazonNotLoggedIn": {
+    "message": "Not signed in to Amazon"
+  },
+  "engGoTo": {
+    "message": "Go to $1"
+  },
+  "engLunaAutoChecking": {
+    "message": "Luna: automatic check…"
+  },
+  "engGogManualCodes": {
+    "message": "GOG: $1 code(s) to enter by hand (Codes tab of the popup)"
+  },
+  "engGogNoPendingCode": {
+    "message": "GOG: no code waiting"
+  },
+  "engGogRedeeming": {
+    "message": "GOG: redeeming the code for $1…"
+  },
+  "engGogLoginNeeded": {
+    "message": "GOG: sign-in required"
+  },
+  "engGogSubmitUnknown": {
+    "message": "GOG: unrecognised submit button"
+  },
+  "engGogClickRefused": {
+    "message": "GOG: click refused"
+  },
+  "engGogAdded": {
+    "message": "GOG: $1 added"
+  },
+  "engGogCodeUsed": {
+    "message": "GOG: code already used ($1)"
+  },
+  "engGogCaptcha": {
+    "message": "GOG: solve the captcha by hand"
+  },
+  "engGogUnconfirmed": {
+    "message": "GOG: redemption not confirmed ($1)"
+  },
+  "engGogError": {
+    "message": "GOG: $1"
+  },
+  "engGogAutoRedeem": {
+    "message": "GOG: redeeming codes automatically…"
+  },
+  "engUnsupportedDomain": {
+    "message": "Site not supported"
+  },
+  "engError": {
+    "message": "Error: $1"
+  },
+  "engNotifyEpicWaitingClick": {
+    "message": "An Epic window is waiting for a click on “$1”. Finish it in the tab."
+  },
+  "engNotifyPaymentCheck": {
+    "message": "Security check during checkout: please act yourself."
+  },
+  "engNotifyEpicFound": {
+    "message": "$1 free game(s) found: $2."
+  },
+  "engNotifyEpicAutoOff": {
+    "message": "$1 new free game(s). Automatic claiming is off: open the extension's button on the page and click “Claim all”."
+  },
+  "engNotifyEpicRelogin": {
+    "message": "New free games are out, but you need to sign in to Epic again."
+  },
+  "engNotifyUrlNotFound": {
+    "message": "Address not found for “$1”. Claim this game by hand from the free games page."
+  },
+  "engNotifyPurchaseWaiting": {
+    "message": "An Epic checkout window has been waiting for confirmation for $1 s. Take a look if it stays stuck."
+  },
+  "engNotifyPurchaseStuck": {
+    "message": "An Epic checkout window stayed open: finish it by hand."
+  },
+  "engNotifyEpicLogin": {
+    "message": "Epic sign-in required: sign in, then start claiming again."
+  },
+  "engNotifyCaptcha": {
+    "message": "Captcha or two-step check detected: over to you."
+  },
+  "engNotifyEpicUnconfirmed": {
+    "message": "Claim not confirmed for “$1”: finish it by hand if needed."
+  },
+  "engNotifyEpicFailed": {
+    "message": "Failed for “$1”: $2"
+  },
+  "engNotifyEpicCannotClaim": {
+    "message": "Could not claim “$1” automatically: claim it by hand on its page."
+  },
+  "engNotifyGogLogin": {
+    "message": "GOG sign-in required."
+  },
+  "engNotifySecurityCheck": {
+    "message": "Security check detected: please act yourself."
+  },
+  "engNotifyGogCodesOpen": {
+    "message": "$1 GOG code(s) to redeem: gog.com/redeem opens, and redemption is automatic if you are signed in to GOG."
+  },
+  "engNotifyGogCodesOpenShort": {
+    "message": "$1 GOG code(s) to redeem: gog.com/redeem opens."
+  },
+  "engNotifyLunaCode": {
+    "message": "$1 code for “$2”: $3."
+  },
+  "engNotifyCopied": {
+    "message": "Copied to the clipboard."
+  },
+  "engNotifyDeadline": {
+    "message": "Use it before $1."
+  },
+  "engNotifyPasteAt": {
+    "message": "Paste it on $1."
+  },
+  "engNotifyPasteOnSite": {
+    "message": "Paste it on the $1 website."
+  },
+  "engNotifyLunaLink": {
+    "message": "“$1”: first link your $2 account in the Luna settings, then try again."
+  },
+  "engNotifyAmazonRelogin": {
+    "message": "Amazon asks you to sign in again: sign in, and claiming will resume."
+  },
+  "engNotifyLunaOldDomain": {
+    "message": "Old domain. Go to luna.amazon.com$1 (or your local version, e.g. luna.amazon.co.uk)."
+  },
+  "engNotifyAmazonLogin": {
+    "message": "Amazon sign-in required: sign in on Luna, and claiming will start on the next page load."
+  },
+  "engNotifyAmazonCaptcha": {
+    "message": "Amazon captcha or two-step check detected: over to you."
+  },
+  "engNotifyGogReopen": {
+    "message": "Sign in to GOG, then reopen gog.com/redeem: $1 code(s) waiting."
+  },
+  "engNotifyGogAdded": {
+    "message": "“$1” added to your GOG library."
+  },
+  "engNotifyGogCaptcha": {
+    "message": "GOG captcha: solve it, then reopen gog.com/redeem to try again."
+  },
+  "engNotifyGogManual": {
+    "message": "Could not redeem the code for “$1” automatically: $2 (copied to the clipboard). Enter it on gog.com/redeem."
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: click to open, drag to move"
   },

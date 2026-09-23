@@ -5,7 +5,7 @@
        file est conservee telle quelle, pour pouvoir reprendre. */
     if (emergencyStopped()) {
       log(PLATFORM, 'error', 'Arret d\'urgence actif : la serie Luna s\'arrete ici (la file est conservee).');
-      updateUiState('error', 'Luna : arret d\'urgence actif');
+      updateUiState('error', uiText('engLunaEmergency'));
       return Promise.resolve();
     }
 
@@ -18,7 +18,7 @@
     var partOfSeries = inQueue || queue.length > 0;
     function proceed(uiMsg) {
       if (partOfSeries) return advanceLunaQueue(PLATFORM, offerId);
-      updateUiState('ok', uiMsg || 'Luna : fiche deja traitee, rien a faire');
+      updateUiState('ok', uiMsg || uiText('engLunaPageDone'));
     }
 
     return waitForElement('[data-a-target="buy-box"]', { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (buyBox) {
@@ -33,7 +33,7 @@
         saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'skipped', 'Plateforme ignoree : ' + label, title);
         if (partOfSeries) bumpLunaBatch('skipped');
         log(PLATFORM, 'info', 'Offre ignoree (plateforme ' + label + ' exclue par configuration) : ' + title);
-        return proceed('Luna : plateforme ' + label + ' ignoree');
+        return proceed(uiText('engLunaPlatformSkipped', label));
       }
 
       if (lunaOfferDone(offerId)) {
@@ -48,7 +48,7 @@
         recordLunaFailure(offerId, 'buy-box introuvable', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'error', 'Bloc "buy-box" introuvable sur la fiche "' + title + '" (structure de page differente ?).');
-        return proceed('Luna : fiche illisible (' + title + ')');
+        return proceed(uiText('engLunaPageUnreadable', title));
       }
 
       /* Le bouton est trouve par son ATTRIBUT, et c'est ce qui rend la
@@ -68,7 +68,7 @@
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton principal non reconnu pour "' + title + '" : "' + actionText(cta)
           + '". Rien n\'est clique. Boutons visibles : ' + (visibleActionLabels(8).join(' | ') || 'aucun'));
-        return proceed('Luna : libelle inattendu (' + title + ')');
+        return proceed(uiText('engLunaUnexpectedLabel', title));
       }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
@@ -77,22 +77,22 @@
           var lateCode = findLunaRevealedCode();
           if (lateCode && !lunaOfferDone(offerId)) {
             handleLunaClaimOutcome(PLATFORM, offerId, title, store, { type: 'code', code: lateCode });
-            return proceed('Luna : code recupere pour ' + title);
+            return proceed(uiText('engLunaCodeReceived', title));
           }
           // Deja pris avant nous -- plus tot, a la main, ou depuis un autre
           // ordinateur : c'est un constat, pas une reclamation. Le motif le dit,
           // et le popup affiche "deja recupere" au lieu de "recupere".
           saveHistoryEntry(PLATFORM, lunaHistoryKey(offerId), 'claimed', 'ALREADY_CLAIMED', title);
           log(PLATFORM, 'info', 'Offre deja reclamee : ' + title);
-          return proceed('Luna : deja reclame (' + title + ')');
+          return proceed(uiText('engLunaAlreadyClaimed', title));
         }
         recordLunaFailure(offerId, 'bouton "Obtenir le jeu" introuvable ou desactive', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Bouton "Obtenir le jeu" introuvable ou desactive pour "' + title + '".');
-        return proceed('Luna : bouton introuvable (' + title + ')');
+        return proceed(uiText('engLunaButtonMissing', title));
       }
 
-      updateUiState('running', 'Luna : ' + title + ' (' + label + ')...');
+      updateUiState('running', uiText('engLunaWorkingOn', title, label));
       log(PLATFORM, 'info', 'Clic sur "' + actionText(cta) + '" pour "' + title + '".');
       /* Par robustClick, comme Epic.
          L'ancien commentaire justifiait le clic direct par une posture -- ne
@@ -105,7 +105,7 @@
         recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
         log(PLATFORM, 'warn', 'Clic refuse pour "' + title + '" (arret d\'urgence, libelle payant ou reclic). Rien n\'a ete tente.');
-        return proceed('Luna : clic refuse (' + title + ')');
+        return proceed(uiText('engLunaClickRefused', title));
       }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
@@ -115,7 +115,7 @@
         if (inQueue || queue.length) return advanceLunaQueue(PLATFORM, offerId);
         var pendingGog = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         if (pendingGog.length && store === 'gog') {
-          notifyUser('Free Games Claimer -- GOG', pendingGog.length + ' code(s) GOG a echanger : la page gog.com/redeem s\'ouvre.');
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpenShort', pendingGog.length));
           openInTab(CONFIG.gogRedeemUrl, true);
         }
       });
@@ -150,7 +150,7 @@
       }
       if (!root && !offers.length) {
         log(PLATFORM, 'info', 'Aucune carte d\'offre trouvee sur la liste (structure differente ou chargement trop long).');
-        updateUiState('ok', 'Luna : aucune offre detectee');
+        updateUiState('ok', uiText('engLunaNoOffer'));
         return;
       }
       log(PLATFORM, 'info', offers.length + ' carte(s) FGWP detectee(s).');
@@ -182,7 +182,7 @@
 
       if (!internal.length && !external.length) {
         setAutoCooldown('luna', CONFIG.autoIdleCooldownMs);
-      updateUiState('ok', 'Luna : rien de nouveau a reclamer');
+      updateUiState('ok', uiText('engLunaNothingNew'));
         log(PLATFORM, 'info', 'Rien de nouveau a reclamer sur Luna.');
         return;
       }
@@ -193,11 +193,11 @@
         if (index >= internal.length) return Promise.resolve();
         if (emergencyStopped()) {
           log(PLATFORM, 'error', 'Arret d\'urgence actif : ' + (internal.length - index) + ' offre(s) directe(s) non traitee(s).');
-          updateUiState('error', 'Luna : arret d\'urgence actif');
+          updateUiState('error', uiText('engLunaEmergency'));
           return Promise.resolve();
         }
         var o = internal[index];
-        updateUiState('running', 'Luna : ' + o.title + '...');
+        updateUiState('running', uiText('engLunaWorking', o.title));
 
         /* Un echec ne doit pas arreter le lot : on le compte et on passe a
            l'offre suivante, comme le faisait l'ancienne branche d'erreur. */
@@ -245,7 +245,7 @@
           return;
         }
         log(PLATFORM, 'info', 'Navigation vers la premiere fiche : ' + external[0].title + ' (' + external[0].url + ')');
-        updateUiState('running', 'Luna : ' + external.length + ' fiche(s) a traiter...');
+        updateUiState('running', uiText('engLunaPagesToDo', external.length));
         setTimeout(function () { location.assign(external[0].url); }, 1000);
       });
     });

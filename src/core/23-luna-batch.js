@@ -50,9 +50,10 @@
   function finishLunaBatch(PLATFORM) {
     var batch = getLunaBatch();
     var summary = 'Luna : ' + batch.claimed + ' reclame(s), ' + batch.codes + ' code(s), ' + batch.skipped + ' ignore(s), ' + batch.failed + ' echec(s)';
-    updateUiState(batch.failed > 0 && batch.claimed + batch.codes === 0 ? 'error' : 'ok', summary);
+    var summaryText = uiText('engLunaSummary', batch.claimed, batch.codes, batch.skipped, batch.failed);
+    updateUiState(batch.failed > 0 && batch.claimed + batch.codes === 0 ? 'error' : 'ok', summaryText);
     log(PLATFORM, 'info', 'Serie Luna terminee. ' + summary + '.');
-    if (batch.total > 0) notifyUser('Free Games Claimer -- Amazon Luna', summary + '.');
+    if (batch.total > 0) notifyUser('Free Games Claimer -- Amazon Luna', summaryText);
     setAutoCooldown('luna', batch.failed > 0 ? CONFIG.autoFailureCooldownMs : CONFIG.autoIdleCooldownMs);
 
     var gogCodes = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
@@ -60,7 +61,7 @@
       batch.gogHandoffDone = true;
       saveLunaBatch(batch);
       log(PLATFORM, 'info', gogCodes.length + ' code(s) GOG en attente : ouverture de ' + CONFIG.gogRedeemUrl + ' pour l\'echange automatique.');
-      notifyUser('Free Games Claimer -- GOG', gogCodes.length + ' code(s) GOG a echanger : la page gog.com/redeem s\'ouvre, l\'echange est automatique si vous etes connecte sur GOG.');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpen', gogCodes.length));
       openInTab(CONFIG.gogRedeemUrl, true);
     }
     saveLunaQueue([]);
@@ -74,7 +75,7 @@
     saveLunaQueue(queue);
     if (queue.length) {
       log(PLATFORM, 'info', queue.length + ' fiche(s) restante(s), navigation vers : ' + queue[0].title + ' (' + queue[0].url + ')');
-      updateUiState('running', 'Luna : ' + queue.length + ' offre(s) restante(s)...');
+      updateUiState('running', uiText('engLunaRemaining', queue.length));
       setTimeout(function () { location.assign(queue[0].url); }, 1200);
       return;
     }
@@ -98,7 +99,7 @@
       saveHistoryEntry(PLATFORM, key, 'claimed', label, title);
       bumpLunaBatch('claimed');
       log(PLATFORM, 'info', 'OK Reclame : "' + title + '" (' + label + ').');
-      updateUiState('ok', 'Luna : ' + title + ' reclame');
+      updateUiState('ok', uiText('engLunaClaimed', title));
       return;
     }
 
@@ -115,7 +116,7 @@
         // en double, sans que rien ne le relise.
         saveHistoryEntry(PLATFORM, key, 'code_pending_gog', 'code en attente d\'echange', title);
         log(PLATFORM, 'info', 'Code GOG pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers)' : '') + '. Echange automatique sur gog.com/redeem a la fin de la serie.');
-        updateUiState('ok', 'Luna : code GOG obtenu pour ' + title);
+        updateUiState('ok', uiText('engLunaGogCode', title));
         return;
       }
       addPendingRedeemCode({ store: store, code: code, title: title, offerId: offerId, ts: Date.now(), attempts: CONFIG.gogRedeemMaxAttempts, deadline: deadline });
@@ -123,16 +124,15 @@
       var redeemUrl = redeemUrlFor(store);
       var msg = 'Code ' + label + ' pour "' + title + '" : ' + code + (copied ? ' (copie dans le presse-papiers).' : '.') + (deadline ? ' A utiliser avant le ' + deadline + '.' : '') + (redeemUrl ? ' Collez-le sur ' + redeemUrl : ' Collez-le sur le site de ' + label + '.');
       log(PLATFORM, 'info', msg);
-      updateUiState('ok', 'Luna : code ' + label + ' copie (' + title + ')');
-      try {
-        if (typeof GM_notification === 'function') {
-          GM_notification({ title: 'Free Games Claimer -- Amazon Luna', text: msg + (redeemUrl ? ' (cliquez pour ouvrir la page d\'echange)' : ''), timeout: 20000, silent: false, onclick: function () { if (redeemUrl) openInTab(redeemUrl, true); } });
-        } else {
-          notifyUser('Free Games Claimer -- Amazon Luna', msg, 20000);
-        }
-      } catch (e) {
-        notifyUser('Free Games Claimer -- Amazon Luna', msg, 20000);
-      }
+      updateUiState('ok', uiText('engLunaCodeCopied', label, title));
+      /* La notification en morceaux : chacun se traduit. Plus de "cliquez
+         pour ouvrir" -- dans l'extension, un clic sur la notification n'a
+         jamais rien ouvert. */
+      var notice = [uiText('engNotifyLunaCode', label, title, code)];
+      if (copied) notice.push(uiText('engNotifyCopied'));
+      if (deadline) notice.push(uiText('engNotifyDeadline', deadline));
+      notice.push(redeemUrl ? uiText('engNotifyPasteAt', redeemUrl) : uiText('engNotifyPasteOnSite', label));
+      notifyUser('Free Games Claimer -- Amazon Luna', notice, 20000);
       return;
     }
 
@@ -140,14 +140,14 @@
       saveHistoryEntry(PLATFORM, key, 'needs_link', label, title);
       bumpLunaBatch('skipped');
       log(PLATFORM, 'warn', '"' + title + '" : liaison du compte ' + label + ' requise (parametres Luna > Associer un compte). Offre passee.');
-      notifyUser('Free Games Claimer -- Amazon Luna', '"' + title + '" : associez d\'abord votre compte ' + label + ' dans les parametres Luna, puis relancez.');
-      updateUiState('error', 'Luna : liaison ' + label + ' requise (' + title + ')');
+      notifyUser('Free Games Claimer -- Amazon Luna', uiText('engNotifyLunaLink', title, label));
+      updateUiState('error', uiText('engLunaLinkNeeded', label, title));
       return;
     }
 
     var attempts = recordLunaFailure(offerId, 'Aucun resultat identifiable apres le clic (' + outcome.type + ')', title);
     bumpLunaBatch('failed');
     log(PLATFORM, 'error', 'ECHEC pour "' + title + '" (' + label + ') : aucun resultat identifiable apres le clic (essai ' + attempts + '/' + CONFIG.lunaMaxAttemptsPerOffer + ').');
-    updateUiState('error', 'Luna : echec (' + title + ')');
+    updateUiState('error', uiText('engLunaFailed', title));
   }
 

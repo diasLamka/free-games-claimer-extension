@@ -61,7 +61,8 @@ import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
-import { intlLocale, setLocale, t } from './lib/i18n.js';
+import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
+import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -847,10 +848,14 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   }
 
   if (msg.type === 'fgc-notify') {
+    /* Le moteur n'envoie plus une phrase mais des pieces, { key, args }
+       (2.55.0) : elles se composent ici, dans la langue choisie. */
     // create() rend une promesse : le try/catch d'origine ne voyait jamais son rejet.
-    api.notifications.create('', {
-      type: 'basic', iconUrl: 'icons/icon128.png', title: String(msg.title || ''), message: String(msg.text || ''),
-    }).catch((e) => record('warn', 'notification impossible', e));
+    langue
+      .then(() => api.notifications.create('', {
+        type: 'basic', iconUrl: 'icons/icon128.png', title: engineTitle(msg.title), message: composeEngineText(msg.text, t),
+      }))
+      .catch((e) => record('warn', 'notification impossible', e));
     return;
   }
 
@@ -1001,6 +1006,8 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         facts,
         lines: factLines(facts, { t, storeLabel: (s) => STORE_LABELS[s] || s, dateText }),
         labels: launcherLabels(t),
+        /* Les etats du moteur, en modeles : le lanceur les remplit (2.55.0). */
+        engine: engineTemplates(t, keysWith('eng')),
       });
     })().catch(() => sendResponse({ facts: [] }));
     return true;

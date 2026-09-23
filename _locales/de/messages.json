@@ -557,6 +557,300 @@
   "updatedBody": {
     "message": "Version $1 läuft jetzt."
   },
+  "engReady": {
+    "message": "Bereit"
+  },
+  "engSearching": {
+    "message": "Suche läuft…"
+  },
+  "engAutoWeeklyRunning": {
+    "message": "Wöchentliche Rotation: wird abgeholt…"
+  },
+  "engUrlNotFound": {
+    "message": "Adresse nicht gefunden: $1"
+  },
+  "engEpicClaiming": {
+    "message": "Epic: wird abgeholt…"
+  },
+  "engEpicPurchaseWaiting": {
+    "message": "Epic: Kauffenster offen, warte…"
+  },
+  "engEpicPurchaseStuck": {
+    "message": "Epic: Das Kauffenster ist offen geblieben"
+  },
+  "engEpicWrongPage": {
+    "message": "Seite nicht gefunden: zurück zu /free-games"
+  },
+  "engEpicNotLoggedIn": {
+    "message": "Nicht bei Epic angemeldet"
+  },
+  "engCaptcha": {
+    "message": "Captcha oder Zwei-Faktor-Prüfung erkannt"
+  },
+  "engEpicPageNotLoaded": {
+    "message": "Die Epic-Seite wurde nicht geladen"
+  },
+  "engEpicAllClaimed": {
+    "message": "Alle Gratisspiele dieser Woche sind schon abgeholt"
+  },
+  "engEpicWorking": {
+    "message": "Epic: $1…"
+  },
+  "engEpicUnconfirmed": {
+    "message": "Epic: nicht bestätigt ($1)"
+  },
+  "engEpicClaimed": {
+    "message": "Epic: $1 abgeholt"
+  },
+  "engEpicFailed": {
+    "message": "Epic: fehlgeschlagen ($1) – $2"
+  },
+  "engEpicTally": {
+    "message": "Epic: $1 von $2 abgeholt"
+  },
+  "engEpicFindingCard": {
+    "message": "Epic: suche „$1“…"
+  },
+  "engRepeatedFailure": {
+    "message": "Wiederholt fehlgeschlagen: $1"
+  },
+  "engNoFreeGameHere": {
+    "message": "Hier gibt es kein Gratisspiel"
+  },
+  "engGogChecking": {
+    "message": "GOG: wird geprüft…"
+  },
+  "engGogNotLoggedIn": {
+    "message": "Nicht bei GOG angemeldet"
+  },
+  "engGogNoGiveaway": {
+    "message": "Hier läuft kein Giveaway"
+  },
+  "engAlreadyClaimed": {
+    "message": "Schon abgeholt"
+  },
+  "engGogClaimed": {
+    "message": "GOG: $1 abgeholt"
+  },
+  "engGogFailed": {
+    "message": "GOG: fehlgeschlagen ($1)"
+  },
+  "engLunaSummary": {
+    "message": "Luna: $1 abgeholt, $2 Code(s), $3 übersprungen, $4 fehlgeschlagen"
+  },
+  "engLunaRemaining": {
+    "message": "Luna: noch $1 Angebot(e)…"
+  },
+  "engLunaClaimed": {
+    "message": "Luna: $1 abgeholt"
+  },
+  "engLunaGogCode": {
+    "message": "Luna: GOG-Code für $1 erhalten"
+  },
+  "engLunaCodeCopied": {
+    "message": "Luna: $1-Code kopiert ($2)"
+  },
+  "engLunaLinkNeeded": {
+    "message": "Luna: $1-Konto verknüpfen ($2)"
+  },
+  "engLunaFailed": {
+    "message": "Luna: fehlgeschlagen ($1)"
+  },
+  "engLunaEmergency": {
+    "message": "Luna: Not-Aus ist aktiv"
+  },
+  "engLunaPageDone": {
+    "message": "Luna: Seite schon erledigt, nichts zu tun"
+  },
+  "engLunaPlatformSkipped": {
+    "message": "Luna: Plattform $1 übersprungen"
+  },
+  "engLunaPageUnreadable": {
+    "message": "Luna: Seite unlesbar ($1)"
+  },
+  "engLunaUnexpectedLabel": {
+    "message": "Luna: unerwartete Beschriftung ($1)"
+  },
+  "engLunaCodeReceived": {
+    "message": "Luna: Code für $1 erhalten"
+  },
+  "engLunaAlreadyClaimed": {
+    "message": "Luna: schon abgeholt ($1)"
+  },
+  "engLunaButtonMissing": {
+    "message": "Luna: Schaltfläche nicht gefunden ($1)"
+  },
+  "engLunaClickRefused": {
+    "message": "Luna: Klick verweigert ($1)"
+  },
+  "engLunaWorkingOn": {
+    "message": "Luna: $1 ($2)…"
+  },
+  "engLunaNoOffer": {
+    "message": "Luna: kein Angebot gefunden"
+  },
+  "engLunaNothingNew": {
+    "message": "Luna: nichts Neues abzuholen"
+  },
+  "engLunaWorking": {
+    "message": "Luna: $1…"
+  },
+  "engLunaPagesToDo": {
+    "message": "Luna: $1 Seite(n) zu bearbeiten…"
+  },
+  "engLunaRelogin": {
+    "message": "Luna: erneute Amazon-Anmeldung nötig"
+  },
+  "engLunaChecking": {
+    "message": "Luna: wird geprüft…"
+  },
+  "engLunaOldDomain": {
+    "message": "Alte Domain: geh zu luna.amazon.*"
+  },
+  "engAmazonNotLoggedIn": {
+    "message": "Nicht bei Amazon angemeldet"
+  },
+  "engGoTo": {
+    "message": "Geh zu $1"
+  },
+  "engLunaAutoChecking": {
+    "message": "Luna: automatische Prüfung…"
+  },
+  "engGogManualCodes": {
+    "message": "GOG: $1 Code(s) von Hand einzugeben (Reiter Codes im Popup)"
+  },
+  "engGogNoPendingCode": {
+    "message": "GOG: kein Code wartet"
+  },
+  "engGogRedeeming": {
+    "message": "GOG: löse den Code für $1 ein…"
+  },
+  "engGogLoginNeeded": {
+    "message": "GOG: Anmeldung erforderlich"
+  },
+  "engGogSubmitUnknown": {
+    "message": "GOG: Senden-Schaltfläche nicht erkannt"
+  },
+  "engGogClickRefused": {
+    "message": "GOG: Klick verweigert"
+  },
+  "engGogAdded": {
+    "message": "GOG: $1 hinzugefügt"
+  },
+  "engGogCodeUsed": {
+    "message": "GOG: Code schon verwendet ($1)"
+  },
+  "engGogCaptcha": {
+    "message": "GOG: Captcha von Hand lösen"
+  },
+  "engGogUnconfirmed": {
+    "message": "GOG: Einlösung nicht bestätigt ($1)"
+  },
+  "engGogError": {
+    "message": "GOG: $1"
+  },
+  "engGogAutoRedeem": {
+    "message": "GOG: Codes werden automatisch eingelöst…"
+  },
+  "engUnsupportedDomain": {
+    "message": "Seite wird nicht unterstützt"
+  },
+  "engError": {
+    "message": "Fehler: $1"
+  },
+  "engNotifyEpicWaitingClick": {
+    "message": "Ein Epic-Fenster wartet auf einen Klick auf „$1“. Schließ es im Tab ab."
+  },
+  "engNotifyPaymentCheck": {
+    "message": "Sicherheitsprüfung beim Bezahlen: Jetzt bist du dran."
+  },
+  "engNotifyEpicFound": {
+    "message": "$1 Gratisspiel(e) gefunden: $2."
+  },
+  "engNotifyEpicAutoOff": {
+    "message": "$1 neue(s) Gratisspiel(e). Automatisches Abholen ist aus: Öffne die Schaltfläche der Erweiterung auf der Seite und klicke auf „Alle abholen“."
+  },
+  "engNotifyEpicRelogin": {
+    "message": "Neue Gratisspiele sind da, aber du musst dich erneut bei Epic anmelden."
+  },
+  "engNotifyUrlNotFound": {
+    "message": "Adresse für „$1“ nicht gefunden. Hol dieses Spiel von Hand auf der Gratisspiele-Seite ab."
+  },
+  "engNotifyPurchaseWaiting": {
+    "message": "Ein Epic-Kauffenster wartet seit $1 s auf eine Bestätigung. Schau nach, falls es hängen bleibt."
+  },
+  "engNotifyPurchaseStuck": {
+    "message": "Ein Epic-Kauffenster ist offen geblieben: Schließ es von Hand ab."
+  },
+  "engNotifyEpicLogin": {
+    "message": "Epic-Anmeldung erforderlich: Melde dich an und starte das Abholen erneut."
+  },
+  "engNotifyCaptcha": {
+    "message": "Captcha oder Zwei-Faktor-Prüfung erkannt: Jetzt bist du dran."
+  },
+  "engNotifyEpicUnconfirmed": {
+    "message": "Abholen von „$1“ nicht bestätigt: Schließ es bei Bedarf von Hand ab."
+  },
+  "engNotifyEpicFailed": {
+    "message": "Fehlgeschlagen für „$1“: $2"
+  },
+  "engNotifyEpicCannotClaim": {
+    "message": "„$1“ konnte nicht automatisch abgeholt werden: Hol es von Hand auf seiner Seite ab."
+  },
+  "engNotifyGogLogin": {
+    "message": "GOG-Anmeldung erforderlich."
+  },
+  "engNotifySecurityCheck": {
+    "message": "Sicherheitsprüfung erkannt: Jetzt bist du dran."
+  },
+  "engNotifyGogCodesOpen": {
+    "message": "$1 GOG-Code(s) einzulösen: gog.com/redeem öffnet sich, das Einlösen läuft automatisch, wenn du bei GOG angemeldet bist."
+  },
+  "engNotifyGogCodesOpenShort": {
+    "message": "$1 GOG-Code(s) einzulösen: gog.com/redeem öffnet sich."
+  },
+  "engNotifyLunaCode": {
+    "message": "$1-Code für „$2“: $3."
+  },
+  "engNotifyCopied": {
+    "message": "In die Zwischenablage kopiert."
+  },
+  "engNotifyDeadline": {
+    "message": "Vor dem $1 einlösen."
+  },
+  "engNotifyPasteAt": {
+    "message": "Füge ihn auf $1 ein."
+  },
+  "engNotifyPasteOnSite": {
+    "message": "Füge ihn auf der Website von $1 ein."
+  },
+  "engNotifyLunaLink": {
+    "message": "„$1“: Verknüpfe zuerst dein $2-Konto in den Luna-Einstellungen und versuch es dann erneut."
+  },
+  "engNotifyAmazonRelogin": {
+    "message": "Amazon verlangt eine erneute Anmeldung: Melde dich an, dann geht das Abholen weiter."
+  },
+  "engNotifyLunaOldDomain": {
+    "message": "Alte Domain. Geh zu luna.amazon.com$1 (oder zu deiner lokalen Version, z. B. luna.amazon.de)."
+  },
+  "engNotifyAmazonLogin": {
+    "message": "Amazon-Anmeldung erforderlich: Melde dich bei Luna an, das Abholen startet beim nächsten Laden."
+  },
+  "engNotifyAmazonCaptcha": {
+    "message": "Amazon-Captcha oder Zwei-Faktor-Prüfung erkannt: Jetzt bist du dran."
+  },
+  "engNotifyGogReopen": {
+    "message": "Melde dich bei GOG an und öffne gog.com/redeem erneut: $1 Code(s) warten."
+  },
+  "engNotifyGogAdded": {
+    "message": "„$1“ zu deiner GOG-Bibliothek hinzugefügt."
+  },
+  "engNotifyGogCaptcha": {
+    "message": "GOG-Captcha: Löse es und öffne dann gog.com/redeem erneut."
+  },
+  "engNotifyGogManual": {
+    "message": "Der Code für „$1“ konnte nicht automatisch eingelöst werden: $2 (in die Zwischenablage kopiert). Gib ihn auf gog.com/redeem ein."
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: zum Öffnen klicken, zum Verschieben ziehen"
   },

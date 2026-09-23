@@ -4,6 +4,52 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.55.0 -- 2026-09-23
+
+**Le moteur parle la langue du lecteur, avec ses accents**
+
+Le moteur est ecrit en ASCII -- le build le refuse autrement -- et ne sait
+pas quelle langue lit l'utilisateur. Ses 67 etats (le bouton de page, la
+bulle, le panneau) et ses 30 notifications etaient donc en francais sans
+accents pour tout le monde : « Tous les jeux gratuits de la semaine sont deja
+recuperes », meme dans une interface en allemand.
+
+Il ne compose plus de phrase. `uiText('engX', valeurs...)` rend une piece,
+`{ key, args }` ; 98 cles `eng...` vivent dans `_locales`, en anglais,
+francais, allemand et espagnol, accents compris (`watch/engine-text.js`) :
+
+- **l'etat du moteur** est compose par le lanceur, avec les modeles que le
+  worker lui envoie dans la langue choisie ; a defaut, avec ceux du
+  navigateur ;
+- **les notifications** sont composees par le worker, qui verifie chaque
+  piece comme une donnee venue d'une page : une cle `eng...` seulement, six
+  valeurs au plus, bornees. Le titre prend un vrai tiret : « Free Games
+  Claimer — GOG ».
+
+Au passage, des phrases qui mentaient :
+
+- « cliquez sur Claim » renvoyait a un bouton qui n'existe plus depuis la
+  2.51.0 : elles nomment « Tout recuperer », dans le bouton de l'extension ;
+- « relancez l'echange (menu Tampermonkey) » : il n'y a plus de menu ; il
+  faut rouvrir gog.com/redeem ;
+- le code Luna promettait « cliquez pour ouvrir la page d'echange » : dans
+  l'extension, un clic sur la notification n'a jamais rien ouvert ;
+- « codes a saisir manuellement (voir console) » : ils sont dans l'onglet
+  Codes du popup.
+
+Le build refuse une cle `uiText` absente des traductions ; un test verifie
+que chaque appel passe autant de valeurs que la phrase en attend, dans les
+quatre langues. Nouveau temoin fige (`reference-v2.55.0.js`). Les commandes
+de console du moteur (`FGC.menu()`), reservees au developpeur, restent en
+francais.
+
+Verifie dans Chromium, extension chargee : la bulle en francais accentue,
+puis en allemand avec la langue forcee ; une notification de code Luna
+composee en francais, allemand et espagnol ; « Aucun jeu gratuit ici » apres
+un vrai clic sur « Tout recuperer ».
+
+1172 tests.
+
 ## 2.54.0 -- 2026-09-23
 
 **Trois declencheurs de plus pour la mise a jour**

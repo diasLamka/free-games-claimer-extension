@@ -1,20 +1,20 @@
   function runGogModule() {
     var PLATFORM = 'GOG';
     log(PLATFORM, 'info', 'Demarrage du module GOG.');
-    updateUiState('running', 'GOG : verification...');
+    updateUiState('running', uiText('engGogChecking'));
 
     if (isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Session GOG non detectee.');
-      notifyUser('Free Games Claimer -- GOG', 'Connexion requise sur GOG.');
-      updateUiState('error', 'Non connecte sur GOG');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogLogin'));
+      updateUiState('error', uiText('engGogNotLoggedIn'));
       return Promise.resolve();
     }
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ').', challenge.detail);
-      notifyUser('Free Games Claimer -- GOG', 'Verification de securite detectee : action manuelle requise.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- GOG', uiText('engNotifySecurityCheck'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -22,7 +22,7 @@
 
     if (!claimBtn) {
       log(PLATFORM, 'info', 'Aucun bouton de recuperation visible (peut-etre deja reclame, ou pas de giveaway actif, ou le texte du bouton a change).');
-      updateUiState('ok', 'Aucun giveaway actif ici');
+      updateUiState('ok', uiText('engGogNoGiveaway'));
       return Promise.resolve();
     }
 
@@ -30,7 +30,7 @@
     var title = (titleEl && titleEl.textContent && titleEl.textContent.trim()) || location.href;
     if (alreadyHandled(PLATFORM, title)) {
       log(PLATFORM, 'info', 'Deja recupere : ' + title);
-      updateUiState('ok', 'Deja recupere');
+      updateUiState('ok', uiText('engAlreadyClaimed'));
       return Promise.resolve();
     }
 
@@ -42,10 +42,10 @@
     }, { label: 'recuperation GOG (' + title + ')', retries: 3 }).then(function () {
       saveHistoryEntry(PLATFORM, title, 'claimed');
       log(PLATFORM, 'info', 'OK Recupere : ' + title);
-      updateUiState('ok', 'GOG : ' + title + ' recupere');
+      updateUiState('ok', uiText('engGogClaimed', title));
     }).catch(function (err) {
       log(PLATFORM, 'error', 'ECHEC pour "' + title + '" : ' + err.message);
-      updateUiState('error', 'GOG : echec (' + title + ')');
+      updateUiState('error', uiText('engGogFailed', title));
     });
   }
 

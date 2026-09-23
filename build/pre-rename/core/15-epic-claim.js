@@ -232,9 +232,8 @@
             + 's : la sentinelle de la frame a la main, on continue d\'attendre.');
           if (!epicSettleNoticeSent && elapsed >= CONFIG.epicPurchaseStuckNoticeMs) {
             epicSettleNoticeSent = true;
-            updateUiState('running', 'Epic : fenetre d\'achat ouverte, en attente...');
-            notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic attend une confirmation depuis '
-              + Math.round(elapsed / 1000) + 's. Jetez-y un oeil si elle reste bloquee.');
+            updateUiState('running', uiText('engEpicPurchaseWaiting'));
+            notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPurchaseWaiting', Math.round(elapsed / 1000)));
           }
           return round();
         }
@@ -276,8 +275,8 @@
     }).catch(function () {
       log(PLATFORM, 'warn', 'Fenetre d\'achat toujours ouverte apres '
         + Math.round(CONFIG.epicPurchaseSettleMaxMs / 1000) + 's : on passe au suivant. Terminez-la manuellement.');
-      notifyUser('Free Games Claimer -- Epic Games', 'Une fenetre d\'achat Epic est restee ouverte : terminez-la manuellement.');
-      updateUiState('error', 'Epic : fenetre d\'achat restee ouverte');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPurchaseStuck'));
+      updateUiState('error', uiText('engEpicPurchaseStuck'));
       return null;
     });
   }

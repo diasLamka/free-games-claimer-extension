@@ -21,22 +21,22 @@
 
     if (isEpicNotFoundPage(location.pathname)) {
       log(PLATFORM, 'warn', 'Page /not-found : aucune reclamation possible ici. Rendez-vous sur ' + epicStoreUrl('/free-games') + '.');
-      updateUiState('error', 'Page introuvable -- retournez sur /free-games');
+      updateUiState('error', uiText('engEpicWrongPage'));
       return Promise.resolve();
     }
 
     if (isLikelyLoggedOut()) {
       log(PLATFORM, 'warn', 'Aucune session active detectee. Connectez-vous manuellement puis relancez.');
-      notifyUser('Free Games Claimer -- Epic Games', 'Connexion requise. Connectez-vous manuellement puis relancez le script.');
-      updateUiState('error', 'Non connecte sur Epic');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicLogin'));
+      updateUiState('error', uiText('engEpicNotLoggedIn'));
       return Promise.resolve();
     }
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
       log(PLATFORM, 'warn', 'Defi de securite detecte (' + challenge.type + ') avant meme le chargement de la page. Arret.', challenge.detail);
-      notifyUser('Free Games Claimer -- Epic Games', 'Captcha/2FA detecte : intervention manuelle necessaire.');
-      updateUiState('error', 'Captcha/2FA detecte');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyCaptcha'));
+      updateUiState('error', uiText('engCaptcha'));
       return Promise.resolve();
     }
 
@@ -44,7 +44,7 @@
       return waitForElement(function () { return document.querySelector('main'); }, { timeout: 12000 });
     }, { label: 'chargement de la page Epic Games Store' }).catch(function (e) {
       log(PLATFORM, 'error', 'La page principale ne s\'est pas chargee a temps.', e);
-      updateUiState('error', 'Page Epic non chargee');
+      updateUiState('error', uiText('engEpicPageNotLoaded'));
       return Promise.reject('STOP');
     }).then(function () {
       return fetchCurrentEpicFreebies().catch(function (e) {
@@ -79,7 +79,7 @@
 
         if (unclaimed.length === 0) {
           setAutoCooldown('epic', CONFIG.autoIdleCooldownMs);
-          updateUiState('ok', 'Tous les jeux gratuits de la semaine sont deja recuperes');
+          updateUiState('ok', uiText('engEpicAllClaimed'));
           log(PLATFORM, 'info', 'Aucun jeu gratuit restant a reclamer selon l\'API.');
           return;
         }
@@ -89,7 +89,7 @@
           try { sessionStorage.removeItem('FGC_epic_redirect_counts'); } catch (e) {}
 
           log(PLATFORM, 'info', 'Fiche produit courante identifiee comme jeu gratuit non reclame : ' + currentMatch.title);
-          updateUiState('running', 'Epic : ' + currentMatch.title + '...');
+          updateUiState('running', uiText('engEpicWorking', currentMatch.title));
           resetEpicSettleClock();
           return withRetry(function () {
             return claimEpicGame(document, currentMatch.title, PLATFORM);
@@ -99,18 +99,18 @@
             return sleep(CONFIG.epicClaimVerifyDelayMs).then(function () {
               if (result !== 'ALREADY_OWNED' && isEpicGameUnownedOnCurrentPage()) {
                 log(PLATFORM, 'warn', 'Verification : "' + currentMatch.title + '" affiche encore le bouton d\'achat. Rien enregistre, nouvelle tentative au prochain passage.');
-                notifyUser('Free Games Claimer -- Epic Games', 'Reclamation non confirmee pour "' + currentMatch.title + '" : terminez-la manuellement si besoin.');
-                updateUiState('error', 'Epic : non confirme (' + currentMatch.title + ')');
+                notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicUnconfirmed', currentMatch.title));
+                updateUiState('error', uiText('engEpicUnconfirmed', currentMatch.title));
                 return;
               }
               saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result, currentMatch.title);
-              updateUiState('ok', 'Epic : ' + currentMatch.title + ' recupere');
+              updateUiState('ok', uiText('engEpicClaimed', currentMatch.title));
               log(PLATFORM, 'info', 'OK Recupere avec succes : ' + currentMatch.title + ' (' + result + ')');
             });
           }).catch(function (err) {
-            updateUiState('error', 'Epic : echec (' + currentMatch.title + ') -- ' + err.message);
+            updateUiState('error', uiText('engEpicFailed', currentMatch.title, err.message));
             log(PLATFORM, 'error', 'ECHEC de la recuperation pour "' + currentMatch.title + '" : ' + err.message + '. Aucune entree "claimed" enregistree.');
-            notifyUser('Free Games Claimer -- Epic Games', 'Echec pour "' + currentMatch.title + '" : ' + err.message);
+            notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFailed', currentMatch.title, err.message));
           });
         }
 
@@ -129,13 +129,13 @@
 
         function processNextInner(index) {
           if (index >= unclaimed.length) {
-            updateUiState(successCount > 0 ? 'ok' : 'error', 'Epic : ' + successCount + '/' + unclaimed.length + ' recupere(s)');
+            updateUiState(successCount > 0 ? 'ok' : 'error', uiText('engEpicTally', successCount, unclaimed.length));
             log(PLATFORM, 'info', 'Module Epic Games termine (detection API).');
             return;
           }
 
           var game = unclaimed[index];
-          updateUiState('running', 'Epic : recherche de la carte "' + game.title + '"...');
+          updateUiState('running', uiText('engEpicFindingCard', game.title));
 
           // Les cartes de /free-games sont rendues cote client : on attend
           // leur apparition avant de decider qu'il faut rediriger.
@@ -143,7 +143,7 @@
           return waitForEpicAnchor(game.slug, waitMs).then(function (anchor) {
             if (anchor) {
               log(PLATFORM, 'info', 'Carte trouvee par slug pour : ' + game.title + ' (' + anchor.getAttribute('href') + ')');
-              updateUiState('running', 'Epic : ' + game.title + '...');
+              updateUiState('running', uiText('engEpicWorking', game.title));
               // Si le clic sur la carte provoque un rechargement complet (et
               // non une navigation SPA), la fiche reprendra la reclamation.
               setEpicPendingSlug(game.slug);
@@ -167,8 +167,8 @@
             var redirectCount = getRedirectCount(game.slug);
             if (redirectCount >= CONFIG.epicMaxRedirectsPerSlug) {
               log(PLATFORM, 'error', 'Trop de redirections deja tentees pour "' + game.title + '" (' + redirectCount + ') sans succes. Abandon automatique : reclamez-le manuellement via ' + game.url + '.');
-              notifyUser('Free Games Claimer -- Epic Games', 'Impossible de reclamer automatiquement "' + game.title + '". Cliquez sur Claim manuellement sur sa page.');
-              updateUiState('error', 'Echec repete : ' + game.title);
+              notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicCannotClaim', game.title));
+              updateUiState('error', uiText('engRepeatedFailure', game.title));
               return processNext(index + 1);
             }
             incrementRedirectCount(game.slug);
@@ -184,7 +184,7 @@
 
       if (cards.length === 0) {
         log(PLATFORM, 'info', 'Aucun jeu gratuit detecte (ni via l\'API, ni via le DOM). Verifiez que vous etes bien sur ' + epicStoreUrl('/free-games') + ' et que vous etes connecte.');
-        updateUiState('ok', 'Aucun jeu gratuit ici');
+        updateUiState('ok', uiText('engNoFreeGameHere'));
         return;
       }
 
@@ -200,7 +200,7 @@
 
       function processCardInner(index) {
         if (index >= cards.length) {
-          updateUiState(successCount2 > 0 ? 'ok' : 'error', 'Epic : ' + successCount2 + '/' + cards.length + ' recupere(s)');
+          updateUiState(successCount2 > 0 ? 'ok' : 'error', uiText('engEpicTally', successCount2, cards.length));
           log(PLATFORM, 'info', 'Module Epic Games termine (repli DOM).');
           return;
         }
@@ -216,7 +216,7 @@
         }
 
         log(PLATFORM, 'info', 'Traitement de : ' + title);
-        updateUiState('running', 'Epic : ' + title + '...');
+        updateUiState('running', uiText('engEpicWorking', title));
         resetEpicSettleClock();
         return withRetry(function () {
           return claimEpicGame(card, title, PLATFORM);

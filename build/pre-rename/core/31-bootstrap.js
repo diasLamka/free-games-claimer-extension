@@ -204,7 +204,7 @@
   function demarrerNormalement() {
     setTimeout(function () {
       injectFloatingButton();
-      updateUiState('idle', 'Pret -- cliquez sur Claim');
+      updateUiState('idle', uiText('engReady'));
       scheduleEpicAutoWatcher();
       startEpicPostPurchaseModalWatcher();
       var pauseEpic = autoCooldownRemaining('epic');

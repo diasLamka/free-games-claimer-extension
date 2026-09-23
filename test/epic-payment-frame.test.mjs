@@ -252,8 +252,10 @@ test('le filet ne previent qu\'une fois', () => {
   ecran(sandbox, [ajouter]);
   for (let i = 0; i < 10; i++) fgc.epicPaymentFramePass();
 
-  assert.equal(notifications.length, 1, notifications.map((n) => n.text).join(' / '));
-  assert.match(notifications[0].text, /biblioth/i);
+  assert.equal(notifications.length, 1, JSON.stringify(notifications.map((n) => n.text)));
+  // Depuis la 2.55.0, une piece { key, args } : le worker compose la phrase.
+  assert.equal(notifications[0].text.key, 'engNotifyEpicWaitingClick');
+  assert.match(notifications[0].text.args[0], /biblioth/i);
 });
 
 /* ------------------------------- le cadre du dessus n'enchaine pas */

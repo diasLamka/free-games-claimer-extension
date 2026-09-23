@@ -161,8 +161,7 @@
     log(EPIC_PAYMENT_PLATFORM, 'warn', 'La frame d\'achat n\'a pas bouge depuis '
       + Math.round((now - epicPaymentActionAt) / 1000) + 's alors que "' + text
       + '" est toujours a l\'ecran. Ecran : ' + epicPaymentScreen);
-    notifyUser('Free Games Claimer -- Epic Games',
-      'Une fenetre Epic attend un clic sur "' + text + '". Terminez-la dans l\'onglet.');
+    notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicWaitingClick', text));
   }
 
   // Une passe. Rend true quand elle a REELLEMENT clique quelque chose.
@@ -175,7 +174,7 @@
       epicPaymentStopped = true;
       epicPaymentSawSomethingAt = 0;
       log(EPIC_PAYMENT_PLATFORM, 'warn', 'Defi de securite (' + challenge.type + ') dans la frame d\'achat. Sentinelle arretee.', challenge.detail);
-      notifyUser('Free Games Claimer -- Epic Games', 'Verification de securite dans le paiement : action manuelle requise.');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPaymentCheck'));
       return false;
     }
 
@@ -304,5 +303,5 @@
     return Promise.resolve();
   }
 
-  var UI_STATE = { status: 'idle', message: 'Pret' };
+  var UI_STATE = { status: 'idle', message: uiText('engReady') };
 

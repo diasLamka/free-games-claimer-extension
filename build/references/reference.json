@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.51.0.js",
-  "sha256": "670ABDBF98BE9DC00EFD296C5C881C084D680F076494776EC13491BF6EDE115F",
-  "octets": 218996,
-  "version": "2.51.0",
-  "motif": "2.51.0 : le moteur ne pose plus rien dans la page, il declare ses commandes au lanceur (content/launcher.js)"
+  "fichier": "reference-v2.55.0.js",
+  "sha256": "4643937FF1B1935E1D70CA3C684E72FF1F046FED9D3CF1CCD2B7B862EC9EE10D",
+  "octets": 218206,
+  "version": "2.55.0",
+  "motif": "2.55.0 : le moteur ne compose plus de phrase, il envoie des cles traduites (uiText)"
 }

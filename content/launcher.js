@@ -89,6 +89,8 @@
     message: '',
     lignes: [],
     libelles: {},
+    /* Les phrases du moteur, en modeles ($1..$4), envoyees par le worker. */
+    modeles: {},
     ouvert: false,
     pos: { x: X_DEFAUT, y: Y_DEFAUT },
     bulleFaits: false,
@@ -117,6 +119,32 @@
     if (typeof v === 'string' && v) return v;
     try { v = api.i18n.getMessage(CLES[nom]); } catch (e) { v = ''; }
     return v || '';
+  }
+
+  /**
+   * Un texte du moteur, dans la langue du lecteur (2.55.0).
+   *
+   * Le moteur n'envoie plus de phrase : une piece { key, args }, ou plusieurs.
+   * Le modele vient du worker (langue choisie dans les reglages) ; a defaut,
+   * du navigateur. Une chaine -- moteur d'avant -- passe telle quelle, et une
+   * cle sans traduction s'affiche en clair : une cle visible est un defaut
+   * qu'on signale, un texte vide un defaut qui se cache.
+   */
+  function composer(m) {
+    if (typeof m === 'string') return m;
+    if (Array.isArray(m)) return m.map(composer).filter(Boolean).join(' ');
+    if (!m || typeof m.key !== 'string') return '';
+    var args = Array.isArray(m.args) ? m.args.map(String) : [];
+    var modele = etat.modeles[m.key];
+    if (typeof modele !== 'string') {
+      var navigateur = '';
+      try { navigateur = api.i18n.getMessage(m.key, args); } catch (e) { navigateur = ''; }
+      return navigateur || m.key;
+    }
+    return modele.replace(/\$(\d)/g, function (tout, d) {
+      var v = args[Number(d) - 1];
+      return v === undefined ? '' : v;
+    });
   }
 
   function el(tag, style, texte) {
@@ -610,7 +638,7 @@
     var dire = etat.moteur && etat.statut !== 'idle' && etat.message;
     p.statut.style.display = dire ? 'flex' : 'none';
     p.statutPoint.style.background = C[etat.statut] || C.idle;
-    p.statutTexte.textContent = dire ? etat.message : '';
+    p.statutTexte.textContent = dire ? composer(etat.message) : '';
 
     while (p.faits.firstChild) p.faits.removeChild(p.faits.firstChild);
     for (var i = 0; i < etat.lignes.length; i++) {
@@ -800,9 +828,9 @@
         bulle ; le reste attend qu'on ouvre le panneau. */
     status: function (statut, message) {
       etat.statut = STATUTS[statut] ? statut : 'idle';
-      etat.message = String(message || '');
+      etat.message = message || '';
       mettreAJour();
-      if (etat.moteur && (etat.statut === 'ok' || etat.statut === 'error')) montrerBulle(etat.message, etat.statut);
+      if (etat.moteur && (etat.statut === 'ok' || etat.statut === 'error')) montrerBulle(composer(etat.message), etat.statut);
     },
   };
 
@@ -870,6 +898,13 @@
             if (typeof recus[nom] === 'string' && recus[nom]) libelles[nom] = recus[nom];
           }
           etat.libelles = libelles;
+
+          var modeles = {};
+          var recu = reponse.engine || {};
+          for (var cle in recu) {
+            if (/^eng[A-Za-z0-9]+$/.test(cle) && typeof recu[cle] === 'string') modeles[cle] = recu[cle].slice(0, 300);
+          }
+          etat.modeles = modeles;
 
           var facts = Array.isArray(reponse.facts) ? reponse.facts : [];
           var lignes = Array.isArray(reponse.lines) && reponse.lines.length === facts.length ? reponse.lines : [];
