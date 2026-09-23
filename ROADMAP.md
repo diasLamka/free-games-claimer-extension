@@ -207,8 +207,12 @@ les pastilles Deck restent simplement absentes -- rien ne s'affiche a tort.
 `freeGamesPromotions`, filtre de plateforme ou non ; ils sont dans l'API de
 decouverte de l'application, rubrique `mobile-android-free-game` /
 `mobile-ios-free-game`. Reste a mesurer : la forme de `purchase` (la date de
-fin) et de `media` (la vignette) -- la mesure V8 recopie desormais la
-premiere offre de la rubrique en entier ; un rapport de plus suffira.
+fin) et de `media` (la vignette). Le rapport de la 2.57.0 aurait pu couper
+`purchase` ; depuis la 2.59.0, la mesure V8 dit pour chaque jeu la date et
+la vignette que l'extension retient, et d'ou elle les tient ; elle recopie
+`purchase` et `media` a part -- leur forme complete et leurs valeurs, pris
+sur le premier jeu qu'elle lit mal. Un
+rapport de plus suffira : ou il confirme la lecture, ou il dit quoi corriger.
 
 *Pourquoi.* Epic offre aussi, chaque semaine, des jeux pour Android et iOS.
 L'extension ne les voit pas, et on ne sait pas ou Epic les expose. La

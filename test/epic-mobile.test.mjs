@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   MOBILE_WORDS, findHints, promoElements, summariseElements, compareTitles, summariseUnknown, mobileVerdict,
+  freeTopicDump, readTally,
 } from '../watch/epic-mobile.js';
 
 const ROOT = new URL('../', import.meta.url);
@@ -140,6 +141,73 @@ test('le verdict : rien nulle part, ou seulement dans la page', () => {
   assert.match(page.detail, /Seule la page/);
 });
 
+/* ------------------------------------------------------------ la rubrique (2.59.0) */
+
+const T = Date.parse('2026-09-24T18:00:00Z');
+const FIN = '2026-10-01T15:00:00.000Z';
+
+/** Une offre de la rubrique, avec un `ageRating` lourd AVANT `media` et `purchase`, comme les vraies. */
+function offreLourde(title, { purchase, media } = {}) {
+  return {
+    offerId: `o-${title}`,
+    sandboxId: 'bac',
+    content: {
+      ageRating: { ageRating: { title: 'PEGI 12', contentDescriptors: Array.from({ length: 60 }, (_, i) => ({ id: i, title: `descripteur ${i}`, image: 'https://cdn.example/x.png' })) } },
+      attention: null,
+      catalogItemId: 'cat',
+      categories: ['freegames'],
+      mapping: { slug: `${title.toLowerCase()}-android-abc123` },
+      media: media === undefined ? { screenshots: Array.from({ length: 30 }, (_, i) => ({ imageSrc: `https://cdn1.epicgames.com/s/${i}.jpg` })), card16x9: { imageSrc: 'https://cdn1.epicgames.com/s/wide.jpg' } } : media,
+      purchase: purchase === undefined ? [{ purchaseType: 'Claim', discount: { discountEndDate: FIN } }] : purchase,
+      title,
+      systemSpecs: { platform: 'android' },
+    },
+  };
+}
+
+const reponse = (offres) => ({ data: [
+  { topicId: 'mobile-android-top', offers: [offreLourde('Autre')] },
+  { topicId: 'mobile-android-free-game', type: 'hero', title: 'Jeux gratuits', offers: offres },
+] });
+
+test('le rapport recopie purchase et media en entier, meme quand l\'offre depasse 6000 caracteres', () => {
+  const offres = [offreLourde('Calico'), offreLourde('Mutazione', { purchase: [{ purchaseType: 'Claim' }], media: {} })];
+  assert.ok(JSON.stringify(offres[0]).length > 6000, 'la 2.57.0 aurait coupe avant purchase');
+  const [f] = freeTopicDump(reponse(offres), T);
+  assert.equal(f.topicId, 'mobile-android-free-game');
+  assert.equal(f.offers, 2);
+  assert.deepEqual(f.contentKeys, ['ageRating', 'attention', 'catalogItemId', 'categories', 'mapping', 'media', 'purchase', 'title', 'systemSpecs']);
+  // Recopies depuis le jeu que la lecture manque : c'est lui qui dira quoi corriger.
+  assert.equal(f.sampleTitle, 'Mutazione');
+  assert.equal(f.purchase, '[{"purchaseType":"Claim"}]');
+  assert.equal(f.media, '{}');
+
+  const [tout] = freeTopicDump(reponse([offreLourde('Calico')]), T);
+  assert.equal(tout.sampleTitle, 'Calico', 'tout est lu : le premier');
+  assert.equal(tout.purchase, JSON.stringify(offres[0].content.purchase));
+  assert.match(tout.purchaseShape, /purchaseType: texte, discount: \{discountEndDate: texte\}/);
+  assert.match(tout.mediaShape, /card16x9: \{imageSrc: texte\}/);
+  assert.ok(tout.media.length <= 3000);
+  assert.deepEqual(f.read, [
+    { title: 'Calico', end: FIN, endPath: 'purchase[0].discount.discountEndDate', image: 'https://cdn1.epicgames.com/s/wide.jpg', imagePath: 'media.card16x9.imageSrc' },
+    { title: 'Mutazione', end: null, endPath: null, image: null, imagePath: null },
+  ]);
+});
+
+test('le verdict dit ce que la source comprend de la rubrique', () => {
+  const tout = { discover: [{ ok: true, status: 200, freeTopic: freeTopicDump(reponse([offreLourde('Calico')]), T) }] };
+  assert.deepEqual(readTally(tout.discover), { games: 1, ends: 1, images: 1 });
+  const v = mobileVerdict(tout);
+  assert.equal(v.level, 'ok');
+  assert.match(v.title, /date de fin et vignette comprises/);
+
+  const partiel = { discover: [{ ok: true, status: 200, freeTopic: freeTopicDump(reponse([offreLourde('Calico'), offreLourde('Mutazione', { purchase: [], media: {} })]), T) }] };
+  const w = mobileVerdict(partiel);
+  assert.equal(w.level, 'warn');
+  assert.match(w.detail, /2 jeu\(x\).*date de fin lue pour 1, vignette pour 1/);
+  assert.match(w.detail, /recopie purchase et media/);
+});
+
 /* ------------------------------------------------------------ la page de diagnostic */
 
 test('la mesure est branchee, lit sans cookies, et reste sur des hotes deja declares', () => {
@@ -149,6 +217,7 @@ test('la mesure est branchee, lit sans cookies, et reste sur des hotes deja decl
   assert.match(js, /fetch\(url, \{ credentials: 'omit', cache: 'no-store' \}\)/);
   assert.match(js, /\$\('mobile-run'\)\.addEventListener\('click', lancerMobile\)/);
   assert.match(js, /## V8 -- jeux mobiles Epic/);
+  for (const ligne of ['purchase, forme', 'media, forme', 'lu par l\\\'extension']) assert.ok(js.includes(ligne), ligne);
   for (const id of ['mobile-run', 'mobile-state', 'm-promo', 'm-plateformes', 'm-decouverte', 'm-page', 'm-verdict']) {
     assert.match(html, new RegExp(`id="${id}"`), id);
   }

@@ -4,6 +4,44 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.59.0 -- 2026-09-23
+
+**Jeux mobiles Epic : la date de fin et la vignette, reprises**
+
+La 2.57.0 lisait la date de fin et la vignette d'un jeu mobile « avec
+prudence », faute de connaitre la forme de `purchase` et de `media` -- et la
+carte disait souvent « fin inconnue », avec une lettre a la place de l'image.
+L'API d'Epic reste injoignable depuis l'endroit ou ce code est ecrit : la
+forme exacte viendra du prochain rapport V8. Cette version fait en sorte que
+ce rapport suffise, et lit mieux d'ici la.
+
+- **Un defaut de la mesure, corrige.** La V8 recopiait la premiere offre
+  ENTIERE, coupee a 6000 caracteres. Or `ageRating` et `media` passent avant
+  `purchase` dans l'objet : la coupe pouvait tomber avant le champ cherche.
+  `purchase` et `media` ont maintenant chacun leur ligne -- leur forme
+  complete, puis leurs valeurs --, prises sur le premier jeu que la lecture
+  manque (c'est lui qui dira quoi corriger), sinon sur le premier.
+- **Le rapport dit ce que l'extension comprend.** Pour chaque jeu de la
+  rubrique : la date de fin et la vignette retenues, et le chemin ou elles
+  ont ete prises (`purchase[0].discount.discountEndDate`,
+  `media.card16x9.imageSrc`...). La page l'affiche aussi (« date de fin lue
+  pour 3, vignette pour 4 »), et le verdict dit si tout est lu.
+- **La vignette est choisie, plus prise au hasard.** Chaque image recoit une
+  note d'apres les cles qui y menent et le genre que son objet declare :
+  large, 16x9, carte ou vignette gagnent ; logo, icone, portrait ou capture
+  perdent. Les images sans extension du CDN d'Epic sont acceptees, les
+  videos toujours refusees.
+- **La date de fin se lit sous plus de noms** -- `end_date`, `validUntil`,
+  `endsAt` -- et en secondes ou en millisecondes, toujours a condition d'etre
+  a venir. Un debut n'est jamais pris pour une fin, et une chaine sans annee
+  n'est pas une date.
+
+Verifie : les lecteurs sur des formes plausibles, dont une offre de plus de
+6000 caracteres ; dans Chromium, la mesure V8 sur des reponses simulees, un
+jeu lu en entier et un jeu sans date.
+
+1209 tests.
+
 ## 2.58.0 -- 2026-09-23
 
 **Le tableau de bord : le popup, en grand**

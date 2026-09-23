@@ -22,7 +22,10 @@
  * CE QUI NE L'EST PAS : la forme de `purchase` (donc la date de fin) et celle
  * de `media` (donc la vignette). Elles sont lues avec prudence : une date ou
  * une image qu'on ne trouve pas vaut « on ne sait pas », jamais une valeur
- * inventee. Sans date de fin, une offre vit tant que la rubrique la porte --
+ * inventee. Depuis la 2.59.0, chaque lecture dit aussi le CHEMIN ou elle a
+ * pris ce qu'elle retient (findEnd, findImage), et la mesure V8 le recopie :
+ * le rapport montre si la lecture est juste, et sinon purchase et media du
+ * jeu manque. Sans date de fin, une offre vit tant que la rubrique la porte --
  * la source fait autorite sur son magasin, et une offre qui en disparait est
  * terminee.
  *
@@ -81,42 +84,108 @@ export function freeTopicOffers(json) {
   return libres.flatMap((r) => (Array.isArray(r.offers) ? r.offers : []));
 }
 
-/** La premiere image https trouvee dans `media`, dont la forme n'est pas mesuree. */
-export function readImage(media) {
-  let trouvee = null;
-  (function walk(v, profondeur) {
-    if (trouvee || profondeur > 6 || v === null || v === undefined) return;
+/** Les mots d'une cle : « discountEndDate » -> « discount end date », « end_date » -> « end date ». */
+const mots = (k) => String(k).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').toLowerCase();
+
+/* ------------------------------------------------------------ la vignette */
+
+const URL_HTTPS = /^https:\/\/[^\s"'<>]{1,2000}$/;
+const EXT_IMAGE = /\.(?:jpe?g|png|webp|avif)(?:[?#][^\s"']*)?$/i;
+/** Ce qui n'est pas une image, meme sur le CDN d'Epic. */
+const EXT_AUTRE = /\.(?:mp4|webm|m3u8|mov|gif|svg|json|js|html?)(?:[?#]|$)/i;
+/** Le CDN d'images d'Epic sert aussi des adresses sans extension. */
+const CDN_EPIC = /^https:\/\/cdn\d*\.(?:epicgames\.com|unrealengine\.com)\//i;
+/** Ce qui fait une bonne vignette PAYSAGE, et ce qui n'en fait pas une. */
+const INDICE_BON = /wide|16 ?x ?9|landscape|hero|banner|featured|card|thumb|key ?art|cover/;
+const INDICE_MAUVAIS = /logo|icon|rating|avatar|badge|screenshot|video|trailer|tall|portrait|3 ?x ?4|9 ?x ?16|vertical/;
+
+/**
+ * La vignette dans `media`, et le chemin ou elle a ete prise.
+ *
+ * La forme de `media` n'est pas mesuree (2.57.0). Plutot que la premiere image
+ * venue -- un logo, un portrait --, chaque image https recoit une note d'apres
+ * les cles qui y menent et le genre que son objet declare
+ * (`{ type: 'OfferImageWide', url }`) : large, 16x9, carte ou vignette
+ * gagnent ; logo, icone, portrait ou capture perdent. A note egale, la
+ * premiere. Le chemin part dans le rapport V8 : il dit d'ou vient l'image.
+ */
+export function findImage(media) {
+  let meilleure = null;
+  (function walk(v, chemin, indice, profondeur) {
+    if (profondeur > 7 || v === null || v === undefined) return;
     if (typeof v === 'string') {
-      if (/^https:\/\/[^\s"']+\.(?:jpe?g|png|webp)(?:\?[^\s"']*)?$/i.test(v)) trouvee = v;
+      const s = v.trim();
+      if (!URL_HTTPS.test(s) || EXT_AUTRE.test(s)) return;
+      if (!EXT_IMAGE.test(s) && !CDN_EPIC.test(s)) return;
+      const note = (INDICE_BON.test(indice) ? 2 : 0) - (INDICE_MAUVAIS.test(indice) ? 3 : 0);
+      if (!meilleure || note > meilleure.note) meilleure = { url: s, path: chemin, note };
       return;
     }
-    if (Array.isArray(v)) { for (const x of v) walk(x, profondeur + 1); return; }
-    if (typeof v === 'object') for (const x of Object.values(v)) walk(x, profondeur + 1);
-  }(media, 0));
-  return trouvee;
+    if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${chemin}[${i}]`, indice, profondeur + 1)); return; }
+    if (typeof v === 'object') {
+      const genre = ['type', 'name', 'imageType', 'kind', 'role']
+        .map((k) => (typeof v[k] === 'string' ? mots(v[k]) : '')).join(' ');
+      for (const [k, x] of Object.entries(v)) walk(x, `${chemin}.${k}`, `${indice} ${mots(k)} ${genre}`, profondeur + 1);
+    }
+  }(media, 'media', '', 0));
+  return meilleure && { url: meilleure.url, path: meilleure.path };
+}
+
+/** La vignette seule, ou null. */
+export function readImage(media) {
+  const trouvee = findImage(media);
+  return trouvee ? trouvee.url : null;
+}
+
+/* ------------------------------------------------------------ la date de fin */
+
+/** Une cle qui dit « fin ». « weekend », « legend » ou « startDate » ne passent pas. */
+const CLE_FIN = /\bends? ?(date|time|at|on)?$|\bexpir|\buntil$|\bvalid (to|thru|through)$/;
+
+/** Un instant : une date ecrite (avec son annee), ou des secondes, ou des millisecondes. */
+function instant(v) {
+  if (typeof v === 'string' && /\b20\d\d\b/.test(v)) {
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    if (v > 1e12 && v < 1e14) return v;
+    if (v > 1e9 && v < 1e11) return v * 1000;
+  }
+  return null;
 }
 
 /**
- * Une date de fin dans `purchase`, dont la forme n'est pas mesuree : une cle
- * qui dit « fin » et une valeur qui se lit comme une date. Sinon null.
+ * La date de fin dans `purchase`, et le chemin ou elle a ete lue : une cle qui
+ * dit « fin », une valeur qui se lit comme un instant A VENIR. S'il y en a
+ * plusieurs, la plus proche -- une offre finit a sa premiere fin. Sinon null :
+ * une date qu'on ne trouve pas vaut « on ne sait pas », jamais une valeur
+ * inventee.
  */
-export function readEnd(purchase, now) {
+export function findEnd(purchase, now) {
   let fin = null;
-  (function walk(v, profondeur) {
+  (function walk(v, chemin, profondeur) {
     if (profondeur > 6 || !v || typeof v !== 'object') return;
-    for (const [k, x] of Object.entries(v)) {
-      /* La cle se lit mot a mot : « discountEndDate » -> « discount end date ».
-         « weekend » ou « legend » ne passent pas. */
-      const mots = k.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-      if (typeof x === 'string' && /\bends? ?(date|time|at)?$|\bexpir/.test(mots)) {
-        const t = Date.parse(x);
-        if (Number.isFinite(t) && t > now && (fin === null || t < fin)) fin = t;
-      } else {
-        walk(x, profondeur + 1);
+    const entrees = Array.isArray(v) ? v.map((x, i) => [i, x]) : Object.entries(v);
+    for (const [k, x] of entrees) {
+      const ici = typeof k === 'number' ? `${chemin}[${k}]` : `${chemin}.${k}`;
+      if (typeof k === 'string' && CLE_FIN.test(mots(k))) {
+        const t = instant(x);
+        if (t !== null) {
+          if (t > now && (fin === null || t < fin.at)) fin = { at: t, path: ici };
+          continue;
+        }
       }
+      walk(x, ici, profondeur + 1);
     }
-  }(purchase, 0));
+  }(purchase, 'purchase', 0));
   return fin;
+}
+
+/** La date de fin seule, en millisecondes, ou null. */
+export function readEnd(purchase, now) {
+  const fin = findEnd(purchase, now);
+  return fin ? fin.at : null;
 }
 
 /**

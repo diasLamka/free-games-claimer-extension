@@ -11,7 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  NAME, PAGE_URL, discoverUrl, baseSlug, freeTopicOffers, readImage, readEnd, mapMobileOffers, discover,
+  NAME, PAGE_URL, discoverUrl, baseSlug, freeTopicOffers, readImage, readEnd, findImage, findEnd, mapMobileOffers, discover,
 } from '../watch/sources/epic-mobile.js';
 import { SOURCES, CLAIMABLE_STORES, DETECT_ONLY_STORES, activeSourcesFor } from '../watch/sources/index.js';
 import { STORES, STORE_LABELS, makeOffer } from '../watch/offer.js';
@@ -96,6 +96,46 @@ test('la date de fin : une cle qui dit « fin », une date a venir -- ou rien', 
   assert.equal(readEnd({ endDate: 'bientot' }, T), null);
   // Deux fins : la plus proche.
   assert.equal(readEnd({ a: { endDate: '2026-10-08T15:00:00Z' }, b: { endDate: futur } }, T), Date.parse(futur));
+});
+
+/* 2.59.0 : la lecture dit d'ou elle tient ce qu'elle retient, et choisit mieux. */
+
+test('la vignette : une image PAYSAGE plutot qu\'un logo ou un portrait, et son chemin', () => {
+  const media = {
+    logo: { imageSrc: 'https://cdn1.epicgames.com/spt/calico-logo.png' },
+    card3x4: { imageSrc: 'https://cdn1.epicgames.com/spt/calico-tall.jpg' },
+    card16x9: { imageSrc: 'https://cdn1.epicgames.com/spt/calico-wide.jpg' },
+    screenshots: [{ imageSrc: 'https://cdn1.epicgames.com/spt/calico-shot1.jpg' }],
+  };
+  assert.deepEqual(findImage(media), { url: 'https://cdn1.epicgames.com/spt/calico-wide.jpg', path: 'media.card16x9.imageSrc' });
+
+  // Le genre declare par l'objet compte comme une cle.
+  const images = [
+    { type: 'OfferImageTall', url: 'https://cdn1.epicgames.com/offer/tall.jpg' },
+    { type: 'OfferImageWide', url: 'https://cdn1.epicgames.com/offer/wide.jpg' },
+  ];
+  assert.deepEqual(findImage(images), { url: 'https://cdn1.epicgames.com/offer/wide.jpg', path: 'media[1].url' });
+
+  // Le CDN d'Epic sert des images sans extension ; une video reste une video.
+  assert.equal(readImage({ hero: 'https://cdn2.unrealengine.com/calico-hero-1920x1080-abc123' }), 'https://cdn2.unrealengine.com/calico-hero-1920x1080-abc123');
+  assert.equal(readImage({ trailer: 'https://cdn1.epicgames.com/calico/trailer.mp4' }), null);
+  assert.equal(readImage({ hero: 'https://ailleurs.example/sans-extension' }), null, 'hors du CDN d\'Epic, une extension d\'image');
+  // Seul un logo : mieux qu'une lettre.
+  assert.equal(readImage({ logo: 'https://cdn1.epicgames.com/spt/logo.png' }), 'https://cdn1.epicgames.com/spt/logo.png');
+});
+
+test('la date de fin : son chemin, les instants chiffres, et « until »', () => {
+  const futur = '2026-10-01T15:00:00.000Z';
+  assert.deepEqual(findEnd([{ purchaseType: 'Claim', discount: { discountEndDate: futur } }], T),
+    { at: Date.parse(futur), path: 'purchase[0].discount.discountEndDate' });
+  assert.equal(readEnd({ end_date: futur }, T), Date.parse(futur));
+  assert.equal(readEnd({ validUntil: futur }, T), Date.parse(futur));
+  assert.equal(readEnd({ endsAt: Date.parse(futur) }, T), Date.parse(futur), 'en millisecondes');
+  assert.equal(readEnd({ endTime: Date.parse(futur) / 1000 }, T), Date.parse(futur), 'en secondes');
+  assert.equal(readEnd({ endDate: 7 }, T), null, 'un nombre qui n\'est pas un instant');
+  assert.equal(readEnd({ endDate: '5' }, T), null, 'une chaine sans annee n\'est pas une date');
+  assert.equal(readEnd({ purchaseStateEffectiveDate: futur, startDate: futur }, T), null, 'un debut n\'est pas une fin');
+  assert.equal(findEnd(undefined, T), null);
 });
 
 /* ------------------------------------------------------------ les offres */

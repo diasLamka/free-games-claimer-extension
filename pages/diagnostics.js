@@ -9,7 +9,7 @@
  */
 import { queryHtml } from '../watch/offscreen.js';
 import { epicApiUrls, KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from '../watch/locale.js';
-import { compareTitles, freeTopicDump, mobileVerdict, promoElements, summariseElements, summariseUnknown } from '../watch/epic-mobile.js';
+import { compareTitles, freeTopicDump, mobileVerdict, promoElements, readTally, summariseElements, summariseUnknown } from '../watch/epic-mobile.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -657,10 +657,14 @@ async function lancerMobile() {
     $('m-plateformes').textContent = out.platforms.map((p) => (p.ok
       ? `${p.platform} : ${p.count} offre(s), ${p.diff.onlySecond.length} de plus, ${p.diff.onlyFirst.length} de moins`
       : `${p.platform} : ${p.error || 'HTTP ' + p.status}`)).join(' | ');
-    $('m-decouverte').textContent = out.discover.map((d) => (d.ok
-      ? `${d.platform} : HTTP ${d.status}, ${d.bytes} octets`
-        + (d.summary ? `, ${d.summary.titled.length} objet(s) titre(s), ${d.summary.free.length} mention(s) de gratuite` : ', pas du JSON')
-      : `${d.platform} : echec (${d.error})`)).join(' | ');
+    $('m-decouverte').textContent = out.discover.map((d) => {
+      if (!d.ok) return `${d.platform} : echec (${d.error})`;
+      if (!d.summary) return `${d.platform} : HTTP ${d.status}, ${d.bytes} octets, pas du JSON`;
+      // Ce que la source comprend de la rubrique : la seule question encore ouverte.
+      const lu = readTally([d]);
+      return `${d.platform} : HTTP ${d.status}, ${d.bytes} octets`
+        + (lu.games ? `, ${lu.games} jeu(x) offert(s) -- date de fin lue pour ${lu.ends}, vignette pour ${lu.images}` : ', rubrique des jeux offerts absente');
+    }).join(' | ');
     const page = out.page || {};
     $('m-page').textContent = page.ok
       ? `HTTP ${page.status}, ${page.bytes} octets -- mobile : affiche ${page.matches && page.matches.motMobile ? 'oui' : 'non'}`
@@ -771,7 +775,16 @@ function majRapport() {
       for (const h of d.summary.mobile) l.push(`    mobile ${h.path} = ${h.value}`);
       for (const f of d.freeTopic || []) {
         l.push(`    RUBRIQUE ${f.topicId} « ${f.title} » type=${f.type} taille=${f.size} lien=${JSON.stringify(f.link)} : ${f.offers} offre(s)`);
-        if (f.first) l.push(`    premiere offre : ${f.first}`);
+        l.push(`    recopie depuis : ${f.sampleTitle}`);
+        l.push(`    cles de content : ${(f.contentKeys || []).join(', ')}`);
+        l.push(`    purchase, forme : ${f.purchaseShape}`);
+        l.push(`    purchase : ${f.purchase}`);
+        l.push(`    media, forme : ${f.mediaShape}`);
+        l.push(`    media : ${f.media}`);
+        l.push('    lu par l\'extension :');
+        for (const x of f.read || []) {
+          l.push(`      - ${x.title} : fin ${x.end ? x.end + ' <- ' + x.endPath : '?'} ; vignette ${x.image ? x.image + ' <- ' + x.imagePath : '?'}`);
+        }
       }
     }
     l.push('### 4. page des jeux gratuits');
