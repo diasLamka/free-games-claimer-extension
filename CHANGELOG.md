@@ -4,6 +4,28 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.45.0 -- 2026-09-23
+
+**Un echec se dit quand il est certain, pas cinq minutes plus tard**
+
+En mode pilote, le verdict est l'entree d'historique que le module ecrit. Un
+module qui finit sans rien ecrire -- bouton introuvable, reclamation non
+confirmee, page qui ne se charge pas -- laissait l'orchestrateur attendre tout
+son budget, cinq minutes d'onglet ouvert, pour conclure « failed, delai
+depasse ».
+
+Il conclut maintenant trois secondes apres la fin du module : une entree
+nouvelle d'abord, puis l'entree deja la (2.41.0), puis un defi de securite, et
+seulement ensuite l'echec. Deux gardes :
+
+- aucune execution Epic ou Luna ne doit etre en cours -- un second appel du
+  module rend tout de suite une promesse resolue pendant que le premier
+  travaille encore ;
+- le verdict reste `failed`, pas « indetermine ». Le recul est le meme, et le
+  canari continue de le compter : « indetermine » est pour lui une panne de
+  notre fait, et un bouton introuvable finit exactement ainsi quand c'est le
+  magasin qui a bouge.
+
 ## 2.44.1 -- 2026-09-23
 
 **Le dernier recours de la resolution de slug ne servait plus**

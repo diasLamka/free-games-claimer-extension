@@ -93,6 +93,19 @@
     };
   }
 
+  // Le module a-t-il fini pour de bon ? Rendu depuis PILOT_SETTLE_MS, et
+  // aucune execution Epic ou Luna encore en cours : un module deja lance rend
+  // tout de suite une promesse resolue pendant que l'autre travaille encore,
+  // et conclure a ce moment-la annoncerait un echec avant la reclamation.
+  function pilotSettled(moduleDoneAt, now) {
+    return !!moduleDoneAt && now - moduleDoneAt >= PILOT_SETTLE_MS && !epicModuleRunSince && !lunaModuleRunSince;
+  }
+
+  // Le motif d'un module fini sans rien noter. Volontairement pas dans les
+  // motifs "de notre fait" du canari (watch/canary.js) : un bouton introuvable
+  // finit exactement ainsi, et c'est le magasin qui a bouge.
+  var PILOT_EMPTY_REASON = 'le module a termine sans rien noter';
+
   function runClaimOrder(budgetMs) {
     var platform = platformNameForHost(location.hostname);
     var before = historyFingerprint(platform);
@@ -117,8 +130,9 @@
       // Une entree nouvelle d'abord ; a defaut, et seulement une fois le
       // module termine, l'entree deja la. Le delai laisse passer une ecriture
       // tardive, qui dirait mieux ce qui vient de se passer.
+      var settled = pilotSettled(moduleDoneAt, Date.now());
       var found = freshEntry(platform, before)
-        || (moduleDoneAt && Date.now() - moduleDoneAt >= PILOT_SETTLE_MS ? standingEntry(platform, location.href) : null);
+        || (settled ? standingEntry(platform, location.href) : null);
       if (found) {
         clearInterval(timer);
         sendToPilot({
@@ -133,6 +147,15 @@
       if (detectSecurityChallenge()) {
         clearInterval(timer);
         sendToPilot({ type: 'fgc-verdict', verdict: 'challenge', plateforme: platform });
+        return;
+      }
+      // Fini, rien de nouveau, rien de deja traite, pas de defi : c'est un
+      // echec, et l'attendre jusqu'au bout du budget -- cinq minutes -- ne
+      // changerait que le moment ou on le dit. Meme verdict qu'a l'expiration,
+      // pour que le recul et le canari le lisent comme avant.
+      if (settled) {
+        clearInterval(timer);
+        sendToPilot({ type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform });
         return;
       }
       if (Date.now() - debut > budgetMs) {

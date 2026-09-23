@@ -140,6 +140,36 @@ test('ni une fiche inconnue, ni un echec, ni une page sans jeu ne rendent de ver
   assert.equal(fgc.standingEntry('GOG', 'https://www.gog.com/fr/game/x'), null);
 });
 
+/* ------------------------------- un module fini sans rien noter (2.45.0) */
+
+test('le mode pilote conclut quelques secondes apres la fin du module, pas avant', () => {
+  const { fgc } = loadEngine({ pathname: '/p/jeu' });
+  const now = 1790000000000;
+  assert.equal(fgc.pilotSettled(0, now), false, 'module pas encore termine');
+  assert.equal(fgc.pilotSettled(now - 1000, now), false, 'une ecriture tardive peut encore arriver');
+  assert.equal(fgc.pilotSettled(now - fgc.PILOT_SETTLE_MS, now), true);
+});
+
+test('tant qu\'une execution Epic est en cours, rien n\'est conclu', () => {
+  /* Un second appel du module rend tout de suite une promesse resolue, pendant
+     que le premier travaille encore : conclure la annoncerait un echec avant
+     meme la reclamation. Ici l'execution attend une page qui ne vient pas. */
+  const { fgc } = loadEngine({ pathname: '/p/jeu' });
+  fgc.runEpicGamesModule();
+  assert.equal(fgc.pilotSettled(Date.now() - 60000, Date.now()), false);
+});
+
+test('un module fini sans rien noter reste un echec que le canari compte', async () => {
+  /* Meme verdict qu'a l'expiration du budget, cinq minutes plus tot : le
+     recul et le canari le lisent comme avant. « indetermine » aurait aveugle
+     le canari, qui le tient pour une panne de notre fait. */
+  const { classify, KINDS } = await import('../watch/canary.js');
+  const { FINAL_VERDICTS } = await import('../watch/claim.js');
+  const { fgc } = loadEngine({ pathname: '/p/jeu' });
+  assert.equal(classify('failed', fgc.PILOT_EMPTY_REASON), KINDS.SELECTOR);
+  assert.equal(FINAL_VERDICTS.includes('failed'), false, 'et il sera retente');
+});
+
 /* ----------------------- « Dans la bibliotheque » rendu apres le chargement */
 
 function ownedButton() {
