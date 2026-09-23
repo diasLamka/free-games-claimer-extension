@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (25 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog |
+| Veille | `veille:*` (27 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi) |
 | Moteur | `FGC_*` (`gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -26,7 +26,7 @@ liste des onglets pilotes.
 
 ## Ce qui peut quitter la machine
 
-**Deux choses, chacune coupee par defaut et par son propre interrupteur.**
+**Trois choses, chacune coupee par defaut et par son propre interrupteur.**
 
 Le reglage `syncCodes` (Reglages -> Sauvegarde, `watch/storage.js`) recopie
 les codes en attente dans `chrome.storage.sync`, qui transite par votre compte
@@ -38,6 +38,17 @@ registre des jeux recuperes, reduit a quatre champs : magasin, identifiant,
 titre, date (`watch/library-sync.js`). Aucun code, aucune valeur, aucun lien.
 Il sert a ce qu'un autre ordinateur du meme compte ne rouvre pas ce qui est deja
 pris. Le couper retire la copie du compte.
+
+L'**alerte telephone** (Reglages -> Notifications, depuis la 2.47.0,
+`watch/phone.js`) envoie a un serveur ntfy -- `ntfy.sh` par defaut, ou le
+votre -- un titre et quelques lignes : une panne de l'extension, un defi de
+securite en attente, le nom d'un jeu de votre liste de souhaits et le lien de
+sa fiche. **Jamais un code de rachat, jamais un cookie** (`credentials:
+'omit'`). Sur `ntfy.sh`, qui connait le nom du sujet lit ces messages : le
+bouton « Nouveau sujet » en tire un au hasard (cent bits). L'adresse et le
+jeton vivent sous leur propre cle, `veille:telephone`, et non dans les
+reglages -- que l'option de synchronisation des reglages recopierait dans le
+compte du navigateur. Couper l'alerte retire aussi la permission de l'hote.
 
 Rien d'autre ne part tout seul.
 
@@ -59,6 +70,7 @@ l'evenement, qui n'en porte qu'une empreinte de 32 bits (`watch/calendar.js`).
 | `www.gamerpower.com` | Rien |
 | `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue. **Depuis la 2.27.0, pour tout le monde** : la detection Steam ne depend plus de l'option de reclamation. Voir la note ci-dessous |
 | `api.frankfurter.dev` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
+| Votre serveur ntfy (`ntfy.sh` par defaut) | **Seulement si vous activez l'alerte telephone.** Le texte de l'alerte, votre adresse IP, et le jeton d'acces si vous en avez saisi un. Rien d'autre |
 
 **Regarder Steam et y cliquer sont deux choses, depuis la 2.27.0.** La source
 Steam etait jusque-la liee a l'option de reclamation : qui refusait le clic --
@@ -145,7 +157,8 @@ vous qui decidez.
 | `scripting` | Le clic Steam, les sondes de diagnostic. Bornee aux hotes ci-dessous |
 | `offscreen` | Lire du HTML : un service worker MV3 n'a pas de `DOMParser`. Absente sur Firefox |
 | `alarms` | Se reveiller pour verifier |
-| `steamcommunity.com` (hote) | **Optionnel, hors manifeste.** Lire VOTRE temps de jeu Steam, sur un clic, par l adresse /my/ qui se resout cote serveur -- aucun identifiant de profil n est demande ni stocke. Demande au moment du geste, retirable ensuite |
+| `steamcommunity.com` (hote) | **Optionnel** (`optional_host_permissions`). Lire VOTRE temps de jeu Steam, sur un clic, par l adresse /my/ qui se resout cote serveur -- aucun identifiant de profil n est demande ni stocke. Demande au moment du geste, retirable ensuite. De la 2.39.0 a la 2.46.0 il n etait declare nulle part, et Chrome refusait la demande : le temps de jeu ne s est jamais lu |
+| `https://*/*` (hote) | **Optionnel, jamais accorde a l installation.** Seulement pour l alerte telephone : l extension demande l hote de VOTRE serveur ntfy, et lui seul (`https://ntfy.sh/*` par defaut), au moment ou vous activez l alerte. Le joker existe parce que le serveur est le votre ; il ne donne rien que vous n ayez accorde hote par hote |
 | `nativeMessaging` | **Optionnelle, coupee par defaut, Chrome seulement.** Ouvrir un canal vers un programme LOCAL que vous avez installe vous-meme, pour lui deposer un instantane de votre ludotheque. Rien n ecoute sur un port, rien ne quitte la machine, et **les codes de rachat n y sont pas**. Voir host/README.md |
 | `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |
 

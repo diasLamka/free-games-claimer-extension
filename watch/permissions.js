@@ -64,3 +64,28 @@ export function declaresOptional(manifest, permission) {
   const liste = (manifest && manifest.optional_permissions) || [];
   return liste.includes(permission);
 }
+
+/**
+ * Le manifeste permet-il de demander cet hote ?
+ *
+ * Meme piege que ci-dessus, et il a servi : de la 2.39.0 a la 2.46.0, la page
+ * de collection demandait `https://steamcommunity.com/*` sans qu'aucun
+ * manifeste ne le declare. Chrome refusait la demande, la page affichait
+ * « acces refuse », et le temps de jeu ne s'est jamais lu.
+ *
+ * `origin` est un motif `https://hote/*`. Un motif du manifeste le couvre s'il
+ * est identique, ou si son hote est un joker (`*` ou `*.domaine`).
+ */
+export function declaresOptionalOrigin(manifest, origin) {
+  const cible = /^(https?):\/\/([^/]+)\/\*$/.exec(String(origin || ''));
+  if (!cible) return false;
+  const [, schema, hote] = cible;
+  const liste = (manifest && manifest.optional_host_permissions) || [];
+  return liste.some((motif) => {
+    const m = /^(https?|\*):\/\/([^/]+)\/\*$/.exec(motif);
+    if (!m) return false;
+    if (m[1] !== '*' && m[1] !== schema) return false;
+    if (m[2] === '*' || m[2] === hote) return true;
+    return m[2].startsWith('*.') && (hote === m[2].slice(2) || hote.endsWith(m[2].slice(1)));
+  });
+}

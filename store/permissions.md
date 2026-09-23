@@ -36,13 +36,26 @@ celui-ci l'a autorise.
 | `https://api.steampowered.com/*` | Confirmer qu'un jeu Steam repere est bien gratuit, et retrouver le nom des jeux lors d'un import de bibliotheque demande par l'utilisateur. Lu sans cookie. |
 | `https://api.frankfurter.app/*` | Convertir en devise de l'utilisateur la valeur affichee des jeux recuperes. Une requete par 24 h, aucune donnee personnelle transmise. Seul hote qui ne soit pas un magasin de jeux. |
 
+## Permissions optionnelles
+
+Aucune n'est accordee a l'installation. Chacune est demandee sur un geste de
+l'utilisateur, et se retire du meme geste.
+
+| Permission | Justification a recopier |
+|---|---|
+| `background` | Garder la veille active apres la fermeture de la derniere fenetre, si l'utilisateur le demande. |
+| `nativeMessaging` | Deposer un instantane de la ludotheque aupres d'un programme local que l'utilisateur a installe lui-meme. |
+| `https://steamcommunity.com/*` | Lire le temps de jeu Steam de l'utilisateur, sur un clic, pour comparer les jeux recuperes aux jeux lances. |
+| `https://*/*` | Envoyer les alertes au telephone de l'utilisateur par ntfy, service de notification libre et auto-hebergeable. Le serveur est celui que l'utilisateur choisit (`ntfy.sh` par defaut) : l'extension demande CET hote seul, au moment ou l'alerte est activee. Le joker n'existe que parce que l'hote n'est pas connu a l'avance ; il ne donne aucun acces tant que l'utilisateur n'a pas accorde un hote precis. |
+
 ## Ce que l'extension ne demande pas
 
 A mentionner si un relecteur s'interroge sur l'etendue des acces.
 
 Aucune permission `tabs`, `cookies`, `webRequest`, `downloads`, `identity`,
-`history`, ni `<all_urls>`. L'extension ne peut pas lire l'URL des onglets de
-l'utilisateur, ni lire un cookie, ni intercepter une requete.
+`history`, ni `<all_urls>` en permission obligatoire. L'extension ne peut pas
+lire l'URL des onglets de l'utilisateur, ni lire un cookie, ni intercepter une
+requete.
 
 ## Code distant
 

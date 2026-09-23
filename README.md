@@ -109,6 +109,7 @@ est declare `"type": "module"`.
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de sa liste Steam |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
+| `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 | `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |
 | `codes.js` | ou echanger un code, par magasin, et ou il en est |
@@ -151,6 +152,7 @@ watch/             la veille de fond, en ES modules
   journal.js canary.js backup.js offscreen.js  library.js  filters.js
   outcomes.js incidents.js health.js notify-actions.js
   wishlist.js annotations.js history.js codes.js permissions.js teaching.js calendar.js
+  phone.js
   lookup.js recurrence.js playtime.js bridge.js
   schedule/  clock.js  prediction.js  scheduler.js
   sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js

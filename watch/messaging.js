@@ -74,6 +74,9 @@ export const UI_COMMANDS = Object.freeze([
      la machine : c'est la commande la plus puissante du lot, et elle est
      donc reservee aux pages de l'extension comme toutes les autres. */
   'fgc-bridge',
+  /* L'essai du telephone (2.47.0). Il envoie un message vers un hote que
+     l'utilisateur a choisi : reserve aux pages, comme tout ce qui sort. */
+  'fgc-phone-test',
 ]);
 
 /**

@@ -4,6 +4,61 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.47.0 -- 2026-09-23
+
+**Ce qui demande un humain arrive sur le telephone**
+
+### L'alerte telephone, par ntfy
+
+Le chien de garde savait qu'une session avait expire ; il le disait sur
+l'ordinateur, le seul endroit ou personne ne regarde a trois heures du matin.
+Reglages -> Notifications -> « Alerte sur le telephone (ntfy) » envoie a un
+sujet ntfy -- `ntfy.sh`, ou votre serveur -- ce qui demande un geste :
+
+- les incidents du chien de garde : session expiree, magasin qui a change sa
+  page, source en panne, veille arretee ;
+- **l'ordinateur qui bloque nos notifications** : le seul canal qui puisse
+  dire que l'autre est coupe. Chaque incident a son propre marqueur,
+  `phonedAt`, parce que les deux canaux ne tombent pas en panne ensemble ;
+- un defi de securite en attente ;
+- les jeux de votre liste de souhaits -- une case, cochee par defaut --,
+  meme si les notifications de l'ordinateur sont coupees.
+
+Les heures calmes valent pour le telephone ; un reglage d'alertes coupe aussi.
+Un envoi rate repart au tour suivant, pas avant une heure : une adresse mal
+tapee n'ecrit pas au journal quarante-huit fois par jour.
+
+Ce qui part : un titre, quelques lignes, parfois le nom d'un jeu et le lien de
+sa fiche. **Jamais un code, jamais un cookie.** Les parametres passent dans
+l'adresse et pas dans des en-tetes : un en-tete n'accepte que le latin-1, et
+« Récupéré » y ferait jeter `fetch`.
+
+Sur `ntfy.sh`, qui connait le nom du sujet lit les messages. « Nouveau sujet »
+en tire un au hasard, et l'adresse vit sous sa propre cle,
+`veille:telephone` -- pas dans les reglages, que l'option de synchronisation
+recopierait dans le compte du navigateur. HTTPS seulement. Un bouton
+« Envoyer un essai » passe par le meme chemin que les vraies alertes.
+
+### La permission, hote par hote
+
+`optional_host_permissions` apparait dans les deux manifestes, avec
+`https://*/*` : le serveur ntfy est le votre, donc inconnu a l'avance.
+Optionnel veut dire qu'il n'est jamais accorde a l'installation -- l'extension
+demande l'hote de VOTRE serveur, et lui seul, quand vous activez l'alerte, et
+le retire quand vous la coupez.
+
+### Le temps de jeu Steam ne s'est jamais lu
+
+Ma collection demandait `https://steamcommunity.com/*` depuis la 2.39.0, et
+aucun manifeste ne le declarait. Chrome refuse de demander un hote que le
+manifeste ne permet pas : la page affichait « acces refuse », et SECURITY.md
+decrivait l'hote « hors manifeste » comme un choix. Il est declare, et un test
+verifie maintenant que chaque hote demande par le code figure dans les deux
+manifestes (`declaresOptionalOrigin`).
+
+1095 tests, dont 31 nouveaux (`test/phone.test.mjs`, et des ajouts a
+`health`, `cycle` et `permissions`).
+
 ## 2.46.0 -- 2026-09-23
 
 **Ce que vous attendez vient de Steam, et ce qui finit va dans votre agenda**

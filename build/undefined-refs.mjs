@@ -34,6 +34,7 @@ const GLOBALS = new Set(`
   Object Array String Number Boolean Symbol BigInt Math JSON Date RegExp Error
   TypeError RangeError SyntaxError ReferenceError EvalError URIError
   Promise Map Set WeakMap WeakSet Proxy Reflect Intl
+  ArrayBuffer DataView Uint8Array Uint16Array Uint32Array Int8Array Int16Array Int32Array Float32Array Float64Array
   Function Infinity NaN undefined null true false
   parseInt parseFloat isNaN isFinite encodeURIComponent decodeURIComponent
   encodeURI decodeURI structuredClone queueMicrotask

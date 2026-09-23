@@ -19,8 +19,10 @@
 import { KEY_CANARY } from './canary.js';
 import { KEY_SESSIONS } from './session.js';
 import {
-  KEY_INCIDENTS, incidentLine, markNotified, observe, pendingNotices, reconcile,
+  KEY_INCIDENTS, KINDS, incidentLine, markNotified, markPhoned, observe, pendingNotices, phonePending, reconcile,
 } from './incidents.js';
+import { KEY_PHONE, KEY_PHONE_STATE, incidentsMessage, mayRetry, phoneTarget, pushToPhone } from './phone.js';
+import { STORE_LABELS } from './offer.js';
 import { ALERTS, badgeState, decideAlert } from './notify-policy.js';
 import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
@@ -40,11 +42,14 @@ export async function inspectHealth({
   notify = async () => {},
   setBadge = async () => {},
   record = () => {},
+  /** Pour le telephone seulement. Absent, le canal se tait : rien d'autre ne part sur le reseau ici. */
+  fetch: fetchImpl = null,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('inspectHealth : "maintenant" est obligatoire');
 
   const raw = await readKeys(chrome, [
     KEY_CANARY, KEYS.SOURCES, KEY_SESSIONS, KEYS.STATE, KEY_INCIDENTS, KEYS.OFFERS,
+    KEY_PHONE, KEY_PHONE_STATE,
   ]);
   const settings = await readSettings(chrome);
   const state = raw[KEYS.STATE] || {};
@@ -118,6 +123,31 @@ export async function inspectHealth({
     suivant = markNotified(incidents, aDire.map((i) => i.id), { now });
   }
 
+  /* Le telephone (2.47.0), avec son propre marqueur.
+   *
+   * Meme regle que l'ordinateur pour le silence et les heures calmes -- un
+   * reglage d'alertes coupe vaut pour les deux canaux --, mais PAS pour le
+   * canal coupe : c'est precisement quand l'ordinateur ne peut plus rien
+   * dire que le telephone sert. Un envoi rate n'est pas marque : il repart
+   * au tour suivant, passe le delai de `mayRetry`. */
+  const tel = phoneTarget(raw[KEY_PHONE]);
+  if (tel && fetchImpl) {
+    const aTel = phonePending(suivant);
+    const d = decideAlert({
+      mode: settings.alertMode || ALERTS.ON,
+      quiet: settings.quiet,
+      now,
+      count: aTel.length,
+    });
+    if (d.notify && mayRetry(raw[KEY_PHONE_STATE], now)) {
+      const msg = incidentsMessage(aTel, { title: t('phoneIncidentTitle'), label: incidentLabel });
+      const r = await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'alerte' });
+      if (r.ok) suivant = markPhoned(suivant, aTel.map((i) => i.id), { now });
+    } else if (aTel.length && !d.notify && !d.hold) {
+      suivant = markPhoned(suivant, aTel.map((i) => i.id), { now });
+    }
+  }
+
   await write(chrome, { [KEY_INCIDENTS]: suivant });
 
   /* Le badge, meme sans cycle : c'est le seul canal qui reste quand le systeme
@@ -134,4 +164,15 @@ export async function inspectHealth({
   } catch (e) { /* le badge est un bonus */ }
 
   return { incidents: suivant, opened, closed, notified };
+}
+
+/** La phrase d'un incident pour le telephone : ce qu'il faut FAIRE, pas seulement ce qui casse. */
+function incidentLabel(kind, key) {
+  const magasin = key ? (STORE_LABELS[key] || key) : '';
+  if (kind === KINDS.SELECTOR) return t('phoneKindSelector', magasin);
+  if (kind === KINDS.SOURCE) return t('phoneKindSource', magasin);
+  if (kind === KINDS.SESSION) return t('phoneKindSession', magasin);
+  if (kind === KINDS.STALLED) return t('phoneKindStalled');
+  if (kind === KINDS.MUTED) return t('phoneKindMuted');
+  return String(kind);
 }

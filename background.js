@@ -60,6 +60,8 @@ import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
+import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
+import { t } from './i18n.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -306,6 +308,8 @@ async function inspectHealth(now) {
       await api.action.setBadgeBackgroundColor({ color });
     },
     record,
+    // Pour le telephone seulement (2.47.0) : rien d'autre ne part d'ici.
+    fetch: (u, i) => fetch(u, i),
   });
 }
 
@@ -948,6 +952,29 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     readPlaytime({ chrome: api, fetch: (u, i) => fetch(u, i) })
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, reason: String((e && e.message) || e), count: 0 }));
+    return true;
+  }
+
+  /* L'essai du telephone, depuis le popup. Il passe par le meme chemin que
+     les vraies alertes -- une adresse qui marche ici marche la-bas -- et son
+     resultat efface un echec precedent, ce qui libere le tour d'inspection. */
+  if (msg.type === 'fgc-phone-test') {
+    readKeys(api, [KEY_PHONE])
+      .then((raw) => {
+        const tel = phoneTarget(raw[KEY_PHONE]);
+        if (!tel) return { ok: false, status: 0, note: 'adresse invalide ou alerte coupee' };
+        return pushToPhone({
+          chrome: api,
+          fetch: (u, i) => fetch(u, i),
+          target: tel,
+          msg: { title: t('phoneTestTitle'), message: t('phoneTestBody'), priority: PRIORITY.DEFAULT, tags: ['white_check_mark'] },
+          now: Date.now(),
+          record,
+          why: 'essai',
+        });
+      })
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, status: 0, note: String((e && e.message) || e) }));
     return true;
   }
 

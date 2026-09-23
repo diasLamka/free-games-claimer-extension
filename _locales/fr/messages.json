@@ -392,6 +392,81 @@
   "exportIcsHint": {
     "message": "Fins d'offres, prochaines offres et codes à échanger, pour l'agenda de votre téléphone. À refaire pour voir les offres suivantes : les rappels déjà importés sont mis à jour, pas doublés."
   },
+  "phoneLabel": {
+    "message": "Alerte sur le téléphone (ntfy)"
+  },
+  "phoneHint": {
+    "message": "Pannes, captchas et jeux attendus, sur votre téléphone. Installez l'application ntfy, puis abonnez-vous à l'adresse ci-dessous."
+  },
+  "phoneUrlLabel": {
+    "message": "Adresse du sujet"
+  },
+  "phoneNewTopic": {
+    "message": "Nouveau sujet"
+  },
+  "phoneCopy": {
+    "message": "Copier"
+  },
+  "phoneCopied": {
+    "message": "Adresse copiée : collez-la dans l'application ntfy"
+  },
+  "phoneTest": {
+    "message": "Envoyer un essai"
+  },
+  "phoneWishedLabel": {
+    "message": "Aussi les jeux de ma liste de souhaits"
+  },
+  "phoneTokenLabel": {
+    "message": "Jeton d'accès (serveur privé)"
+  },
+  "phoneSecretHint": {
+    "message": "Sur ntfy.sh, qui connaît le nom du sujet lit vos alertes : gardez-le long et secret. Rien n'y part jamais d'un code de rachat."
+  },
+  "phoneInvalid": {
+    "message": "Adresse invalide : il faut https://serveur/sujet"
+  },
+  "phoneDenied": {
+    "message": "Permission refusée : l'alerte reste coupée"
+  },
+  "phoneSent": {
+    "message": "Essai envoyé : regardez votre téléphone"
+  },
+  "phoneFailed": {
+    "message": "Essai non envoyé : $1"
+  },
+  "phoneLastOk": {
+    "message": "Dernier envoi réussi : $1"
+  },
+  "phoneLastFailed": {
+    "message": "Dernier envoi raté, $1 : $2"
+  },
+  "phoneIncidentTitle": {
+    "message": "Free Games : l'extension a besoin de vous"
+  },
+  "phoneKindSelector": {
+    "message": "$1 a changé sa page : l'extension ne trouve plus le bouton"
+  },
+  "phoneKindSource": {
+    "message": "La source $1 échoue depuis un moment"
+  },
+  "phoneKindSession": {
+    "message": "$1 : vous n'êtes plus connecté, reconnectez-vous dans le navigateur"
+  },
+  "phoneKindStalled": {
+    "message": "La veille ne tourne plus : ouvrez le navigateur de l'ordinateur"
+  },
+  "phoneKindMuted": {
+    "message": "L'ordinateur bloque les notifications de l'extension"
+  },
+  "phoneWishedTitle": {
+    "message": "Un jeu attendu est gratuit : $1"
+  },
+  "phoneTestTitle": {
+    "message": "Free Games : essai reçu"
+  },
+  "phoneTestBody": {
+    "message": "Les alertes de l'extension arriveront ici."
+  },
   "icsCalendarName": {
     "message": "Jeux gratuits"
   },

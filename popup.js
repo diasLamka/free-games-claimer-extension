@@ -36,7 +36,8 @@ import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
 import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from './watch/wishlist.js';
 import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from './watch/codes.js';
-import { OPTIONAL, declaresOptional, describeBackground } from './watch/permissions.js';
+import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from './watch/permissions.js';
+import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from './watch/phone.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from './watch/teaching.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
 import { readLibraryMirror } from './watch/library-sync.js';
@@ -171,6 +172,8 @@ const KEYS_READ = [
   KEY_INCIDENTS,
   KEY_WISHLIST,
   KEY_STEAM_WISHLIST,
+  KEY_PHONE,
+  KEY_PHONE_STATE,
   KEY_TAUGHT,
   KEY_SEEN,
   KEY_COLLECTION,
@@ -1878,6 +1881,7 @@ async function render() {
   renderNotifications(behaviourCache);
   renderSyncCodes(behaviourCache);
   renderSyncLibrary(behaviourCache);
+  renderPhone(all);
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
   document.getElementById('luna-auto').checked = all.FGC_luna_auto_mode !== false;
@@ -2186,6 +2190,118 @@ document.getElementById('open-epic').addEventListener('click', async () => {
 });
 document.getElementById('open-luna').addEventListener('click', () => openTab(PRIMARY[2].url));
 
+/* --- le telephone (2.47.0)
+
+   La configuration a sa propre cle, que le popup est seul a ecrire : elle
+   n'entre pas dans les reglages, que `syncSettings` recopie dans le compte du
+   navigateur -- le nom d'un sujet ntfy est un secret. */
+
+function renderPhone(all) {
+  const p = readPhone(all[KEY_PHONE]);
+  document.getElementById('phone-on').checked = p.on;
+  document.getElementById('phone-fields').hidden = !p.on;
+  document.getElementById('phone-wished').checked = p.wished;
+  // Jamais sous les doigts : un rendu remettrait la valeur stockee.
+  const url = document.getElementById('phone-url');
+  if (document.activeElement !== url) url.value = p.url;
+  const token = document.getElementById('phone-token');
+  if (document.activeElement !== token) token.value = p.token;
+
+  const etat = all[KEY_PHONE_STATE];
+  const zone = document.getElementById('phone-state');
+  if (!p.on) zone.textContent = '';
+  else if (p.url && !topicUrl(p.url)) zone.textContent = t('phoneInvalid');
+  else if (etat && typeof etat.at === 'number') {
+    zone.textContent = etat.ok
+      ? t('phoneLastOk', shortDateTime(etat.at))
+      : t('phoneLastFailed', shortDateTime(etat.at), etat.note || `HTTP ${etat.status}`);
+  } else zone.textContent = '';
+}
+
+function phoneSay(message) {
+  document.getElementById('phone-state').textContent = message;
+}
+
+async function readPhoneStored() {
+  return readPhone((await api.storage.local.get(KEY_PHONE))[KEY_PHONE]);
+}
+
+async function writePhone(patch) {
+  await setValue(KEY_PHONE, { ...(await readPhoneStored()), ...patch });
+}
+
+/* La permission de l'hote, demandee dans le GESTE -- Chrome refuse hors d'un
+   clic -- et relue plutot que supposee : un refus n'est pas une erreur, c'est
+   un silence. Un hote que le manifeste ne declare pas n'est meme pas
+   demande : c'est l'erreur qui a rendu le temps de jeu muet jusqu'a la 2.46.0.
+
+   AUCUN await AVANT elle dans les gestionnaires ci-dessous : Firefox ne tient
+   pour un geste que ce qui s'execute d'un trait depuis le clic, et une lecture
+   du stockage suffit a le lui faire perdre. L'adresse se lit donc dans le
+   champ, que le rendu tient a jour, et l'ecriture vient APRES la demande. */
+async function askPhoneHost(url) {
+  const origin = originPattern(url);
+  if (!origin || !declaresOptionalOrigin(api.runtime.getManifest(), origin)) return false;
+  try {
+    return await api.permissions.request({ origins: [origin] });
+  } catch { return false; }
+}
+
+function freshTopic() {
+  return newTopicUrl(crypto.getRandomValues(new Uint8Array(20)));
+}
+
+document.getElementById('phone-on').addEventListener('change', async (e) => {
+  const champ = document.getElementById('phone-url');
+  if (!e.target.checked) {
+    const origin = originPattern(champ.value);
+    // Se retire aussi facilement qu'elle s'accorde.
+    if (origin) { try { await api.permissions.remove({ origins: [origin] }); } catch { /* deja retiree */ } }
+    await writePhone({ on: false });
+    return;
+  }
+  const url = topicUrl(champ.value) || freshTopic();
+  if (!await askPhoneHost(url)) {
+    e.target.checked = false;
+    phoneSay(t('phoneDenied'));
+    return;
+  }
+  await writePhone({ on: true, url });
+});
+
+document.getElementById('phone-url').addEventListener('change', async (e) => {
+  const brut = e.target.value.trim();
+  if (!topicUrl(brut)) { await writePhone({ url: brut }); phoneSay(t('phoneInvalid')); return; }
+  const accorde = await askPhoneHost(brut);
+  await writePhone({ url: brut });
+  if (!accorde) phoneSay(t('phoneDenied'));
+});
+
+document.getElementById('phone-new').addEventListener('click', async () => {
+  const url = freshTopic();
+  document.getElementById('phone-url').value = url;
+  if (!await askPhoneHost(url)) { phoneSay(t('phoneDenied')); return; }
+  await writePhone({ url });
+});
+
+document.getElementById('phone-copy').addEventListener('click', async () => {
+  const url = topicUrl(document.getElementById('phone-url').value);
+  if (!url) { phoneSay(t('phoneInvalid')); return; }
+  try { await navigator.clipboard.writeText(url); } catch { return; }
+  phoneSay(t('phoneCopied'));
+});
+
+document.getElementById('phone-test').addEventListener('click', async () => {
+  const url = topicUrl(document.getElementById('phone-url').value);
+  if (!url) { phoneSay(t('phoneInvalid')); return; }
+  if (!await askPhoneHost(url)) { phoneSay(t('phoneDenied')); return; }
+  const r = await tell('fgc-phone-test');
+  phoneSay(r && r.ok ? t('phoneSent') : t('phoneFailed', (r && r.note) || '?'));
+});
+
+document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
+document.getElementById('phone-token').addEventListener('change', (e) => writePhone({ token: e.target.value.trim() }));
+
 /* --- backup */
 
 document.getElementById('export-json').addEventListener('click', async () => {
@@ -2445,7 +2561,7 @@ document.addEventListener('keydown', (e) => {
 const WATCHED_KEYS = new Set(KEYS_READ.filter((k) => k !== KEY_UI));
 // La recherche n'y est pas : le rendu ne touche pas a sa valeur, et bloquer
 // tant qu'elle garde le focus figerait le popup pour rien.
-const EDITING = 'input[type="range"], input[type="number"], input[type="time"], textarea, select';
+const EDITING = 'input[type="range"], input[type="number"], input[type="time"], input[type="url"], input[type="password"], textarea, select';
 let refreshTimer = null;
 
 function scheduleRefresh() {

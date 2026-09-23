@@ -356,7 +356,7 @@
   }
 
   /* ------------------------------------------------------------ controls */
-  input[type="search"], select {
+  input[type="search"], input[type="url"], input[type="password"], select {
     appearance: none;
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -369,7 +369,7 @@
   }
   input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   select { padding-right: 22px; cursor: pointer; }
-  input[type="search"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
+  input[type="search"]:focus-visible, input[type="url"]:focus-visible, input[type="password"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
 
   .toolbar { display: flex; gap: 6px; padding: 9px var(--pad); border-bottom: 1px solid var(--line); }
   .toolbar input[type="search"] { flex: 1; }
@@ -880,6 +880,10 @@
   .field { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
   .field select { margin-left: auto; }
   .field .pair { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+  /* Une adresse ne tient pas a droite d'un libelle a 328 px : elle passe dessous. */
+  .field.stack { flex-direction: column; align-items: stretch; gap: 4px; }
+  .field.stack input { width: 100%; font-family: var(--mono); font-size: 11px; }
+  #phone-fields[hidden] { display: none; }
   input[type="time"] {
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -1235,6 +1239,33 @@
           <span class="range-label"><span data-i18n="reminderLabel"></span> <b id="reminder-value">6</b></span>
           <input type="range" id="reminder" min="0" max="24" step="1" value="6">
         </label>
+        <label class="toggle">
+          <input type="checkbox" id="phone-on">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="phoneLabel"></span><small data-i18n="phoneHint"></small></span>
+        </label>
+        <div id="phone-fields" hidden>
+          <label class="field stack">
+            <span data-i18n="phoneUrlLabel"></span>
+            <input type="url" id="phone-url" placeholder="https://ntfy.sh/…" spellcheck="false" autocomplete="off">
+          </label>
+          <div class="actions">
+            <button id="phone-new" data-i18n="phoneNewTopic"></button>
+            <button id="phone-copy" data-i18n="phoneCopy"></button>
+            <button id="phone-test" data-i18n="phoneTest"></button>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="phone-wished">
+            <span class="switch"></span>
+            <span class="toggle-label" data-i18n="phoneWishedLabel"></span>
+          </label>
+          <label class="field stack">
+            <span data-i18n="phoneTokenLabel"></span>
+            <input type="password" id="phone-token" spellcheck="false" autocomplete="off">
+          </label>
+          <p class="hint" data-i18n="phoneSecretHint"></p>
+          <p class="hint" id="phone-state" role="status"></p>
+        </div>
       </details>
     </section>
 

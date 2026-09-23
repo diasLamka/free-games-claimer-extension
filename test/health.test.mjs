@@ -210,3 +210,88 @@ test('ce qui attendait un canal bloque part des qu\'il rouvre', async () => {
   await tour('granted', T + HEURE);
   assert.equal(envoyees.length, 1, 'le canal rouvre, l\'alerte part enfin');
 });
+
+/* ------------------------------------------------ le telephone (2.47.0) */
+
+import { KEY_PHONE, KEY_PHONE_STATE, RETRY_MS } from '../watch/phone.js';
+
+/** Un poste abonne a un sujet ntfy, dont on capture les envois. */
+async function posteTelephone(options = {}, repondre = async () => ({ ok: true, status: 200 })) {
+  const p = await poste(options);
+  await p.faux.chrome.storage.local.set({ [KEY_PHONE]: { on: true, url: 'https://ntfy.sh/fgc-test' } });
+  const appels = [];
+  const fetch = async (url, init) => { appels.push({ url, init }); return repondre(url, init); };
+  const tour = (now = T) => inspectHealth({
+    chrome: p.faux.chrome, now, permissionLevel: options.permissionLevel || 'granted',
+    notify: async (n) => { p.envoyees.push(n); }, setBadge: async () => {}, record: () => {}, fetch,
+  });
+  return { ...p, appels, tour };
+}
+
+test('telephone : l\'incident part aussi sur le telephone, une seule fois', async () => {
+  const p = await posteTelephone();
+  const r = await p.tour();
+  await p.tour(T + HEURE);
+
+  assert.equal(p.appels.length, 1, 'une fois, pas a chaque tour');
+  assert.match(p.appels[0].url, /^https:\/\/ntfy\.sh\/fgc-test\?/);
+  assert.equal(p.appels[0].init.credentials, 'omit');
+  assert.equal(r.incidents.stalled.phonedAt, T);
+  assert.equal(p.envoyees.length, 1, 'l\'ordinateur est prevenu aussi');
+});
+
+test('telephone : ordinateur muet, le telephone le dit -- c\'est sa raison d\'etre', async () => {
+  const p = await posteTelephone({ permissionLevel: 'denied' });
+  const r = await p.tour();
+
+  assert.deepEqual(p.envoyees, [], 'rien sur l\'ordinateur, qui ne peut rien afficher');
+  assert.equal(p.appels.length, 1);
+  const corps = p.appels[0].init.body;
+  assert.ok(r.incidents.muted.phonedAt, 'l\'incident « muet » a ete dit au telephone');
+  assert.ok(corps.split('\n').length >= 2, 'la veille arretee ET le canal coupe');
+  assert.equal(r.incidents.stalled.notifiedAt, null, 'l\'ordinateur le redira quand il pourra');
+});
+
+test('telephone : heures calmes, rien ne part et rien n\'est perdu', async () => {
+  const p = await posteTelephone({ settings: { quiet: { on: true, start: '23:00', end: '08:00' } } });
+  const nuit = Date.UTC(2026, 8, 23, 2, 0, 0);
+  const r = await p.tour(nuit);
+
+  assert.equal(p.appels.length, 0);
+  assert.equal(r.incidents.stalled.phonedAt, undefined, 'au matin');
+});
+
+test('telephone : alertes coupees, le telephone se tait aussi', async () => {
+  const p = await posteTelephone({ settings: { alertMode: ALERTS.OFF } });
+  const r = await p.tour();
+  assert.equal(p.appels.length, 0);
+  assert.equal(r.incidents.stalled.phonedAt, T, 'marque, pour ne pas tout envoyer au rallumage');
+});
+
+test('telephone : un envoi rate repart, mais pas a chaque tour', async () => {
+  let panne = true;
+  const p = await posteTelephone({}, async () => (panne ? { ok: false, status: 404 } : { ok: true, status: 200 }));
+
+  let r = await p.tour();
+  assert.equal(p.appels.length, 1);
+  assert.equal(r.incidents.stalled.phonedAt, undefined, 'rate : pas marque');
+  const etat = (await p.faux.chrome.storage.local.get(KEY_PHONE_STATE))[KEY_PHONE_STATE];
+  assert.equal(etat.ok, false);
+
+  await p.tour(T + 30 * 60000);
+  assert.equal(p.appels.length, 1, 'trente minutes plus tard : on attend encore');
+
+  panne = false;
+  r = await p.tour(T + RETRY_MS);
+  assert.equal(p.appels.length, 2);
+  assert.ok(r.incidents.stalled.phonedAt);
+});
+
+test('telephone : coupe, ou sans adresse valide, rien ne part', async () => {
+  const p = await posteTelephone();
+  await p.faux.chrome.storage.local.set({ [KEY_PHONE]: { on: false, url: 'https://ntfy.sh/fgc-test' } });
+  await p.tour();
+  await p.faux.chrome.storage.local.set({ [KEY_PHONE]: { on: true, url: 'http://ntfy.sh/fgc-test' } });
+  await p.tour(T + HEURE);
+  assert.equal(p.appels.length, 0);
+});

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.46.0",
+  "version": "2.47.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -15,6 +15,10 @@
   "optional_permissions": [
     "background",
     "nativeMessaging"
+  ],
+  "optional_host_permissions": [
+    "https://steamcommunity.com/*",
+    "https://*/*"
   ],
   "host_permissions": [
     "https://*.epicgames.com/*",

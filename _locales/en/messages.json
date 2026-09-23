@@ -392,6 +392,81 @@
   "exportIcsHint": {
     "message": "Offer endings, upcoming offers and codes to redeem, for your phone's calendar. Export again to see later offers: reminders already imported are updated, not doubled."
   },
+  "phoneLabel": {
+    "message": "Phone alerts (ntfy)"
+  },
+  "phoneHint": {
+    "message": "Breakdowns, captchas and awaited games, on your phone. Install the ntfy app, then subscribe to the address below."
+  },
+  "phoneUrlLabel": {
+    "message": "Topic address"
+  },
+  "phoneNewTopic": {
+    "message": "New topic"
+  },
+  "phoneCopy": {
+    "message": "Copy"
+  },
+  "phoneCopied": {
+    "message": "Address copied: paste it into the ntfy app"
+  },
+  "phoneTest": {
+    "message": "Send a test"
+  },
+  "phoneWishedLabel": {
+    "message": "Also games on my wishlist"
+  },
+  "phoneTokenLabel": {
+    "message": "Access token (private server)"
+  },
+  "phoneSecretHint": {
+    "message": "On ntfy.sh, anyone who knows the topic name can read your alerts: keep it long and secret. No redeem code is ever sent."
+  },
+  "phoneInvalid": {
+    "message": "Invalid address: use https://server/topic"
+  },
+  "phoneDenied": {
+    "message": "Permission denied: alerts stay off"
+  },
+  "phoneSent": {
+    "message": "Test sent: check your phone"
+  },
+  "phoneFailed": {
+    "message": "Test not sent: $1"
+  },
+  "phoneLastOk": {
+    "message": "Last sent: $1"
+  },
+  "phoneLastFailed": {
+    "message": "Last send failed, $1: $2"
+  },
+  "phoneIncidentTitle": {
+    "message": "Free Games needs you"
+  },
+  "phoneKindSelector": {
+    "message": "$1 changed its page: the extension can't find the button"
+  },
+  "phoneKindSource": {
+    "message": "The $1 source has been failing for a while"
+  },
+  "phoneKindSession": {
+    "message": "$1: you're signed out, sign in again in the browser"
+  },
+  "phoneKindStalled": {
+    "message": "The watch has stopped: open the browser on your computer"
+  },
+  "phoneKindMuted": {
+    "message": "Your computer is blocking the extension's notifications"
+  },
+  "phoneWishedTitle": {
+    "message": "A game you're waiting for is free: $1"
+  },
+  "phoneTestTitle": {
+    "message": "Free Games: test received"
+  },
+  "phoneTestBody": {
+    "message": "The extension's alerts will arrive here."
+  },
   "icsCalendarName": {
     "message": "Free games"
   },

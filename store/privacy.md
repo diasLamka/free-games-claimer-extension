@@ -9,7 +9,7 @@ Derive de `SECURITY.md`, qui fait foi.
 
 ## Free Games Auto-Claimer -- confidentialite
 
-**Derniere mise a jour : 2026-09-23**
+**Derniere mise a jour : 2026-09-23 (2.47.0)**
 
 ### En une phrase
 
@@ -35,8 +35,18 @@ stockage synchronise du navigateur, et le reglage « retrouver mes jeux
 recuperes sur mes autres ordinateurs » y place la liste des jeux recuperes
 (magasin, identifiant, titre, date -- aucun code). Ce stockage transite par le
 compte Google ou Mozilla de l'utilisateur ; le chiffrement applique est celui
-de ce service, pas le notre. Couper le second retire la copie. Tant que les
-deux reglages restent coupes, rien ne sort.
+de ce service, pas le notre. Couper le second retire la copie.
+
+Un troisieme reglage, lui aussi coupe par defaut, envoie des alertes au
+telephone de l'utilisateur par le service ntfy : sur le serveur public
+`ntfy.sh`, ou sur un serveur que l'utilisateur designe. Ces alertes portent un
+titre et quelques lignes -- une panne de l'extension, un defi de securite en
+attente, le nom d'un jeu attendu et le lien de sa fiche --, **jamais un code
+de rachat ni un cookie**. Le serveur ntfy recoit ce texte et l'adresse IP de
+l'utilisateur ; sur `ntfy.sh`, quiconque connait le nom du sujet peut lire ces
+messages, d'ou un nom tire au hasard par l'extension.
+
+Tant que les trois reglages restent coupes, rien ne sort.
 
 Le bouton « Agenda (.ics) » ecrit un fichier sur le disque de l'utilisateur,
 qui en fait ce qu'il veut : titres, magasins, dates et liens des offres, et le

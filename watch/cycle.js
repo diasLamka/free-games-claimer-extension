@@ -36,8 +36,9 @@ import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
 import { split } from './filters.js';
 import {
-  decideAnnouncement, endingSoon, badgeCount, onlyWatched,
+  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours,
 } from './notify-policy.js';
+import { PRIORITY, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../i18n.js';
 import {
   claimOffer,
@@ -516,6 +517,22 @@ export async function runCycle({
       });
     }
 
+    /* Le telephone (2.47.0) : les jeux ATTENDUS seulement.
+     *
+     * Ils partent quand l'annonce est tranchee -- dite, ou tue parce que
+     * l'utilisateur a coupe les notifications de l'ordinateur -- et jamais
+     * en heures calmes, ou `hold` les garde pour le cycle suivant. C'est ce
+     * qui fait partir chaque jeu attendu UNE fois : `notifiedAt`, pose plus
+     * bas dans les memes conditions, le retire des annonces suivantes. */
+    const tel = phoneTarget(ctx.phone);
+    if (tel && tel.wished && !decision.hold) {
+      const msg = wishedMessage(watched.filter((o) => o.wished), {
+        title: (titre) => t('phoneWishedTitle', titre),
+        line: (o) => `${o.title} -- ${STORE_LABELS[o.store] || o.store}`,
+      });
+      if (msg && fetchImpl) await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'jeu attendu' });
+    }
+
     /* ---- rappel avant expiration ---- */
 
     // Une offre qui se termine bientot et qui n'a pas ete traitee merite un
@@ -622,6 +639,25 @@ export async function runCycle({
           text: t('notifyChallengeBody'),
           id: `defi-${now}`,
         });
+        /* Un defi attend l'humain : c'est exactement ce que le telephone sait
+           aller chercher. Pas en heures calmes -- l'offre reste dans « ce qui
+           vous attend », rien n'est perdu a attendre le matin. */
+        if (manual && tel && fetchImpl && !inQuietHours(ctx.settings.quiet, now)) {
+          await pushToPhone({
+            chrome,
+            fetch: fetchImpl,
+            target: tel,
+            msg: {
+              title: t('notifyChallengeTitle'),
+              message: claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).map((x) => x.title).join('\n'),
+              priority: PRIORITY.HIGH,
+              tags: ['lock'],
+            },
+            now,
+            record,
+            why: 'defi de securite',
+          });
+        }
       }
     }
 

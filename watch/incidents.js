@@ -249,6 +249,32 @@ export function markNotified(incidents, ids, { now } = {}) {
   return next;
 }
 
+/**
+ * Ce que le TELEPHONE n'a pas encore recu (2.47.0).
+ *
+ * Un marqueur a part, `phonedAt`, parce que les deux canaux ne tombent pas en
+ * panne ensemble -- c'est tout leur interet. Et le genre `muted` y figure,
+ * contrairement a `pendingNotices` : dire sur l'ordinateur que l'ordinateur
+ * ne peut plus rien dire est absurde, le dire sur le telephone est la raison
+ * d'etre de ce canal.
+ */
+export function phonePending(incidents) {
+  return Object.values(incidents || {})
+    .filter((i) => !i.phonedAt)
+    .sort((a, b) => a.openedAt - b.openedAt);
+}
+
+/** Fige le fait que le telephone les a recus. */
+export function markPhoned(incidents, ids, { now } = {}) {
+  if (typeof now !== 'number') throw new TypeError('markPhoned : "maintenant" est obligatoire');
+
+  const next = { ...(incidents || {}) };
+  for (const id of ids || []) {
+    if (next[id]) next[id] = { ...next[id], phonedAt: now };
+  }
+  return next;
+}
+
 /* ------------------------------------------------------------ l'affichage */
 
 /** Les incidents ouverts, le plus ancien d'abord : c'est lui qui dure. */

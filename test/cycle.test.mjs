@@ -673,3 +673,66 @@ test('un souhait de la liste Steam echappe au resume, offert sur un autre magasi
   assert.ok(c.journal.some((l) => /jeu attendu/.test(l)));
   assert.match(c.notifications[0].text, /^Hollow Knight/);
 });
+
+/* ------------------------------------------------ le telephone (2.47.0) */
+
+import { KEY_PHONE } from '../watch/phone.js';
+
+/** Un fetch qui ne repond qu'a ntfy, et note ce qui y part. */
+function fetchNtfy() {
+  const appels = [];
+  const f = async (url, init) => {
+    if (String(url).startsWith('https://ntfy.sh/')) { appels.push({ url, init }); return { ok: true, status: 200 }; }
+    return { ok: false, status: 503 };
+  };
+  f.appels = appels;
+  return f;
+}
+
+async function cycleAvecTelephone({ phone, settings = {}, wishes = ['Hollow Knight'] }) {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu B'), offer('Hollow Knight')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+  let l = [];
+  for (const w of wishes) l = addWish(l, w, normaliseTitle);
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'], ...settings },
+    [KEY_WISHLIST]: l,
+    ...(phone ? { [KEY_PHONE]: phone } : {}),
+  });
+  const f = fetchNtfy();
+  await c.cycle(T, { fetch: f });
+  await c.cycle(T + DAY, { force: true, fetch: f });
+  await c.cycle(T + DAY + 2 * HOUR, { force: true, fetch: f });
+  return { c, appels: f.appels };
+}
+
+test('telephone : un jeu attendu part une fois, avec le lien de sa fiche', async () => {
+  const { appels } = await cycleAvecTelephone({ phone: { on: true, url: 'https://ntfy.sh/fgc-test' } });
+  assert.equal(appels.length, 1, 'une fois, pas a chaque cycle');
+  const u = new URL(appels[0].url);
+  assert.match(u.searchParams.get('title'), /Hollow Knight/);
+  assert.equal(u.searchParams.get('click'), 'https://store.epicgames.com/p/hollow knight');
+  assert.doesNotMatch(appels[0].init.body, /Jeu B/, 'seulement les jeux attendus');
+});
+
+test('telephone : sans l\'option « jeux attendus », seuls les incidents partiront', async () => {
+  const { appels } = await cycleAvecTelephone({ phone: { on: true, url: 'https://ntfy.sh/fgc-test', wished: false } });
+  assert.equal(appels.length, 0);
+});
+
+test('telephone : l\'ordinateur coupe, le jeu attendu part quand meme au telephone', async () => {
+  const { appels, c } = await cycleAvecTelephone({
+    phone: { on: true, url: 'https://ntfy.sh/fgc-test' },
+    settings: { notifyMode: 'off' },
+  });
+  assert.equal(c.notifications.length, 0);
+  assert.equal(appels.length, 1);
+});
+
+test('telephone : coupe par defaut, rien ne part', async () => {
+  const { appels } = await cycleAvecTelephone({ phone: undefined });
+  assert.equal(appels.length, 0);
+});
