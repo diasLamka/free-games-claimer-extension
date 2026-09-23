@@ -491,6 +491,9 @@
   "deckFilterVerified": {
     "message": "Vérifié Deck"
   },
+  "launcherButton": {
+    "message": "Free Games Auto-Claimer : cliquer pour ouvrir, glisser pour déplacer"
+  },
   "overlayOwned": {
     "message": "Vous le possédez déjà sur $1."
   },

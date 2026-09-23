@@ -4,6 +4,56 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.51.0 -- 2026-09-23
+
+**Un seul bouton sur la page du magasin**
+
+Deux boites se partageaient le coin bas droit des pages de magasin : celle du
+moteur (son etat, « Claim », « Auto hebdo ») et le bandeau des fiches
+(« Offert en ce moment sur Epic Games Store... »). Sur une fiche Epic, la
+premiere recouvrait la seconde -- et toutes deux masquaient ce que la page
+affichait dessous.
+
+Il n'en reste qu'une, `content/launcher.js` : l'icone de l'extension au bord
+droit de la fenetre, a la maniere du bouton de Dealabs.
+
+- **Un clic** ouvre un panneau : ce que le moteur est en train de faire, ce
+  que l'extension sait du jeu, « Tout recuperer », et la bascule automatique
+  (Epic ou Luna). Echap, la croix ou un clic ailleurs le referme.
+- **Un glisser** le deplace le long du bord, et la position est retenue d'une
+  page a l'autre (`veille:lanceur`, la seule cle que ce script ecrit).
+- **Au repos, il se tait.** Une pastille compte ce que la fiche a a dire, un
+  point dit ou en est le moteur (orange qui pulse, vert, rouge). Une bulle
+  breve annonce une fin -- « Tous les jeux gratuits de la semaine sont deja
+  recuperes » -- ou le premier fait d'une fiche, puis s'efface d'elle-meme
+  apres six secondes.
+- **Rien quand il n'y a rien a dire** : une fiche Steam inconnue de
+  l'extension ne recoit aucun bouton, comme avant.
+
+### Plus rien du moteur dans la page
+
+Le moteur posait ses boutons et son etat dans le DOM ordinaire de la page,
+avec une feuille de style injectee : les scripts du magasin pouvaient lire
+« Epic : Tyranny recupere ». Il ne pose plus rien. Il declare ses deux
+commandes au lanceur (`window.FGC_PAGE_UI`, visible des seuls scripts de
+l'extension) et lui dit ou il en est ; tout s'affiche dans la racine d'ombre
+fermee qu'utilisait deja le bandeau des fiches. Nouveau temoin fige
+(`reference-v2.51.0.js`) : seul `src/core/12-ui.js` change.
+
+Les libelles du bouton suivent la langue choisie dans les reglages : le
+worker les envoie avec les faits de la fiche (`launcherLabels`,
+watch/lookup.js). L'etat du moteur, lui, reste en francais -- comme avant.
+
+### Aussi
+
+- Les huit phrases des fiches passaient pour orphelines a chaque build :
+  `watch/lookup.js`, ou elles vivent, est maintenant dans le balayage i18n.
+
+1125 tests, dont 17 qui font tourner le lanceur sur un faux document. Verifie
+aussi dans Chromium avec l'extension chargee, sur des fiches Epic et Steam
+factices : un seul element ajoute a la page, aucune racine ni aucun texte
+lisibles par elle, position retenue, aucun bouton sur une fiche inconnue.
+
 ## 2.50.0 -- 2026-09-23
 
 **L'extension parle allemand et espagnol**

@@ -234,7 +234,7 @@ const AVEC_IMPORTS = [
   'background.js', 'pages/popup.js', 'pages/journal.js', 'pages/sentinel.js', 'pages/diagnostics.js',
   'pages/probe-offscreen.js', 'pages/offscreen-html.js', 'lib/i18n.js', 'pages/collection.js',
   'pages/historique.js', 'lib/money.js',
-  'content/overlay.js',
+  'content/launcher.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'sources')).map((f) => `watch/sources/${f}`),
@@ -284,7 +284,7 @@ const { useBeforeDeclaration } = await import('./tdz.mjs');
 
 for (const fichier of ['pages/popup.js', 'pages/journal.js', 'pages/sentinel.js', 'background.js', 'pages/diagnostics.js',
   'lib/i18n.js', 'pages/probe-offscreen.js', 'pages/offscreen-html.js', 'pages/collection.js', 'pages/historique.js',
-  'content/overlay.js', 'lib/money.js']) {
+  'content/launcher.js', 'lib/money.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }
@@ -393,7 +393,10 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js']);
+  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js',
+  /* Les phrases des fiches et les libelles du lanceur y vivent en TABLE : le
+     lanceur n'a pas de table de traduction, il recoit ses mots du worker. */
+  'watch/lookup.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -418,7 +421,10 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js'].map((f) => {
+  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js',
+  /* Les phrases des fiches et les libelles du lanceur y vivent en TABLE : le
+     lanceur n'a pas de table de traduction, il recoit ses mots du worker. */
+  'watch/lookup.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

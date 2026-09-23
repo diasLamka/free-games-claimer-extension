@@ -55,7 +55,7 @@ import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunn
 import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
-import { factLines, lookup } from './watch/lookup.js';
+import { factLines, launcherLabels, lookup } from './watch/lookup.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
@@ -917,7 +917,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return true;
   }
 
-  /* La surcouche demande ce qu'on sait d'un titre. Lecture seule, et la
+  /* Le lanceur demande ce qu'on sait d'un titre. Lecture seule, et la
      reponse ne porte QUE des faits deja connus de l'utilisateur : rien n'est
      divulgue a la page, qui n'apprend rien qu'il ne sache deja lui-meme. */
   if (msg.type === 'fgc-lookup') {
@@ -936,11 +936,14 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         now: Date.now(),
       });
       /* Les phrases partent avec les faits, dans la langue du lecteur : la
-         surcouche n'a pas de table de traduction (voir factLines). */
+         lanceur n'a pas de table de traduction (voir factLines). Ses
+         libelles partent aussi, pour la meme raison ; hors d'une fiche, le
+         titre est vide et seuls eux ont un sens. */
       const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
       sendResponse({
         facts,
         lines: factLines(facts, { t, storeLabel: (s) => STORE_LABELS[s] || s, dateText }),
+        labels: launcherLabels(t),
       });
     })().catch(() => sendResponse({ facts: [] }));
     return true;

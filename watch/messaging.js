@@ -89,9 +89,10 @@ export const UI_COMMANDS = Object.freeze([
 export const CONTENT_MESSAGES = Object.freeze([
   'fgc-suis-je-pilote', 'fgc-pret', 'fgc-verdict', 'fgc-fetch',
   'fgc-notify', 'fgc-open-tab',
-  /* La surcouche des pages de magasin (2.37.0). Elle LIT : aucune ecriture,
-     aucun clic, aucune reclamation. C'est pour cela qu'elle a le droit de
-     venir d'un script de contenu, contrairement aux commandes. */
+  /* La surcouche des pages de magasin (2.37.0), devenue le lanceur (2.51.0).
+     Elle LIT : aucune ecriture, aucun clic, aucune reclamation. C'est pour
+     cela qu'elle a le droit de venir d'un script de contenu, contrairement
+     aux commandes. */
   'fgc-lookup',
 ]);
 

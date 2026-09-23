@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (27 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi) |
+| Veille | `veille:*` (28 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin |
 | Moteur | `FGC_*` (`content/gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -112,12 +112,16 @@ un `<img>` -- mais l'effet est le meme, et il vaut d'etre dit.
 
 ### Ce que la page d'un magasin peut voir
 
-Sur une fiche Epic, GOG ou Steam, la surcouche (`content/overlay.js`) affiche ce
-que l'extension sait du jeu -- dont ce que vous possedez sur les AUTRES
-magasins. Jusqu'a la 2.47.0 ce bandeau vivait dans le DOM ordinaire de la
-page : les scripts du magasin, et les outils d'enregistrement de session
-qu'il embarque, pouvaient le lire. Depuis la 2.48.0 il vit dans une racine
-d'ombre **fermee** : la page voit qu'un element existe, pas ce qu'il dit.
+Sur une page de magasin, le bouton de l'extension (`content/launcher.js`)
+affiche ce qu'elle sait du jeu -- dont ce que vous possedez sur les AUTRES
+magasins -- et ou en est le moteur. Jusqu'a la 2.47.0 le bandeau des fiches
+vivait dans le DOM ordinaire de la page : les scripts du magasin, et les
+outils d'enregistrement de session qu'il embarque, pouvaient le lire. Depuis
+la 2.48.0 il vit dans une racine d'ombre **fermee** : la page voit qu'un
+element existe, pas ce qu'il dit. Depuis la 2.51.0 l'etat du moteur et ses
+boutons y vivent aussi ; avant, ils s'ecrivaient dans la page avec une
+feuille de style injectee. Le moteur ne laisse plus rien dans le DOM de la
+page.
 
 ## Ce que l'extension ne fait pas
 

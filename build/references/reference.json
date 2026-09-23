@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.45.0.js",
-  "sha256": "FD216DEF04B5CD8206D669249EEF28BB088B6BFE815746EA85936D098DD6766C",
-  "octets": 221461,
-  "version": "2.45.0",
-  "motif": "2.45.0 : le mode pilote conclut a l'echec des que le module a fini sans rien noter, au lieu d'attendre le budget"
+  "fichier": "reference-v2.51.0.js",
+  "sha256": "670ABDBF98BE9DC00EFD296C5C881C084D680F076494776EC13491BF6EDE115F",
+  "octets": 218996,
+  "version": "2.51.0",
+  "motif": "2.51.0 : le moteur ne pose plus rien dans la page, il declare ses commandes au lanceur (content/launcher.js)"
 }

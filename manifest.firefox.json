@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.50.0",
+  "version": "2.51.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -82,13 +82,30 @@
     },
     {
       "matches": [
-        "https://store.epicgames.com/*",
+        "https://*.epicgames.com/*",
         "https://www.gog.com/*",
         "https://gog.com/*",
+        "https://luna.amazon.com/claims/*",
+        "https://luna.amazon.fr/claims/*",
+        "https://luna.amazon.de/claims/*",
+        "https://luna.amazon.co.uk/claims/*",
+        "https://luna.amazon.it/claims/*",
+        "https://luna.amazon.es/claims/*",
+        "https://luna.amazon.ca/claims/*",
+        "https://luna.amazon.com.au/claims/*",
+        "https://luna.amazon.co.jp/claims/*",
+        "https://luna.amazon.in/claims/*",
+        "https://luna.amazon.com.mx/claims/*",
+        "https://luna.amazon.com.br/claims/*",
+        "https://luna.amazon.nl/claims/*",
+        "https://luna.amazon.se/claims/*",
+        "https://luna.amazon.pl/claims/*",
+        "https://luna.amazon.com.tr/claims/*",
+        "https://gaming.amazon.com/*",
         "https://store.steampowered.com/app/*"
       ],
       "js": [
-        "content/overlay.js"
+        "content/launcher.js"
       ],
       "run_at": "document_idle",
       "all_frames": false

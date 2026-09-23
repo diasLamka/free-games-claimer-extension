@@ -491,6 +491,9 @@
   "deckFilterVerified": {
     "message": "Deck verified"
   },
+  "launcherButton": {
+    "message": "Free Games Auto-Claimer: click to open, drag to move"
+  },
   "overlayOwned": {
     "message": "You already own it on $1."
   },

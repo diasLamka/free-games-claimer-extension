@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 34
-sha256  : 8D0762DA6A56CA2AC4AA284076A11117DD29A4C28168A9F7EABE3E59B61546B4
-motif   : 2.45.0 : le mode pilote conclut a l'echec des que le module a fini sans rien noter, au lieu d'attendre le budget
+sha256  : B006C155198E1B0559F6EB460546624BC4AD3991EC22582CD253566B36F8CD0C
+motif   : 2.51.0 : le moteur ne pose plus rien dans la page, il declare ses commandes au lanceur (content/launcher.js)
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

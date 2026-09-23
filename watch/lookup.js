@@ -9,7 +9,7 @@
  * ne les lit toutes.
  *
  * Module PUR : il repond a une question, il n'affiche rien et ne touche a
- * aucune page. Le rendu vit dans overlay.js, qui n'a le droit de rien savoir
+ * aucune page. Le rendu vit dans content/launcher.js, qui n'a le droit de rien savoir
  * d'autre que ce qui sort d'ici.
  */
 import { OUTCOMES } from './outcomes.js';
@@ -140,7 +140,7 @@ function dedupe(faits) {
 /**
  * Les phrases d'une fiche, dans la langue de l'utilisateur (2.50.0).
  *
- * Composees ICI, cote service worker, et non dans la surcouche : celle-ci est
+ * Composees ICI, cote service worker, et non dans le lanceur : celui-ci est
  * injectee dans une page tierce et doit rester minuscule, sans table de
  * traduction. Elle ecrivait donc ses phrases en francais pour tout le monde,
  * et le magasin sous son identifiant (« sur gog »). Le worker a la table, les
@@ -162,4 +162,27 @@ export function factLines(facts, { t, storeLabel = (s) => s, dateText = (ts) => 
     if (l) lignes.push(l);
   }
   return lignes;
+}
+
+/**
+ * Les mots du lanceur (content/launcher.js, 2.51.0), par nom.
+ *
+ * Meme raison que les phrases ci-dessus : le lanceur n'a pas de table de
+ * traduction. Il recoit ses libelles avec la reponse, dans la langue choisie
+ * dans les reglages ; sans reponse, il demande les memes cles au navigateur,
+ * qui ignore seulement ce choix. Les cles sont donc recopiees la-bas, et un
+ * test verifie que les deux listes n'ont pas diverge.
+ */
+export const LAUNCHER_LABELS = Object.freeze({
+  button: 'launcherButton',
+  close: 'sentinelClose',
+  claim: 'claimAll',
+  autoEpic: 'epicAutoLabel',
+  autoLuna: 'lunaAutoLabel',
+});
+
+export function launcherLabels(t) {
+  const out = {};
+  for (const [nom, cle] of Object.entries(LAUNCHER_LABELS)) out[nom] = t(cle);
+  return out;
 }
