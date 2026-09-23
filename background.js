@@ -61,7 +61,8 @@ import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
-import { intlLocale, t } from './lib/i18n.js';
+import { intlLocale, setLocale, t } from './lib/i18n.js';
+import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, updatedNotice } from './watch/self-update.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -107,6 +108,9 @@ function record(niveau, message, details) {
   // dernier evenement. Ce qui suit est la seule trace qui survit a la nuit.
   const entry = makeEntry({ level: niveau, message, details, ts: Date.now() });
   journalQueue = journalQueue.then(() => appendTo(api, entry)).catch(() => {});
+  /* Rendue pour qui doit savoir la ligne ecrite : un rechargement de
+     l'extension, par exemple, couperait l'ecriture en cours. */
+  return journalQueue;
 }
 
 /* ------------------------------------------------------------------ alarmes */
@@ -482,6 +486,11 @@ function planifier(origine) {
 }
 
 api.alarms.onAlarm.addListener((alarme) => {
+  if (alarme.name === ALARM_DISK) {
+    checkDisk({ chrome: api, fetch: (u, i) => fetch(u, i), cycleBusy: !!cycleRunning, record })
+      .catch((e) => record('warn', 'lecture du dossier de l\'extension impossible', e));
+    return;
+  }
   if (alarme.name === ALARM_MAIN) {
     startCycle('alarme principale').catch((e) => record('error', 'cycle impossible (alarme principale)', e));
     return;
@@ -496,6 +505,53 @@ api.runtime.onStartup.addListener(() => planifier('demarrage'));
 
 // Une mise a jour efface les alarmes : 'update' compte autant que 'install'.
 api.runtime.onInstalled.addListener(() => planifier('installation'));
+
+/* La langue choisie dans les reglages (Apparence -> Langue).
+ *
+ * Seules les PAGES l'appliquaient : le worker parlait la langue du navigateur.
+ * Ses notifications, les phrases des fiches et les libelles du bouton de page
+ * ignoraient donc le choix. Il la lit maintenant a chaque reveil et la suit
+ * quand elle change ; ce qui compose un texte attend `langue` d'abord. */
+const KEY_UI = 'veille:ui';
+
+async function appliquerLangue() {
+  const raw = await readKeys(api, KEY_UI);
+  const ui = raw[KEY_UI] || {};
+  setLocale(ui.language && ui.language !== 'auto' ? ui.language : null);
+}
+
+const langue = appliquerLangue().catch(() => {});
+
+api.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes[KEY_UI]) return;
+  const ui = changes[KEY_UI].newValue || {};
+  setLocale(ui.language && ui.language !== 'auto' ? ui.language : null);
+});
+
+/* Le dossier de l'extension mis a jour (2.53.0) : voir watch/self-update.js.
+ * L'alarme n'existe que pour une installation depuis un dossier ; une version
+ * du Web Store n'en a pas, et une alarme restee d'avant est retiree. */
+async function armerDisque() {
+  let dev = false;
+  try {
+    dev = !!(api.management && api.management.getSelf && (await api.management.getSelf()).installType === 'development');
+  } catch { dev = false; }
+  const alarme = await api.alarms.get(ALARM_DISK);
+  if (dev && !alarme) await api.alarms.create(ALARM_DISK, { periodInMinutes: DISK_PERIOD_MIN });
+  if (!dev && alarme) await api.alarms.clear(ALARM_DISK);
+}
+
+/* Apres un rechargement vers une version plus recente : le dire, une fois. */
+api.runtime.onInstalled.addListener((details) => {
+  const n = updatedNotice(details, api.runtime.getManifest().version);
+  if (!n) return;
+  record('info', `mise a jour appliquee : ${n.from} -> ${n.to}`);
+  langue
+    .then(() => api.notifications.create('fgc-mise-a-jour', {
+      type: 'basic', iconUrl: 'icons/icon128.png', title: t('updatedTitle'), message: t('updatedBody', n.to),
+    }))
+    .catch((e) => record('warn', 'notification de mise a jour impossible', e));
+});
 
 /* « Bientot » restait sans liens apres la mise a jour qui les a ajoutes.
  *
@@ -922,6 +978,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
      divulgue a la page, qui n'apprend rien qu'il ne sache deja lui-meme. */
   if (msg.type === 'fgc-lookup') {
     (async () => {
+      await langue;
       const raw = await readKeys(api, [
         KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_OUTCOMES,
       ]);
@@ -1150,3 +1207,4 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 // Filet universel : ni onStartup ni onInstalled ne couvrent un reveil ordinaire
 // du worker. Cet appel racine coute un alarms.get et couvre tous les cas.
 planifier('reveil');
+armerDisque().catch((e) => record('warn', 'alarme du dossier impossible', e));

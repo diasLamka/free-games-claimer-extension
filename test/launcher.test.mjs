@@ -179,9 +179,11 @@ function charger({
     pile.push(page, doc.body, doc.documentElement);
     return pile;
   };
+  const messages = [];
   const chrome = {
     runtime: {
       lastError: undefined,
+      onMessage: { addListener: (f) => messages.push(f) },
       sendMessage(msg, cb) { envoyes.push(JSON.parse(JSON.stringify(msg))); if (reponse) cb(JSON.parse(JSON.stringify(reponse))); },
     },
     i18n: { getMessage: (k) => `nav:${k}` },
@@ -223,6 +225,12 @@ function charger({
   const pos = () => ({ left: hote().style.left, top: hote().style.top });
   return {
     doc, win, api: win.FGC_PAGE_UI, envoyes, ecrits, minuteries, hote, parts, elements, jouer, jouerJusqua, redimensionner, pos,
+    /** Ce que le lanceur repond a un message du worker. */
+    demander: (msg) => {
+      let r;
+      for (const f of messages) f(msg, {}, (x) => { r = JSON.parse(JSON.stringify(x)); });
+      return r;
+    },
   };
 }
 
@@ -617,4 +625,16 @@ test('les deux manifestes : le lanceur partout ou le moteur tourne, plus les fic
     for (const motif of moteurs.matches) assert.ok(lanceur[0].matches.includes(motif), `${f} : ${motif}`);
     assert.ok(lanceur[0].matches.includes('https://store.steampowered.com/app/*'));
   }
+});
+
+/* ------------------------------------------------------------ occupe ? (2.53.0) */
+
+test('avant un rechargement, le lanceur dit si son moteur est en pleine reclamation', () => {
+  const p = charger({ reponse: null });
+  assert.deepEqual(p.demander({ type: 'fgc-occupe' }), { occupe: false });
+  p.api.status('running', 'Epic : Tyranny...');
+  assert.deepEqual(p.demander({ type: 'fgc-occupe' }), { occupe: true }, 'meme sans bouton : onglet pilote');
+  p.api.status('ok', 'fini');
+  assert.deepEqual(p.demander({ type: 'fgc-occupe' }), { occupe: false });
+  assert.equal(p.demander({ type: 'autre' }), undefined, 'les autres messages ne le regardent pas');
 });

@@ -135,6 +135,12 @@ page.
   un. Les sessions sont utilisees de facon ambiante par le navigateur.
 - **Aucune ressource distante dans ses pages.** Pas de police, pas de script,
   pas de feuille de style tierce.
+- **Aucune mise a jour venue d'ailleurs que de votre dossier.** Installee depuis
+  un dossier, l'extension se recharge quand une version plus recente y arrive
+  (2.53.0) : elle relit son propre `manifest.json` sur le disque, rien d'autre,
+  et ne telecharge rien. C'est `tools/maj-auto.ps1`, s'il est installe, qui
+  fait le `git pull` -- avec votre git, depuis le depot que vous avez clone, et
+  jamais en ecrasant un fichier modifie a la main.
 
 ## Votre donnee la plus sensible : les codes de rachat
 

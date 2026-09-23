@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
+| `self-update.js` | installee depuis un dossier : se recharge quand une version plus recente y arrive, jamais en pleine reclamation |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 | `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |
 | `codes.js` | ou echanger un code, par magasin, et ou il en est |
@@ -182,6 +183,7 @@ build/                      outils : build, controles, archives, apercu
   pre-rename/                 le temoin du renommage francais -> anglais
 test/                       tests unitaires (node --test), harnais et captures reelles
 host/                       le programme de la passerelle locale, installe a la main
+tools/                      maj-auto.ps1 : git pull du dossier, a la main ou toutes les heures (Windows)
 store/                      fiches, permissions et confidentialite pour les magasins
 docs/specs/                 design de la veille, constats V0 et V6-V7
 .github/workflows/          check.yml a chaque push, release.yml sur un tag
@@ -198,6 +200,38 @@ une release GitHub.
 
 **Chrome / Edge, depuis les sources** -- `chrome://extensions` -> Mode
 developpeur -> *Charger l'extension non empaquetee* -> choisir ce dossier.
+
+### Mise a jour automatique d'une installation depuis les sources
+
+Chargee depuis un dossier, l'extension ne se met pas a jour seule. Deux pieces
+s'en chargent (2.53.0) :
+
+1. **Le dossier suit GitHub.** Une fois, dans PowerShell, depuis ce dossier :
+
+   ```
+   powershell -ExecutionPolicy Bypass -File tools\maj-auto.ps1 -Installer
+   ```
+
+   Une tache planifiee a votre nom (sans droits d'administrateur) fait un
+   `git pull` toutes les heures, sans fenetre. Elle ne touche a rien quand un
+   fichier a ete modifie a la main, quand le dossier n'est pas sur `main`, ou
+   quand l'historique local differe de celui de GitHub : elle l'ecrit dans
+   `%LOCALAPPDATA%\FreeGamesAutoClaimer\maj-auto.log` et s'arrete. Sans
+   `-Installer`, une seule mise a jour, tout de suite ; `-Desinstaller` retire
+   la tache.
+
+2. **L'extension se recharge d'elle-meme.** Toutes les cinq minutes, elle
+   relit la version ecrite dans son `manifest.json` sur le disque. Plus
+   recente que celle qui tourne : elle se recharge -- le bouton ⟳ de
+   `chrome://extensions`, sans vous -- sauf si une reclamation est en cours ;
+   elle attend alors la fin. Une notification dit la nouvelle version. Cela ne
+   concerne que l'installation depuis un dossier : une version du Web Store se
+   met a jour par le Store.
+
+Un dossier clone avant la reecriture de l'historique (septembre 2026) ne peut
+pas avancer : `git fetch` puis `git reset --hard origin/main`, une fois, si
+rien n'y est a garder. Le script le dit dans son journal plutot que de le
+faire a votre place.
 
 **Firefox, depuis les sources** -- remplacer `manifest.json` par
 `manifest.firefox.json`, puis `about:debugging#/runtime/this-firefox` ->

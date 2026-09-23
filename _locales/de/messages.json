@@ -491,6 +491,12 @@
   "deckFilterVerified": {
     "message": "Deck-verifiziert"
   },
+  "updatedTitle": {
+    "message": "Free Games Auto-Claimer aktualisiert"
+  },
+  "updatedBody": {
+    "message": "Version $1 läuft jetzt."
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: zum Öffnen klicken, zum Verschieben ziehen"
   },

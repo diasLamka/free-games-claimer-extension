@@ -806,6 +806,17 @@
     },
   };
 
+  /* Avant de recharger l'extension, le worker demande si un onglet est en
+     pleine reclamation (watch/self-update.js) : recharger couperait le moteur
+     de son worker au milieu d'un jeu. Seule l'extension peut poser la
+     question -- une page n'a pas acces a runtime.onMessage. */
+  try {
+    api.runtime.onMessage.addListener(function (msg, expediteur, repondre) {
+      if (!msg || msg.type !== 'fgc-occupe') return;
+      repondre({ occupe: etat.statut === 'running' });
+    });
+  } catch (e) { /* contexte invalide apres une mise a jour */ }
+
   /* ------------------------------------------------------------ la fiche */
 
   /**

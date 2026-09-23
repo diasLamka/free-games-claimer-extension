@@ -4,6 +4,46 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.53.0 -- 2026-09-23
+
+**Une installation depuis les sources se met a jour toute seule**
+
+Chargee depuis un dossier, l'extension ne se mettait jamais a jour : il
+fallait un `git pull`, puis le bouton « Recharger » de `chrome://extensions`.
+Les deux se font seuls.
+
+- **`tools/maj-auto.ps1`** fait le `git pull`, a la main ou toutes les heures
+  (`-Installer` : tache planifiee a votre nom, sans droits d'administrateur,
+  sans fenetre ; `-Desinstaller` la retire). Il n'ecrase jamais rien : fichier
+  modifie a la main, autre branche que `main`, historique qui differe de
+  GitHub -- il l'ecrit dans son journal et s'arrete. Il avance seulement
+  (`merge --ff-only`) et n'appelle ni `reset`, ni `checkout`, ni `clean`.
+  Essaye sous PowerShell sur cinq cas : a jour, version nouvelle (un fichier
+  non suivi ne gene pas), fichier modifie, historique reecrit, autre branche.
+- **L'extension se recharge d'elle-meme** (`watch/self-update.js`). Chargee
+  depuis un dossier, Chrome lui sert ses fichiers depuis le disque : toutes
+  les cinq minutes, elle relit la version de son `manifest.json` et, plus
+  recente que celle qui tourne, se recharge. Jamais en pleine reclamation --
+  ni pendant un cycle, ni quand un onglet dit que son moteur travaille (le
+  lanceur repond a `fgc-occupe`) ; elle attend. Jamais vers une version plus
+  ancienne. Jamais pour une version du Web Store. La raison est ecrite au
+  journal AVANT le rechargement, et une notification dit la nouvelle version
+  apres. Aucune permission de plus : `management.getSelf` n'en demande pas,
+  et les onglets interroges sont ceux ou l'extension a deja acces.
+  Verifie dans Chromium : version changee sur le disque, extension rechargee
+  seule en 2.53.1, active, alarme rearmee, les deux lignes au journal.
+
+### La langue choisie n'atteignait pas le service worker
+
+Reglages -> Apparence -> Langue n'etait applique que par les pages. Le worker
+parlait la langue du navigateur : ses notifications, les phrases des fiches
+et les libelles du bouton de page ignoraient le choix -- contrairement a ce
+qu'annoncait la 2.51.0. Il la lit maintenant a chaque reveil et la suit quand
+elle change. Verifie : allemand choisi, navigateur en francais, panneau du
+bouton en allemand.
+
+1152 tests.
+
 ## 2.52.0 -- 2026-09-23
 
 **Le bouton se pose ou l'on veut, et laisse la place aux autres**
