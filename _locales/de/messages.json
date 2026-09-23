@@ -491,6 +491,66 @@
   "deckFilterVerified": {
     "message": "Deck-verifiziert"
   },
+  "updateTitle": {
+    "message": "Aktualisierung"
+  },
+  "updateVersion": {
+    "message": "Version $1, aus deinem Ordner geladen."
+  },
+  "updateNow": {
+    "message": "Jetzt aktualisieren"
+  },
+  "updateHint": {
+    "message": "Holt die neueste Version von GitHub in deinen Ordner und lädt die Erweiterung neu – ohne auf die stündliche Aktualisierung zu warten. Braucht das Hilfsprogramm aus tools\\maj-auto.ps1 -Installer."
+  },
+  "updateWorking": {
+    "message": "Wird aktualisiert…"
+  },
+  "updateDenied": {
+    "message": "Berechtigung verweigert: Die Schaltfläche muss mit dem Hilfsprogramm auf diesem PC sprechen."
+  },
+  "updateNoHost": {
+    "message": "Hilfsprogramm fehlt. Führe im Ordner der Erweiterung aus: $1"
+  },
+  "updateWrongId": {
+    "message": "Das Hilfsprogramm kennt diese Erweiterung nicht. Führe im Ordner der Erweiterung aus: $1"
+  },
+  "updateNoGit": {
+    "message": "Git ist auf diesem PC nicht installiert."
+  },
+  "updateNotRepo": {
+    "message": "Der Ordner der Erweiterung ist kein Git-Klon."
+  },
+  "updateModified": {
+    "message": "Nichts getan: Im Ordner wurden Dateien von Hand geändert. Sie bleiben, wie sie sind."
+  },
+  "updateBranch": {
+    "message": "Nichts getan: Der Ordner ist nicht auf dem Branch main."
+  },
+  "updateDiverged": {
+    "message": "Nichts getan: Der Verlauf des Ordners weicht von GitHub ab. Das Aktualisierungsprotokoll sagt, was zu tun ist."
+  },
+  "updateNetwork": {
+    "message": "GitHub ist nicht erreichbar. Versuch es später noch einmal."
+  },
+  "updateBusyHost": {
+    "message": "Eine andere Aktualisierung läuft bereits."
+  },
+  "updateFailed": {
+    "message": "Aktualisierung fehlgeschlagen: $1"
+  },
+  "updateReloading": {
+    "message": "Version $1 ist da: Die Erweiterung startet neu."
+  },
+  "updateAfterClaim": {
+    "message": "Version $1 ist da. Die Erweiterung startet neu, sobald das laufende Abholen fertig ist."
+  },
+  "updatePulled": {
+    "message": "Dateien aktualisiert, gleiche Version ($1): nichts neu zu laden."
+  },
+  "updateUpToDate": {
+    "message": "Bereits aktuell ($1)."
+  },
   "updatedTitle": {
     "message": "Free Games Auto-Claimer aktualisiert"
   },

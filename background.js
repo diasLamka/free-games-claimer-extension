@@ -62,7 +62,7 @@ import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
 import { intlLocale, setLocale, t } from './lib/i18n.js';
-import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, updatedNotice } from './watch/self-update.js';
+import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -1003,6 +1003,21 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         labels: launcherLabels(t),
       });
     })().catch(() => sendResponse({ facts: [] }));
+    return true;
+  }
+
+  /* « Mettre a jour maintenant » (2.54.0) : le relais fait le git pull, puis
+     le disque est relu tout de suite. La reponse part AVANT le rechargement,
+     qui fermera le popup. */
+  if (msg.type === 'fgc-maj') {
+    (async () => {
+      const r = await requestUpdate({ chrome: api });
+      record(r.ok ? 'info' : 'warn', `mise a jour demandee depuis le popup : ${r.etat}`);
+      const disk = r.ok
+        ? await checkDisk({ chrome: api, fetch: (u, i) => fetch(u, i), cycleBusy: !!cycleRunning, record, delayMs: 1200 })
+        : null;
+      sendResponse({ ...r, disk, running: api.runtime.getManifest().version });
+    })().catch((e) => sendResponse({ ok: false, etat: 'echec', detail: String((e && e.message) || e) }));
     return true;
   }
 

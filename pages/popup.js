@@ -39,6 +39,7 @@ import { DECK } from '../watch/deck.js';
 import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from '../watch/codes.js';
 import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
 import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
+import { updateMessage } from '../watch/self-update.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -2310,6 +2311,37 @@ document.getElementById('phone-test').addEventListener('click', async () => {
 
 document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
 document.getElementById('phone-token').addEventListener('change', (e) => writePhone({ token: e.target.value.trim() }));
+
+/* --- mise a jour a la demande (2.54.0)
+
+   La section n'existe que pour une installation depuis un dossier : une
+   version du Web Store se met a jour par le Store. */
+
+function updateSay(text) { document.getElementById('update-state').textContent = text; }
+
+(async () => {
+  let moi = null;
+  try { moi = api.management && api.management.getSelf ? await api.management.getSelf() : null; } catch { moi = null; }
+  if (!moi || moi.installType !== 'development') return;
+  document.getElementById('update-section').hidden = false;
+  document.getElementById('update-version').textContent = t('updateVersion', api.runtime.getManifest().version);
+})();
+
+document.getElementById('update-now').addEventListener('click', async () => {
+  // Firefox : la demande de permission doit partir avant tout await.
+  let accorde = false;
+  try { accorde = await api.permissions.request({ permissions: ['nativeMessaging'] }); } catch { accorde = false; }
+  if (!accorde) { updateSay(t('updateDenied')); return; }
+  const bouton = document.getElementById('update-now');
+  bouton.disabled = true;
+  updateSay(t('updateWorking'));
+  const r = await tell('fgc-maj');
+  bouton.disabled = false;
+  const [cle, ...subs] = updateMessage(r || { ok: false, etat: 'echec', detail: '?' }, {
+    disk: r && r.disk, id: api.runtime.id, running: api.runtime.getManifest().version,
+  });
+  updateSay(t(cle, ...subs));
+});
 
 /* --- backup */
 

@@ -77,6 +77,10 @@ export const UI_COMMANDS = Object.freeze([
   /* L'essai du telephone (2.47.0). Il envoie un message vers un hote que
      l'utilisateur a choisi : reserve aux pages, comme tout ce qui sort. */
   'fgc-phone-test',
+  /* La mise a jour a la demande (2.54.0). Elle fait tourner un programme de
+     la machine, par le relais que l'utilisateur a installe : reservee aux
+     pages, comme la passerelle. */
+  'fgc-maj',
 ]);
 
 /**

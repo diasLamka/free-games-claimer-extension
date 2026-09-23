@@ -396,7 +396,10 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js',
   /* Les phrases des fiches et les libelles du lanceur y vivent en TABLE : le
      lanceur n'a pas de table de traduction, il recoit ses mots du worker. */
-  'watch/lookup.js']);
+  'watch/lookup.js',
+  /* Les messages du bouton « Mettre a jour maintenant » : le popup les lit
+     par une cle rendue par updateMessage, jamais ecrite en toutes lettres. */
+  'watch/self-update.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -424,7 +427,10 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js',
   /* Les phrases des fiches et les libelles du lanceur y vivent en TABLE : le
      lanceur n'a pas de table de traduction, il recoit ses mots du worker. */
-  'watch/lookup.js'].map((f) => {
+  'watch/lookup.js',
+  /* Les messages du bouton « Mettre a jour maintenant » : le popup les lit
+     par une cle rendue par updateMessage, jamais ecrite en toutes lettres. */
+  'watch/self-update.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

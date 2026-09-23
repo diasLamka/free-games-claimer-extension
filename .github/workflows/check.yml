@@ -33,3 +33,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm run check
+
+      # La sonnette (2.54.0). Un push sur main dont le check passe previent le
+      # PC de l'auteur, qui fait aussitot son `git pull` (tools/maj-auto.ps1,
+      # l'ecouteur). Le sujet ntfy est un secret du depot, MAJ_NTFY : absent,
+      # l'etape ne fait rien. Le message ne porte que le numero du commit --
+      # l'ecouteur n'en lit meme pas le contenu. Une panne de ntfy ne rend pas
+      # le check rouge : la mise a jour horaire rattrapera.
+      - name: Sonnette de mise a jour
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          MAJ_NTFY: ${{ secrets.MAJ_NTFY }}
+        run: |
+          if [ -z "$MAJ_NTFY" ]; then echo "pas de secret MAJ_NTFY : aucune sonnette"; exit 0; fi
+          case "$MAJ_NTFY" in https://*) ;; *) echo "MAJ_NTFY doit commencer par https://"; exit 0 ;; esac
+          curl -fsS -m 20 -H "Title: Free Games Auto-Claimer" -d "${GITHUB_SHA::7}" "$MAJ_NTFY" -o /dev/null \
+            && echo "sonnette envoyee" || echo "ntfy injoignable : la mise a jour horaire rattrapera"

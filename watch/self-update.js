@@ -75,7 +75,7 @@ export function reloadDecision({ installType, running, onDisk, busy }) {
   const c = compareVersions(onDisk, running);
   if (c === null) return { reload: false, reason: `version incomprise (${onDisk} / ${running})` };
   if (c <= 0) return { reload: false, reason: 'a jour' };
-  if (busy) return { reload: false, reason: `version ${onDisk} sur le disque, mais une reclamation est en cours : on attendra` };
+  if (busy) return { reload: false, busy: true, reason: `version ${onDisk} sur le disque, mais une reclamation est en cours : on attendra` };
   return { reload: true, reason: `version ${onDisk} sur le disque, ${running} chargee : rechargement` };
 }
 
@@ -110,7 +110,7 @@ export async function tabsBusy({ chrome, matches, timeoutMs = BUSY_TIMEOUT_MS })
  * Le tour complet : lire les deux versions, verifier que rien ne travaille,
  * recharger si tout y est. Rend la decision.
  */
-export async function checkDisk({ chrome, fetch, cycleBusy = false, record = () => {} }) {
+export async function checkDisk({ chrome, fetch, cycleBusy = false, record = () => {}, delayMs = 0 }) {
   let installType = null;
   try {
     const moi = chrome.management && chrome.management.getSelf ? await chrome.management.getSelf() : null;
@@ -123,11 +123,16 @@ export async function checkDisk({ chrome, fetch, cycleBusy = false, record = () 
   const plusRecente = compareVersions(onDisk, manifest.version) === 1;
   const busy = plusRecente && (cycleBusy || await tabsBusy({ chrome, matches: launcherMatches(manifest) }));
 
-  const d = reloadDecision({ installType, running: manifest.version, onDisk, busy });
+  const d = { ...reloadDecision({ installType, running: manifest.version, onDisk, busy }), onDisk };
   /* La ligne est ecrite AVANT de recharger : le rechargement couperait
      l'ecriture, et le journal ne dirait pas pourquoi l'extension a redemarre. */
   if (plusRecente) await record(d.reload ? 'info' : 'warn', d.reason);
-  if (d.reload) chrome.runtime.reload();
+  /* `delayMs` : le temps de repondre au popup qui a demande, avant que le
+     rechargement ne le ferme. */
+  if (d.reload) {
+    if (delayMs > 0) setTimeout(() => chrome.runtime.reload(), delayMs);
+    else chrome.runtime.reload();
+  }
   return d;
 }
 
@@ -139,4 +144,75 @@ export function updatedNotice(details, currentVersion) {
   if (!details || details.reason !== 'update') return null;
   if (!details.previousVersion || compareVersions(currentVersion, details.previousVersion) !== 1) return null;
   return { from: details.previousVersion, to: currentVersion };
+}
+
+/* ------------------------------------------------------------ le bouton (2.54.0)
+ *
+ * « Mettre a jour maintenant », dans le popup. L'extension ne peut pas faire
+ * de `git pull` : elle demande au relais que tools/maj-auto.ps1 -Installer a
+ * declare a Chrome (messagerie native). Le message ne porte AUCUNE commande :
+ * `{ cmd: 'maj' }` declenche la seule chose que le relais sache faire, la
+ * meme mise a jour que l'appel a la main. Puis le disque est relu tout de
+ * suite, sans attendre l'alarme.
+ */
+
+export const NATIVE_UPDATE = 'com.free_games_claimer.maj';
+
+/** La commande a lancer dans le dossier pour installer le relais. */
+export const INSTALL_COMMAND = 'powershell -ExecutionPolicy Bypass -File tools\\maj-auto.ps1 -Installer';
+
+/** Les mots que le relais peut rendre (voir MettreAJour dans le script). */
+const ETATS_RELAIS = Object.freeze([
+  'a-jour', 'mis-a-jour', 'modifie', 'branche', 'divergent', 'reseau', 'sans-git', 'pas-depot', 'occupe', 'echec', 'refuse',
+]);
+
+/** La reponse du relais, verifiee : un programme local reste une source externe. */
+export function readUpdateReply(r) {
+  if (!r || typeof r !== 'object' || !ETATS_RELAIS.includes(r.etat)) {
+    return { ok: false, etat: 'echec', detail: 'reponse du relais illisible' };
+  }
+  const court = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+  return { ok: r.ok === true, etat: r.etat, avant: court(r.avant, 20), apres: court(r.apres, 20), detail: court(r.detail, 400) };
+}
+
+/** Demander la mise a jour au relais. Ne leve jamais : rend un etat. */
+export async function requestUpdate({ chrome }) {
+  if (!chrome.runtime || typeof chrome.runtime.sendNativeMessage !== 'function') return { ok: false, etat: 'sans-permission' };
+  try {
+    return readUpdateReply(await chrome.runtime.sendNativeMessage(NATIVE_UPDATE, { cmd: 'maj' }));
+  } catch (e) {
+    const m = String((e && e.message) || e);
+    if (/not found/i.test(m)) return { ok: false, etat: 'sans-relais' };
+    if (/forbidden/i.test(m)) return { ok: false, etat: 'refuse-origine' };
+    return { ok: false, etat: 'echec', detail: m.slice(0, 400) };
+  }
+}
+
+/**
+ * Ce que le popup dit, en cle de traduction et ses variables.
+ *
+ * `disk` est la decision de checkDisk prise juste apres, `id` l'identifiant
+ * de l'extension (le relais doit le connaitre), `running` la version qui
+ * tourne.
+ */
+export function updateMessage(r, { disk = null, id = '', running = '' } = {}) {
+  const e = r && r.etat;
+  if (!r || !r.ok) {
+    if (e === 'sans-permission') return ['updateDenied'];
+    if (e === 'sans-relais') return ['updateNoHost', INSTALL_COMMAND];
+    if (e === 'refuse-origine') return ['updateWrongId', `${INSTALL_COMMAND} -IdExtension ${id}`];
+    if (e === 'sans-git') return ['updateNoGit'];
+    if (e === 'pas-depot') return ['updateNotRepo'];
+    if (e === 'modifie') return ['updateModified'];
+    if (e === 'branche') return ['updateBranch'];
+    if (e === 'divergent') return ['updateDiverged'];
+    if (e === 'reseau') return ['updateNetwork'];
+    if (e === 'occupe') return ['updateBusyHost'];
+    return ['updateFailed', (r && r.detail) || e || '?'];
+  }
+  const cible = (disk && disk.onDisk) || r.apres || running;
+  if (disk && disk.reload) return ['updateReloading', cible];
+  if (disk && disk.busy) return ['updateAfterClaim', cible];
+  if (e === 'mis-a-jour') return ['updatePulled', r.apres || running];
+  return ['updateUpToDate', running || r.apres];
 }

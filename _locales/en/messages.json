@@ -491,6 +491,66 @@
   "deckFilterVerified": {
     "message": "Deck verified"
   },
+  "updateTitle": {
+    "message": "Updates"
+  },
+  "updateVersion": {
+    "message": "Version $1, loaded from your folder."
+  },
+  "updateNow": {
+    "message": "Update now"
+  },
+  "updateHint": {
+    "message": "Fetches the latest version from GitHub into your folder, then reloads the extension — without waiting for the hourly update. Needs the helper installed by tools\\maj-auto.ps1 -Installer."
+  },
+  "updateWorking": {
+    "message": "Updating…"
+  },
+  "updateDenied": {
+    "message": "Permission denied: the button needs to talk to the helper installed on this computer."
+  },
+  "updateNoHost": {
+    "message": "Helper not installed. In the extension folder, run: $1"
+  },
+  "updateWrongId": {
+    "message": "The helper does not know this extension. In the extension folder, run: $1"
+  },
+  "updateNoGit": {
+    "message": "Git is not installed on this computer."
+  },
+  "updateNotRepo": {
+    "message": "The extension folder is not a Git clone."
+  },
+  "updateModified": {
+    "message": "Nothing done: files were edited by hand in the folder. They are left as they are."
+  },
+  "updateBranch": {
+    "message": "Nothing done: the folder is not on the main branch."
+  },
+  "updateDiverged": {
+    "message": "Nothing done: the folder's history differs from GitHub. The update log says what to run."
+  },
+  "updateNetwork": {
+    "message": "GitHub cannot be reached. Try again later."
+  },
+  "updateBusyHost": {
+    "message": "Another update is already running."
+  },
+  "updateFailed": {
+    "message": "Update failed: $1"
+  },
+  "updateReloading": {
+    "message": "Version $1 is here: the extension restarts."
+  },
+  "updateAfterClaim": {
+    "message": "Version $1 is here. The extension will restart once the current claim is over."
+  },
+  "updatePulled": {
+    "message": "Files updated, same version ($1): nothing to reload."
+  },
+  "updateUpToDate": {
+    "message": "Already up to date ($1)."
+  },
   "updatedTitle": {
     "message": "Free Games Auto-Claimer updated"
   },

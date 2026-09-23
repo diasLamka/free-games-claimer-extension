@@ -141,6 +141,15 @@ page.
   et ne telecharge rien. C'est `tools/maj-auto.ps1`, s'il est installe, qui
   fait le `git pull` -- avec votre git, depuis le depot que vous avez clone, et
   jamais en ecrasant un fichier modifie a la main.
+- **Les declencheurs de mise a jour ne transportent aucune commande** (2.54.0).
+  Le bouton du popup envoie `{ cmd: 'maj' }` au relais local, qui refuse tout
+  autre message et n'accepte que l'identifiant de cette extension ; la
+  sonnette ntfy ne transporte que le numero du commit, que l'ecouteur ne lit
+  meme pas. Qui connaitrait le sujet ntfy pourrait tout au plus provoquer un
+  `git pull` de plus -- une fois par minute au maximum -- depuis VOTRE depot.
+  Le sujet est un nom au hasard de 20 caracteres, garde dans
+  `%LOCALAPPDATA%\FreeGamesAutoClaimer\sujet.txt` et dans le secret GitHub
+  `MAJ_NTFY`. Tout est pose sous `HKCU` : aucun droit d'administrateur.
 
 ## Votre donnee la plus sensible : les codes de rachat
 
@@ -178,7 +187,7 @@ vous qui decidez.
 | `alarms` | Se reveiller pour verifier |
 | `steamcommunity.com` (hote) | **Optionnel** (`optional_host_permissions`). Lire VOTRE temps de jeu Steam, sur un clic, par l adresse /my/ qui se resout cote serveur -- aucun identifiant de profil n est demande ni stocke. Demande au moment du geste, retirable ensuite. De la 2.39.0 a la 2.46.0 il n etait declare nulle part, et Chrome refusait la demande : le temps de jeu ne s est jamais lu |
 | `https://*/*` (hote) | **Optionnel, jamais accorde a l installation.** Seulement pour l alerte telephone : l extension demande l hote de VOTRE serveur ntfy, et lui seul (`https://ntfy.sh/*` par defaut), au moment ou vous activez l alerte. Le joker existe parce que le serveur est le votre ; il ne donne rien que vous n ayez accorde hote par hote |
-| `nativeMessaging` | **Optionnelle, coupee par defaut, Chrome seulement.** Ouvrir un canal vers un programme LOCAL que vous avez installe vous-meme, pour lui deposer un instantane de votre ludotheque. Rien n ecoute sur un port, rien ne quitte la machine, et **les codes de rachat n y sont pas**. Voir host/README.md |
+| `nativeMessaging` | **Optionnelle, coupee par defaut, Chrome seulement.** Ouvrir un canal vers un programme LOCAL que vous avez installe vous-meme, pour lui deposer un instantane de votre ludotheque ; et, depuis la 2.54.0, pour demander au relais de mise a jour (`tools/maj-auto.ps1`) de faire le `git pull` du dossier. Rien n ecoute sur un port, rien ne quitte la machine, et **les codes de rachat n y sont pas**. Voir host/README.md |
 | `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |
 
 **Ce qui est absent, et c'est le point** : pas de `tabs`, pas de `cookies`,

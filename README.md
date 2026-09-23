@@ -212,13 +212,26 @@ s'en chargent (2.53.0) :
    powershell -ExecutionPolicy Bypass -File tools\maj-auto.ps1 -Installer
    ```
 
-   Une tache planifiee a votre nom (sans droits d'administrateur) fait un
-   `git pull` toutes les heures, sans fenetre. Elle ne touche a rien quand un
-   fichier a ete modifie a la main, quand le dossier n'est pas sur `main`, ou
-   quand l'historique local differe de celui de GitHub : elle l'ecrit dans
-   `%LOCALAPPDATA%\FreeGamesAutoClaimer\maj-auto.log` et s'arrete. Sans
-   `-Installer`, une seule mise a jour, tout de suite ; `-Desinstaller` retire
-   la tache.
+   Trois declencheurs, a votre nom, sans droits d'administrateur (2.54.0) :
+
+   - **toutes les heures**, une tache planifiee ;
+   - **a l'ouverture de session**, puis **des qu'une version est publiee** :
+     un petit ecouteur demarre avec Windows, fait une mise a jour, puis
+     attend une sonnette ntfy que GitHub fait retentir apres chaque check
+     reussi sur `main`. Pour l'activer, ajoutez sur GitHub le secret
+     `MAJ_NTFY` (Settings -> Secrets and variables -> Actions) avec l'adresse
+     que `-Installer` affiche. Sans le secret, rien ne sonne et l'heure suffit ;
+   - **le bouton « Mettre a jour maintenant »** du popup (Reglages -> Mise a
+     jour) : l'extension appelle le relais que `-Installer` a declare a
+     Chrome, Edge et Chromium, puis se recharge dans la foulee.
+
+   Aucun ne touche a rien quand un fichier a ete modifie a la main, quand le
+   dossier n'est pas sur `main`, ou quand l'historique local differe de celui
+   de GitHub : ils l'ecrivent dans
+   `%LOCALAPPDATA%\FreeGamesAutoClaimer\maj-auto.log` et s'arretent. Le
+   message du popup et celui de la sonnette ne portent aucune commande : ils
+   declenchent la meme mise a jour, et rien d'autre. Sans `-Installer`, une
+   seule mise a jour, tout de suite ; `-Desinstaller` retire tout.
 
 2. **L'extension se recharge d'elle-meme.** Toutes les cinq minutes, elle
    relit la version ecrite dans son `manifest.json` sur le disque. Plus

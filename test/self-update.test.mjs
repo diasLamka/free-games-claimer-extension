@@ -11,7 +11,9 @@ import { readFileSync } from 'node:fs';
 
 import {
   ALARM_DISK, compareVersions, diskVersion, reloadDecision, launcherMatches, tabsBusy, checkDisk, updatedNotice,
+  NATIVE_UPDATE, INSTALL_COMMAND, readUpdateReply, requestUpdate, updateMessage,
 } from '../watch/self-update.js';
+import { messageAllowed } from '../watch/messaging.js';
 
 const ROOT = new URL('../', import.meta.url);
 const lire = (f) => readFileSync(new URL(f, ROOT), 'utf8');
@@ -196,4 +198,114 @@ test('tools/maj-auto.ps1 : ASCII pur, et jamais d\'ecrasement', () => {
     assert.ok(!commandes.includes(interdit), `aucune commande git « ${interdit} »`);
   }
   assert.ok(!/^\s*function Git\b/m.test(ps), 'une fonction Git masquerait la commande git et s\'appellerait elle-meme');
+});
+
+/* ------------------------------------------------------------ les declencheurs (2.54.0) */
+
+test('checkDisk peut differer le rechargement, le temps de repondre au popup', async () => {
+  const f = fauxChrome({ onglets: [] });
+  const minuteries = [];
+  const avant = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms) => { minuteries.push(ms); fn(); return 0; };
+  try {
+    const d = await checkDisk({ chrome: f.chrome, fetch: f.fetch, delayMs: 1200 });
+    assert.equal(d.reload, true);
+    assert.equal(d.onDisk, '2.53.0', 'la version lue sur le disque est rendue');
+  } finally { globalThis.setTimeout = avant; }
+  assert.deepEqual(minuteries, [1200]);
+  assert.equal(f.journal.recharge, 1);
+});
+
+test('le bouton : un message sans commande, au seul relais de l\'extension', async () => {
+  let vu = null;
+  const chrome = { runtime: { sendNativeMessage: async (nom, msg) => { vu = { nom, msg }; return { ok: true, etat: 'mis-a-jour', avant: '2.53.0', apres: '2.54.0', detail: 'x' }; } } };
+  const r = await requestUpdate({ chrome });
+  assert.deepEqual(vu, { nom: NATIVE_UPDATE, msg: { cmd: 'maj' } });
+  assert.deepEqual(r, { ok: true, etat: 'mis-a-jour', avant: '2.53.0', apres: '2.54.0', detail: 'x' });
+});
+
+test('le bouton : chaque panne de Chrome devient un etat que le popup sait dire', async () => {
+  const echoue = (m) => ({ runtime: { sendNativeMessage: async () => { throw new Error(m); } } });
+  assert.equal((await requestUpdate({ chrome: { runtime: {} } })).etat, 'sans-permission');
+  assert.equal((await requestUpdate({ chrome: echoue('Specified native messaging host not found.') })).etat, 'sans-relais');
+  assert.equal((await requestUpdate({ chrome: echoue('Access to the specified native messaging host is forbidden.') })).etat, 'refuse-origine');
+  const r = await requestUpdate({ chrome: echoue('Native host has exited.') });
+  assert.deepEqual([r.etat, r.detail], ['echec', 'Native host has exited.']);
+});
+
+test('la reponse du relais est verifiee comme une source externe', () => {
+  assert.equal(readUpdateReply(null).etat, 'echec');
+  assert.equal(readUpdateReply({ ok: true, etat: 'rm -rf' }).etat, 'echec');
+  const r = readUpdateReply({ ok: 'oui', etat: 'a-jour', avant: 'x'.repeat(99), detail: 7 });
+  assert.deepEqual(r, { ok: false, etat: 'a-jour', avant: 'x'.repeat(20), apres: '', detail: '' }, 'ok doit valoir true, pas « oui »');
+});
+
+test('ce que le popup dit, pour chaque issue', () => {
+  const ok = (etat, extra = {}) => ({ ok: true, etat, avant: '2.53.0', apres: '2.54.0', ...extra });
+  assert.deepEqual(updateMessage(ok('mis-a-jour'), { disk: { reload: true, onDisk: '2.54.0' } }), ['updateReloading', '2.54.0']);
+  assert.deepEqual(updateMessage(ok('mis-a-jour'), { disk: { reload: false, busy: true, onDisk: '2.54.0' } }), ['updateAfterClaim', '2.54.0']);
+  assert.deepEqual(updateMessage(ok('mis-a-jour'), { disk: { reload: false } }), ['updatePulled', '2.54.0']);
+  assert.deepEqual(updateMessage(ok('a-jour', { apres: '2.53.0' }), { disk: { reload: false }, running: '2.53.0' }), ['updateUpToDate', '2.53.0']);
+  // Deja a jour pour git, mais l'heure precedente avait ramene une version pas encore chargee.
+  assert.deepEqual(updateMessage(ok('a-jour'), { disk: { reload: true, onDisk: '2.54.0' } }), ['updateReloading', '2.54.0']);
+
+  const ko = (etat) => updateMessage({ ok: false, etat, detail: 'd' }, { id: 'abcd' });
+  assert.deepEqual(ko('sans-relais'), ['updateNoHost', INSTALL_COMMAND]);
+  assert.deepEqual(ko('refuse-origine'), ['updateWrongId', `${INSTALL_COMMAND} -IdExtension abcd`]);
+  for (const [etat, cle] of [['sans-permission', 'updateDenied'], ['sans-git', 'updateNoGit'], ['pas-depot', 'updateNotRepo'],
+    ['modifie', 'updateModified'], ['branche', 'updateBranch'], ['divergent', 'updateDiverged'], ['reseau', 'updateNetwork'],
+    ['occupe', 'updateBusyHost']]) {
+    assert.deepEqual(ko(etat), [cle], etat);
+  }
+  assert.deepEqual(ko('echec'), ['updateFailed', 'd']);
+});
+
+test('toutes les cles que le popup peut recevoir existent dans les quatre langues', () => {
+  const cles = [...lire('watch/self-update.js').matchAll(/\['(update[A-Za-z]+)'/g)].map((m) => m[1]);
+  assert.ok(cles.length >= 14);
+  for (const loc of ['en', 'fr', 'de', 'es']) {
+    const table = JSON.parse(lire(`_locales/${loc}/messages.json`));
+    for (const c of [...cles, 'updateTitle', 'updateNow', 'updateHint', 'updateWorking', 'updateVersion']) {
+      assert.ok(table[c] && table[c].message, `${loc} : ${c}`);
+    }
+  }
+});
+
+test('fgc-maj ne vient que d\'une page de l\'extension, et le worker y repond avant de recharger', () => {
+  assert.equal(messageAllowed('fgc-maj', 'page'), true);
+  assert.equal(messageAllowed('fgc-maj', 'content'), false, 'une page de magasin ne declenche rien');
+  const bg = lire('background.js');
+  assert.match(bg, /msg\.type === 'fgc-maj'[\s\S]{0,600}delayMs: 1200[\s\S]{0,200}sendResponse/);
+});
+
+test('le popup demande la permission avant tout await, et ne montre la section qu\'a un dossier', () => {
+  const js = lire('pages/popup.js');
+  const clic = js.slice(js.indexOf("getElementById('update-now').addEventListener"));
+  const premier = clic.indexOf('await ');
+  assert.ok(premier > 0 && clic.slice(premier).startsWith('await api.permissions.request'), 'Firefox refuse une demande apres un await');
+  assert.match(js, /installType !== 'development'\) return;\s*\n\s*document\.getElementById\('update-section'\)\.hidden = false/);
+  assert.match(lire('pages/popup.html'), /<section id="update-section" hidden>/);
+});
+
+test('le script : le relais n\'execute rien de ce qu\'il recoit, la sonnette non plus', () => {
+  const ps = lire('tools/maj-auto.ps1');
+  assert.ok(/^[\x00-\x7F]*$/.test(ps));
+  for (const interdit of ['Invoke-Expression', 'iex ', 'ScriptBlock]::Create', '.message', 'Add-Type']) {
+    assert.ok(!ps.includes(interdit), interdit);
+  }
+  assert.match(ps, /\$m\.cmd -ne 'maj'/, 'un seul message accepte');
+  assert.match(ps, /\$taille -gt 4096/, 'un message trop long est ignore');
+  assert.match(ps, /Local\\FreeGamesAutoClaimer-maj'/, 'un verrou : trois declencheurs, une ecriture git a la fois');
+  assert.match(ps, /'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'/, 'la session, sans droits d\'administrateur');
+  assert.ok(!/HKLM:/.test(ps), 'rien sous HKLM : aucun droit d\'administrateur');
+});
+
+test('la sonnette de GitHub : seulement sur main, secret facultatif, jamais bloquante', () => {
+  const ci = lire('.github/workflows/check.yml');
+  const etape = ci.slice(ci.indexOf('- name: Sonnette de mise a jour'));
+  assert.match(etape, /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
+  assert.match(etape, /MAJ_NTFY: \$\{\{ secrets\.MAJ_NTFY \}\}/);
+  assert.match(etape, /if \[ -z "\$MAJ_NTFY" \]; then .*exit 0; fi/);
+  assert.match(etape, /\|\| echo "ntfy injoignable/);
+  assert.match(ci, /permissions:\s*\n\s*contents: read/, 'le workflow reste en lecture seule');
 });

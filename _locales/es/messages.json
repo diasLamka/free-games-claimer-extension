@@ -491,6 +491,66 @@
   "deckFilterVerified": {
     "message": "Verificado para Deck"
   },
+  "updateTitle": {
+    "message": "Actualización"
+  },
+  "updateVersion": {
+    "message": "Versión $1, cargada desde tu carpeta."
+  },
+  "updateNow": {
+    "message": "Actualizar ahora"
+  },
+  "updateHint": {
+    "message": "Trae la última versión de GitHub a tu carpeta y recarga la extensión, sin esperar a la actualización de cada hora. Necesita el asistente que instala tools\\maj-auto.ps1 -Installer."
+  },
+  "updateWorking": {
+    "message": "Actualizando…"
+  },
+  "updateDenied": {
+    "message": "Permiso denegado: el botón necesita hablar con el asistente instalado en este PC."
+  },
+  "updateNoHost": {
+    "message": "Falta el asistente. En la carpeta de la extensión, ejecuta: $1"
+  },
+  "updateWrongId": {
+    "message": "El asistente no reconoce esta extensión. En la carpeta de la extensión, ejecuta: $1"
+  },
+  "updateNoGit": {
+    "message": "Git no está instalado en este PC."
+  },
+  "updateNotRepo": {
+    "message": "La carpeta de la extensión no es un clon de Git."
+  },
+  "updateModified": {
+    "message": "No se hizo nada: hay archivos modificados a mano en la carpeta. Se quedan como están."
+  },
+  "updateBranch": {
+    "message": "No se hizo nada: la carpeta no está en la rama main."
+  },
+  "updateDiverged": {
+    "message": "No se hizo nada: el historial de la carpeta difiere del de GitHub. El registro de actualización dice qué ejecutar."
+  },
+  "updateNetwork": {
+    "message": "No se puede acceder a GitHub. Inténtalo más tarde."
+  },
+  "updateBusyHost": {
+    "message": "Ya hay otra actualización en curso."
+  },
+  "updateFailed": {
+    "message": "La actualización falló: $1"
+  },
+  "updateReloading": {
+    "message": "Versión $1 descargada: la extensión se reinicia."
+  },
+  "updateAfterClaim": {
+    "message": "Versión $1 descargada. La extensión se reiniciará al terminar la reclamación en curso."
+  },
+  "updatePulled": {
+    "message": "Archivos actualizados, misma versión ($1): nada que recargar."
+  },
+  "updateUpToDate": {
+    "message": "Ya está al día ($1)."
+  },
   "updatedTitle": {
     "message": "Free Games Auto-Claimer actualizado"
   },

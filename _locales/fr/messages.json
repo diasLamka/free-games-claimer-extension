@@ -491,6 +491,66 @@
   "deckFilterVerified": {
     "message": "Vérifié Deck"
   },
+  "updateTitle": {
+    "message": "Mise à jour"
+  },
+  "updateVersion": {
+    "message": "Version $1, chargée depuis votre dossier."
+  },
+  "updateNow": {
+    "message": "Mettre à jour maintenant"
+  },
+  "updateHint": {
+    "message": "Récupère la dernière version depuis GitHub dans votre dossier, puis recharge l'extension — sans attendre la mise à jour horaire. Demande le relais installé par tools\\maj-auto.ps1 -Installer."
+  },
+  "updateWorking": {
+    "message": "Mise à jour en cours…"
+  },
+  "updateDenied": {
+    "message": "Permission refusée : le bouton doit parler au relais installé sur ce PC."
+  },
+  "updateNoHost": {
+    "message": "Relais absent. Dans le dossier de l'extension, lancez : $1"
+  },
+  "updateWrongId": {
+    "message": "Le relais ne connaît pas cette extension. Dans le dossier de l'extension, lancez : $1"
+  },
+  "updateNoGit": {
+    "message": "Git est introuvable sur ce PC."
+  },
+  "updateNotRepo": {
+    "message": "Le dossier de l'extension n'est pas un clone Git."
+  },
+  "updateModified": {
+    "message": "Rien fait : des fichiers ont été modifiés à la main dans le dossier. Ils restent tels quels."
+  },
+  "updateBranch": {
+    "message": "Rien fait : le dossier n'est pas sur la branche main."
+  },
+  "updateDiverged": {
+    "message": "Rien fait : l'historique du dossier diffère de celui de GitHub. Le journal de mise à jour dit quoi lancer."
+  },
+  "updateNetwork": {
+    "message": "GitHub est injoignable. Réessayez plus tard."
+  },
+  "updateBusyHost": {
+    "message": "Une autre mise à jour est déjà en cours."
+  },
+  "updateFailed": {
+    "message": "Échec de la mise à jour : $1"
+  },
+  "updateReloading": {
+    "message": "Version $1 récupérée : l'extension redémarre."
+  },
+  "updateAfterClaim": {
+    "message": "Version $1 récupérée. L'extension redémarrera à la fin de la réclamation en cours."
+  },
+  "updatePulled": {
+    "message": "Fichiers mis à jour, même version ($1) : rien à recharger."
+  },
+  "updateUpToDate": {
+    "message": "Déjà à jour ($1)."
+  },
   "updatedTitle": {
     "message": "Free Games Auto-Claimer mis à jour"
   },

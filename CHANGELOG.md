@@ -4,6 +4,50 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.54.0 -- 2026-09-23
+
+**Trois declencheurs de plus pour la mise a jour**
+
+L'heure ne suffisait pas : une version publiee attendait jusqu'a soixante
+minutes. `tools/maj-auto.ps1 -Installer` pose maintenant trois declencheurs,
+tous a votre nom, sans droits d'administrateur (tout est sous `HKCU`) :
+
+- **Le bouton « Mettre a jour maintenant »** (popup -> Reglages -> Mise a
+  jour, affiche seulement pour une installation depuis un dossier).
+  L'extension appelle un relais local par la messagerie native de Chrome
+  (`com.free_games_claimer.maj`, declare a Chrome, Edge et Chromium) ; le
+  relais fait le `git pull`, l'extension relit le disque et se recharge dans
+  la foulee. Le popup dit chaque issue en clair : deja a jour, redemarrage,
+  apres la reclamation en cours, fichiers modifies a la main, autre branche,
+  historique divergent, GitHub injoignable, git absent, relais absent (avec
+  la commande a lancer), relais qui ne connait pas l'extension (avec son
+  identifiant).
+- **A l'ouverture de session** : un ecouteur demarre avec Windows (cle `Run`
+  de l'utilisateur) et fait une mise a jour.
+- **Des qu'une version est publiee** : le meme ecouteur attend une sonnette
+  sur un sujet ntfy au hasard. `.github/workflows/check.yml` la fait
+  retentir apres chaque check reussi sur `main`, si le secret `MAJ_NTFY`
+  existe ; sans lui, rien ne sonne. Deux sonnettes dans la minute font une
+  seule mise a jour.
+
+L'identifiant de l'extension, que le relais doit connaitre, se calcule a
+partir du chemin du dossier (SHA-256, comme Chrome le fait -- verifie sur
+Chromium) et se lit aussi dans les profils ; `-IdExtension` le force.
+
+**Rien ne transporte de commande.** Le relais n'accepte que `{ cmd: 'maj' }`
+et refuse tout autre message ; la sonnette ne porte que le numero du commit, que
+l'ecouteur ne lit pas. Un verrou empeche deux mises a jour simultanees.
+
+Verifie : le relais sous PowerShell (sortie standard propre au bit pres,
+message inconnu refuse, arguments de Chrome ignores) ; l'ecouteur contre un
+faux serveur ntfy (mise a jour a l'ouverture, puis a la sonnette) ; et le
+parcours complet dans Chromium -- clic sur le bouton, relais reel, `git pull`
+d'un vrai clone, extension rechargee de 2.54.0 en 2.54.1. Ce qui ne peut
+etre essaye que sous Windows (tache planifiee, cle `Run`, registre, lanceurs
+sans fenetre) ne l'a pas ete.
+
+1162 tests.
+
 ## 2.53.0 -- 2026-09-23
 
 **Une installation depuis les sources se met a jour toute seule**
