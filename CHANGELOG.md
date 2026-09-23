@@ -73,7 +73,7 @@ dater faux.
 
 - `npm run preview` refuse l'antislash sur tous les systemes. Le test qui le
   verifiait echouait sous Linux, donc en integration continue.
-- Les notes de conception passent de `docs/superpowers/specs/` a `docs/specs/`.
+- Les notes de conception sont rangees sous `docs/specs/`.
 
 1064 tests, dont 35 nouveaux (`test/calendar.test.mjs`, et des ajouts a
 `wishlist`, `collection`, `cycle` et `codes`).
