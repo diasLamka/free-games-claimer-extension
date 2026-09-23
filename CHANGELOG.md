@@ -4,6 +4,24 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.44.1 -- 2026-09-23
+
+**Le dernier recours de la resolution de slug ne servait plus**
+
+L'API Epic nomme son champ `urlSlug`. La traduction du code en anglais a pris
+ce nom pour un identifiant francais et l'a renomme `slugUrl` -- partout, y
+compris dans `el.urlSlug`. Le moteur comme la veille lisaient donc un champ qui
+n'existe jamais, et le dernier recours de `resolveSlug` etait mort : une offre
+sans `offerMappings`, sans `catalogNs` et sans `productSlug` exploitable
+n'avait pas d'adresse, et la ligne « Bientot » correspondante pas de lien.
+
+Les tests, ecrits apres le renommage, fabriquaient des objets avec `slugUrl` :
+ils verifiaient l'erreur. Et `verify-rename`, qui applique la table de
+renommage a sa base, la figeait -- remettre `urlSlug` dans le code le faisait
+echouer. L'entree est retiree de `build/rename-map.mjs` (et donc de
+`watch/field-renames.js`, genere), le moteur et la veille lisent `urlSlug`, et
+les tests aussi. Un test prend le cas reel : un jeu qui n'a que son `urlSlug`.
+
 ## 2.44.0 -- 2026-09-22
 
 **Un bilan honnete, un popup vivant, et le popup visible sans l'extension**

@@ -57,7 +57,7 @@ export function resolveSlug(el) {
   const candidates = [];
   for (const m of el.offerMappings || []) if (m) candidates.push(m.pageSlug);
   for (const m of (el.catalogNs && el.catalogNs.mappings) || []) if (m) candidates.push(m.pageSlug);
-  candidates.push(el.productSlug, el.slugUrl);
+  candidates.push(el.productSlug, el.urlSlug);
 
   for (const c of candidates) {
     const slug = normaliseSlug(c);
@@ -294,7 +294,7 @@ export function mapElements(elements, now) {
         title: el.title,
         reasonText: 'aucun slug de page exploitable',
         productSlug: el.productSlug ?? null,
-        slugUrl: el.slugUrl ?? null,
+        urlSlug: el.urlSlug ?? null,
       });
       continue;
     }

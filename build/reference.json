@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.41.0.js",
-  "sha256": "5D14D7F400E1EDE05973CE9B548ED6541EF26ACDE0431122FD8DBF77679A2D51",
+  "fichier": "reference-v2.44.1.js",
+  "sha256": "C7C9AB10AD1DE7CB38E25D93DD318E691965807CEE90B83A6BA1D242EB8C0738",
   "octets": 220017,
-  "version": "2.41.0",
-  "motif": "2.41.0 : titre dans l'historique, ALREADY_CLAIMED sur Luna, cle de carte par titre, possession Epic guettee pendant l'attente sur la fiche du jeu, verdict pilote pour une fiche deja traitee"
+  "version": "2.44.1",
+  "motif": "2.44.1 : l'API Epic nomme son champ urlSlug ; la traduction l'avait renomme slugUrl, un champ qui n'existe jamais"
 }

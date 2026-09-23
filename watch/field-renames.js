@@ -417,7 +417,6 @@ export const FIELD_RENAMES = Object.freeze({
   "urlItems": "itemsUrl",
   "urlResolue": "resolvedUrl",
   "urlResolution": "resolveUrl",
-  "urlSlug": "slugUrl",
   "urlStore": "storeUrl",
   "urlUtilisee": "usedUrl",
   "valeur": "worth",

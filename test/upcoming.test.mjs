@@ -55,7 +55,7 @@ test('l\'adresse est celle que la reclamation utiliserait', () => {
 test('un element sans slug exploitable n\'invente pas d\'adresse', () => {
   /* Un lien mort est pire qu'une absence de lien : il fait cliquer pour rien,
      et donne l'impression que l'extension s'est trompee de jeu. */
-  const [w] = upcomingWindows(element({ productSlug: null, slugUrl: null, catalogNs: null, offerMappings: [] }), T);
+  const [w] = upcomingWindows(element({ productSlug: null, urlSlug: null, catalogNs: null, offerMappings: [] }), T);
 
   assert.equal(w.url, null);
   assert.equal(w.title, 'Cardpocalypse', 'le reste de la ligne survit');
@@ -105,4 +105,13 @@ test('des fenetres a jour, ou sans titre a montrer, ne demandent rien', () => {
   assert.equal(windowsLackLinks([T + JOUR]), false);
   assert.equal(windowsLackLinks([]), false);
   assert.equal(windowsLackLinks(undefined), false);
+});
+
+test('un jeu qui n\'a que son urlSlug recoit quand meme son adresse', () => {
+  /* Le champ de l'API s'appelle `urlSlug`. La traduction du code en anglais
+     l'avait renomme `slugUrl` -- un champ qui n'existe jamais -- et le dernier
+     recours de la resolution ne servait plus : sans offerMappings ni
+     productSlug, la ligne « Bientot » restait sans lien. */
+  const [w] = upcomingWindows(element({ productSlug: null, catalogNs: null, offerMappings: [], urlSlug: 'luftrausers' }), T);
+  assert.match(w.url, /\/p\/luftrausers\?/);
 });

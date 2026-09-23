@@ -556,7 +556,9 @@ export const NOMS = {
   urlItems: 'itemsUrl',
   urlResolue: 'resolvedUrl',
   urlResolution: 'resolveUrl',
-  urlSlug: 'slugUrl',
+  /* `urlSlug` retire en 2.44.1 : c'est un champ de l'API Epic, pas un nom
+     francais. Le renommer faisait lire `el.slugUrl`, qui n'existe jamais --
+     et la verification, qui applique cette table, figeait l'erreur. */
   urlStore: 'storeUrl',
   urlUtilisee: 'usedUrl',
   valeur: 'worth',

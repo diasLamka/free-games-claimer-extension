@@ -82,13 +82,13 @@ test('resoudreSlug : parite sur toute la capture reelle', () => {
 
 test('resoudreSlug : parite sur les priorites construites a la main', () => {
   const cas = [
-    { offerMappings: [{ pageSlug: 'a' }], catalogNs: { mappings: [{ pageSlug: 'b' }] }, productSlug: 'c', slugUrl: 'd' },
+    { offerMappings: [{ pageSlug: 'a' }], catalogNs: { mappings: [{ pageSlug: 'b' }] }, productSlug: 'c', urlSlug: 'd' },
     { offerMappings: [], catalogNs: { mappings: [{ pageSlug: 'b' }] }, productSlug: 'c' },
     { productSlug: 'cardpocalypse/home' },
-    { slugUrl: 'dernier-recours' },
-    { offerMappings: [{ pageSlug: '[]' }], productSlug: '3f18c54a6e00424b8c0f2b3d4e5f6a7b', slugUrl: 'le-bon' },
-    { productSlug: '[]', slugUrl: '[]' },
-    { offerMappings: [null], catalogNs: null, productSlug: null, slugUrl: null },
+    { urlSlug: 'dernier-recours' },
+    { offerMappings: [{ pageSlug: '[]' }], productSlug: '3f18c54a6e00424b8c0f2b3d4e5f6a7b', urlSlug: 'le-bon' },
+    { productSlug: '[]', urlSlug: '[]' },
+    { offerMappings: [null], catalogNs: null, productSlug: null, urlSlug: null },
     {},
     null,
   ];

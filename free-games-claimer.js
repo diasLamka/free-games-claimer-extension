@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.44.0
+ * FREE GAMES AUTO-CLAIMER -- v2.44.1
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -1158,7 +1158,7 @@
     ((el.offerMappings) || []).forEach(function (m) { if (m) candidates.push(m.pageSlug); });
     ((el.catalogNs && el.catalogNs.mappings) || []).forEach(function (m) { if (m) candidates.push(m.pageSlug); });
     candidates.push(el.productSlug);
-    candidates.push(el.slugUrl);
+    candidates.push(el.urlSlug);
     for (var i = 0; i < candidates.length; i++) {
       var slug = normalizeEpicSlug(candidates[i]);
       if (slug) return slug;
@@ -1220,7 +1220,7 @@
       }
       var slug = resolveEpicSlug(el);
       if (!slug) {
-        log('Epic Games', 'warn', 'Offre gratuite sans slug de page exploitable, ignoree : "' + el.title + '" (productSlug=' + el.productSlug + ', urlSlug=' + el.slugUrl + ').');
+        log('Epic Games', 'warn', 'Offre gratuite sans slug de page exploitable, ignoree : "' + el.title + '" (productSlug=' + el.productSlug + ', urlSlug=' + el.urlSlug + ').');
         return;
       }
       var pathBase = epicPathBaseFor(el);

@@ -41,7 +41,7 @@ test('resolveEpicSlug respecte la priorite offerMappings > catalogNs > productSl
     offerMappings: [{ pageSlug: 'depuis-offer-mappings' }],
     catalogNs: { mappings: [{ pageSlug: 'depuis-catalog-ns' }] },
     productSlug: 'depuis-product-slug',
-    slugUrl: 'depuis-url-slug',
+    urlSlug: 'depuis-url-slug',
   }), 'depuis-offer-mappings');
 
   assert.equal(fgc.resolveEpicSlug({
@@ -51,17 +51,17 @@ test('resolveEpicSlug respecte la priorite offerMappings > catalogNs > productSl
   }), 'depuis-catalog-ns');
 
   assert.equal(fgc.resolveEpicSlug({ productSlug: 'cardpocalypse/home' }), 'cardpocalypse');
-  assert.equal(fgc.resolveEpicSlug({ slugUrl: 'dernier-recours' }), 'dernier-recours');
+  assert.equal(fgc.resolveEpicSlug({ urlSlug: 'dernier-recours' }), 'dernier-recours');
 });
 
 test('resolveEpicSlug saute les candidats inexploitables au lieu de s\'arreter', () => {
   assert.equal(fgc.resolveEpicSlug({
     offerMappings: [{ pageSlug: '[]' }],
     productSlug: '3f18c54a6e00424b8c0f2b3d4e5f6a7b',
-    slugUrl: 'le-bon-slug',
+    urlSlug: 'le-bon-slug',
   }), 'le-bon-slug');
 
-  assert.equal(fgc.resolveEpicSlug({ productSlug: '[]', slugUrl: '[]' }), null);
+  assert.equal(fgc.resolveEpicSlug({ productSlug: '[]', urlSlug: '[]' }), null);
   assert.equal(fgc.resolveEpicSlug(null), null);
 });
 
@@ -144,7 +144,7 @@ test('mapEpicApiElements ne garde que le reclamable et construit l\'URL', () => 
 
   const sansSlug = promo('2026-08-20T15:00:00.000Z', '2026-09-03T15:00:00.000Z', 0);
   sansSlug.productSlug = '[]';
-  sansSlug.slugUrl = '[]';
+  sansSlug.urlSlug = '[]';
 
   const jeux = fgc.mapEpicApiElements([actif, aVenir, bundle, sansSlug], T);
 
