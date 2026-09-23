@@ -187,6 +187,12 @@ et c'est de quoi corriger le parseur du premier coup.
 le... » avec un nombre plausible -- ou le parseur a ete corrige d'apres le
 rapport, et elles le disent ensuite.
 
+*Depuis la 2.46.0, la meme importation mesure aussi la liste de souhaits
+Steam.* `rgWishlist` n'a jamais ete lu CONNECTE dans ce depot. Si la carte
+Steam dit « N applications · M souhait(s) », c'est confirme ; si son rapport
+dit « rgWishlist absent » ou « forme inattendue », la liste importee avant
+reste en place et la ligne `forme :` du rapport dit ou chercher.
+
 ---
 
 ## Hors perimetre, et pourquoi

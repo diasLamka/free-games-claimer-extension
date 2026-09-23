@@ -147,3 +147,56 @@ export function setCodeStatus(list, code, status, now) {
     c && c.code === code ? { ...c, status, statusAt: now } : c
   ));
 }
+
+/* ----------------------------------------------------- la date limite */
+
+/** Les mois, sans accents, dans les deux langues des pages que le moteur lit. */
+const MONTHS = Object.freeze({
+  en: ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'],
+  fr: ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'],
+});
+
+const COMBINING = new RegExp('[\\u0300-\\u036f]', 'g');
+
+/**
+ * Le mois d'un mot, ou -1.
+ *
+ * Le nom entier d'abord, puis une abreviation -- a condition qu'elle ne
+ * designe qu'UN mois. Jusqu'a la 2.45.0, le popup comparait les trois
+ * premieres lettres et prenait le premier mois qui commencait ainsi : « jui »
+ * designait juin, et un code valable jusqu'au 15 juillet s'affichait expire
+ * depuis un mois. Une abreviation ambigue rend -1 : mieux vaut ne pas dater
+ * un code que le dater faux.
+ */
+function monthOf(word) {
+  for (const names of Object.values(MONTHS)) {
+    const exact = names.indexOf(word);
+    if (exact >= 0) return exact;
+  }
+  if (word.length < 3) return -1;
+  for (const names of Object.values(MONTHS)) {
+    const hits = names.filter((n) => n.startsWith(word));
+    if (hits.length === 1) return names.indexOf(hits[0]);
+  }
+  return -1;
+}
+
+/**
+ * Le jour d'une date limite ecrite en toutes lettres, tel que la page
+ * d'echange le recopie : « 31 decembre 2026 », « 1er aout 2026 »,
+ * « 3rd June 2026 ». Rend { year, month, day }, le mois de 0 a 11, ou null.
+ *
+ * Un JOUR, pas un instant : la page ne dit ni l'heure ni le fuseau, et en
+ * inventer un serait affirmer ce qu'on ne sait pas.
+ */
+export function deadlineDay(deadline) {
+  if (!deadline) return null;
+  const m = String(deadline).match(/(\d{1,2})(?:er|st|nd|rd|th)?\s+([a-zÀ-ſ.]+)\s+(\d{4})/i);
+  if (!m) return null;
+  const word = m[2].toLowerCase().replace(/\./g, '').normalize('NFD').replace(COMBINING, '');
+  const month = monthOf(word);
+  if (month < 0) return null;
+  const day = Number(m[1]);
+  if (day < 1 || day > 31) return null;
+  return { year: Number(m[3]), month, day };
+}

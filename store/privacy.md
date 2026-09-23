@@ -9,7 +9,7 @@ Derive de `SECURITY.md`, qui fait foi.
 
 ## Free Games Auto-Claimer -- confidentialite
 
-**Derniere mise a jour : 2026-09-22**
+**Derniere mise a jour : 2026-09-23**
 
 ### En une phrase
 
@@ -20,7 +20,8 @@ serveur.
 
 Tout vit dans le stockage local du navigateur, sur la machine de
 l'utilisateur : le catalogue des offres reperees, les reglages, l'historique
-des recuperations, la bibliotheque importee et les codes de rachat en attente.
+des recuperations, la bibliotheque et la liste de souhaits Steam importees, et
+les codes de rachat en attente.
 
 Rien n'est chiffre par l'extension. Qui peut lire le repertoire de profil du
 navigateur peut tout lire. Le chiffrement de disque du systeme est la vraie
@@ -36,6 +37,11 @@ recuperes sur mes autres ordinateurs » y place la liste des jeux recuperes
 compte Google ou Mozilla de l'utilisateur ; le chiffrement applique est celui
 de ce service, pas le notre. Couper le second retire la copie. Tant que les
 deux reglages restent coupes, rien ne sort.
+
+Le bouton « Agenda (.ics) » ecrit un fichier sur le disque de l'utilisateur,
+qui en fait ce qu'il veut : titres, magasins, dates et liens des offres, et le
+dernier jour des codes a echanger -- **jamais le code lui-meme**. Rien n'est
+envoye par l'extension.
 
 ### Requetes reseau
 

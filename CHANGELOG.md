@@ -4,6 +4,80 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.46.0 -- 2026-09-23
+
+**Ce que vous attendez vient de Steam, et ce qui finit va dans votre agenda**
+
+### La liste de souhaits Steam
+
+Le coeur ne connaissait que ce qu'on tapait a la main. L'import Steam de Ma
+collection lit desormais aussi `rgWishlist`, dans la reponse de
+`dynamicstore/userdata` qu'il lisait deja : aucune requete de plus avec vos
+cookies, aucune permission. Les noms viennent des memes lots GetItems que ceux
+de la bibliotheque.
+
+- La liste vit a part, sous `veille:souhaits-steam`. C'est une photographie :
+  une importation la remplace entiere, et un jeu retire de la liste Steam
+  cesse d'etre attendu. La liste saisie n'est jamais touchee.
+- Le rapprochement se fait sur l'appid exact pour une offre Steam, et sur le
+  titre normalise pour le reste -- le cas qui compte est le jeu de la liste
+  Steam offert sur Epic ou GOG. Un titre qui se ressemble a tort coute une
+  annonce prioritaire de trop, jamais un jeu rate.
+- La liste gardee est bornee a 2000 jeux, AVANT de demander leurs noms : pas
+  de lot pour un souhait qu'on ne garderait pas.
+- Une reponse sans `rgWishlist`, ou d'une forme inconnue, garde la liste
+  precedente. Sa forme CONNECTEE n'a jamais ete mesuree ici : le rapport de la
+  carte Steam le dira (ROADMAP, entree 4).
+- Dans le popup, le coeur est plein et son infobulle dit d'ou vient le
+  souhait. Il ne se retire pas d'ici : il reviendrait a l'importation suivante.
+
+### Le cycle ne lisait pas la liste de souhaits
+
+`readContext` ne demandait pas la cle `veille:souhaits`. Depuis la 2.31.0, le
+cycle voyait donc une liste vide : un jeu attendu n'a jamais echappe au resume
+quotidien, ni pris la tete de l'annonce. Le popup, qui lit la cle lui-meme,
+affichait pourtant son coeur. Les tests de la 2.31.0 passaient la liste
+directement a `markWished` ; trois tests de bout en bout la placent maintenant
+dans le stockage, et les deux qui portent un souhait echouent sans la
+correction.
+
+### L'agenda (.ics)
+
+L'extension ne recupere rien quand le navigateur est ferme, et le chien de
+garde ne peut le dire que sur cet ordinateur. Reglages -> Sauvegarde ->
+« Agenda (.ics) » ecrit un fichier pour l'agenda du telephone :
+
+- la fin de chaque offre en cours que vous ne possedez pas, sur sa derniere
+  heure, avec un rappel la veille ;
+- le debut des offres annoncees (« Bientot »), jeux mysteres compris ;
+- le dernier jour des codes a echanger, en journee entiere -- la page
+  d'echange ne donne qu'un jour.
+
+Les UID sont stables : exporter de nouveau met les evenements a jour, sans les
+doubler. Les heures sont en UTC, les lignes pliees a 75 octets sans jamais
+couper un accent, le texte echappe comme la RFC 5545 le demande. **Jamais le
+code** : ni dans le texte, ni dans l'UID, qui n'en porte qu'une empreinte de
+32 bits. Un fichier et pas un abonnement : il faudrait un serveur.
+
+### Juillet n'etait pas juin
+
+Les jours restants d'un code se lisaient sur les trois premieres lettres du
+mois, et « jui » designait juin : un code valable jusqu'au 15 juillet
+s'affichait expire un mois trop tot. La lecture vit maintenant dans
+`watch/codes.js` (`deadlineDay`), partagee par le popup et l'agenda. Elle
+essaie le nom entier, puis une abreviation qui ne designe qu'un seul mois, et
+renonce sur une abreviation ambigue : mieux vaut ne pas dater un code que le
+dater faux.
+
+### Aussi
+
+- `npm run preview` refuse l'antislash sur tous les systemes. Le test qui le
+  verifiait echouait sous Linux, donc en integration continue.
+- Les notes de conception passent de `docs/superpowers/specs/` a `docs/specs/`.
+
+1064 tests, dont 35 nouveaux (`test/calendar.test.mjs`, et des ajouts a
+`wishlist`, `collection`, `cycle` et `codes`).
+
 ## 2.45.0 -- 2026-09-23
 
 **Un echec se dit quand il est certain, pas cinq minutes plus tard**

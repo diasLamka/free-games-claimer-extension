@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (24 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits, backlog |
+| Veille | `veille:*` (25 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog |
 | Moteur | `FGC_*` (`gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -40,6 +40,13 @@ Il sert a ce qu'un autre ordinateur du meme compte ne rouvre pas ce qui est deja
 pris. Le couper retire la copie du compte.
 
 Rien d'autre ne part tout seul.
+
+**L'agenda (2.46.0) est un fichier que vous telechargez**, pas un envoi : le
+bouton « Agenda (.ics) » ecrit sur votre disque les fins d'offres, les offres
+annoncees et le dernier jour des codes a echanger. Importe dans un agenda
+synchronise, ce qu'il contient part avec -- titres, magasins, dates, liens.
+**Jamais un code de rachat** : ni dans le texte, ni dans l'identifiant de
+l'evenement, qui n'en porte qu'une empreinte de 32 bits (`watch/calendar.js`).
 
 ## Ce qui part sur le reseau, et vers qui
 
@@ -64,9 +71,11 @@ transmis a chaque cycle (`withOwned`, `watch/cycle.js`) et se compare a `true`,
 jamais a la veracite.
 
 Une exception a connaitre : pendant un **import de collection Steam**, les
-identifiants de **tous** vos jeux partent par lots de 50 vers
-`api.steampowered.com` pour en recuperer les noms. Sans cookie, et seulement
-sur un clic de votre part.
+identifiants de **tous** vos jeux -- et, depuis la 2.46.0, ceux de votre liste
+de souhaits -- partent par lots de 50 vers `api.steampowered.com` pour en
+recuperer les noms. Sans cookie, et seulement sur un clic de votre part. La
+liste de souhaits elle-meme n'ajoute aucune requete avec cookie : elle voyage
+dans la reponse de `dynamicstore/userdata` que l'import lisait deja.
 
 ### Avec vos cookies (`credentials: 'include'`)
 

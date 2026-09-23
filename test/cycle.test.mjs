@@ -628,3 +628,48 @@ test('forcer une source inconnue n\'interroge rien, et ne jette pas', async () =
   assert.equal(appels.a, 0);
   assert.ok(r, 'le cycle doit rendre un resultat, pas une exception');
 });
+
+/* ------------------------------------------------------ souhaits (2.46.0) */
+
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST, addWish, makeSteamWishlist } from '../watch/wishlist.js';
+import { normaliseTitle } from '../watch/offer.js';
+
+/** Deux nouveautes apres l'amorcage, en mode resume : le cas ou un souhait doit percer. */
+async function resumeAvecSouhaits(souhaits) {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu B'), offer('Hollow Knight')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'], notifyMode: 'digest' },
+    ...souhaits,
+  });
+  await c.cycle(T);
+  await c.cycle(T + DAY, { force: true });
+  return c;
+}
+
+test('sans souhait, deux nouveautes partent en resume', async () => {
+  const c = await resumeAvecSouhaits({});
+  assert.equal(c.notifications.length, 1);
+  assert.ok(!c.journal.some((l) => /jeu attendu/.test(l)));
+});
+
+test('un souhait saisi echappe au resume : le cycle lit enfin la liste', async () => {
+  /* De la 2.31.0 a la 2.45.0, readContext ne demandait pas la cle : le cycle
+     voyait une liste vide, et ce test aurait rendu le resume. */
+  const c = await resumeAvecSouhaits({ [KEY_WISHLIST]: addWish([], 'Hollow Knight', normaliseTitle) });
+  assert.equal(c.notifications.length, 1);
+  assert.ok(c.journal.some((l) => /jeu attendu/.test(l)));
+  // Plusieurs offres : le compte en titre, et le jeu attendu en tete du texte.
+  assert.match(c.notifications[0].text, /^Hollow Knight/);
+});
+
+test('un souhait de la liste Steam echappe au resume, offert sur un autre magasin', async () => {
+  const steam = makeSteamWishlist([{ id: '367520', title: 'Hollow Knight' }], normaliseTitle, T);
+  const c = await resumeAvecSouhaits({ [KEY_STEAM_WISHLIST]: steam });
+  assert.equal(c.notifications.length, 1);
+  assert.ok(c.journal.some((l) => /jeu attendu/.test(l)));
+  assert.match(c.notifications[0].text, /^Hollow Knight/);
+});

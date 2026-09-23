@@ -145,3 +145,31 @@ test('le dedoublonnage porte sur le code, pas sur le titre', () => {
 
   assert.equal(apres.length, 2);
 });
+
+/* ---------------------------------------------- la date limite (2.46.0) */
+
+import { deadlineDay } from '../watch/codes.js';
+
+test('une date limite en toutes lettres donne un jour, en francais comme en anglais', () => {
+  assert.deepEqual(deadlineDay('31 décembre 2026'), { year: 2026, month: 11, day: 31 });
+  assert.deepEqual(deadlineDay('Valable jusqu\'au 1er août 2026'), { year: 2026, month: 7, day: 1 });
+  assert.deepEqual(deadlineDay('3rd June 2026'), { year: 2026, month: 5, day: 3 });
+  assert.deepEqual(deadlineDay('12 févr. 2027'), { year: 2027, month: 1, day: 12 });
+});
+
+test('juillet n\'est pas juin', () => {
+  /* Jusqu'a la 2.45.0, les trois premieres lettres suffisaient : « jui »
+     designait juin, et un code valable jusqu'au 15 juillet s'affichait
+     expire depuis un mois. */
+  assert.deepEqual(deadlineDay('15 juillet 2026'), { year: 2026, month: 6, day: 15 });
+  assert.deepEqual(deadlineDay('15 juil. 2026'), { year: 2026, month: 6, day: 15 });
+  assert.deepEqual(deadlineDay('15 juin 2026'), { year: 2026, month: 5, day: 15 });
+});
+
+test('une abreviation ambigue ou un texte sans date ne donnent rien', () => {
+  assert.equal(deadlineDay('15 jui 2026'), null, 'mieux vaut ne pas dater que dater faux');
+  assert.equal(deadlineDay('bientot'), null);
+  assert.equal(deadlineDay(''), null);
+  assert.equal(deadlineDay(null), null);
+  assert.equal(deadlineDay('45 mars 2026'), null);
+});

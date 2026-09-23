@@ -137,6 +137,9 @@
   "unwishTitle": {
     "message": "Ne plus guetter ce titre"
   },
+  "wishSteamTitle": {
+    "message": "Dans votre liste de souhaits Steam : à retirer sur Steam, sinon il revient à la prochaine importation"
+  },
   "claimThisTitle": {
     "message": "Recuperer celle-ci maintenant"
   },
@@ -382,6 +385,33 @@
   },
   "exportCsv": {
     "message": "Exporter en CSV"
+  },
+  "exportIcs": {
+    "message": "Agenda (.ics)"
+  },
+  "exportIcsHint": {
+    "message": "Fins d'offres, prochaines offres et codes à échanger, pour l'agenda de votre téléphone. À refaire pour voir les offres suivantes : les rappels déjà importés sont mis à jour, pas doublés."
+  },
+  "icsCalendarName": {
+    "message": "Jeux gratuits"
+  },
+  "icsEnding": {
+    "message": "Dernière heure pour récupérer $1"
+  },
+  "icsEndingSoon": {
+    "message": "Plus que 24 h pour récupérer $1"
+  },
+  "icsStarting": {
+    "message": "Gratuit maintenant : $1"
+  },
+  "icsCode": {
+    "message": "Dernier jour pour échanger le code de $1"
+  },
+  "icsExported": {
+    "message": "$1 rappel(s) dans le fichier : ouvrez-le avec votre agenda"
+  },
+  "icsNothing": {
+    "message": "Rien à mettre dans l'agenda pour l'instant"
   },
   "import": {
     "message": "Importer"

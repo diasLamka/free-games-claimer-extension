@@ -31,7 +31,7 @@ import { KEY_COLLECTION } from './collection.js';
    sans que son issue ait ete figee, et l'information n'existe plus nulle part
    ailleurs. */
 import { KEY_OUTCOMES } from './outcomes.js';
-import { KEY_WISHLIST } from './wishlist.js';
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST } from './wishlist.js';
 
 export const PREFIX = 'veille:';
 
@@ -344,6 +344,11 @@ export async function readContext(chrome) {
     KEYS.OFFERS, KEYS.SOURCES, KEYS.SETTINGS, KEYS.SCHEDULES, KEYS.STATE,
     KEYS.STATS, KEYS.FILTERS, KEYS.CADENCE, KEY_CANARY, KEY_LIBRARY, KEY_RATES,
     KEY_OUTCOMES, KEY_COLLECTION,
+    /* Les souhaits. Absents de cette liste de la 2.31.0 a la 2.45.0 : le cycle
+       lisait une liste toujours vide, et un jeu attendu n'a jamais echappe au
+       resume -- le popup, qui lit la cle lui-meme, affichait pourtant son
+       coeur. */
+    KEY_WISHLIST, KEY_STEAM_WISHLIST,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -369,6 +374,7 @@ export async function readContext(chrome) {
     rates: raw[KEY_RATES] || null,
     outcomes: raw[KEY_OUTCOMES] || {},
     wishlist: raw[KEY_WISHLIST] || [],
+    steamWishlist: raw[KEY_STEAM_WISHLIST] || null,
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),
       lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),

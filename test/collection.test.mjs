@@ -37,10 +37,12 @@ import {
   importGog,
   importSteam,
   importStore,
+  readSteamWishlist,
   epicPageUrl,
   gogPageUrl,
 } from '../watch/collection-import.js';
 import { OWNED_URL } from '../watch/sources/steam.js';
+import { MAX_STEAM_WISHES } from '../watch/wishlist.js';
 
 /* ----------------------------------------------------------------- outils */
 
@@ -267,6 +269,57 @@ test('Steam : une reponse sans rgOwnedApps est une forme inattendue', async () =
   const r = await importSteam({ fetch: f, pause: sansPause });
   assert.equal(r.status, IMPORT_STATUS.SHAPE);
   assert.match(r.report, /autreChose: booleen/);
+});
+
+test('Steam : la liste de souhaits vient de la meme reponse, nommee par les memes lots', async () => {
+  const f = fauxFetch((url) => {
+    if (url === OWNED_URL) return { body: { rgOwnedApps: [10], rgWishlist: [367520, 10, 999] } };
+    const lot = JSON.parse(decodeURIComponent(url.split('input_json=')[1])).ids.map((i) => i.appid);
+    const connus = { 10: { name: 'Deja A Moi', type: 0 }, 367520: { name: 'Hollow Knight', type: 0 } };
+    return {
+      body: { response: { store_items: lot.filter((id) => connus[id]).map((id) => ({ appid: id, ...connus[id] })) } },
+    };
+  });
+
+  const r = await importSteam({ fetch: f, pause: sansPause, batch: 50 });
+
+  assert.equal(r.status, IMPORT_STATUS.OK);
+  assert.equal(f.appels.length, 2, 'userdata, puis un seul lot pour la bibliotheque ET les souhaits');
+  assert.deepEqual(r.wishlist.map((w) => [w.id, w.title]), [['367520', 'Hollow Knight'], ['10', 'Deja A Moi'], ['999', null]]);
+  assert.equal(r.items.length, 1, 'un souhait n\'entre pas dans la collection');
+  assert.match(r.note, /3 souhait/);
+  assert.match(r.report, /liste de souhaits : 3 jeu\(x\), 1 sans nom/);
+  assert.ok(!r.report.includes('Hollow'), 'le rapport ne recopie aucun titre');
+});
+
+test('Steam : sans rgWishlist, la liste importee avant est gardee (null, pas vide)', async () => {
+  const f = fauxFetch((url) => (url === OWNED_URL
+    ? { body: { rgOwnedApps: [10] } }
+    : { body: { response: { store_items: [] } } }));
+  const r = await importSteam({ fetch: f, pause: sansPause });
+  assert.equal(r.status, IMPORT_STATUS.OK);
+  assert.equal(r.wishlist, null);
+  assert.match(r.report, /rgWishlist absent, la precedente est gardee/);
+});
+
+test('Steam : une liste de souhaits demesuree est bornee avant d\'etre nommee', async () => {
+  const beaucoup = Array.from({ length: MAX_STEAM_WISHES + 120 }, (_, i) => 1000 + i);
+  const f = fauxFetch((url) => (url === OWNED_URL
+    ? { body: { rgOwnedApps: [10], rgWishlist: beaucoup } }
+    : { body: { response: { store_items: [] } } }));
+  const r = await importSteam({ fetch: f, pause: sansPause, batch: 50 });
+  assert.equal(r.wishlist.length, MAX_STEAM_WISHES);
+  assert.equal(f.appels.length - 1, Math.ceil((1 + MAX_STEAM_WISHES) / 50), 'aucun lot pour un souhait qu\'on ne garde pas');
+  assert.match(r.report, /gardes/);
+});
+
+test('readSteamWishlist : nombres, chaines ou { appid } ; une forme inconnue rend null', () => {
+  assert.deepEqual(readSteamWishlist({ rgWishlist: [1, '2', { appid: 3 }, 1] }), ['1', '2', '3']);
+  assert.deepEqual(readSteamWishlist({ rgWishlist: [] }), [], 'une vraie liste vide remplace');
+  assert.equal(readSteamWishlist({ rgWishlist: [{ id: 'x' }] }), null, 'des elements illisibles ne sont pas une liste vide');
+  assert.equal(readSteamWishlist({ rgWishlist: {} }), null);
+  assert.equal(readSteamWishlist({}), null);
+  assert.equal(readSteamWishlist(null), null);
 });
 
 /* --------------------------------------------------------------------- GOG */

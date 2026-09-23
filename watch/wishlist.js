@@ -29,6 +29,34 @@ export const KEY_WISHLIST = 'veille:souhaits';
 export const MAX_WISHES = 200;
 
 /**
+ * La liste de souhaits STEAM, importee avec Ma collection (2.46.0).
+ *
+ * A PART de la liste saisie, et pour trois raisons :
+ *
+ *   - c'est une PHOTOGRAPHIE : chaque importation la remplace entiere, pour
+ *     qu'un jeu retire de la liste Steam cesse d'etre attendu ici. Melangee a
+ *     la saisie, elle ne pourrait se remplacer sans emporter ce que
+ *     l'utilisateur a tape lui-meme ;
+ *   - le coeur du popup ne sait retirer qu'un souhait SAISI. Un souhait
+ *     importe se retire sur Steam, ou il reviendrait a l'importation suivante ;
+ *   - sa borne n'est pas la meme : une liste Steam de huit cents jeux existe,
+ *     une saisie a la main de huit cents titres non.
+ */
+export const KEY_STEAM_WISHLIST = 'veille:souhaits-steam';
+
+/**
+ * Nombre de souhaits Steam conserves.
+ *
+ * Chaque souhait coute une comparaison par offre et par cycle, soit quelques
+ * dizaines de milliers au pire : rien. La borne protege le stockage d'une
+ * reponse aberrante, pas le processeur.
+ */
+export const MAX_STEAM_WISHES = 2000;
+
+/** D'ou vient le souhait qui designe une offre. */
+export const WISH_ORIGIN = Object.freeze({ MANUAL: 'manual', STEAM: 'steam' });
+
+/**
  * Ce qu'on garde d'un souhait.
  *
  * Le titre TEL QUE SAISI pour l'affichage, et sa forme normalisee pour le
@@ -66,17 +94,67 @@ export function removeWish(list, title, normalise) {
 }
 
 /**
+ * La photographie de la liste Steam, prete a etre stockee.
+ *
+ * `entries` : [{ id, title }], l'appid et le nom que GetItems a rendu -- ou
+ * null quand il n'en a rendu aucun. Un souhait sans nom reste : il reconnait
+ * encore une offre STEAM par son appid, il ne reconnait simplement pas le
+ * meme jeu offert ailleurs.
+ */
+export function makeSteamWishlist(entries, normalise, now) {
+  const norm = requireNormalise(normalise);
+  const vus = new Set();
+  const out = [];
+  for (const e of entries || []) {
+    const id = e && e.id !== undefined && e.id !== null ? String(e.id) : '';
+    if (!/^\d+$/.test(id) || vus.has(id)) continue;
+    vus.add(id);
+    const title = e.title ? String(e.title).trim() : '';
+    out.push({ id, title: title || null, key: (title && norm(title)) || null });
+    if (out.length >= MAX_STEAM_WISHES) break;
+  }
+  return { at: now, wishes: out };
+}
+
+/** Les souhaits Steam d'une photographie stockee, ou aucun. */
+export function steamWishes(stored) {
+  return stored && Array.isArray(stored.wishes) ? stored.wishes : [];
+}
+
+/**
+ * Qui attend cette offre : la saisie, Steam, ou personne (null).
+ *
+ * La saisie gagne quand les deux l'attendent : c'est elle que le coeur du
+ * popup sait retirer, et il doit pouvoir le faire.
+ *
+ * Cote Steam, deux rapprochements : l'APPID exact pour une offre Steam -- il
+ * reconnait le jeu sous un titre traduit -- et le TITRE normalise pour tout le
+ * reste, parce que le cas qui compte est le jeu de la liste Steam offert sur
+ * Epic ou GOG. Un titre qui se ressemble a tort coute une annonce prioritaire
+ * de trop, jamais un jeu rate : c'est pour cela qu'un souhait peut se fier au
+ * titre, et le filtre « deja possede » jamais.
+ */
+export function wishOrigin(list, offer, normalise, steam = null) {
+  if (!offer) return null;
+  const key = offer.title ? normalise(offer.title) : '';
+  if (key && wishes(list).some((w) => w.key === key)) return WISH_ORIGIN.MANUAL;
+
+  const importes = steamWishes(steam);
+  if (!importes.length) return null;
+  const appid = offer.store === 'steam' && offer.storeId ? String(offer.storeId) : null;
+  if (appid && importes.some((w) => w.id === appid)) return WISH_ORIGIN.STEAM;
+  if (key && importes.some((w) => w.key === key)) return WISH_ORIGIN.STEAM;
+  return null;
+}
+
+/**
  * Cette offre est-elle attendue ?
  *
  * Une liste vide ne rend jamais rien attendu -- le cas du premier jour, ou
  * tout rendre prioritaire ferait de la nouveaute une regression.
  */
-export function isWished(list, offer, normalise) {
-  const titre = offer && offer.title;
-  if (!titre) return false;
-  const key = normalise(titre);
-  if (!key) return false;
-  return wishes(list).some((w) => w.key === key);
+export function isWished(list, offer, normalise, steam = null) {
+  return wishOrigin(list, offer, normalise, steam) !== null;
 }
 
 /**
@@ -86,8 +164,8 @@ export function isWished(list, offer, normalise) {
  * changer entre deux cycles, et une offre marquee une fois pour toutes
  * resterait prioritaire apres le retrait du souhait.
  */
-export function markWished(offers, list, normalise) {
-  return (offers || []).map((o) => ({ ...o, wished: isWished(list, o, normalise) }));
+export function markWished(offers, list, normalise, steam = null) {
+  return (offers || []).map((o) => ({ ...o, wished: isWished(list, o, normalise, steam) }));
 }
 
 /**

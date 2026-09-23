@@ -59,6 +59,7 @@ import { lookup } from './watch/lookup.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
+import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -414,6 +415,13 @@ async function importCollection(stores) {
       // precedent vient d'y mettre.
       const apres = await readKeys(api, KEY_COLLECTION);
       await write(api, { [KEY_COLLECTION]: applyImport(apres[KEY_COLLECTION], store, result, Date.now()) });
+
+      /* La liste de souhaits Steam voyage dans la meme reponse. Elle n'est
+         remplacee que par une liste LUE : une importation ratee, ou une
+         reponse qui ne la porte pas, laisse la precedente en place. */
+      if (result.status === IMPORT_STATUS.OK && Array.isArray(result.wishlist)) {
+        await write(api, { [KEY_STEAM_WISHLIST]: makeSteamWishlist(result.wishlist, normaliseTitle, Date.now()) });
+      }
 
       const niveau = result.status === IMPORT_STATUS.OK ? 'info' : 'warn';
       record(niveau, `collection ${store} : ${result.status}${result.note ? ` (${result.note})` : ''}`);

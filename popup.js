@@ -30,11 +30,12 @@ import { claimableStoresFor } from './watch/sources/index.js';
 import { DEFAULT_SETTINGS } from './watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
-import { KEY_COLLECTION, ownedStoreKeys } from './watch/collection.js';
+import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from './watch/collection.js';
+import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from './watch/calendar.js';
 import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
-import { KEY_WISHLIST, isWished } from './watch/wishlist.js';
-import { REDEEM_URLS, addCodes, parseCodes, redeemUrlFor } from './watch/codes.js';
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from './watch/wishlist.js';
+import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from './watch/codes.js';
 import { OPTIONAL, declaresOptional, describeBackground } from './watch/permissions.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from './watch/teaching.js';
 import { KEY_SYNC_CODES } from './watch/backup.js';
@@ -169,6 +170,7 @@ const KEYS_READ = [
   KEY_SESSIONS,
   KEY_INCIDENTS,
   KEY_WISHLIST,
+  KEY_STEAM_WISHLIST,
   KEY_TAUGHT,
   KEY_SEEN,
   KEY_COLLECTION,
@@ -294,23 +296,10 @@ function prettySlug(slug) {
 
 /* Deadline text on a pending code. The engine stores it as the store printed
    it, in words, so it is parsed rather than assumed to be a timestamp. */
-const MONTHS = {
-  en: ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'],
-  fr: ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'],
-};
-
 function daysUntil(deadline) {
-  if (!deadline) return null;
-  const m = String(deadline).match(/(\d{1,2})(?:er|st|nd|rd|th)?\s+([a-zÀ-ſ.]+)\s+(\d{4})/i);
-  if (!m) return null;
-  const stem = m[2].toLowerCase().replace('.', '').normalize('NFD').replace(/[̀-ͯ]/g, '').slice(0, 3);
-  let month = -1;
-  for (const names of Object.values(MONTHS)) {
-    const hit = names.findIndex((n) => n.startsWith(stem));
-    if (hit >= 0) { month = hit; break; }
-  }
-  if (month < 0) return null;
-  return Math.ceil((new Date(Number(m[3]), month, Number(m[1])) - Date.now()) / DAY_MS);
+  const d = deadlineDay(deadline);
+  if (!d) return null;
+  return Math.ceil((new Date(d.year, d.month, d.day) - Date.now()) / DAY_MS);
 }
 
 /* --------------------------------------------------------------- the ring */
@@ -666,14 +655,26 @@ function gameCard({ key, offer }, ctx) {
   /* Le souhait porte sur le TITRE, pas sur cette offre : c'est ce qui lui
      permet de reconnaitre le meme jeu quand il repassera sur un autre magasin,
      dans six mois. Un coeur accroche a l'offre disparaitrait avec elle. */
-  const wished = isWished(ctx.wishlist, offer, normaliseTitle);
+  const origin = wishOrigin(ctx.wishlist, offer, normaliseTitle, ctx.steamWishlist);
+  const wished = origin !== null;
   const heart = el('button', `pin${wished ? ' on' : ''}`, wished ? '♥' : '♡');
-  heart.title = t(wished ? 'unwishTitle' : 'wishTitle');
-  heart.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    await tell('fgc-wish', { title: offer.title, on: !wished });
-    await load();
-  });
+  if (origin === WISH_ORIGIN.STEAM) {
+    /* Un souhait IMPORTE ne se retire pas d'ici : il reviendrait a la
+       prochaine importation. Le coeur le dit par son infobulle, et le clic
+       ne fait rien d'autre que ne pas ouvrir la carte. Pas desactive : un
+       bouton desactive perd son infobulle, et l'opacite de .pin:disabled le
+       ferait passer pour un coeur vide. */
+    heart.title = t('wishSteamTitle');
+    heart.setAttribute('aria-label', heart.title);
+    heart.addEventListener('click', (e) => e.stopPropagation());
+  } else {
+    heart.title = t(wished ? 'unwishTitle' : 'wishTitle');
+    heart.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await tell('fgc-wish', { title: offer.title, on: !wished });
+      await load();
+    });
+  }
   actions.append(heart);
 
   const pinned = offer.priority === true;
@@ -805,6 +806,7 @@ function renderGames(all, behaviour) {
     },
     fresh: markFresh(rows),
     wishlist: get(all, KEY_WISHLIST, []),
+    steamWishlist: get(all, KEY_STEAM_WISHLIST, null),
   };
 
   document.getElementById('n-games').textContent = rows.length || '';
@@ -895,10 +897,10 @@ function renderGames(all, behaviour) {
 
 /* ---------------------------------------------------------------- upcoming */
 
-function renderUpcoming(all) {
-  const sources = get(all, KEY_SOURCES, {});
-  const now = Date.now();
-
+/* Les offres annoncees, la plus proche d'abord, une fois par jeu. Lue par la
+   section « Bientot » et par l'agenda : deux lectures de la meme liste
+   finiraient par ne plus montrer les memes jeux. */
+function upcomingWindows(sources, now) {
   const windows = [];
   for (const [name, s] of Object.entries(sources)) {
     // Seule la source Epic annonce ses fenetres ; le nom le dit.
@@ -914,12 +916,16 @@ function renderUpcoming(all) {
   // One game can have several announced windows; only the nearest matters.
   // Without this filter "Breathedge" showed up twice.
   const seen = new Set();
-  const next = windows.filter((w) => {
+  return windows.filter((w) => {
     const k = (w.title || String(w.start)).toLowerCase();
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
+}
+
+function renderUpcoming(all) {
+  const next = upcomingWindows(get(all, KEY_SOURCES, {}), Date.now());
 
   const section = document.getElementById('upcoming-section');
   const host = document.getElementById('upcoming');
@@ -2224,6 +2230,48 @@ document.getElementById('export-csv').addEventListener('click', async () => {
   // A BOM, so Excel opens UTF-8 without mangling accented titles.
   download(exportFileName(Date.now()).replace(/\.json$/, '.csv'), 'text/csv', `﻿${lines.join('\r\n')}\r\n`);
   say(t('exportedCsv', String(rows.length)));
+});
+
+/* L'agenda. Ce que vous possedez deja n'y entre pas -- les memes trois
+   preuves que la carte de jeu : le magasin, le registre, la collection. Le
+   code d'un jeu n'y entre jamais : voir watch/calendar.js. */
+document.getElementById('export-ics').addEventListener('click', async () => {
+  const all = await readAll();
+  const now = Date.now();
+  const mine = ownedTitles(get(all, KEY_LIBRARY, {}), normaliseTitle);
+  const ownedIds = ownedStoreKeys(get(all, KEY_COLLECTION, null));
+  const offers = openOffers(get(all, KEY_CATALOG, {}), behaviourCache || DEFAULT_BEHAVIOUR, now)
+    .filter(({ offer }) => offer.alreadyOwned !== true
+      && !mine.get(offer.normalisedTitle || String(offer.title || '').toLowerCase())
+      && !offerStoreKeys(offer).some((k) => ownedIds.has(k)))
+    .map(({ key, offer }) => ({
+      key, title: displayTitle(offer.title), store: offer.store, end: offer.end, url: offer.url || offer.resolveUrl,
+    }));
+  const codes = get(all, KEY_CODES, [])
+    .filter((c) => c && codeStatus(c) === CODE_STATUS.PENDING)
+    .map((c) => ({ code: c.code, title: c.title, store: c.store, day: deadlineDay(c.deadline), redeemUrl: redeemUrlFor(c.store) }));
+
+  const withStore = (title, store) => (store ? `${title} · ${store}` : title);
+  const options = {
+    now,
+    storeLabel: (s) => (s ? STORE_LABELS[s] || s : ''),
+    label: {
+      ending: (title, store) => t('icsEnding', withStore(title, store)),
+      endingSoon: (title) => t('icsEndingSoon', title),
+      starting: (title, store) => t('icsStarting', withStore(title, store)),
+      code: (title, store) => t('icsCode', withStore(title, store)),
+      mystery: t('upcomingUnannounced'),
+      untitled: t('untitledGame'),
+    },
+  };
+  const events = [
+    ...endingEvents(offers, options),
+    ...upcomingEvents(upcomingWindows(get(all, KEY_SOURCES, {}), now), options),
+    ...codeEvents(codes, options),
+  ];
+  if (!events.length) { say(t('icsNothing')); return; }
+  download(calendarFileName(now), 'text/calendar', buildCalendar(events, { now, name: t('icsCalendarName') }));
+  say(t('icsExported', String(events.length)));
 });
 
 document.getElementById('import').addEventListener('click', () => document.getElementById('import-file').click());

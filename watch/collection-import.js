@@ -30,6 +30,7 @@ import { IMPORT_STATUS, KINDS, makeItem, describeShape } from './collection.js';
 import { describeFetchFailure } from './net.js';
 import { OWNED_URL, itemsUrl, readOwnership } from './sources/steam.js';
 import { normaliseTitle } from './offer.js';
+import { MAX_STEAM_WISHES } from './wishlist.js';
 
 export const GOG_LIBRARY_URL = 'https://www.gog.com/account/getFilteredProducts';
 
@@ -169,8 +170,8 @@ function judge(res) {
   return null;
 }
 
-function result(status, { items = [], note = null, lines = [] } = {}) {
-  return { status, items, note, report: lines.join('\n') };
+function result(status, { items = [], note = null, lines = [], wishlist = null } = {}) {
+  return { status, items, note, report: lines.join('\n'), wishlist };
 }
 
 /* ------------------------------------------------------------------- Steam */
@@ -187,6 +188,34 @@ export function steamKind(type) {
   if (type === 0) return KINDS.GAME;
   if (type === 4) return KINDS.DLC;
   return KINDS.OTHER;
+}
+
+/**
+ * La liste de souhaits, lue dans la MEME reponse que la bibliotheque.
+ *
+ * `rgWishlist` voyage dans `dynamicstore/userdata` a cote de `rgOwnedApps` :
+ * aucune requete de plus vers un compte, aucune permission de plus. Sa forme
+ * CONNECTEE n'a pas ete mesuree dans ce depot -- une suite d'appids, sous
+ * forme de nombres, est la forme connue. D'ou la prudence :
+ *
+ *   - absente, ou d'une forme non reconnue : null, et la liste importee la
+ *     fois precedente reste telle quelle. Ne pas savoir n'est pas « vide » ;
+ *   - un tableau d'appids, meme vide : la photographie, qui remplace.
+ *
+ * Un element peut aussi etre un objet `{ appid }` : la forme de
+ * `IWishlistService`, que Steam pourrait un jour reprendre ici.
+ */
+export function readSteamWishlist(json) {
+  const raw = json && json.rgWishlist;
+  if (!Array.isArray(raw)) return null;
+  const ids = [];
+  for (const v of raw) {
+    const id = v && typeof v === 'object' ? v.appid : v;
+    if ((typeof id === 'number' || typeof id === 'string') && /^\d+$/.test(String(id))) ids.push(String(id));
+  }
+  // Des elements, dont aucun n'est lisible : une forme inconnue, pas une liste vide.
+  if (raw.length && !ids.length) return null;
+  return [...new Set(ids)];
 }
 
 export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pause = defaultPause, batch = STEAM_BATCH } = {}) {
@@ -213,12 +242,25 @@ export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pa
   }
 
   const ids = [...new Set(apps.map(String))].filter((id) => /^\d+$/.test(id));
+  const lue = readSteamWishlist(owned.json);
+  if (lue === null) {
+    lines.push(`  liste de souhaits : ${Array.isArray(owned.json.rgWishlist) ? 'forme inattendue' : 'rgWishlist absent'}, la precedente est gardee`);
+  }
+  // Bornee AVANT d'etre nommee : des lots pour des souhaits qu'on ne gardera pas seraient des requetes pour rien.
+  const wishIds = lue && lue.slice(0, MAX_STEAM_WISHES);
+  if (lue && lue.length > wishIds.length) lines.push(`  liste de souhaits : ${lue.length} jeux, ${wishIds.length} gardes`);
+
+  /* Les noms des souhaits viennent des memes lots GetItems que ceux de la
+     bibliotheque : c'est le nom qui reconnaitra le jeu offert sur Epic ou
+     GOG. Un souhait deja possede n'a pas a etre nomme deux fois. */
+  const idSet = new Set(ids);
+  const toName = [...ids, ...(wishIds || []).filter((id) => !idSet.has(id))];
   const names = new Map();
   let failed = 0;
   let lots = 0;
 
-  for (let i = 0; i < ids.length; i += batch) {
-    const lot = ids.slice(i, i + batch);
+  for (let i = 0; i < toName.length; i += batch) {
+    const lot = toName.slice(i, i + batch);
     const url = itemsUrl(lot, { lang: 'english', pays: country });
     const res = await fetchJson(fetchImpl, url, { credentials: 'omit' });
     lots++;
@@ -232,7 +274,7 @@ export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pa
         if (it && it.appid !== undefined && it.name) names.set(String(it.appid), { name: it.name, type: it.type });
       }
     }
-    if (i + batch < ids.length) await pause();
+    if (i + batch < toName.length) await pause();
   }
 
   /* Un nom manquant n'annule pas l'importation : la POSSESSION vient de
@@ -248,10 +290,18 @@ export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pa
     });
   });
 
-  const unnamed = ids.length - names.size;
+  const unnamed = ids.filter((id) => !names.has(id)).length;
   lines.push(`  ${ids.length} application(s), ${lots} lot(s) de noms, ${failed} en echec, ${unnamed} sans nom`);
-  const note = unnamed ? `${ids.length} applications, ${unnamed} sans nom` : `${ids.length} applications`;
-  return result(IMPORT_STATUS.OK, { items, note, lines });
+  let note = unnamed ? `${ids.length} applications, ${unnamed} sans nom` : `${ids.length} applications`;
+
+  let wishlist = null;
+  if (wishIds !== null) {
+    wishlist = wishIds.map((id) => ({ id, title: names.has(id) ? names.get(id).name : null }));
+    const sansNom = wishlist.filter((w) => !w.title).length;
+    lines.push(`  liste de souhaits : ${wishlist.length} jeu(x), ${sansNom} sans nom`);
+    note += ` · ${wishlist.length} souhait(s)`;
+  }
+  return result(IMPORT_STATUS.OK, { items, note, lines, wishlist });
 }
 
 /* --------------------------------------------------------------------- GOG */

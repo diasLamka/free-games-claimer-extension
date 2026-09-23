@@ -137,6 +137,9 @@
   "unwishTitle": {
     "message": "Stop watching this title"
   },
+  "wishSteamTitle": {
+    "message": "On your Steam wishlist: remove it there, it would come back at the next import"
+  },
   "claimThisTitle": {
     "message": "Claim this one now"
   },
@@ -382,6 +385,33 @@
   },
   "exportCsv": {
     "message": "Export CSV"
+  },
+  "exportIcs": {
+    "message": "Calendar (.ics)"
+  },
+  "exportIcsHint": {
+    "message": "Offer endings, upcoming offers and codes to redeem, for your phone's calendar. Export again to see later offers: reminders already imported are updated, not doubled."
+  },
+  "icsCalendarName": {
+    "message": "Free games"
+  },
+  "icsEnding": {
+    "message": "Last hour to claim $1"
+  },
+  "icsEndingSoon": {
+    "message": "24 hours left to claim $1"
+  },
+  "icsStarting": {
+    "message": "Free now: $1"
+  },
+  "icsCode": {
+    "message": "Last day to redeem the code for $1"
+  },
+  "icsExported": {
+    "message": "$1 reminder(s) in the file: open it with your calendar"
+  },
+  "icsNothing": {
+    "message": "Nothing to put in your calendar right now"
   },
   "import": {
     "message": "Import"
