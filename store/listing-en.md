@@ -84,3 +84,5 @@ produces them.
 2. The popup, Codes tab, showing a Luna code and its remaining days.
 3. The My Collection page.
 4. The watch journal.
+5. The dashboard: the popup opened full size in a tab (right-click the icon,
+   then Options), games, codes, watch and settings side by side.

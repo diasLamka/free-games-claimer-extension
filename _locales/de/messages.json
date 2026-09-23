@@ -1355,6 +1355,12 @@
   "openJournal": {
     "message": "Überwachungsprotokoll"
   },
+  "dashboardOpen": {
+    "message": "Groß öffnen, in einem Tab"
+  },
+  "dashboardTitle": {
+    "message": "Free Games — Übersicht"
+  },
   "openHistory": {
     "message": "Verlauf"
   },

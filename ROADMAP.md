@@ -6,7 +6,7 @@ l'ordre ci-dessous est un avis, pas un engagement.
 
 Le design de fond est ailleurs --
 `docs/specs/2026-08-27-veille-jeux-gratuits-design.md`, qui decoupe
-le travail en vagues V0 a V7. Six vagues et demie sont livrees ; ce qui suit
+le travail en vagues V0 a V7. Sept vagues sont livrees ; ce qui suit
 est ce qu'il en reste, plus ce que les corrections des dernieres versions ont
 fait apparaitre.
 
@@ -26,7 +26,7 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V1 | Decoupage du moteur | livree -- `src/core/`, 34 modules, build reproductible au bit pres |
 | V2 | Veille en notification seule | livree -- `watch/`, 2.8.0 |
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
-| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`pages/journal.html`) ; les quatre autres vues vivent dans le popup. Hors design, la **collection** a aussi sa page (2.21.0) |
+| V4 | Onglet dedie, journal persistant | **livree** -- journal en 2.14.0 (`pages/journal.html`), historique filtrable (`pages/historique.html`), et en 2.58.0 le **tableau de bord** : le popup ouvert en grand, veille, offres, codes et reglages cote a cote. Hors design, la **collection** a aussi sa page (2.21.0) |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
 | V6 | Sources HTML, mode repli | **livree** -- repli (`pages/sentinel.html`), lecture HTML (`watch/offscreen.js`) et source GOG en propre (2.15.0) |
 | V7 | Elargissement | **Prime Gaming mesure et ferme** le 2026-09-17 ; trois magasins reclamables, un quatrieme seulement detecte |
@@ -111,6 +111,14 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   active seulement apres l'avertissement. La page d'une vraie offre a ete
   mesuree a blanc ; le clic lui-meme ne l'a jamais ete -- le premier sera
   celui de l'utilisateur qui active l'option, et un echec y a son motif.
+- **Le tableau de bord** (2.58.0), l'entree 2 de cette liste. Ce n'est pas
+  une page de plus : c'est le popup, ouvert en grand dans un onglet -- par le
+  bouton de son en-tete, ou clic droit sur l'icone -> Options. Au-dela de
+  760 px, les volets se posent cote a cote : les jeux en grille, les codes et
+  la veille avec sa bande de 24 heures, les reglages. Deux pages auraient
+  diverge au premier reglage ajoute ; une seule ne le peut pas. Le vrai popup
+  ne change pas de largeur : la mise en page d'onglet n'y entre que par un
+  marqueur qu'il ne porte jamais (`lib/dashboard.js`).
 - **Ma collection** (2.21.0). Une page qui rassemble ce que Steam, GOG et Epic
   disent que vous possedez, plus ce que l'extension a reclame. Lecture seule, a
   la demande, et jamais d'effacement sur un echec. Le comportement SANS session
@@ -139,14 +147,9 @@ l'agregateur le voit, et le journal dit lequel des deux a parle.
 
 ## 2. Les quatre autres vues de l'onglet dedie
 
-*Pourquoi.* Le popup porte a l'etroit dans 328 px ce que le design reserve a un
-onglet dedie (§9) : veille par source, offres, historique filtrable, reglages
-complets. Le journal en est sorti en 2.14.0 et a sa page ; les autres suivront
-si le popup devient trop dense.
-
-*Cout.* L'entree la plus chere en interface, et la moins risquee en moteur :
-elle ne touche a aucun magasin. C'est aussi la moins urgente -- le popup fait
-le travail aujourd'hui.
+**Livre en 2.58.0** -- voir « Livre depuis ». Le popup s'ouvre en grand et
+devient l'onglet dedie du design (§9) : veille, offres, codes et reglages sur
+un ecran, a cote du journal et de l'historique qui avaient deja leur page.
 
 ## 3. Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension
 

@@ -4,6 +4,48 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.58.0 -- 2026-09-23
+
+**Le tableau de bord : le popup, en grand**
+
+Le design prevoyait un onglet dedie (§9) ; le popup portait tout dans
+328 px. Il s'ouvre desormais EN GRAND, dans un onglet : c'etait la derniere
+entree de la feuille de route qui n'attendait pas une mesure.
+
+- **Deux portes** : le bouton en fleches de l'en-tete du popup, ou clic
+  droit sur l'icone -> Options (la page d'options du manifeste). Un second
+  clic ramene l'onglet deja ouvert au lieu d'en empiler un autre.
+- **Cote a cote** au-dela de 760 px : les jeux en grille, avec des
+  jaquettes plus grandes ; les codes, et sous eux la veille, ouverte avec sa
+  bande de 24 heures ; les reglages au bout. Trois colonnes a partir de
+  1240 px, deux en dessous. Le pied de page -- collection, historique,
+  journal, diagnostics -- reste en bas de l'ecran. Plus etroit, l'onglet
+  garde les trois onglets du popup, a pleine largeur ; 1, 2, 3 font defiler
+  jusqu'au volet.
+- **Une seule page** : c'est popup.html, dispose autrement. Un reglage ajoute
+  au popup est aussitot dans le tableau de bord -- deux pages auraient
+  diverge au premier.
+- **Il vit** : un popup dure quelques secondes, le tableau de bord des
+  heures. Il se relit chaque minute tant qu'on le regarde, et en revenant
+  sur l'onglet (ce qui efface le badge, comme ouvrir le popup) ; il suit la
+  langue et le theme changes depuis le popup ; ouvrir une fiche ou le
+  journal ne le ferme plus.
+- **Le vrai popup ne bouge pas** : la mise en page d'onglet n'y entre que
+  par un marqueur pose quand la page se sait dans un onglet
+  (`lib/dashboard.js` : la requete `?vue=onglet`, ou la liste des vues de
+  type onglet, ou le popup ne figure jamais). Un doute vaut « popup ».
+- `npm run preview` donne aussi l'adresse du tableau de bord.
+
+Aucune permission nouvelle : une page d'options n'en demande pas.
+
+Verifie dans Chromium : le tableau de bord a 1440, 1000 et 700 px, en clair
+et en sombre, sans debordement ; le retour aux colonnes apres un passage
+etroit ; le vrai popup, ouvert par `action.openPopup`, reste a 328 px avec
+ses onglets ; son bouton ramene l'onglet existant et se referme ; un lien du
+tableau de bord ouvre sa page sans le fermer.
+
+1205 tests.
+
 ## 2.57.0 -- 2026-09-23
 
 **Les jeux mobiles offerts par Epic**

@@ -86,6 +86,11 @@ function referencesManifeste(chemin) {
     refs.push(...(cs.js || []), ...(cs.css || []));
   }
   if (m.action && m.action.default_popup) refs.push(m.action.default_popup);
+  /* La page d'options porte une requete (le tableau de bord, 2.58.0) : le
+     fichier est ce qui la precede. */
+  for (const page of [m.options_ui && m.options_ui.page, m.options_page]) {
+    if (typeof page === 'string') refs.push(page.split(/[?#]/)[0]);
+  }
   for (const table of [m.action && m.action.default_icon, m.icons]) {
     if (table) refs.push(...Object.values(table));
   }

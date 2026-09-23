@@ -227,6 +227,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const { data, from } = loadData(args);
   createPreviewServer({ data, lang: args.lang }).listen(args.port, '127.0.0.1', () => {
     console.log(`apercu : http://127.0.0.1:${args.port}/pages/popup.html`);
+    console.log(`tableau de bord : http://127.0.0.1:${args.port}/pages/popup.html?vue=onglet`);
     console.log(`donnees : ${from}, ${Object.keys(data).length} cle(s)`);
     console.log('aussi : /pages/collection.html, /pages/historique.html, /pages/journal.html -- Ctrl+C pour arreter');
   });

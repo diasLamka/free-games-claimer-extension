@@ -1355,6 +1355,12 @@
   "openJournal": {
     "message": "Watch log"
   },
+  "dashboardOpen": {
+    "message": "Open full size, in a tab"
+  },
+  "dashboardTitle": {
+    "message": "Free Games — dashboard"
+  },
   "openHistory": {
     "message": "History"
   },

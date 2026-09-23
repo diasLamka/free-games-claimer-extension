@@ -1355,6 +1355,12 @@
   "openJournal": {
     "message": "Journal de la veille"
   },
+  "dashboardOpen": {
+    "message": "Ouvrir en grand, dans un onglet"
+  },
+  "dashboardTitle": {
+    "message": "Free Games — tableau de bord"
+  },
   "openHistory": {
     "message": "Historique"
   },

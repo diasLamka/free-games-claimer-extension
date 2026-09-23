@@ -215,6 +215,20 @@
 
   .version { margin-left: auto; color: var(--mute); font-size: 11px; font-variant-numeric: tabular-nums; }
 
+  /* Un bouton sans texte : l'icone dit « en grand », le title le dit en mots. */
+  .icon-button {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-right: -4px;
+    background: none;
+    border-color: transparent;
+    color: var(--mute);
+  }
+  .icon-button:hover { color: var(--amber); border-color: var(--line); }
+
   /* ------------------------------------------------------------ sections */
   section { padding: var(--pad); border-bottom: 1px solid var(--line); }
   section:last-of-type { border-bottom: 0; }
@@ -1025,6 +1039,90 @@
   footer a { color: var(--mute); font-size: 11px; text-decoration: none; border-bottom: 1px solid transparent; }
   footer a:hover { color: var(--amber); border-bottom-color: var(--amber); }
 
+  /* ------------------------------------------------ le tableau de bord
+     Le MEME popup, ouvert en grand dans un onglet (2.58.0) : l'onglet dedie
+     du design (§9), sans une seconde page qu'il faudrait tenir d'accord avec
+     celle-ci -- un reglage ajoute au popup y est aussitot.
+
+     `data-vue="onglet"` est pose par popup.js, qui sait ou il tourne ; jamais
+     dans le vrai popup, dont la largeur reste fixe. Sous 760 px de large,
+     l'onglet garde les trois onglets du popup, a pleine largeur. Au-dela, les
+     volets se posent cote a cote : les jeux en large, les codes et la veille
+     a cote, les reglages au bout. */
+  .pane-title { display: none; }
+
+  :root[data-vue="onglet"], :root[data-vue="onglet"] body { width: auto; }
+  :root[data-vue="onglet"] body {
+    max-height: none;
+    overflow: visible;
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+  :root[data-vue="onglet"] #open-dashboard { display: none; }
+
+  @media (min-width: 760px) {
+    :root[data-vue="onglet"] .tabs { display: none; }
+    :root[data-vue="onglet"] .panes {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+      grid-template-areas: "games codes" "games settings";
+      grid-template-rows: auto 1fr;
+    }
+    :root[data-vue="onglet"] #pane-games { grid-area: games; }
+    :root[data-vue="onglet"] #pane-codes { grid-area: codes; border-left: 1px solid var(--line); }
+    :root[data-vue="onglet"] #pane-settings { grid-area: settings; border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+    /* 1, 2, 3 font defiler jusqu'au volet : il s'arrete sous l'en-tete. */
+    :root[data-vue="onglet"] .pane { scroll-margin-top: 56px; }
+
+    :root[data-vue="onglet"] .pane-title {
+      display: block;
+      margin: 0;
+      padding: 14px var(--pad) 0;
+      font-size: 11px;
+      color: var(--paper);
+    }
+
+    /* Les jeux en grille : une carte par case, et les reperes d'echeance
+       sur toute la largeur. */
+    :root[data-vue="onglet"] #games,
+    :root[data-vue="onglet"] #upcoming {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      column-gap: 14px;
+      align-items: start;
+    }
+    :root[data-vue="onglet"] #games > .horizon,
+    :root[data-vue="onglet"] #games > .empty { grid-column: 1 / -1; }
+    :root[data-vue="onglet"] #upcoming .row:last-child { border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+    :root[data-vue="onglet"] .art { width: 88px; height: 55px; }
+    :root[data-vue="onglet"] .log { columns: 300px; column-gap: 24px; }
+    :root[data-vue="onglet"] .log li { break-inside: avoid; }
+    :root[data-vue="onglet"] .toolbar input[type="search"] { max-width: 420px; }
+
+    /* Les liens vers les autres pages restent a portee : sous une colonne de
+       quarante jeux, le pied de page serait a trois ecrans de l'en-tete. */
+    :root[data-vue="onglet"] footer {
+      position: sticky;
+      bottom: 0;
+      z-index: 3;
+      flex-wrap: nowrap;
+      background: var(--ink);
+      /* Une hauteur ENTIERE : a 35,5 px, le demi-pixel du bas laissait
+         passer le haut des lignes qui defilent dessous. */
+      height: 40px;
+    }
+    :root[data-vue="onglet"] footer .grow { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  }
+
+  @media (min-width: 1240px) {
+    :root[data-vue="onglet"] .panes {
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) minmax(340px, 400px);
+      grid-template-areas: "games codes settings";
+      grid-template-rows: auto;
+    }
+    :root[data-vue="onglet"] #pane-settings { border-top: 0; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ticket, .pane.enter, .left.hot.final { animation: none; }
     * { transition: none !important; }
@@ -1044,6 +1142,10 @@
     <img src="../icons/icon128.png" alt="">
     <span class="wordmark">Free Games</span>
     <span class="version" id="version"></span>
+    <!-- Le tableau de bord (2.58.0) : ce meme popup, en grand, dans un onglet. -->
+    <button class="icon-button" id="open-dashboard" data-i18n-attr="title:dashboardOpen,aria-label:dashboardOpen">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 8.5 7.5M6.5 13.5h-4v-4M2.5 13.5l5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </header>
 
   <div class="stopped" id="stopped-banner" hidden>
@@ -1062,8 +1164,13 @@
     <button class="tab" role="tab" id="tab-settings" aria-controls="pane-settings" aria-selected="false" data-i18n="tabSettings"></button>
   </nav>
 
+  <!-- Les trois volets. En popup, un seul a la fois ; dans le tableau de bord,
+       cote a cote (voir « le tableau de bord » dans les styles). -->
+  <main class="panes" id="panes">
+
   <!-- ------------------------------------------------------------ games -->
   <div class="pane" id="pane-games" role="tabpanel" aria-labelledby="tab-games">
+    <h2 class="pane-title" data-i18n="tabGames"></h2>
     <div class="toolbar">
       <input type="search" id="search" data-i18n-attr="placeholder:searchPlaceholder,aria-label:searchPlaceholder">
       <select id="sort" data-i18n-attr="aria-label:sortLabel">
@@ -1102,6 +1209,7 @@
 
   <!-- ------------------------------------------------------------ codes -->
   <div class="pane" id="pane-codes" role="tabpanel" aria-labelledby="tab-codes" hidden>
+    <h2 class="pane-title" data-i18n="tabCodes"></h2>
     <section>
       <h2><span data-i18n="codesToRedeem"></span><span class="count" id="codes-count"></span></h2>
       <div id="codes"></div>
@@ -1124,6 +1232,7 @@
 
   <!-- --------------------------------------------------------- settings -->
   <div class="pane" id="pane-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <h2 class="pane-title" data-i18n="tabSettings"></h2>
     <section>
       <details class="fold" id="fold-tally">
         <summary><h2 data-i18n="summary"></h2><span class="aside" id="fold-tally-say"></span></summary>
@@ -1401,6 +1510,8 @@
       </details>
     </section>
   </div>
+
+  </main>
 
   <div class="undo" id="undo" hidden>
     <span id="undo-text"></span>

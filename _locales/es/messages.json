@@ -1355,6 +1355,12 @@
   "openJournal": {
     "message": "Registro de la vigilancia"
   },
+  "dashboardOpen": {
+    "message": "Abrir en grande, en una pestaña"
+  },
+  "dashboardTitle": {
+    "message": "Free Games — panel"
+  },
   "openHistory": {
     "message": "Historial"
   },

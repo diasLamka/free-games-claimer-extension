@@ -40,6 +40,7 @@ import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes
 import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
 import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
 import { updateMessage } from '../watch/self-update.js';
+import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -49,6 +50,20 @@ import {
 } from '../watch/session.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
+
+/* ------------------------------------------------------- le tableau de bord */
+
+/* Ce popup s'ouvre aussi en grand, dans un onglet (2.58.0) : voir
+   lib/dashboard.js. Le marqueur est pose avant tout rendu, pour que la page
+   ne se dessine jamais d'abord a 328 px. */
+const EN_ONGLET = isDashboard(location.search, (() => {
+  try { return api.extension && api.extension.getViews ? api.extension.getViews({ type: 'tab' }) : null; } catch { return null; }
+})(), window);
+if (EN_ONGLET) document.documentElement.dataset.vue = 'onglet';
+
+/** Assez large pour poser les volets cote a cote (meme seuil que les styles). */
+const LARGE = window.matchMedia('(min-width: 760px)');
+const enColonnes = () => EN_ONGLET && LARGE.matches;
 
 /* ------------------------------------------------------------------- stores */
 
@@ -290,7 +305,8 @@ function shortDateTime(ms) {
 
 function openTab(url) {
   api.tabs.create({ url, active: true });
-  window.close();
+  // Le tableau de bord, lui, reste : on y revient, on ne le traverse pas.
+  if (!EN_ONGLET) window.close();
 }
 
 /** "together-after-dark" -> "Together After Dark" */
@@ -1875,6 +1891,7 @@ async function render() {
   setLocale(ui.language === 'auto' ? null : ui.language);
   translateDocument();
   applyLook();
+  if (EN_ONGLET) document.title = t('dashboardTitle');
 
   document.getElementById('version').textContent = `v${api.runtime.getManifest().version}`;
 
@@ -1966,27 +1983,31 @@ function tell(type, payload = {}) {
 /* -------------------------------------------------------------------- tabs */
 
 const TAB_NAMES = ['games', 'codes', 'settings'];
+let currentTab = 'games';
 
 function showTab(name) {
+  currentTab = name;
+  // Le tableau de bord en colonnes montre les trois volets a la fois.
+  const colonnes = enColonnes();
   for (const n of TAB_NAMES) {
     const tab = document.getElementById(`tab-${n}`);
     const pane = document.getElementById(`pane-${n}`);
     const active = n === name;
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
-    pane.hidden = !active;
+    pane.hidden = !active && !colonnes;
 
     // Replay the entry animation: a class already set does not replay on its
     // own, it has to be removed with a reflow forced in between.
     pane.classList.remove('enter');
-    if (active) {
+    if (active && !colonnes) {
       void pane.offsetWidth;
       pane.classList.add('enter');
     }
   }
   // The popup keeps its scroll position between tabs, which reads as truncated
-  // content.
-  window.scrollTo(0, 0);
+  // content. In columns, there is no tab to reset: the page scrolls to the pane.
+  if (!colonnes) window.scrollTo(0, 0);
 
   // Looking at the Games tab IS having seen the offers. The badge counted
   // "unseen" offers while nothing ever marked them, so it showed every active
@@ -2594,9 +2615,56 @@ document.addEventListener('keydown', (e) => {
   const n = Number(e.key);
   if (n >= 1 && n <= TAB_NAMES.length) {
     showTab(TAB_NAMES[n - 1]);
-    document.getElementById(`tab-${TAB_NAMES[n - 1]}`).focus();
+    if (enColonnes()) document.getElementById(`pane-${TAB_NAMES[n - 1]}`).scrollIntoView({ block: 'start' });
+    else document.getElementById(`tab-${TAB_NAMES[n - 1]}`).focus();
   }
 });
+
+/* --- le tableau de bord : le meme popup, en grand (2.58.0)
+
+   Le bouton de l'en-tete ouvre la page d'options du manifeste, qui EST ce
+   popup en onglet. `openOptionsPage` ramene l'onglet s'il est deja ouvert,
+   au lieu d'en empiler un second ; sans lui (l'apercu), un onglet simple. */
+document.getElementById('open-dashboard').addEventListener('click', async () => {
+  try {
+    if (api.runtime.openOptionsPage) {
+      await api.runtime.openOptionsPage();
+      window.close();
+      return;
+    }
+  } catch { /* retombe sur un onglet simple */ }
+  openTab(api.runtime.getURL(DASHBOARD_PAGE));
+});
+
+/* La veille a sa colonne dans le tableau de bord, sous les codes : c'est la
+   vue qui rend la prediction inspectable (design §9), et au bout des
+   reglages personne ne la verrait. Elle y va OUVERTE, une fois -- la refermer
+   reste un choix. Sous 760 px, elle retourne a sa place parmi les reglages. */
+const VEILLE = document.getElementById('fold-watch').closest('section');
+const PLACE_VEILLE = document.createComment(' place de la veille parmi les reglages ');
+VEILLE.before(PLACE_VEILLE);
+let veilleOuverte = false;
+
+function arrangeDashboard() {
+  if (enColonnes()) {
+    if (VEILLE.parentElement.id !== 'pane-codes') document.getElementById('pane-codes').append(VEILLE);
+    if (!veilleOuverte) {
+      veilleOuverte = true;
+      // Et sa bande de 24 heures avec : c'est elle qu'on vient regarder.
+      for (const pli of [document.getElementById('fold-watch'), document.querySelector('#fold-watch details')]) {
+        if (pli) pli.open = true;
+      }
+    }
+  } else if (PLACE_VEILLE.nextSibling !== VEILLE) {
+    PLACE_VEILLE.after(VEILLE);
+  }
+}
+
+if (EN_ONGLET) {
+  arrangeDashboard();
+  // Le demarrage affiche deja le volet courant ; un changement de largeur non.
+  LARGE.addEventListener('change', () => { arrangeDashboard(); showTab(currentTab); });
+}
 
 /* --- le popup suit ce qui change pendant qu'il est ouvert
 
@@ -2616,19 +2684,43 @@ const WATCHED_KEYS = new Set(KEYS_READ.filter((k) => k !== KEY_UI));
 const EDITING = 'input[type="range"], input[type="number"], input[type="time"], input[type="url"], input[type="password"], textarea, select';
 let refreshTimer = null;
 
+function editing() {
+  const active = document.activeElement;
+  return !!(active && active.matches && active.matches(EDITING));
+}
+
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(() => {
-    const active = document.activeElement;
-    if (active && active.matches && active.matches(EDITING)) { scheduleRefresh(); return; }
+    if (editing()) { scheduleRefresh(); return; }
     load();
   }, 400);
 }
 
 api.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (Object.keys(changes).some((k) => WATCHED_KEYS.has(k))) scheduleRefresh();
+  const cles = Object.keys(changes);
+  if (cles.some((k) => WATCHED_KEYS.has(k))) scheduleRefresh();
+  /* Le tableau de bord reste ouvert des heures, et le popup peut changer la
+     langue ou le theme pendant ce temps. Il suit -- sauf quand c'est lui qui
+     vient d'ecrire : il a alors le focus, et s'est deja redessine. */
+  else if (EN_ONGLET && cles.includes(KEY_UI) && !document.hasFocus()) scheduleRefresh();
 });
+
+/* Un popup vit quelques secondes ; le tableau de bord, des heures. Ses
+   « il y a 5 min » et ses anneaux d'echeance vieilliraient sur place : il se
+   relit chaque minute tant qu'on le regarde, et en revenant sur l'onglet.
+   Revenir sur l'onglet, c'est aussi avoir vu les offres -- le badge s'efface
+   comme a l'ouverture du popup. */
+if (EN_ONGLET) {
+  // Pas pendant une saisie : la minute suivante repassera.
+  setInterval(() => { if (document.visibilityState === 'visible' && !editing()) scheduleRefresh(); }, 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    scheduleRefresh();
+    tell('fgc-mark-seen');
+  });
+}
 
 /* --- boot */
 

@@ -155,7 +155,7 @@ background.js               service worker (module ES) : relais + veille
 _locales/                   textes de l'interface : fr, en, de, es (emplacement impose)
 
 pages/                      les pages de l'extension, une paire .html / .js chacune
-  popup                       le popup
+  popup                       le popup -- et, ouvert en grand, le tableau de bord (page d'options)
   collection                  Ma collection : vos jeux des quatre magasins, en une page
   historique                  ce qui est passe, pris ou rate, et ce que cela valait
   journal                     le journal de la veille, 500 entrees persistees
@@ -169,6 +169,7 @@ content/                    ce qui s'injecte dans les pages de magasin
   launcher.js                 le bouton sur la page : etat du moteur, faits de la fiche, commandes ;
                               deplacable, il s'ecarte des boutons des autres extensions
 lib/                        partage par les pages, le worker et la veille
+  dashboard.js                le popup se sait-il ouvert dans un onglet ? (tableau de bord)
   i18n.js                     traduction
   i18n-tables.js              tables de traduction -- GENEREES depuis _locales
   money.js                    montants et devises
@@ -291,6 +292,14 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Le tableau de bord** (2.58.0) est ce meme popup ouvert en grand : le bouton
+en fleches de son en-tete, ou clic droit sur l'icone -> Options. Au-dela de
+760 px de large, les volets se posent cote a cote -- les jeux en grille, les
+codes et la veille (avec sa bande de 24 heures), les reglages -- et la page
+se relit chaque minute. En dessous, il garde les onglets du popup. Une seule
+page pour les deux : un reglage ajoute au popup est aussitot dans le tableau
+de bord.
 
 Les interrupteurs ecrivent les memes cles que le moteur (`FGC_epic_auto_mode`,
 `FGC_luna_auto_mode`, `FGC_luna_claim_dlc`), et `content/gm-shim.js` ecoute
