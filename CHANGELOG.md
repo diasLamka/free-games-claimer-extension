@@ -4,6 +4,53 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.52.0 -- 2026-09-23
+
+**Le bouton se pose ou l'on veut, et laisse la place aux autres**
+
+- **Deplacable partout.** Il ne glissait que le long du bord droit ; il se
+  pose maintenant n'importe ou dans la fenetre. La place est retenue en
+  fractions de la fenetre (`veille:lanceur` porte `x` et `y`) : agrandie ou
+  reduite, il reste au meme endroit relatif, et jamais dehors. L'ancienne
+  place (hauteur seule) est relue, au bord droit.
+- **Il s'ecarte des boutons des autres extensions.** Dealabs, un comparateur
+  de prix, une bulle d'aide : si leur bouton occupe la place, le lanceur prend
+  la place libre la plus proche -- au-dessus ou au-dessous d'abord, puis de
+  cote -- avec 6 px d'air, et y revient de lui-meme quand le voisin s'en va.
+  Lache sur un voisin, il se pousse a cote, et c'est cette place-la qui est
+  retenue. Il ne bouge jamais sous la main : ni pendant un glisser, ni panneau
+  ouvert.
+- **Il arrive en glissant** depuis le bord le plus proche, depasse un peu sa
+  place et s'y pose ; la pastille eclot juste apres, et la bulle attend qu'il
+  soit arrive. Le panneau s'ouvre en fondu, la bulle glisse, le point eclot a
+  chaque fin. Quand le systeme demande moins de mouvement, tout devient un
+  simple fondu.
+- Panneau et bulle s'ouvrent du cote ou il y a de la place : a droite du
+  bouton quand il est a gauche de l'ecran.
+
+### Comment il voit les voisins
+
+Les autres extensions vivent, comme lui, dans des racines d'ombre fermees : on
+n'en voit pas l'interieur. Le lanceur demande au navigateur ce qui se trouve
+au premier plan en 16 points autour de sa place (`elementsFromPoint`). Un
+point est pris quand ce qui s'y trouve FLOTTE : fixe et de taille modeste (un
+bouton, pas un en-tete pleine largeur), ou pose a la racine du document et
+dessinant hors de sa propre boite -- la signature d'une extension. Le texte de
+la page ne compte pas : le bouton reste la ou vous l'avez mis. Il ne regarde
+qu'a son arrivee, quand un element s'ajoute a la racine du document (jamais
+la page entiere), quand la fenetre change, et deux fois dans les cinq
+premieres secondes.
+
+### Corrige
+
+- Le bouton se posait sous la barre de defilement : la largeur de la fenetre
+  comptait la barre. Elle ne la compte plus.
+
+1134 tests, dont 26 sur le lanceur. Verifie dans Chromium avec l'extension
+chargee et deux fausses extensions voisines : 12 px d'ecart avec la
+premiere, ecart et retour automatiques quand la seconde arrive puis s'en va,
+arrivee ralentie image par image.
+
 ## 2.51.0 -- 2026-09-23
 
 **Un seul bouton sur la page du magasin**

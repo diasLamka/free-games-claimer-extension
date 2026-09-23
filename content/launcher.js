@@ -6,11 +6,12 @@
  * surcouche des fiches (« deja a vous sur GOG »). Sur une fiche Epic, les deux
  * se chevauchaient, et masquaient ce que la page affichait dessous.
  *
- * Il n'y a plus qu'un element : l'icone de l'extension, au bord droit de la
- * fenetre. Un clic ouvre un panneau ; un glisser la deplace le long du bord,
- * et la position est retenue. Une pastille compte ce qu'il y a a lire, un
- * point dit ou en est le moteur, et une bulle breve annonce ce qui vient
- * d'arriver -- puis s'efface d'elle-meme.
+ * Il n'y a plus qu'un element : l'icone de l'extension, qui arrive en glissant
+ * depuis le bord de la fenetre. Un clic ouvre un panneau ; un glisser la pose
+ * n'importe ou, et la position est retenue. Si le bouton d'une AUTRE extension
+ * occupe deja la place, elle se met a cote (2.52.0). Une pastille compte ce
+ * qu'il y a a lire, un point dit ou en est le moteur, et une bulle breve
+ * annonce ce qui vient d'arriver -- puis s'efface d'elle-meme.
  *
  * CINQ REGLES, chacune une facon de ne pas nuire a une page qu'on ne possede
  * pas. Les quatre premieres viennent de la surcouche.
@@ -51,11 +52,17 @@
 
   var KEY_POSITION = 'veille:lanceur';
   var TAILLE = 40;
-  var MARGE = 12;
   var ECART = 10;
-  var BORD = 8;
+  var BORD = 12;
   var BULLE_MS = 6000;
+  var X_DEFAUT = 1;
   var Y_DEFAUT = 0.7;
+  /* La recherche d'une place libre : par pas de 16 px, jamais a plus de
+     480 px de la place voulue -- au-dela, mieux vaut rester ou l'on est. */
+  var PAS = 16;
+  var RAYON_MAX = 480;
+  /* L'air laisse entre le bouton et celui d'un voisin. */
+  var ESPACE = 6;
 
   var C = {
     fond: '#14101F', bord: '#2E2745', texte: '#EDE9F5', doux: '#9A90B8',
@@ -83,16 +90,25 @@
     lignes: [],
     libelles: {},
     ouvert: false,
-    y: Y_DEFAUT,
+    pos: { x: X_DEFAUT, y: Y_DEFAUT },
     bulleFaits: false,
   };
 
   var hote = null;
   var ui = {};
+  /* Ou le bouton se tient vraiment, en pixels. Ce n'est pas toujours la place
+     voulue (etat.pos) : un voisin peut l'occuper. */
+  var place = null;
   var minuterieBulle = null;
+  var generationBulle = 0;
+  var minuterieVoisins = null;
+  var observateur = null;
   var pulsation = null;
   var glisse = null;
   var ignorerClic = false;
+  var dernierStatut = 'idle';
+  /* Jusqu'a quand l'arrivee se joue : la bulle attend qu'elle soit finie. */
+  var arriveeJusqua = 0;
 
   /* ------------------------------------------------------------ outils */
 
@@ -140,8 +156,22 @@
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
   }
 
-  function hauteur() { return window.innerHeight || document.documentElement.clientHeight || 600; }
-  function largeur() { return window.innerWidth || document.documentElement.clientWidth || 800; }
+  /* La fenetre SANS ses barres de defilement : innerWidth les compte, et le
+     bouton se posait dessous. clientWidth ne les compte pas -- sauf en mode
+     de compatibilite, ou il mesure le document entier ; on garde alors le
+     plus petit des deux. */
+  function mesure(client, inner, defaut) {
+    if (client > 0 && inner > 0) return Math.min(client, inner);
+    return client > 0 ? client : inner > 0 ? inner : defaut;
+  }
+  function hauteur() {
+    var d = document.documentElement;
+    return mesure(d && d.clientHeight, window.innerHeight, 600);
+  }
+  function largeur() {
+    var d = document.documentElement;
+    return mesure(d && d.clientWidth, window.innerWidth, 800);
+  }
 
   /** L'icone de l'extension, en aplats : un degrade ou un masque passent par
       des references #id, que les racines d'ombre resolvent mal selon le
@@ -161,11 +191,47 @@
 
   /* ------------------------------------------------------------ position */
 
-  function placer() {
+  function borne(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function fraction(v) { return typeof v === 'number' && v >= 0 && v <= 1; }
+
+  /* La place voulue est retenue en FRACTIONS de la zone ou le bouton peut se
+     tenir, pas en pixels : une fenetre agrandie ou reduite le garde au meme
+     endroit relatif, et jamais dehors. */
+  function versPixels(pos) {
+    return {
+      left: BORD + borne(pos.x, 0, 1) * Math.max(0, largeur() - TAILLE - 2 * BORD),
+      top: BORD + borne(pos.y, 0, 1) * Math.max(0, hauteur() - TAILLE - 2 * BORD),
+    };
+  }
+
+  function versFraction(px) {
+    var w = largeur() - TAILLE - 2 * BORD;
+    var h = hauteur() - TAILLE - 2 * BORD;
+    return {
+      x: w > 0 ? borne((px.left - BORD) / w, 0, 1) : X_DEFAUT,
+      y: h > 0 ? borne((px.top - BORD) / h, 0, 1) : Y_DEFAUT,
+    };
+  }
+
+  function dansLaFenetre(px) {
+    return {
+      left: borne(px.left, BORD, Math.max(BORD, largeur() - TAILLE - BORD)),
+      top: borne(px.top, BORD, Math.max(BORD, hauteur() - TAILLE - BORD)),
+    };
+  }
+
+  /** Le bouton est-il dans la moitie droite ? Le panneau et la bulle s'ouvrent
+      alors vers la gauche : du cote ou il y a de la place. */
+  function versLaGauche() {
+    return place.left - BORD > largeur() - place.left - TAILLE - BORD;
+  }
+
+  function poser(px, doux) {
     if (!hote) return;
-    var h = hauteur();
-    var top = Math.max(BORD, Math.min(h - TAILLE - BORD, etat.y * h));
-    hote.style.top = Math.round(top) + 'px';
+    place = dansLaFenetre(px);
+    hote.style.transition = doux && !mouvementReduit() ? 'left .28s ease,top .28s ease' : 'none';
+    hote.style.left = Math.round(place.left) + 'px';
+    hote.style.top = Math.round(place.top) + 'px';
   }
 
   function lirePosition() {
@@ -173,15 +239,176 @@
       api.storage.local.get(KEY_POSITION, function (items) {
         void api.runtime.lastError;
         var p = items && items[KEY_POSITION];
-        if (p && typeof p.y === 'number' && p.y >= 0 && p.y <= 1) { etat.y = p.y; placer(); }
+        if (!p || !fraction(p.y)) return;
+        // Avant la 2.52.0, seule la hauteur etait retenue : le bouton vivait au bord droit.
+        etat.pos = { x: fraction(p.x) ? p.x : X_DEFAUT, y: p.y };
+        if (hote) { poser(versPixels(etat.pos), false); adapter(); }
       });
     } catch (e) { /* contexte invalide apres une mise a jour */ }
   }
 
   function sauverPosition() {
     var o = {};
-    o[KEY_POSITION] = { y: Math.round(etat.y * 1000) / 1000 };
+    o[KEY_POSITION] = { x: Math.round(etat.pos.x * 1000) / 1000, y: Math.round(etat.pos.y * 1000) / 1000 };
     try { api.storage.local.set(o, function () { void api.runtime.lastError; }); } catch (e) {}
+  }
+
+  /* ------------------------------------------------------------ les voisins */
+
+  /**
+   * D'autres extensions posent, elles aussi, un bouton flottant : Dealabs, un
+   * comparateur de prix, une bulle d'aide. Le lanceur ne se pose pas dessus.
+   * Si la place voulue est prise, il prend la place libre la plus proche, et
+   * il y revient de lui-meme quand le voisin s'en va.
+   *
+   * On ne voit pas l'interieur des autres extensions : leurs racines d'ombre
+   * sont fermees, comme la notre. On voit ce que le navigateur dit d'un point
+   * de l'ecran (`elementsFromPoint`). Un point est pris quand ce qui s'y
+   * trouve au premier plan FLOTTE :
+   *
+   *  - fixe, lui ou un parent, et de taille modeste -- un bouton, une bulle,
+   *    pas un en-tete pleine largeur ni une fenetre modale, qu'on ne pourrait
+   *    de toute facon pas eviter ;
+   *  - ou pose a la racine du document et dessinant HORS de sa propre boite :
+   *    la signature d'une racine d'ombre au contenu fixe, la facon dont les
+   *    extensions s'installent.
+   *
+   * La page elle-meme -- un texte, une image, un bloc qui defile -- ne compte
+   * pas : le bouton reste la ou vous l'avez mis.
+   */
+  function flottant(e, x, y, memo) {
+    if (memo.has(e)) return memo.get(e);
+    var oui = false;
+    var r = e.getBoundingClientRect();
+    var aLaRacine = e.parentNode === document.body || e.parentNode === document.documentElement;
+    if (aLaRacine && !(x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)) {
+      oui = true;
+    } else {
+      for (var n = e; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+        var style = null;
+        try { style = window.getComputedStyle(n); } catch (err) { break; }
+        if (style && style.position === 'fixed') {
+          var b = n.getBoundingClientRect();
+          oui = b.width <= Math.min(420, largeur() * 0.5) && b.height <= Math.min(420, hauteur() * 0.6);
+          break;
+        }
+      }
+    }
+    memo.set(e, oui);
+    return oui;
+  }
+
+  /* Une grille de 4 x 4 points, sur le bouton et sur une marge autour : deux
+     boutons ne se touchent pas, et un petit voisin ne passe pas entre deux
+     points. */
+  function libre(px, memo) {
+    if (typeof document.elementsFromPoint !== 'function') return true;
+    var cote = TAILLE + 2 * ESPACE;
+    for (var i = 0; i < 4; i++) {
+      for (var j = 0; j < 4; j++) {
+        var x = px.left - ESPACE + (i * cote) / 3;
+        var y = px.top - ESPACE + (j * cote) / 3;
+        var pile = document.elementsFromPoint(x, y) || [];
+        /* Seul compte le premier plan, le lanceur mis a part. */
+        for (var k = 0; k < pile.length; k++) {
+          var e = pile[k];
+          if (e === hote) continue;
+          if (e !== document.body && e !== document.documentElement && flottant(e, x, y, memo)) return false;
+          break;
+        }
+      }
+    }
+    return true;
+  }
+
+  /** La place libre la plus proche de celle voulue : le long du meme bord
+      d'abord (au-dessus, au-dessous), puis de cote. */
+  function placeLibre(voulu) {
+    var memo = new Map();
+    var depart = dansLaFenetre(voulu);
+    if (libre(depart, memo)) return depart;
+    for (var r = PAS; r <= RAYON_MAX; r += PAS) {
+      var essais = [[0, -r], [0, r], [-r, 0], [r, 0]];
+      for (var k = 0; k < essais.length; k++) {
+        var c = dansLaFenetre({ left: depart.left + essais[k][0], top: depart.top + essais[k][1] });
+        if (libre(c, memo)) return c;
+      }
+    }
+    return depart;
+  }
+
+  /**
+   * Remettre le bouton a la place libre la plus proche de celle voulue.
+   * `retenir` : cette place devient la place voulue (apres un glisser).
+   * Jamais pendant un glisser, ni panneau ouvert : il ne bouge pas sous la main.
+   */
+  function adapter(retenir) {
+    clearTimeout(minuterieVoisins);
+    minuterieVoisins = null;
+    if (!hote || etat.ouvert || glisse) return;
+    var cible = placeLibre(versPixels(etat.pos));
+    if (!place || Math.abs(cible.left - place.left) > 1 || Math.abs(cible.top - place.top) > 1) poser(cible, true);
+    if (retenir === true) { etat.pos = versFraction(cible); sauverPosition(); }
+  }
+
+  function planifierAdaptation() {
+    clearTimeout(minuterieVoisins);
+    minuterieVoisins = setTimeout(adapter, 250);
+  }
+
+  /* La fenetre change : le bouton reste dedans tout de suite, et retrouve sa
+     place (ou la plus proche de libre) un instant apres. */
+  function redimensionner() {
+    if (!hote) return;
+    poser(place, false);
+    planifierAdaptation();
+  }
+
+  /* Les voisins arrivent souvent apres nous. Les extensions s'installent a la
+     racine du document : on n'observe que CES ajouts-la, jamais la page
+     entiere. Certaines s'affichent sans rien ajouter (une classe qui change
+     dans leur racine) : deux regards de plus, puis on s'en remet au reste. */
+  function surveillerVoisins() {
+    window.addEventListener('resize', redimensionner);
+    if (typeof MutationObserver === 'function') {
+      observateur = new MutationObserver(planifierAdaptation);
+      observateur.observe(document.body, { childList: true });
+      if (document.documentElement) observateur.observe(document.documentElement, { childList: true });
+    }
+    setTimeout(planifierAdaptation, 1500);
+    setTimeout(planifierAdaptation, 5000);
+  }
+
+  /* ------------------------------------------------------------ animations */
+
+  /* Toutes passent par l'API d'animation, pas par une feuille (regle 5), et
+     toutes se reduisent a un fondu quand le systeme demande moins de
+     mouvement. */
+  function animer(n, images, options) {
+    if (!n || typeof n.animate !== 'function') return null;
+    if (mouvementReduit()) images = [{ opacity: 0 }, { opacity: 1 }];
+    try { return n.animate(images, options); } catch (e) { return null; }
+  }
+
+  /** L'arrivee : le bouton glisse depuis le bord le plus proche, depasse un peu
+      sa place et s'y pose. Assez pour qu'on le remarque, une seule fois. */
+  function arrivee() {
+    var aGauche = place.left + TAILLE / 2 < largeur() / 2;
+    var loin = aGauche ? -(place.left + TAILLE + 8) : largeur() - place.left + 8;
+    var rebond = aGauche ? 6 : -6;
+    var a = animer(ui.bouton, [
+      { transform: 'translateX(' + loin + 'px) scale(.8)', opacity: 0 },
+      { transform: 'translateX(' + rebond + 'px) scale(1.06)', opacity: 1, offset: 0.7 },
+      { transform: 'translateX(0) scale(1)', opacity: 1 },
+    ], { duration: 620, easing: 'cubic-bezier(.2,.9,.25,1)' });
+    if (a) arriveeJusqua = Date.now() + 520;
+  }
+
+  /** Une pastille ou un point qui apparait : il eclot. */
+  function eclore(n, delai) {
+    animer(n, [
+      { transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: 0.6 }, { transform: 'scale(1)' },
+    ], { duration: 300, delay: delai || 0, easing: 'ease-out', fill: 'backwards' });
   }
 
   /* ------------------------------------------------------------ construction */
@@ -193,8 +420,8 @@
     if (!document.body || typeof document.body.attachShadow !== 'function') return;
 
     hote = document.createElement('div');
-    hote.style.cssText = 'all:initial;position:fixed;right:' + MARGE + 'px;top:0;width:' + TAILLE + 'px;height:'
-      + TAILLE + 'px;z-index:2147483646';
+    hote.style.cssText = 'all:initial;position:fixed;left:0;top:0;width:' + TAILLE + 'px;height:' + TAILLE
+      + 'px;z-index:2147483646';
     var racine = hote.attachShadow({ mode: 'closed' });
 
     var bouton = el('button', 'all:initial;position:relative;display:block;width:' + TAILLE + 'px;height:' + TAILLE
@@ -221,7 +448,7 @@
     point.setAttribute('aria-hidden', 'true');
     bouton.appendChild(point);
 
-    var bulle = el('div', 'position:absolute;right:' + (TAILLE + ECART) + 'px;top:50%;transform:translateY(-50%);'
+    var bulle = el('div', 'position:absolute;top:50%;transform:translateY(-50%);'
       + 'box-sizing:border-box;width:max-content;max-width:260px;padding:7px 10px;border-radius:10px;cursor:pointer;'
       + 'background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';border-left:3px solid '
       + C.ambre + ';font:12.5px/1.4 ' + POLICE + ';box-shadow:0 6px 20px rgba(0,0,0,.35);display:none');
@@ -245,12 +472,14 @@
 
     ui = { bouton: bouton, pastille: pastille, point: point, bulle: bulle, panneau: panneau };
     document.body.appendChild(hote);
-    window.addEventListener('resize', placer);
-    placer();
+    poser(versPixels(etat.pos), false);
+    adapter();
+    arrivee();
+    surveillerVoisins();
   }
 
   function construirePanneau() {
-    var boite = el('div', 'position:absolute;right:' + (TAILLE + ECART) + 'px;box-sizing:border-box;width:300px;'
+    var boite = el('div', 'position:absolute;box-sizing:border-box;width:300px;'
       + 'padding:12px;border-radius:12px;background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord
       + ';font:13px/1.45 ' + POLICE + ';box-shadow:0 10px 30px rgba(0,0,0,.45);overflow-y:auto;color-scheme:dark;'
       + 'text-align:left;display:none');
@@ -323,11 +552,14 @@
 
   function detruire() {
     fermer();
-    cacherBulle();
+    cacherBulle(true);
     if (pulsation) { pulsation.cancel(); pulsation = null; }
-    window.removeEventListener('resize', placer);
+    window.removeEventListener('resize', redimensionner);
+    if (observateur) { observateur.disconnect(); observateur = null; }
+    clearTimeout(minuterieVoisins);
     if (hote) hote.remove();
     hote = null;
+    place = null;
     ui = {};
   }
 
@@ -346,18 +578,22 @@
     ui.bouton.setAttribute('aria-expanded', etat.ouvert ? 'true' : 'false');
 
     var n = etat.lignes.length;
+    var avait = ui.pastille.style.display === 'block';
     ui.pastille.textContent = n ? String(n) : '';
     ui.pastille.style.display = n ? 'block' : 'none';
+    if (n && !avait) eclore(ui.pastille, 450);
 
     var actif = etat.moteur && etat.statut !== 'idle';
     ui.point.style.display = actif ? 'block' : 'none';
     ui.point.style.background = C[etat.statut] || C.idle;
-    animer(actif && etat.statut === 'running');
+    if (actif && etat.statut !== dernierStatut && etat.statut !== 'running') eclore(ui.point, 0);
+    dernierStatut = etat.statut;
+    pulser(actif && etat.statut === 'running');
 
     remplirPanneau();
   }
 
-  function animer(oui) {
+  function pulser(oui) {
     if (!oui) { if (pulsation) { pulsation.cancel(); pulsation = null; } return; }
     if (pulsation || mouvementReduit() || typeof ui.point.animate !== 'function') return;
     pulsation = ui.point.animate(
@@ -410,25 +646,33 @@
 
   function ouvrir() {
     if (!hote || etat.ouvert) return;
-    cacherBulle();
+    cacherBulle(true);
     etat.ouvert = true;
     var boite = ui.panneau.boite;
-    boite.style.maxWidth = Math.max(200, largeur() - TAILLE - MARGE - ECART - 16) + 'px';
 
-    /* Le panneau s'ouvre vers le haut quand le bouton est dans la moitie
-       basse, vers le bas sinon : jamais hors de la fenetre. */
-    var top = hote.getBoundingClientRect().top;
+    /* Du cote ou il y a le plus de place, horizontalement comme verticalement :
+       jamais hors de la fenetre, ou que le bouton ait ete pose. */
+    var gauche = versLaGauche();
+    var dispo = gauche ? place.left - ECART - BORD : largeur() - place.left - TAILLE - ECART - BORD;
+    boite.style.left = gauche ? 'auto' : (TAILLE + ECART) + 'px';
+    boite.style.right = gauche ? (TAILLE + ECART) + 'px' : 'auto';
+    boite.style.maxWidth = Math.max(180, dispo) + 'px';
+
     var h = hauteur();
-    if (top + TAILLE / 2 > h / 2) {
+    var bas = place.top + TAILLE / 2 > h / 2;
+    if (bas) {
       boite.style.top = 'auto';
       boite.style.bottom = '0';
-      boite.style.maxHeight = Math.max(120, top + TAILLE - BORD) + 'px';
+      boite.style.maxHeight = Math.max(120, place.top + TAILLE - BORD) + 'px';
     } else {
       boite.style.bottom = 'auto';
       boite.style.top = '0';
-      boite.style.maxHeight = Math.max(120, h - top - BORD) + 'px';
+      boite.style.maxHeight = Math.max(120, h - place.top - BORD) + 'px';
     }
+    boite.style.transformOrigin = (gauche ? 'right ' : 'left ') + (bas ? 'bottom' : 'top');
     boite.style.display = 'block';
+    animer(boite, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'scale(1)' }],
+      { duration: 160, easing: 'cubic-bezier(.2,.8,.2,1)' });
     mettreAJour();
     document.addEventListener('pointerdown', clicDehors, true);
     document.addEventListener('keydown', echap, true);
@@ -459,36 +703,63 @@
 
   function montrerBulle(texte, ton) {
     if (!hote || etat.ouvert || !texte) return;
+    /* Le bouton d'abord, la bulle ensuite : pas les deux dans le meme geste. */
+    var reste = arriveeJusqua - Date.now();
+    if (reste > 0) { setTimeout(function () { arriveeJusqua = 0; montrerBulle(texte, ton); }, reste); return; }
     var b = ui.bulle;
+    generationBulle++;
+    var gauche = versLaGauche();
+    var dispo = gauche ? place.left - ECART - BORD : largeur() - place.left - TAILLE - ECART - BORD;
     b.textContent = texte;
     b.style.borderLeftColor = C[ton] || C.ambre;
-    b.style.maxWidth = Math.max(160, Math.min(260, largeur() - TAILLE - MARGE - ECART - 16)) + 'px';
+    b.style.left = gauche ? 'auto' : (TAILLE + ECART) + 'px';
+    b.style.right = gauche ? (TAILLE + ECART) + 'px' : 'auto';
+    b.style.maxWidth = Math.max(140, Math.min(260, dispo)) + 'px';
+    var deja = b.style.display === 'block';
     b.style.display = 'block';
+    if (!deja) {
+      animer(b, [
+        { opacity: 0, transform: 'translate(' + (gauche ? 8 : -8) + 'px,-50%)' },
+        { opacity: 1, transform: 'translate(0,-50%)' },
+      ], { duration: 200, easing: 'ease-out' });
+    }
     clearTimeout(minuterieBulle);
     minuterieBulle = setTimeout(cacherBulle, BULLE_MS);
   }
 
-  function cacherBulle() {
+  /** `net` : sans fondu (le panneau s'ouvre, le bouton part). */
+  function cacherBulle(net) {
     clearTimeout(minuterieBulle);
     minuterieBulle = null;
-    if (ui.bulle) ui.bulle.style.display = 'none';
+    var b = ui.bulle;
+    if (!b || b.style.display === 'none') return;
+    var gen = ++generationBulle;
+    var fondu = net === true ? null : animer(b, [{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in' });
+    if (!fondu) { b.style.display = 'none'; return; }
+    /* Une bulle montree pendant le fondu ne doit pas etre effacee a sa fin. */
+    fondu.onfinish = function () { if (gen === generationBulle) b.style.display = 'none'; };
   }
 
   /* ------------------------------------------------------------ glisser */
 
   function debutGlisse(e) {
-    if (e.button !== 0) return;
-    glisse = { y0: e.clientY, top0: hote.getBoundingClientRect().top, bouge: false };
+    if (e.button !== 0 || !place) return;
+    glisse = { x0: e.clientX, y0: e.clientY, depart: { left: place.left, top: place.top }, bouge: false };
     try { ui.bouton.setPointerCapture(e.pointerId); } catch (x) {}
   }
 
   function pendantGlisse(e) {
     if (!glisse) return;
+    var dx = e.clientX - glisse.x0;
     var dy = e.clientY - glisse.y0;
-    if (!glisse.bouge && Math.abs(dy) < 5) return;
-    if (!glisse.bouge) { glisse.bouge = true; fermer(); cacherBulle(); }
-    etat.y = Math.max(0, Math.min(1, (glisse.top0 + dy) / hauteur()));
-    placer();
+    if (!glisse.bouge && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+    if (!glisse.bouge) {
+      glisse.bouge = true;
+      fermer();
+      cacherBulle(true);
+      ui.bouton.style.cursor = 'grabbing';
+    }
+    poser({ left: glisse.depart.left + dx, top: glisse.depart.top + dy }, false);
   }
 
   function finGlisse() {
@@ -496,7 +767,11 @@
     var bouge = glisse.bouge;
     glisse = null;
     if (!bouge) return;
-    sauverPosition();
+    ui.bouton.style.cursor = 'pointer';
+    /* Lache sur le bouton d'une autre extension : il se pousse a cote, et
+       c'est cette place-la qui est retenue. */
+    etat.pos = versFraction(place);
+    adapter(true);
     /* Le relachement d'un glisser produit aussi un clic : il ne doit pas
        ouvrir le panneau. S'il ne vient pas, le drapeau tombe tout seul. */
     ignorerClic = true;
