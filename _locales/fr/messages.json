@@ -467,6 +467,30 @@
   "phoneTestBody": {
     "message": "Les alertes de l'extension arriveront ici."
   },
+  "deckVerified": {
+    "message": "Vérifié sur Steam Deck"
+  },
+  "deckPlayable": {
+    "message": "Jouable sur Steam Deck"
+  },
+  "deckVerifiedShort": {
+    "message": "Deck ✓"
+  },
+  "deckPlayableShort": {
+    "message": "Deck ~"
+  },
+  "deckFilterLabel": {
+    "message": "Steam Deck"
+  },
+  "deckFilterAll": {
+    "message": "Steam Deck : tous"
+  },
+  "deckFilterPlayable": {
+    "message": "Jouable sur Deck"
+  },
+  "deckFilterVerified": {
+    "message": "Vérifié Deck"
+  },
   "icsCalendarName": {
     "message": "Jeux gratuits"
   },

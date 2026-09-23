@@ -4,6 +4,37 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.49.0 -- 2026-09-23
+
+**Ce jeu tourne-t-il sur le Steam Deck ?**
+
+Steam le dit lui-meme, jeu par jeu -- verifie, jouable, non pris en charge --
+et il le dit dans la reponse que l'extension lisait deja :
+`IStoreBrowseService/GetItems`, a qui l'on demande maintenant
+`include_platforms`. Aucune requete de plus, aucun hote de plus
+(`watch/deck.js`).
+
+- **Le popup** : une offre Steam verifiee ou jouable porte « Deck ✓ » ou
+  « Deck ~ » a cote du magasin. « Non pris en charge » ne s'y affiche pas : a
+  328 px, une mauvaise nouvelle n'a pas la place d'un fait utile.
+- **Ma collection** : la meme pastille sur vos jeux Steam, un filtre « Jouable
+  sur Deck » / « Verifie Deck », et le tirage au sort qui le respecte -- qui
+  joue sur la console ne veut pas qu'on lui tire un jeu qui n'y tourne pas.
+- **La fusion du catalogue** garde la categorie : l'agregateur, qui ne la
+  connait pas, ne l'efface pas (meme regle que le numero de paquet).
+
+Seuls les jeux Steam la portent : un jeu Epic ou GOG n'a pas d'appid, et le
+rapprocher d'un jeu Steam par son titre serait affirmer une compatibilite
+qu'on n'a pas lue.
+
+**Non mesure ici** -- le banc de test n'a pas acces a Steam. Le champ lu est
+`platforms.steam_deck_compat_category` (1, 2, 3, ou le nom de l'enumeration).
+Une forme inconnue vaut « on ne sait pas », qui ne s'affiche pas et ne passe
+aucun filtre. Le rapport d'import Steam montrera la vraie forme (ROADMAP,
+entree 4).
+
+1105 tests, dont 9 nouveaux (`test/deck.test.mjs`).
+
 ## 2.48.1 -- 2026-09-23
 
 **Le userscript Tampermonkey n'est plus produit**

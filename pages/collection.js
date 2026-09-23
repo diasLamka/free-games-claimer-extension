@@ -30,6 +30,7 @@ import {
   storePageUrl,
   launchUrl,
 } from '../watch/collection.js';
+import { DECK, deckAtLeast } from '../watch/deck.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -211,6 +212,7 @@ function renderRows() {
     query: document.getElementById('search').value || '',
     store: document.getElementById('store').value || '',
     duplicatesOnly: document.getElementById('duplicates').checked,
+    deck: document.getElementById('deck').value || '',
   };
 
   /* Le filtre d'etat s'applique APRES les autres, et separement : il porte sur
@@ -241,6 +243,11 @@ function renderRows() {
       title.append(el('span', 'untitled', t('collectionUntitled', r.stores[store].id)));
     }
     if (r.claimed) title.append(el('span', 'tag', t('collectionClaimedTag')));
+    if (r.deck === DECK.VERIFIED || r.deck === DECK.PLAYABLE) {
+      const deck = el('span', `tag deck ${r.deck}`, t(r.deck === DECK.VERIFIED ? 'deckVerifiedShort' : 'deckPlayableShort'));
+      deck.title = t(r.deck === DECK.VERIFIED ? 'deckVerified' : 'deckPlayable');
+      title.append(deck);
+    }
     tr.append(title);
 
     const stores = el('td', 'stores');
@@ -338,7 +345,7 @@ async function boot() {
 }
 
 document.getElementById('search').addEventListener('input', renderRows);
-for (const id of ['store', 'sort', 'duplicates', 'status']) document.getElementById(id).addEventListener('change', renderRows);
+for (const id of ['store', 'sort', 'duplicates', 'status', 'deck']) document.getElementById(id).addEventListener('change', renderRows);
 
 /* Le tirage au sort : le premier maillon « jouer » apres « retrouver ».
  *
@@ -347,7 +354,10 @@ for (const id of ['store', 'sort', 'duplicates', 'status']) document.getElementB
  * contraire du service rendu. Sans rien de marque, il le dit plutot que de
  * faire semblant. */
 document.getElementById('surprise').addEventListener('click', () => {
-  const cles = rows.map(rowKey);
+  /* Le filtre Steam Deck vaut aussi pour le tirage : qui joue sur la console
+     ne veut pas qu'on lui tire un jeu qui n'y tourne pas. */
+  const deck = document.getElementById('deck').value || '';
+  const cles = rows.filter((r) => deckAtLeast(r.deck, deck)).map(rowKey);
   const tire = pickToTry(cles, annotations);
   if (!tire) { flash(t('backlogNothingToTry')); return; }
 

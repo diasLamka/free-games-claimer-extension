@@ -19,6 +19,7 @@
  * Module pur : le reseau est dans collection-import.js, l'ecriture dans
  * background.js -- un seul ecrivain, comme pour le catalogue.
  */
+import { deckAtLeast, readDeck } from './deck.js';
 import { normaliseTitle, webUrl } from './offer.js';
 import { ACQUIRED } from './library.js';
 
@@ -79,7 +80,7 @@ export function itemKey(store, id) {
  * Ce qu'on garde d'un jeu importe. Peu de champs : une bibliotheque Steam
  * compte des milliers d'entrees, et chaque champ se paie autant de fois.
  */
-export function makeItem({ store, id, title, url = null, kind = KINDS.GAME, acquiredAt = null }) {
+export function makeItem({ store, id, title, url = null, kind = KINDS.GAME, acquiredAt = null, deck = null }) {
   const clean = title === null || title === undefined ? '' : String(title).trim();
   return {
     store,
@@ -94,6 +95,10 @@ export function makeItem({ store, id, title, url = null, kind = KINDS.GAME, acqu
     url: webUrl(url),
     kind: Object.values(KINDS).includes(kind) ? kind : KINDS.OTHER,
     acquiredAt: Number.isFinite(acquiredAt) && acquiredAt > 0 ? acquiredAt : null,
+    /* Steam seulement, et seulement quand Steam l'a dit : un champ absent
+       plutot qu'un null par jeu, parce qu'une bibliotheque en compte des
+       milliers et que chaque champ se paie autant de fois. */
+    ...(readDeck(deck) ? { deck: readDeck(deck) } : {}),
   };
 }
 
@@ -277,7 +282,7 @@ function titleFromId(id) {
 export function buildRows({ collection, library }) {
   const rows = new Map();
 
-  function add({ store, id, title, url, kind, acquiredAt, imported, claimed }) {
+  function add({ store, id, title, url, kind, acquiredAt, imported, claimed, deck }) {
     const shown = title || titleFromId(id);
     const norme = shown ? normaliseTitle(shown) : '';
     const key = norme || `?${store}:${id}`;
@@ -302,6 +307,7 @@ export function buildRows({ collection, library }) {
 
     if (acquiredAt) row.since = row.since ? Math.min(row.since, acquiredAt) : acquiredAt;
     row.claimed = row.claimed || Boolean(claimed);
+    if (readDeck(deck)) row.deck = deck;
   }
 
   for (const it of Object.values(sanitiseCollection(collection).items)) {
@@ -338,10 +344,14 @@ export function storeCount(row) {
  * originales, d'outils et de DLC que de jeux, et les montrer d'emblee noierait
  * ce qu'on cherche. 'all' les rend tous.
  */
-export function filterRows(rows, { query = '', store = '', duplicatesOnly = false, kind = KINDS.GAME } = {}) {
+export function filterRows(rows, {
+  query = '', store = '', duplicatesOnly = false, kind = KINDS.GAME, deck = '',
+} = {}) {
   const q = normaliseTitle(query);
   return rows.filter((r) => {
     if (kind !== 'all' && r.kind !== kind) return false;
+    // Au moins ce niveau sur Steam Deck ; un jeu dont on ne sait rien ne passe pas.
+    if (!deckAtLeast(r.deck, deck)) return false;
     if (store && !r.stores[store]) return false;
     if (duplicatesOnly && storeCount(r) < 2) return false;
     if (q && !r.key.includes(q)) return false;

@@ -35,6 +35,7 @@ import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEven
 import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
 import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from '../watch/wishlist.js';
+import { DECK } from '../watch/deck.js';
 import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from '../watch/codes.js';
 import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
 import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
@@ -600,6 +601,14 @@ function gameCard({ key, offer }, ctx) {
 
   const meta = el('span', 'game-meta');
   meta.append(storeTag(offer.store));
+  /* Verifie ou jouable sur Steam Deck : ce qui aide a choisir. « Non pris en
+     charge » ne s'affiche pas ici -- a 328 px, une mauvaise nouvelle n'a pas
+     la place d'un fait utile, et la fiche Steam le dit mieux. */
+  if (offer.deck === DECK.VERIFIED || offer.deck === DECK.PLAYABLE) {
+    const deck = el('span', `deck ${offer.deck}`, t(offer.deck === DECK.VERIFIED ? 'deckVerifiedShort' : 'deckPlayableShort'));
+    deck.title = t(offer.deck === DECK.VERIFIED ? 'deckVerified' : 'deckPlayable');
+    meta.append(deck);
+  }
 
   /* One aside, in order of what a person most needs to know: already yours,
      free elsewhere too, or what it is worth. Three lines would not fit at

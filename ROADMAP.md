@@ -193,6 +193,11 @@ Steam dit « N applications · M souhait(s) », c'est confirme ; si son rapport
 dit « rgWishlist absent » ou « forme inattendue », la liste importee avant
 reste en place et la ligne `forme :` du rapport dit ou chercher.
 
+*Depuis la 2.49.0, elle mesure aussi la categorie Steam Deck.* La ligne
+« forme d'un element GetItems » du rapport doit montrer
+`platforms: { ... steam_deck_compat_category ... }`. Si `platforms` y manque,
+les pastilles Deck restent simplement absentes -- rien ne s'affiche a tort.
+
 ---
 
 ## Hors perimetre, et pourquoi

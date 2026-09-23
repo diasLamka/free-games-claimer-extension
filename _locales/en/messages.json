@@ -467,6 +467,30 @@
   "phoneTestBody": {
     "message": "The extension's alerts will arrive here."
   },
+  "deckVerified": {
+    "message": "Verified on Steam Deck"
+  },
+  "deckPlayable": {
+    "message": "Playable on Steam Deck"
+  },
+  "deckVerifiedShort": {
+    "message": "Deck ✓"
+  },
+  "deckPlayableShort": {
+    "message": "Deck ~"
+  },
+  "deckFilterLabel": {
+    "message": "Steam Deck"
+  },
+  "deckFilterAll": {
+    "message": "Steam Deck: all"
+  },
+  "deckFilterPlayable": {
+    "message": "Playable on Deck"
+  },
+  "deckFilterVerified": {
+    "message": "Deck verified"
+  },
   "icsCalendarName": {
     "message": "Free games"
   },

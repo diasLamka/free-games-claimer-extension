@@ -221,6 +221,8 @@
   td.title { word-break: break-word; }
   td.title .untitled { color: var(--mute); font-style: italic; }
   .tag { display: inline-block; margin-left: 8px; font-size: 11px; color: var(--jade); white-space: nowrap; }
+  .tag.deck { color: var(--mute); }
+  .tag.deck.verified { color: var(--jade); }
   td.stores { white-space: nowrap; width: 1%; }
   td.since { white-space: nowrap; width: 1%; color: var(--mute); font-family: var(--mono); font-size: 12px; }
 
@@ -285,6 +287,11 @@
         <option value="done" data-i18n="backlogDone"></option>
         <option value="dropped" data-i18n="backlogDropped"></option>
         <option value="none" data-i18n="backlogUntouched"></option>
+      </select>
+      <select id="deck" data-i18n-attr="aria-label:deckFilterLabel">
+        <option value="" data-i18n="deckFilterAll"></option>
+        <option value="playable" data-i18n="deckFilterPlayable"></option>
+        <option value="verified" data-i18n="deckFilterVerified"></option>
       </select>
       <label class="check"><input type="checkbox" id="duplicates"> <span data-i18n="collectionDuplicatesOnly"></span></label>
       <button id="surprise" data-i18n="backlogSurprise"></button>

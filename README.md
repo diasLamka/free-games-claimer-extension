@@ -112,6 +112,7 @@ est declare `"type": "module"`.
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de sa liste Steam |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
+| `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
 | `history.js` | lire, filtrer et compter les issues : taux de capture, valeur ratee |
 | `codes.js` | ou echanger un code, par magasin, et ou il en est |

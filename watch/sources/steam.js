@@ -16,6 +16,7 @@
  * le compte possede -- avant d'agir, et comme preuve apres.
  */
 import { makeOffer, STORES } from '../offer.js';
+import { deckFromItem } from '../deck.js';
 import { describeFetchFailure } from '../net.js';
 
 export const NAME = 'steam';
@@ -50,7 +51,9 @@ export function itemsUrl(appids, { lang = 'french', pays = 'FR' } = {}) {
   const input = {
     ids: appids.map((appid) => ({ appid: Number(appid) })),
     context: { language: lang, country_code: pays },
-    data_request: { include_basic_info: true },
+    /* `include_platforms` ajoute la categorie Steam Deck a chaque element,
+       dans la MEME reponse -- voir watch/deck.js. */
+    data_request: { include_basic_info: true, include_platforms: true },
   };
   return `${ITEMS_URL}?input_json=${encodeURIComponent(JSON.stringify(input))}`;
 }
@@ -120,6 +123,7 @@ export function mapItem(item, now, owned) {
        valeur : un jeu offert dont Steam ne publie pas le prix d'origine serait
        sinon classe « on ne sait pas ». */
     keepable: true,
+    deck: deckFromItem(item),
     alreadyOwned: owned ? owned.has(appid) : null,
     seenAt: now,
     updatedAt: now,

@@ -8,6 +8,7 @@
  * implicite -- l'instant est toujours passe en parametre. C'est ce qui le rend
  * testable sans navigateur.
  */
+import { readDeck } from './deck.js';
 import { instantFromLocal } from './schedule/clock.js';
 
 /* ------------------------------------------------------------------ magasins */
@@ -316,6 +317,9 @@ export function makeOffer(raw = {}) {
        que la recuperation Steam cherche sur la page, puis dans la
        bibliotheque. null partout ailleurs. */
     packageId: raw.packageId ? String(raw.packageId) : null,
+    /* Steam Deck : 'verified' | 'playable' | 'unsupported' | null (source
+       Steam seulement, voir watch/deck.js). null veut dire « on ne sait pas ». */
+    deck: readDeck(raw.deck),
     title: String(raw.title || '').trim(),
     normalisedTitle: normaliseTitle(raw.title),
     url: webUrl(raw.url),
@@ -473,6 +477,8 @@ export function merge(existing, incoming) {
     category: keep(existing.category, incoming.category),
     // Une seule source le fournit : l'agregateur ne doit pas l'effacer.
     packageId: keep(existing.packageId, incoming.packageId),
+    // Meme regle pour le Deck : seul Steam le dit, un null ne l'efface pas.
+    deck: keep(existing.deck, incoming.deck),
     updatedAt: incoming.updatedAt ?? existing.updatedAt,
     origin: { ...existingOrigin },
   };

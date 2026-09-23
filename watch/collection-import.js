@@ -31,6 +31,7 @@ import { describeFetchFailure } from './net.js';
 import { OWNED_URL, itemsUrl, readOwnership } from './sources/steam.js';
 import { normaliseTitle } from './offer.js';
 import { MAX_STEAM_WISHES } from './wishlist.js';
+import { deckFromItem } from './deck.js';
 
 export const GOG_LIBRARY_URL = 'https://www.gog.com/account/getFilteredProducts';
 
@@ -271,7 +272,7 @@ export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pa
     } else {
       if (lots - failed === 1 && list.length) lines.push(`  forme d'un element GetItems : ${describeShape(list[0])}`);
       for (const it of list) {
-        if (it && it.appid !== undefined && it.name) names.set(String(it.appid), { name: it.name, type: it.type });
+        if (it && it.appid !== undefined && it.name) names.set(String(it.appid), { name: it.name, type: it.type, deck: deckFromItem(it) });
       }
     }
     if (i + batch < toName.length) await pause();
@@ -287,6 +288,7 @@ export async function importSteam({ fetch: fetchImpl = fetch, country = 'FR', pa
       title: n ? n.name : null,
       url: `https://store.steampowered.com/app/${id}/`,
       kind: n ? steamKind(n.type) : KINDS.OTHER,
+      deck: n ? n.deck : null,
     });
   });
 
