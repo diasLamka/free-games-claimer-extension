@@ -160,6 +160,9 @@ export function resolveInside(root, urlPath) {
   let decoded;
   try { decoded = decodeURIComponent(urlPath); } catch { return null; }
   if (decoded.includes('\0')) return null;
+  // Separateur sous Windows, simple caractere ailleurs : aucun fichier du depot
+  // n'en porte, donc le refuser partout rend le controle identique sur les deux.
+  if (decoded.includes('\\')) return null;
   const file = resolve(root, `.${decoded.startsWith('/') ? '' : '/'}${decoded}`);
   return file === root || file.startsWith(root + sep) ? file : null;
 }
