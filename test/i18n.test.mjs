@@ -60,16 +60,17 @@ test('la langue du navigateur gagne quand elle est livree', () => {
 });
 
 test('une interface dans une langue non livree consulte les langues du lecteur', () => {
-  // Navigateur installe en allemand, lecteur francais : l'anglais par defaut
-  // jetait la seule information honnete disponible.
-  uiLanguage = 'de-DE';
+  // Navigateur installe en italien, lecteur francais : l'anglais par defaut
+  // jetait la seule information honnete disponible. (L'exemple etait
+  // l'allemand jusqu'a la 2.50.0, qui le livre.)
+  uiLanguage = 'it-IT';
   setNavigator(['fr-FR', 'en-US']);
   assert.equal(currentLocale(), 'fr');
 });
 
 test('quand rien n\'est reconnu, l\'anglais reste le repli', () => {
-  uiLanguage = 'de-DE';
-  setNavigator(['it-IT', 'es-ES']);
+  uiLanguage = 'it-IT';
+  setNavigator(['nl-NL', 'pt-BR']);
   assert.equal(currentLocale(), 'en');
   assert.ok(LOCALES.includes('en'));
 });
@@ -105,4 +106,29 @@ test('les deux langues repondent a toutes les cles de duree', () => {
       assert.notEqual(t(cle, '1', '2'), cle, `${cle} manque en ${locale}`);
     }
   }
+});
+
+/* ------------------------------------------------- allemand, espagnol (2.50.0) */
+
+test('l\'allemand et l\'espagnol sont livres, et suivis', () => {
+  assert.ok(LOCALES.includes('de'));
+  assert.ok(LOCALES.includes('es'));
+  uiLanguage = 'de-DE';
+  setNavigator(['en-US']);
+  assert.equal(currentLocale(), 'de');
+  assert.equal(intlLocale(), 'de-DE');
+  uiLanguage = 'it-IT';
+  setNavigator(['es-MX', 'en-US']);
+  assert.equal(currentLocale(), 'es', 'un lecteur hispanophone sur un navigateur italien');
+  assert.equal(intlLocale(), 'es-ES');
+});
+
+test('les durees ont leur unite en allemand et en espagnol', () => {
+  setLocale('de');
+  assert.equal(t('durationDaysHours', '2', '4'), '2 T 4 Std.');
+  assert.equal(t('durationMinutes', '12'), '12 Min.');
+  setLocale('es');
+  assert.equal(t('durationDaysHours', '2', '4'), '2 d 4 h');
+  assert.equal(t('ago', '3 h 05'), 'hace 3 h 05');
+  setLocale(null);
 });

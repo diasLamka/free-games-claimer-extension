@@ -176,3 +176,30 @@ test('la normalisation et l\'instant sont obligatoires', () => {
   assert.throws(() => lookup({ title: 'x', now: T }), TypeError);
   assert.throws(() => lookup({ title: 'x', normalise: normaliseTitle }), TypeError);
 });
+
+/* ------------------------------------------ les phrases traduites (2.50.0) */
+
+import { factLines } from '../watch/lookup.js';
+
+test('les phrases de la surcouche viennent de la table, avec les noms de magasins', () => {
+  const vus = [];
+  const t = (cle, ...args) => { vus.push(cle); return `${cle}(${args.join('|')})`; };
+  const lignes = factLines([
+    { kind: FACTS.OWNED, stores: ['gog', 'steam'] },
+    { kind: FACTS.FREE_NOW, store: 'epic', end: 1000 },
+    { kind: FACTS.FREE_NOW, store: 'epic', end: null },
+    { kind: FACTS.CLAIMED, ts: 2000 },
+    { kind: FACTS.RECURRING, count: 3 },
+    { kind: FACTS.MISSED, ts: null },
+    { kind: 'inconnu' },
+  ], { t, storeLabel: (s) => s.toUpperCase(), dateText: (ts) => `J${ts}` });
+
+  assert.deepEqual(lignes, [
+    'overlayOwned(GOG, STEAM)',
+    'overlayFreeNowUntil(EPIC|J1000)',
+    'overlayFreeNow(EPIC)',
+    'overlayClaimedOn(J2000)',
+    'overlayRecurring(3)',
+    'overlayMissed()',
+  ], 'un fait inconnu ne produit pas de phrase vide');
+});

@@ -1,7 +1,8 @@
 # Free Games Auto-Claimer -- extension Chrome / Firefox
 
 Recuperation automatique des jeux gratuits sur Epic Games Store, GOG et Amazon
-Luna, et reperage sur Steam. Extension Chrome / Edge / Firefox (Manifest V3).
+Luna, et reperage sur Steam. Extension Chrome / Edge / Firefox (Manifest V3),
+en francais, anglais, allemand et espagnol.
 Le userscript Tampermonkey d'origine n'est plus produit depuis la 2.48.1 : son
 moteur tourne desormais dans l'extension, par `content/gm-shim.js`.
 
@@ -147,7 +148,7 @@ D'ou l'alarme filet periodique, et le rearmement en tete de cycle.
 manifest.json               Chrome / Edge
 manifest.firefox.json       Firefox
 background.js               service worker (module ES) : relais + veille
-_locales/                   textes de l'interface, fr et en (emplacement impose)
+_locales/                   textes de l'interface : fr, en, de, es (emplacement impose)
 
 pages/                      les pages de l'extension, une paire .html / .js chacune
   popup                       le popup

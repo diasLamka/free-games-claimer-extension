@@ -45,7 +45,7 @@ import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
 } from './watch/session.js';
 import { senderKind, messageAllowed, isOurs, hostMatchers, relayRequest } from './watch/messaging.js';
-import { webUrl } from './watch/offer.js';
+import { STORE_LABELS, webUrl } from './watch/offer.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
@@ -55,13 +55,13 @@ import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunn
 import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
-import { lookup } from './watch/lookup.js';
+import { factLines, lookup } from './watch/lookup.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
-import { t } from './lib/i18n.js';
+import { intlLocale, t } from './lib/i18n.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -925,17 +925,22 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       const raw = await readKeys(api, [
         KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_OUTCOMES,
       ]);
+      const facts = lookup({
+        title: msg.title,
+        store: msg.store || null,
+        catalog: raw[KEYS.OFFERS] || {},
+        library: raw[KEY_LIBRARY] || {},
+        collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
+        outcomes: raw[KEY_OUTCOMES] || {},
+        normalise: normaliseTitle,
+        now: Date.now(),
+      });
+      /* Les phrases partent avec les faits, dans la langue du lecteur : la
+         surcouche n'a pas de table de traduction (voir factLines). */
+      const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
       sendResponse({
-        facts: lookup({
-          title: msg.title,
-          store: msg.store || null,
-          catalog: raw[KEYS.OFFERS] || {},
-          library: raw[KEY_LIBRARY] || {},
-          collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
-          outcomes: raw[KEY_OUTCOMES] || {},
-          normalise: normaliseTitle,
-          now: Date.now(),
-        }),
+        facts,
+        lines: factLines(facts, { t, storeLabel: (s) => STORE_LABELS[s] || s, dateText }),
       });
     })().catch(() => sendResponse({ facts: [] }));
     return true;

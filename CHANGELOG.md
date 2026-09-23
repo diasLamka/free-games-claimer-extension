@@ -4,6 +4,37 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.50.0 -- 2026-09-23
+
+**L'extension parle allemand et espagnol**
+
+`_locales/de` et `_locales/es`, complets : les 447 textes de l'interface --
+popup, Ma collection, historique, journal, repli, notifications, alertes
+telephone, agenda. Le navigateur choisit la langue tout seul ; Reglages ->
+Apparence -> Langue la force. Les dates suivent le lecteur (`de-DE`,
+`es-ES`), et chaque traduction garde exactement les variables de l'original
+(`$1`, `$2`...) -- verifie par script avant d'ecrire le moindre fichier.
+
+### La surcouche des fiches parlait francais a tout le monde
+
+Elle composait ses phrases elle-meme, en dur et en francais -- et ecrivait le
+magasin sous son identifiant : « Vous le possedez deja sur gog. ». Le service
+worker les compose maintenant dans la langue du lecteur, avec le vrai nom du
+magasin et la date a son format (`factLines`, watch/lookup.js), et les envoie
+avec les faits. La surcouche reste minuscule et sans table de traduction ; ses
+phrases francaises ne servent plus qu'en secours.
+
+### Aussi
+
+- Deux tests prenaient l'allemand et l'espagnol comme exemples de langues NON
+  livrees ; ils prennent maintenant l'italien et le neerlandais.
+- Le selecteur de langue ecrit « Français » avec sa cedille.
+
+Les fiches des magasins d'extensions (`store/`) restent en francais et en
+anglais.
+
+1108 tests.
+
 ## 2.49.0 -- 2026-09-23
 
 **Ce jeu tourne-t-il sur le Steam Deck ?**

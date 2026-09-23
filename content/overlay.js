@@ -116,11 +116,12 @@
     return '';
   }
 
-  function render(faits) {
+  function render(lignes) {
     if (hote) { hote.remove(); hote = null; }
 
     // Regle 2 : rien quand il n'y a rien a dire.
-    if (!faits || !faits.length) return;
+    lignes = (lignes || []).filter(function (l) { return typeof l === 'string' && l; });
+    if (!lignes.length) return;
 
     /* Regle 4 : le texte vit dans une racine FERMEE. Sans `attachShadow`
        (navigateur trop ancien), on se tait plutot que d'exposer. */
@@ -145,8 +146,8 @@
     tete.style.cssText = 'font-weight:600;font-size:11px;color:#FFB454;margin-bottom:4px';
     boite.append(tete);
 
-    for (var i = 0; i < faits.length; i++) {
-      var ligne = el('div', null, phrase(faits[i]));
+    for (var i = 0; i < lignes.length; i++) {
+      var ligne = el('div', null, lignes[i]);
       ligne.style.marginTop = i ? '3px' : '0';
       boite.append(ligne);
     }
@@ -174,7 +175,13 @@
         function (reponse) {
           // Le worker peut dormir : une absence de reponse n'est pas une erreur.
           void api.runtime.lastError;
-          if (reponse && reponse.facts) render(reponse.facts);
+          if (!reponse || !reponse.facts) return;
+          /* Les phrases traduites viennent du worker (2.50.0). Les phrases
+             francaises ci-dessus restent en secours, si elles manquent. */
+          var lignes = Array.isArray(reponse.lines) && reponse.lines.length === reponse.facts.length
+            ? reponse.lines
+            : reponse.facts.map(phrase);
+          render(lignes);
         },
       );
     } catch (e) { /* contexte invalide apres une mise a jour : on se tait */ }

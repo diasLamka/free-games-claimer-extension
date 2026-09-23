@@ -491,6 +491,30 @@
   "deckFilterVerified": {
     "message": "Deck verified"
   },
+  "overlayOwned": {
+    "message": "You already own it on $1."
+  },
+  "overlayFreeNow": {
+    "message": "Free right now on $1."
+  },
+  "overlayFreeNowUntil": {
+    "message": "Free right now on $1, until $2."
+  },
+  "overlayClaimed": {
+    "message": "Claimed by the extension."
+  },
+  "overlayClaimedOn": {
+    "message": "Claimed by the extension on $1."
+  },
+  "overlayRecurring": {
+    "message": "Given away $1 times since you started following it. This one you can wait for."
+  },
+  "overlayMissed": {
+    "message": "Given away once before, and missed. It may come back."
+  },
+  "overlayMissedOn": {
+    "message": "Given away once before ($1), and missed. It may come back."
+  },
   "icsCalendarName": {
     "message": "Free games"
   },

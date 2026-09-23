@@ -1,0 +1,1343 @@
+{
+  "appName": {
+    "message": "Free Games Auto-Claimer"
+  },
+  "appDesc": {
+    "message": "Encuentra juegos gratis en Epic Games Store, GOG, Amazon Luna y Steam, y los reclama por ti."
+  },
+  "workingLabel": {
+    "message": "Comprobando"
+  },
+  "tabsLabel": {
+    "message": "Vistas"
+  },
+  "tabGames": {
+    "message": "Juegos"
+  },
+  "tabCodes": {
+    "message": "Códigos"
+  },
+  "tabSettings": {
+    "message": "Ajustes"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar título o tienda"
+  },
+  "sortLabel": {
+    "message": "Ordenar por"
+  },
+  "sortEnding": {
+    "message": "Terminan antes"
+  },
+  "sortAdded": {
+    "message": "Más recientes"
+  },
+  "sortWorth": {
+    "message": "Mayor valor"
+  },
+  "sortStore": {
+    "message": "Por tienda"
+  },
+  "freeNow": {
+    "message": "Gratis ahora"
+  },
+  "claimAll": {
+    "message": "Reclamar todo"
+  },
+  "comingUp": {
+    "message": "Próximamente"
+  },
+  "alreadyClaimed": {
+    "message": "Ya reclamado"
+  },
+  "seeAll": {
+    "message": "Ver todo"
+  },
+  "seeLess": {
+    "message": "Ver menos"
+  },
+  "resetLog": {
+    "message": "Empezar de nuevo"
+  },
+  "resetLogHint": {
+    "message": "Vacía esta lista. Se reconstruye en tu próxima visita a cada tienda: los juegos que ya tienes vuelven como ya reclamados, no como fallos."
+  },
+  "undoResetLog": {
+    "message": "Lista vaciada. Se reconstruye en tu próxima visita a la tienda."
+  },
+  "codesToRedeem": {
+    "message": "Códigos por canjear"
+  },
+  "statusNeverRan": {
+    "message": "La vigilancia aún no se ha ejecutado."
+  },
+  "statusChecked": {
+    "message": "Comprobado $1"
+  },
+  "statusNext": {
+    "message": "siguiente $1"
+  },
+  "ago": {
+    "message": "hace $1"
+  },
+  "inFuture": {
+    "message": "en $1"
+  },
+  "durationDaysHours": {
+    "message": "$1 d $2 h"
+  },
+  "durationHoursMinutes": {
+    "message": "$1 h $2"
+  },
+  "durationMinutes": {
+    "message": "$1 min"
+  },
+  "never": {
+    "message": "nunca"
+  },
+  "checkNow": {
+    "message": "Comprobar ahora"
+  },
+  "checking": {
+    "message": "Comprobando..."
+  },
+  "emptyGames": {
+    "message": "No hay nada gratis a la vista. La vigilancia busca por su cuenta y te avisará."
+  },
+  "emptyGamesFiltered": {
+    "message": "Ninguna oferta coincide con esta búsqueda."
+  },
+  "emptyCodes": {
+    "message": "Nada que canjear. Los códigos de GOG y Microsoft obtenidos en Luna llegan aquí, con su fecha límite."
+  },
+  "emptyLog": {
+    "message": "Aún no se ha reclamado nada."
+  },
+  "emptySources": {
+    "message": "Aún no se ha consultado ninguna fuente."
+  },
+  "noEndDate": {
+    "message": "sin fecha de fin"
+  },
+  "alreadyOwned": {
+    "message": "en propiedad"
+  },
+  "openOfferTitle": {
+    "message": "Abrir la página de la oferta"
+  },
+  "pinTitle": {
+    "message": "Mantener arriba"
+  },
+  "unpinTitle": {
+    "message": "Dejar de mantener arriba"
+  },
+  "wishTitle": {
+    "message": "Vigilar este título"
+  },
+  "unwishTitle": {
+    "message": "Dejar de vigilar este título"
+  },
+  "wishSteamTitle": {
+    "message": "En tu lista de deseos de Steam: quítalo allí, o volverá en la próxima importación"
+  },
+  "claimThisTitle": {
+    "message": "Reclamar esta ahora"
+  },
+  "snoozeTitle": {
+    "message": "Apartar un tiempo"
+  },
+  "snoozedFor": {
+    "message": "en pausa $1"
+  },
+  "alsoFreeOn": {
+    "message": "también en $1"
+  },
+  "approxFrom": {
+    "message": "Convertido desde $1, al tipo del BCE de $2"
+  },
+  "upcomingUnannounced": {
+    "message": "Título aún no anunciado"
+  },
+  "upcomingOpen": {
+    "message": "Abrir $1 en la tienda"
+  },
+  "summary": {
+    "message": "Resumen"
+  },
+  "foldTallyCount": {
+    "message": "$1 reclamados"
+  },
+  "tallyNone": {
+    "message": "Aún no se ha reclamado nada."
+  },
+  "tallyOne": {
+    "message": "$1 juego reclamado"
+  },
+  "tallyMany": {
+    "message": "$1 juegos reclamados"
+  },
+  "tallyValued": {
+    "message": ", $1 con precio conocido: $2"
+  },
+  "foldTallyAlready": {
+    "message": "$1 ya tuyos"
+  },
+  "tallyNoneTaken": {
+    "message": "La extensión aún no ha reclamado nada"
+  },
+  "tallyAlready": {
+    "message": " · $1 ya tuyos"
+  },
+  "claimForMe": {
+    "message": "Reclamar sin mí"
+  },
+  "foldClaimOn": {
+    "message": "automático"
+  },
+  "foldClaimOff": {
+    "message": "manual"
+  },
+  "autonomousLabel": {
+    "message": "Reclamar sin mí"
+  },
+  "autonomousHint": {
+    "message": "Abre una pestaña en segundo plano y se queda con la oferta"
+  },
+  "minWorthLabel": {
+    "message": "Reclamar solo a partir de"
+  },
+  "noThreshold": {
+    "message": "sin umbral"
+  },
+  "includeDlcLabel": {
+    "message": "Incluir DLC y botín"
+  },
+  "includeDlcHint": {
+    "message": "Cuatro veces más numerosos que los juegos"
+  },
+  "filtersPreview": {
+    "message": "De $1 ofertas abiertas: $2 reclamables sin ti, $3 para ti."
+  },
+  "filtersPreviewNone": {
+    "message": "Ninguna oferta abierta ahora mismo."
+  },
+  "stores": {
+    "message": "Tiendas"
+  },
+  "foldStoresCount": {
+    "message": "$1 vigiladas"
+  },
+  "moreStores": {
+    "message": "Otras tiendas"
+  },
+  "moreStoresCount": {
+    "message": "$1 activas"
+  },
+  "moreStoresHint": {
+    "message": "Vigiladas y notificadas, nunca reclamadas por ti: no existe módulo de reclamación para estas tiendas."
+  },
+  "storeReady": {
+    "message": "lista"
+  },
+  "storeReadyCount": {
+    "message": "lista, $1 reclamados"
+  },
+  "storePaused": {
+    "message": "en pausa $1"
+  },
+  "storeAutoOff": {
+    "message": "automático desactivado"
+  },
+  "storeDetectOnly": {
+    "message": "solo detectada"
+  },
+  "storeOff": {
+    "message": "desactivada"
+  },
+  "watch": {
+    "message": "Vigilancia en segundo plano"
+  },
+  "foldSourcesCount": {
+    "message": "$1 fuentes"
+  },
+  "floorLabel": {
+    "message": "Comprobaciones mínimas al día"
+  },
+  "backgroundLabel": {
+    "message": "Seguir vigilando al cerrar el navegador"
+  },
+  "backgroundGranted": {
+    "message": "La vigilancia sigue funcionando al cerrar la última ventana, mientras el ordenador esté encendido."
+  },
+  "backgroundOffered": {
+    "message": "La vigilancia solo funciona con el navegador abierto. Marca la casilla de arriba para que continúe."
+  },
+  "backgroundUnsupported": {
+    "message": "La vigilancia solo funciona con el navegador abierto. Este navegador no permite cambiarlo."
+  },
+  "predictionTitle": {
+    "message": "Próximas 24 horas"
+  },
+  "predictionLearning": {
+    "message": "Aún aprendiendo: necesita unas cuantas ofertas por fuente."
+  },
+  "predictionPeak": {
+    "message": "pico hacia las $1"
+  },
+  "predictionNothing": {
+    "message": "nada previsto antes de mañana"
+  },
+  "predictionBandTitle": {
+    "message": "Próximas 24 horas. Cuanto más brillante es una barra, más a menudo publica esta fuente a esa hora."
+  },
+  "now": {
+    "message": "ahora"
+  },
+  "plus24h": {
+    "message": "+24 h"
+  },
+  "notifications": {
+    "message": "Notificaciones"
+  },
+  "notifyModeLabel": {
+    "message": "Avisarme"
+  },
+  "notifyEvery": {
+    "message": "De cada oferta"
+  },
+  "notifyDigest": {
+    "message": "Un resumen diario"
+  },
+  "notifyOff": {
+    "message": "Nunca"
+  },
+  "quietLabel": {
+    "message": "Horas de silencio"
+  },
+  "quietHint": {
+    "message": "Retenidas, no descartadas: llegan después"
+  },
+  "quietFrom": {
+    "message": "De"
+  },
+  "quietTo": {
+    "message": "a"
+  },
+  "reminderLabel": {
+    "message": "Recordarme antes de que acabe una oferta, horas:"
+  },
+  "reminderOff": {
+    "message": "desactivado"
+  },
+  "onPagesIOpen": {
+    "message": "En las páginas que abro"
+  },
+  "epicAutoLabel": {
+    "message": "Epic: rotación semanal"
+  },
+  "lunaAutoLabel": {
+    "message": "Luna: reclamar en la página"
+  },
+  "lunaDlcLabel": {
+    "message": "Luna: contenido del juego"
+  },
+  "openEpic": {
+    "message": "Abrir Epic"
+  },
+  "openLuna": {
+    "message": "Abrir Luna"
+  },
+  "appearance": {
+    "message": "Apariencia"
+  },
+  "themeLabel": {
+    "message": "Tema"
+  },
+  "themeSystem": {
+    "message": "Sistema"
+  },
+  "themeDark": {
+    "message": "Oscuro"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "languageLabel": {
+    "message": "Idioma"
+  },
+  "languageAuto": {
+    "message": "Idioma del navegador"
+  },
+  "countryLabel": {
+    "message": "País de la tienda"
+  },
+  "countryHint": {
+    "message": "Epic sirve sus precios y fechas para este país. GOG y GamerPower no aceptan ningún parámetro de país, así que este ajuste no los cambia. La moneda mostrada sigue esta elección."
+  },
+  "hideOwnedLabel": {
+    "message": "Ocultar los juegos que ya tengo"
+  },
+  "backup": {
+    "message": "Copia de seguridad"
+  },
+  "exportJson": {
+    "message": "Exportar JSON"
+  },
+  "exportCsv": {
+    "message": "Exportar CSV"
+  },
+  "exportIcs": {
+    "message": "Calendario (.ics)"
+  },
+  "exportIcsHint": {
+    "message": "Fin de las ofertas, próximas ofertas y códigos por canjear, para el calendario de tu móvil. Exporta de nuevo para ver las ofertas siguientes: los recordatorios ya importados se actualizan, no se duplican."
+  },
+  "phoneLabel": {
+    "message": "Alertas en el móvil (ntfy)"
+  },
+  "phoneHint": {
+    "message": "Averías, captchas y juegos esperados, en tu móvil. Instala la app ntfy y suscríbete a la dirección de abajo."
+  },
+  "phoneUrlLabel": {
+    "message": "Dirección del tema"
+  },
+  "phoneNewTopic": {
+    "message": "Nuevo tema"
+  },
+  "phoneCopy": {
+    "message": "Copiar"
+  },
+  "phoneCopied": {
+    "message": "Dirección copiada: pégala en la app ntfy"
+  },
+  "phoneTest": {
+    "message": "Enviar una prueba"
+  },
+  "phoneWishedLabel": {
+    "message": "También los juegos de mi lista de deseos"
+  },
+  "phoneTokenLabel": {
+    "message": "Token de acceso (servidor privado)"
+  },
+  "phoneSecretHint": {
+    "message": "En ntfy.sh, cualquiera que conozca el nombre del tema puede leer tus alertas: que sea largo y secreto. Nunca se envía un código de canje."
+  },
+  "phoneInvalid": {
+    "message": "Dirección no válida: usa https://servidor/tema"
+  },
+  "phoneDenied": {
+    "message": "Permiso denegado: las alertas siguen desactivadas"
+  },
+  "phoneSent": {
+    "message": "Prueba enviada: mira tu móvil"
+  },
+  "phoneFailed": {
+    "message": "Prueba no enviada: $1"
+  },
+  "phoneLastOk": {
+    "message": "Último envío: $1"
+  },
+  "phoneLastFailed": {
+    "message": "Último envío fallido, $1: $2"
+  },
+  "phoneIncidentTitle": {
+    "message": "Free Games te necesita"
+  },
+  "phoneKindSelector": {
+    "message": "$1 ha cambiado su página: la extensión no encuentra el botón"
+  },
+  "phoneKindSource": {
+    "message": "La fuente $1 lleva un tiempo fallando"
+  },
+  "phoneKindSession": {
+    "message": "$1: has cerrado sesión, vuelve a iniciarla en el navegador"
+  },
+  "phoneKindStalled": {
+    "message": "La vigilancia se ha detenido: abre el navegador del ordenador"
+  },
+  "phoneKindMuted": {
+    "message": "Tu ordenador bloquea las notificaciones de la extensión"
+  },
+  "phoneWishedTitle": {
+    "message": "Un juego que esperas está gratis: $1"
+  },
+  "phoneTestTitle": {
+    "message": "Free Games: prueba recibida"
+  },
+  "phoneTestBody": {
+    "message": "Las alertas de la extensión llegarán aquí."
+  },
+  "deckVerified": {
+    "message": "Verificado en Steam Deck"
+  },
+  "deckPlayable": {
+    "message": "Jugable en Steam Deck"
+  },
+  "deckVerifiedShort": {
+    "message": "Deck ✓"
+  },
+  "deckPlayableShort": {
+    "message": "Deck ~"
+  },
+  "deckFilterLabel": {
+    "message": "Steam Deck"
+  },
+  "deckFilterAll": {
+    "message": "Steam Deck: todos"
+  },
+  "deckFilterPlayable": {
+    "message": "Jugable en Deck"
+  },
+  "deckFilterVerified": {
+    "message": "Verificado para Deck"
+  },
+  "overlayOwned": {
+    "message": "Ya lo tienes en $1."
+  },
+  "overlayFreeNow": {
+    "message": "Gratis ahora mismo en $1."
+  },
+  "overlayFreeNowUntil": {
+    "message": "Gratis ahora mismo en $1, hasta el $2."
+  },
+  "overlayClaimed": {
+    "message": "Reclamado por la extensión."
+  },
+  "overlayClaimedOn": {
+    "message": "Reclamado por la extensión el $1."
+  },
+  "overlayRecurring": {
+    "message": "Regalado ya $1 veces desde que lo sigues. Este puedes esperarlo."
+  },
+  "overlayMissed": {
+    "message": "Ya se regaló una vez y te lo perdiste. Puede volver."
+  },
+  "overlayMissedOn": {
+    "message": "Ya se regaló una vez ($1) y te lo perdiste. Puede volver."
+  },
+  "icsCalendarName": {
+    "message": "Juegos gratis"
+  },
+  "icsEnding": {
+    "message": "Última hora para reclamar $1"
+  },
+  "icsEndingSoon": {
+    "message": "Quedan 24 horas para reclamar $1"
+  },
+  "icsStarting": {
+    "message": "Gratis ahora: $1"
+  },
+  "icsCode": {
+    "message": "Último día para canjear el código de $1"
+  },
+  "icsExported": {
+    "message": "$1 recordatorio(s) en el archivo: ábrelo con tu calendario"
+  },
+  "icsNothing": {
+    "message": "Nada que poner en tu calendario por ahora"
+  },
+  "import": {
+    "message": "Importar"
+  },
+  "exported": {
+    "message": "$1 código(s) y $2 reclamación(es) exportados."
+  },
+  "exportedCsv": {
+    "message": "$1 fila(s) exportada(s)."
+  },
+  "importNotOurs": {
+    "message": "Ese archivo no es una exportación de esta extensión."
+  },
+  "importRestored": {
+    "message": "$1 código(s) restaurado(s), ajustes aplicados."
+  },
+  "importNoNew": {
+    "message": "Ningún código nuevo; ajustes aplicados."
+  },
+  "importFailed": {
+    "message": "Error al importar: $1"
+  },
+  "backupHint": {
+    "message": "Los códigos pendientes no se pueden reconstruir: un código perdido es un juego perdido."
+  },
+  "shortcutsTitle": {
+    "message": "Teclado"
+  },
+  "shortcutsBody": {
+    "message": "1 2 3 cambian de pestaña. / lleva a la búsqueda. Intro abre el primer juego. Escape borra la búsqueda."
+  },
+  "undo": {
+    "message": "Deshacer"
+  },
+  "undoRemovedCode": {
+    "message": "Código de $1 eliminado."
+  },
+  "copy": {
+    "message": "Copiar"
+  },
+  "copied": {
+    "message": "Copiado"
+  },
+  "redeemOnGog": {
+    "message": "Canjear en GOG"
+  },
+  "openRedeemPage": {
+    "message": "Abrir la página de canje"
+  },
+  "redeemUnknownHint": {
+    "message": "Todavía no se ha medido ninguna página de canje para esta tienda. Pega el código en la web de la tienda."
+  },
+  "codesAddTitle": {
+    "message": "Añadir claves a mano"
+  },
+  "codesAddHint": {
+    "message": "Pega lo que sea: se ignoran títulos, viñetas y líneas vacías."
+  },
+  "codesAddPlaceholder": {
+    "message": "ABCDE-12345-FGHIJ"
+  },
+  "codesAddStore": {
+    "message": "Tienda de estas claves"
+  },
+  "codesAddButton": {
+    "message": "Añadir"
+  },
+  "codesNoneFound": {
+    "message": "No se ha encontrado ninguna clave en ese texto."
+  },
+  "codesAdded": {
+    "message": "$1 clave(s) añadida(s)."
+  },
+  "codesAllKnown": {
+    "message": "Todas las claves ya estaban en la lista."
+  },
+  "remove": {
+    "message": "Eliminar"
+  },
+  "untitledGame": {
+    "message": "Juego sin título"
+  },
+  "deadlineBefore": {
+    "message": "Usar antes del $1"
+  },
+  "deadlineExpired": {
+    "message": "Caducado desde el $1"
+  },
+  "deadlineLastDay": {
+    "message": "Último día: $1"
+  },
+  "deadlineDaysLeft": {
+    "message": "Quedan $1 días, antes del $2"
+  },
+  "claimAllDone": {
+    "message": "Hecho: $1 reclamados, $2 quedan para ti."
+  },
+  "footPaused": {
+    "message": "La reclamación descansa entre pasadas, para no reiniciarse en cada página."
+  },
+  "footIdle": {
+    "message": "Abre una tienda: la reclamación empieza sola."
+  },
+  "diagnostics": {
+    "message": "Diagnóstico"
+  },
+  "verdictClaimed": {
+    "message": "reclamado"
+  },
+  "verdictRedeemed": {
+    "message": "añadido a GOG"
+  },
+  "verdictAlreadyRedeemed": {
+    "message": "código ya usado"
+  },
+  "verdictCodePending": {
+    "message": "código por canjear"
+  },
+  "verdictCodeCopied": {
+    "message": "código copiado"
+  },
+  "verdictNeedsLink": {
+    "message": "cuenta por vincular"
+  },
+  "verdictNeedsLogin": {
+    "message": "hay que iniciar sesión"
+  },
+  "verdictChallenge": {
+    "message": "confírmalo tú"
+  },
+  "verdictSkipped": {
+    "message": "omitido"
+  },
+  "verdictBadUrl": {
+    "message": "página no encontrada"
+  },
+  "verdictFailed": {
+    "message": "fallido"
+  },
+  "verdictExpired": {
+    "message": "oferta terminada"
+  },
+  "verdictUpcoming": {
+    "message": "aún no abierta"
+  },
+  "verdictUndetermined": {
+    "message": "dudoso, sin tocar"
+  },
+  "verdictQuota": {
+    "message": "límite de la tienda alcanzado"
+  },
+  "reasonAlreadyOwned": {
+    "message": "ya en propiedad"
+  },
+  "reasonAlreadyClaimed": {
+    "message": "ya reclamado"
+  },
+  "reasonStop": {
+    "message": "interrumpido"
+  },
+  "notifyOneTitle": {
+    "message": "Gratis: $1"
+  },
+  "notifyDigestTitle": {
+    "message": "$1 juegos gratis esperando"
+  },
+  "notifyEndingTitle": {
+    "message": "Termina pronto: $1"
+  },
+  "notifyEndingBody": {
+    "message": "Quedan $1 para llevártelo."
+  },
+  "notifyOneStore": {
+    "message": "Gratis en $1"
+  },
+  "notifyManyTitle": {
+    "message": "$1 juegos gratis detectados"
+  },
+  "incidentOneTitle": {
+    "message": "Algo no funciona"
+  },
+  "incidentManyTitle": {
+    "message": "$1 problemas que revisar"
+  },
+  "notifyActionClaim": {
+    "message": "Reclamar"
+  },
+  "notifyActionSnooze": {
+    "message": "Más tarde"
+  },
+  "notifyActionJournal": {
+    "message": "Abrir el registro"
+  },
+  "healthStalled": {
+    "message": "La vigilancia en segundo plano se detuvo $1."
+  },
+  "healthMuted": {
+    "message": "Tu sistema bloquea las notificaciones de esta extensión."
+  },
+  "notifyManyBody": {
+    "message": "$1 y $2 más"
+  },
+  "notifyClaimedOne": {
+    "message": "Juego reclamado"
+  },
+  "notifyClaimedMany": {
+    "message": "$1 juegos reclamados"
+  },
+  "notifyChallengeTitle": {
+    "message": "Una oferta te necesita"
+  },
+  "notifyChallengeBody": {
+    "message": "Un desafío de seguridad bloquea la reclamación. La pestaña se ha dejado abierta."
+  },
+  "keepableOnlyLabel": {
+    "message": "Solo juegos que se pueden conservar"
+  },
+  "keepableOnlyHint": {
+    "message": "Omite los free-to-play y lo gratuito para siempre: no hay nada que reclamar"
+  },
+  "emergency": {
+    "message": "Parada de emergencia"
+  },
+  "emergencyHint": {
+    "message": "Detiene cada clic y cada pestaña en segundo plano, de golpe. No se pierde nada: el catálogo y tus códigos se quedan."
+  },
+  "stopAll": {
+    "message": "Detenerlo todo"
+  },
+  "stoppedBanner": {
+    "message": "Detenido. La extensión no hace clic en nada."
+  },
+  "resume": {
+    "message": "Reanudar"
+  },
+  "waitingOnYou": {
+    "message": "Esperándote"
+  },
+  "horizonUnknown": {
+    "message": "Sin fecha de fin"
+  },
+  "horizonToday": {
+    "message": "Termina hoy"
+  },
+  "horizonWeek": {
+    "message": "Esta semana"
+  },
+  "horizonLater": {
+    "message": "Más adelante"
+  },
+  "changedSome": {
+    "message": "$1 nuevas desde tu última visita"
+  },
+  "changedNone": {
+    "message": "Nada nuevo. Comprobado $1."
+  },
+  "alreadyYours": {
+    "message": "tuyo en $1 desde $2"
+  },
+  "dropUnsupported": {
+    "message": "ábrelo tú"
+  },
+  "dropUnknownStore": {
+    "message": "tienda no identificada"
+  },
+  "dropDisabled": {
+    "message": "tienda desactivada"
+  },
+  "dropBelow": {
+    "message": "por debajo de tu umbral"
+  },
+  "dropNoWorth": {
+    "message": "precio desconocido"
+  },
+  "dropNothingToKeep": {
+    "message": "gratis de todos modos, nada que reclamar"
+  },
+  "dropAlreadyOwned": {
+    "message": "ya es tuyo"
+  },
+  "dropExtra": {
+    "message": "DLC o botín"
+  },
+  "dropExcluded": {
+    "message": "título en tu lista de «nunca»"
+  },
+  "dropNoPage": {
+    "message": "ninguna página que abrir"
+  },
+  "neverThis": {
+    "message": "No me interesa — no reclamar nunca este título"
+  },
+  "undoNever": {
+    "message": "$1 no se reclamará nunca."
+  },
+  "retryNow": {
+    "message": "Reintentar"
+  },
+  "tallyBestMonth": {
+    "message": "mejor mes: $1 con $2"
+  },
+  "tallyMainStore": {
+    "message": "sobre todo $1"
+  },
+  "journalTitle": {
+    "message": "Registro de la vigilancia"
+  },
+  "journalSub": {
+    "message": "Las últimas 500 acciones de la vigilancia, conservadas entre reinicios. Un service worker se lleva su consola al detenerse: esta es la única huella que sobrevive a la noche."
+  },
+  "journalInfo": {
+    "message": "info"
+  },
+  "journalWarn": {
+    "message": "avisos"
+  },
+  "journalError": {
+    "message": "errores"
+  },
+  "journalLevelAll": {
+    "message": "Todo"
+  },
+  "journalLevelWarn": {
+    "message": "Avisos y errores"
+  },
+  "journalLevelError": {
+    "message": "Solo errores"
+  },
+  "journalSearch": {
+    "message": "Buscar"
+  },
+  "journalRefresh": {
+    "message": "Actualizar"
+  },
+  "journalCopy": {
+    "message": "Copiar"
+  },
+  "journalCopied": {
+    "message": "Copiado"
+  },
+  "journalCopyFailed": {
+    "message": "Copia rechazada"
+  },
+  "journalDownload": {
+    "message": "Descargar"
+  },
+  "journalClear": {
+    "message": "Vaciar"
+  },
+  "journalWhen": {
+    "message": "Cuándo"
+  },
+  "journalLevel": {
+    "message": "Nivel"
+  },
+  "journalWhat": {
+    "message": "Qué pasó"
+  },
+  "journalEmpty": {
+    "message": "Nada registrado aún. La vigilancia escribe aquí cada vez que se despierta."
+  },
+  "journalNoMatch": {
+    "message": "Ninguna entrada coincide con este filtro."
+  },
+  "journalNote": {
+    "message": "Adjunta el archivo descargado a un informe de error: se lee en el orden en que pasaron las cosas."
+  },
+  "historyTitle": {
+    "message": "Historial"
+  },
+  "historySub": {
+    "message": "Lo que pasó, conseguido o perdido. Se congela al terminar cada oferta, para sobrevivir a la purga del catálogo."
+  },
+  "historyTaken": {
+    "message": "conseguido"
+  },
+  "historyMissed": {
+    "message": "perdido"
+  },
+  "historyUnknown": {
+    "message": "dudoso"
+  },
+  "historyAll": {
+    "message": "Cualquier resultado"
+  },
+  "historyAllStores": {
+    "message": "Cualquier tienda"
+  },
+  "historySearch": {
+    "message": "Buscar un título"
+  },
+  "historyRefresh": {
+    "message": "Actualizar"
+  },
+  "historyDownload": {
+    "message": "Descargar CSV"
+  },
+  "historyWhen": {
+    "message": "Terminó"
+  },
+  "historyGame": {
+    "message": "Juego"
+  },
+  "historyStore": {
+    "message": "Tienda"
+  },
+  "historyWorth": {
+    "message": "Valor"
+  },
+  "historyOutcome": {
+    "message": "Resultado"
+  },
+  "historyByMonth": {
+    "message": "Mes a mes"
+  },
+  "historyMonth": {
+    "message": "Mes"
+  },
+  "historyRate": {
+    "message": "El $1 % de las ofertas resueltas acabó en tu cuenta. Perdido: $2 de valor."
+  },
+  "historyRateNone": {
+    "message": "Todavía no ha terminado nada. Vuelve cuando una oferta haya acabado."
+  },
+  "historyEmpty": {
+    "message": "Ninguna oferta ha terminado desde que se instaló esta versión."
+  },
+  "historyNoMatch": {
+    "message": "Ninguna entrada coincide con estos filtros."
+  },
+  "historyNote": {
+    "message": "Solo lectura. Se conservan las últimas 1000 ofertas terminadas."
+  },
+  "historyRecurring": {
+    "message": "Lo que vuelve"
+  },
+  "historyRecurringSub": {
+    "message": "Títulos que esta extensión ha visto en oferta más de una vez. Estos puedes esperarlos en lugar de comprarlos."
+  },
+  "historyTimes": {
+    "message": "Veces"
+  },
+  "historyLastSeen": {
+    "message": "Visto por última vez"
+  },
+  "openJournal": {
+    "message": "Registro de la vigilancia"
+  },
+  "openHistory": {
+    "message": "Historial"
+  },
+  "canaryStreak": {
+    "message": "$1 fallos seguidos"
+  },
+  "canaryAck": {
+    "message": "Visto"
+  },
+  "canaryHint": {
+    "message": "Lo más probable es que esta tienda haya cambiado su página. La reclamación se reintenta con espera; el mensaje de arriba indica lo que el motor no pudo encontrar."
+  },
+  "teachAsk": {
+    "message": "¿Qué botón debería haberse pulsado?"
+  },
+  "teachRefused": {
+    "message": "Esta etiqueta menciona dinero. No se puede aprender."
+  },
+  "teachLearned": {
+    "message": "Aprendido: $1."
+  },
+  "teachForget": {
+    "message": "olvidar"
+  },
+  "syncCodesLabel": {
+    "message": "Guardar mis códigos pendientes"
+  },
+  "syncCodesHint": {
+    "message": "Los copia en tu cuenta del navegador, para que una reinstalación los recupere. No se copia nada más."
+  },
+  "syncCodesState": {
+    "message": "$1 código(s) guardado(s)"
+  },
+  "syncCodesEmpty": {
+    "message": "Aún no se ha guardado nada."
+  },
+  "syncLibraryLabel": {
+    "message": "Reconocer mis juegos reclamados en mis otros ordenadores"
+  },
+  "syncLibraryHint": {
+    "message": "Copia el nombre y la tienda de cada juego reclamado en tu cuenta del navegador, para que otro ordenador no vuelva a abrir lo que ya se ha conseguido. Actívalo en cada ordenador; desactivarlo elimina la copia."
+  },
+  "syncLibraryState": {
+    "message": "$1 juego(s) compartido(s) con tus otros ordenadores"
+  },
+  "syncLibraryEmpty": {
+    "message": "Aún no se ha compartido nada."
+  },
+  "syncUnavailable": {
+    "message": "Este navegador no tiene almacenamiento sincronizado."
+  },
+  "durationSeconds": {
+    "message": "$1 s"
+  },
+  "sentinelTitle": {
+    "message": "Vigilancia de respaldo"
+  },
+  "sentinelSub": {
+    "message": "Una o varias fuentes han fallado tres veces seguidas. Mientras esta pestaña esté abierta, las reintenta a un ritmo fiable — algo que la vigilancia en segundo plano no puede hacer, porque tres fallos dejan una fuente dormida durante horas. Cierra la pestaña y todo vuelve a la normalidad."
+  },
+  "sentinelWhy": {
+    "message": "Por qué está abierta esta pestaña"
+  },
+  "sentinelJournal": {
+    "message": "Lo que está haciendo la vigilancia"
+  },
+  "sentinelNote": {
+    "message": "Esto nunca se convierte en el modo por defecto. Nada aquí suspende la vigilancia normal, y cerrar la pestaña — o todo el navegador — no deja nada que limpiar."
+  },
+  "sentinelTryNow": {
+    "message": "Reintentar ahora"
+  },
+  "sentinelClose": {
+    "message": "Cerrar"
+  },
+  "sentinelTrying": {
+    "message": "Reintentando…"
+  },
+  "sentinelNextTry": {
+    "message": "Próximo intento en $1"
+  },
+  "sentinelAttempts": {
+    "message": "$1 intento(s) desde la apertura"
+  },
+  "sentinelRecovered": {
+    "message": "$1 ha vuelto. La vigilancia normal vuelve a bastar — puedes cerrar esta pestaña."
+  },
+  "sentinelNothingFailing": {
+    "message": "Ninguna fuente falla. Nada que forzar, y no se está pidiendo nada."
+  },
+  "sentinelStillFailing": {
+    "message": "$1 fallos seguidos"
+  },
+  "sentinelBack": {
+    "message": "de vuelta"
+  },
+  "sentinelLastSuccess": {
+    "message": "Último éxito: $1"
+  },
+  "sentinelNeverSucceeded": {
+    "message": "Todavía sin éxito."
+  },
+  "openSentinel": {
+    "message": "Vigilancia de respaldo"
+  },
+  "sentinelBanner": {
+    "message": "$1 sigue fallando"
+  },
+  "sentinelBannerHint": {
+    "message": "Tras tres fallos, una fuente duerme durante horas. La pestaña de respaldo la reintenta mientras miras."
+  },
+  "openCollection": {
+    "message": "Mi colección"
+  },
+  "collectionTitle": {
+    "message": "Mi colección"
+  },
+  "collectionSub": {
+    "message": "Todo lo que tienes en Steam, GOG y Epic, leído con tu propia sesión y solo en lectura, más lo que la extensión ha reclamado. Nada sale de tu navegador, y nada se lee hasta que lo pides."
+  },
+  "collectionTitles": {
+    "message": "Títulos"
+  },
+  "collectionDuplicates": {
+    "message": "En varias tiendas"
+  },
+  "collectionClaimed": {
+    "message": "Reclamados por la extensión"
+  },
+  "collectionSearch": {
+    "message": "Buscar un juego"
+  },
+  "collectionAllStores": {
+    "message": "Todas las tiendas"
+  },
+  "collectionKindLabel": {
+    "message": "Tipo"
+  },
+  "collectionKindGames": {
+    "message": "Juegos"
+  },
+  "collectionKindDlc": {
+    "message": "DLC"
+  },
+  "collectionKindAll": {
+    "message": "Todo"
+  },
+  "collectionSortLabel": {
+    "message": "Orden"
+  },
+  "collectionSortTitle": {
+    "message": "Por título"
+  },
+  "collectionSortSince": {
+    "message": "Más recientes primero"
+  },
+  "collectionSortStores": {
+    "message": "En más tiendas"
+  },
+  "collectionDuplicatesOnly": {
+    "message": "Solo duplicados"
+  },
+  "collectionImportAll": {
+    "message": "Importarlo todo"
+  },
+  "collectionImport": {
+    "message": "Importar"
+  },
+  "collectionReimport": {
+    "message": "Importar de nuevo"
+  },
+  "collectionImporting": {
+    "message": "Importando…"
+  },
+  "collectionBusy": {
+    "message": "Ya hay una importación en curso."
+  },
+  "collectionCopyReport": {
+    "message": "Copiar el informe"
+  },
+  "collectionReportCopied": {
+    "message": "Copiado"
+  },
+  "collectionCopyFailed": {
+    "message": "Copia rechazada"
+  },
+  "collectionSignIn": {
+    "message": "Iniciar sesión"
+  },
+  "collectionNever": {
+    "message": "Nunca importado"
+  },
+  "collectionStateOk": {
+    "message": "Importado el $1"
+  },
+  "collectionStateLoggedOut": {
+    "message": "Sin sesión: inicia sesión y vuelve a importar."
+  },
+  "collectionStateShape": {
+    "message": "Respuesta inesperada: copia el informe y envíalo, dirá qué ha cambiado."
+  },
+  "collectionStateError": {
+    "message": "Error: $1"
+  },
+  "collectionStateStale": {
+    "message": "Importación interrumpida: vuelve a importar."
+  },
+  "collectionKept": {
+    "message": "Se sigue mostrando la lista del $1."
+  },
+  "collectionAmazonState": {
+    "message": "Solo lo que la extensión ha reclamado: la biblioteca de Amazon todavía no se lee."
+  },
+  "collectionColTitle": {
+    "message": "Juego"
+  },
+  "collectionColStores": {
+    "message": "Tiendas"
+  },
+  "collectionColSince": {
+    "message": "Desde"
+  },
+  "collectionEmpty": {
+    "message": "Nada todavía: importa una tienda arriba."
+  },
+  "collectionNoMatch": {
+    "message": "Ningún juego coincide."
+  },
+  "collectionNote": {
+    "message": "Steam: tus juegos y sus nombres públicos. GOG: la lista de juegos de tu cuenta. Epic: tu historial de pedidos, juegos gratis incluidos (allí un DLC parece un juego). Un título encontrado en dos tiendas se empareja por su nombre: es una pista, no una prueba, y ninguna reclamación se decide con ello. Lo que una tienda dice que tienes, en cambio, evita que su oferta se vuelva a abrir: por identificador exacto, nunca por nombre."
+  },
+  "mirrorRead": {
+    "message": "Leer el tiempo de juego de Steam"
+  },
+  "mirrorReading": {
+    "message": "Leyendo tu tiempo de juego de Steam..."
+  },
+  "mirrorDenied": {
+    "message": "Permiso denegado. No se ha leído nada."
+  },
+  "mirrorDone": {
+    "message": "$1 juegos leídos."
+  },
+  "mirrorFailed": {
+    "message": "No se pudo leer: $1"
+  },
+  "bridgeSend": {
+    "message": "Enviar al puente local"
+  },
+  "bridgeSending": {
+    "message": "Enviando al puente local..."
+  },
+  "bridgeDenied": {
+    "message": "Permiso denegado. No se ha enviado nada."
+  },
+  "bridgeDone": {
+    "message": "Escrito en $1"
+  },
+  "bridgeFailed": {
+    "message": "Puente inaccesible: $1"
+  },
+  "backlogColStatus": {
+    "message": "Pendientes"
+  },
+  "backlogFilterLabel": {
+    "message": "Filtrar por estado de pendientes"
+  },
+  "backlogAll": {
+    "message": "Cualquier estado"
+  },
+  "backlogUntouched": {
+    "message": "Sin marcar"
+  },
+  "backlogToTry": {
+    "message": "Por probar"
+  },
+  "backlogPlaying": {
+    "message": "Jugando"
+  },
+  "backlogDone": {
+    "message": "Terminado"
+  },
+  "backlogDropped": {
+    "message": "Abandonado"
+  },
+  "backlogSurprise": {
+    "message": "Elige uno por mí"
+  },
+  "backlogNothingToTry": {
+    "message": "Todavía no hay nada marcado para probar."
+  },
+  "backlogPicked": {
+    "message": "Esta noche: $1"
+  },
+  "collectionUntitled": {
+    "message": "Sin título (#$1)"
+  },
+  "collectionClaimedTag": {
+    "message": "reclamado por la extensión"
+  },
+  "collectionLaunch": {
+    "message": "Iniciar en Steam"
+  },
+  "steamAutoLabel": {
+    "message": "También Steam"
+  },
+  "steamAutoHint": {
+    "message": "Desactivado por defecto: el acuerdo de Steam lo prohíbe"
+  },
+  "steamAutoWarn": {
+    "message": "El Acuerdo de suscriptor de Steam (sección 4.C) prohíbe los scripts que interactúan con Steam, y Valve puede cerrar una cuenta por ello sin previo aviso (4.D). La extensión solo añade ofertas que el propio Steam marca como gratis para siempre, una por pasada y despacio, pero el riesgo sigue siendo total y afecta a toda tu cuenta de Steam."
+  },
+  "steamAutoAccept": {
+    "message": "Activar de todos modos"
+  },
+  "steamAutoCancel": {
+    "message": "Cancelar"
+  },
+  "storeSteamAuto": {
+    "message": "automático, bajo tu propio riesgo"
+  },
+  "sessionsCheck": {
+    "message": "Comprobar sesiones"
+  },
+  "sessionsChecking": {
+    "message": "Comprobando..."
+  },
+  "sessionsChecked": {
+    "message": "comprobado $1"
+  },
+  "sessionsNever": {
+    "message": "nunca comprobado"
+  },
+  "sessionIn": {
+    "message": "sesión iniciada"
+  },
+  "sessionOut": {
+    "message": "sesión cerrada"
+  },
+  "sessionUnknown": {
+    "message": "desconocido"
+  },
+  "sessionNever": {
+    "message": "aún sin comprobar"
+  },
+  "sessionSignIn": {
+    "message": "Iniciar sesión"
+  },
+  "densityLabel": {
+    "message": "Densidad"
+  },
+  "densityCosy": {
+    "message": "Cómoda"
+  },
+  "densityCompact": {
+    "message": "Compacta"
+  }
+}

@@ -136,3 +136,30 @@ function dedupe(faits) {
   }
   return out;
 }
+
+/**
+ * Les phrases d'une fiche, dans la langue de l'utilisateur (2.50.0).
+ *
+ * Composees ICI, cote service worker, et non dans la surcouche : celle-ci est
+ * injectee dans une page tierce et doit rester minuscule, sans table de
+ * traduction. Elle ecrivait donc ses phrases en francais pour tout le monde,
+ * et le magasin sous son identifiant (« sur gog »). Le worker a la table, les
+ * noms de magasins et le format de date du lecteur.
+ *
+ * `t` est la fonction de traduction, `storeLabel` rend le nom d'un magasin,
+ * `dateText` un jour lisible. Une phrase vide n'est pas rendue.
+ */
+export function factLines(facts, { t, storeLabel = (s) => s, dateText = (ts) => String(ts) }) {
+  const lignes = [];
+  for (const f of facts || []) {
+    let l = '';
+    if (f.kind === FACTS.OWNED) l = t('overlayOwned', (f.stores || []).map(storeLabel).join(', '));
+    else if (f.kind === FACTS.FREE_NOW) {
+      l = f.end ? t('overlayFreeNowUntil', storeLabel(f.store), dateText(f.end)) : t('overlayFreeNow', storeLabel(f.store));
+    } else if (f.kind === FACTS.CLAIMED) l = f.ts ? t('overlayClaimedOn', dateText(f.ts)) : t('overlayClaimed');
+    else if (f.kind === FACTS.RECURRING) l = t('overlayRecurring', String(f.count));
+    else if (f.kind === FACTS.MISSED) l = f.ts ? t('overlayMissedOn', dateText(f.ts)) : t('overlayMissed');
+    if (l) lignes.push(l);
+  }
+  return lignes;
+}

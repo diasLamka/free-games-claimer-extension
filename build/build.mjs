@@ -313,7 +313,7 @@ function lireLocale(code) {
   return table;
 }
 
-const LOCALES = ['en', 'fr'];
+const LOCALES = ['en', 'fr', 'de', 'es'];
 const tables = {};
 for (const code of LOCALES) tables[code] = lireLocale(code);
 

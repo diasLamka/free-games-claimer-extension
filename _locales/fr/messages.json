@@ -491,6 +491,30 @@
   "deckFilterVerified": {
     "message": "Vérifié Deck"
   },
+  "overlayOwned": {
+    "message": "Vous le possédez déjà sur $1."
+  },
+  "overlayFreeNow": {
+    "message": "Offert en ce moment sur $1."
+  },
+  "overlayFreeNowUntil": {
+    "message": "Offert en ce moment sur $1, jusqu'au $2."
+  },
+  "overlayClaimed": {
+    "message": "Récupéré par l'extension."
+  },
+  "overlayClaimedOn": {
+    "message": "Récupéré par l'extension le $1."
+  },
+  "overlayRecurring": {
+    "message": "Déjà offert $1 fois depuis que vous le suivez. Celui-là, vous pouvez l'attendre."
+  },
+  "overlayMissed": {
+    "message": "Déjà offert une fois, et manqué. Il peut revenir."
+  },
+  "overlayMissedOn": {
+    "message": "Déjà offert une fois ($1), et manqué. Il peut revenir."
+  },
   "icsCalendarName": {
     "message": "Jeux gratuits"
   },
