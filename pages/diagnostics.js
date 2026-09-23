@@ -8,6 +8,8 @@
  * exactement comme la cible qu'elle mesure.
  */
 import { queryHtml } from '../watch/offscreen.js';
+import { epicApiUrls, KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from '../watch/locale.js';
+import { compareTitles, mobileVerdict, promoElements, summariseElements, summariseUnknown } from '../watch/epic-mobile.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -19,7 +21,7 @@ const SEUIL_INTENSIF_MS = 5 * 60 * 1000;
 const INTERVALLE_MS = 1000;
 
 const $ = (id) => document.getElementById(id);
-const resultats = { throttle: null, offscreen: null, sonde: null };
+const resultats = { throttle: null, offscreen: null, sonde: null, mobile: null };
 
 $('version').textContent = 'v' + api.runtime.getManifest().version;
 
@@ -556,6 +558,126 @@ async function lancerSonde() {
   }
 }
 
+/* ------------------------------------------------ V8 : les jeux mobiles d'Epic
+ *
+ * Quatre lectures publiques, sans cookies, sur des hotes que le manifeste
+ * couvre deja (*.epicgames.com). L'analyse vit dans watch/epic-mobile.js, ou
+ * elle est testee ; ici, seulement les requetes et l'affichage. */
+
+const DECOUVERTE = (pays, langue, plateforme) => 'https://egs-platform-service.store.epicgames.com/api/v2/public/discover/home'
+  + `?count=10&country=${encodeURIComponent(pays)}&locale=${encodeURIComponent(langue)}`
+  + `&platform=${plateforme}&start=0&store=EGS`;
+
+async function lireJson(url) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(url, { credentials: 'omit', cache: 'no-store' });
+    const corps = await r.text();
+    const out = { url, ok: true, status: r.status, bytes: corps.length, ms: Math.round(performance.now() - t0), json: null };
+    try { out.json = JSON.parse(corps); } catch { out.debut = corps.slice(0, 200); }
+    return out;
+  } catch (e) {
+    return { url, ok: false, error: String((e && e.message) || e), ms: Math.round(performance.now() - t0) };
+  }
+}
+
+async function lancerMobile() {
+  $('mobile-run').disabled = true;
+  $('mobile-out').classList.remove('hidden');
+  $('mobile-state').textContent = 'lecture...';
+  verdict($('m-verdict'), '', 'Mesure en cours', '');
+
+  try {
+    const stock = await api.storage.local.get([KEY_COUNTRY, KEY_LANG]);
+    const pays = normaliseCountry(stock[KEY_COUNTRY]);
+    const langue = normaliseLang(stock[KEY_LANG], pays);
+    const base = epicApiUrls(pays, langue)[0];
+    const now = Date.now();
+    const out = { pays, langue };
+
+    // 1. L'API deja lue.
+    const promo = await lireJson(base);
+    const elements = promo.json ? promoElements(promo.json) : null;
+    out.promo = {
+      url: base, ok: promo.ok && !!elements, status: promo.status, bytes: promo.bytes, ms: promo.ms,
+      error: promo.error || (elements ? null : 'forme inattendue'),
+      elements: elements ? summariseElements(elements, now) : null,
+      shape: !elements && promo.json ? summariseUnknown(promo.json).shape : null,
+    };
+
+    // 2. La meme, filtree par plateforme.
+    const titres = (elements || []).map((e) => e.title);
+    out.platforms = [];
+    for (const platform of ['android', 'ios']) {
+      const r = await lireJson(`${base}&platform=${platform}`);
+      const els = r.json ? promoElements(r.json) : null;
+      out.platforms.push({
+        platform, ok: r.ok && !!els, status: r.status, error: r.error || null,
+        count: els ? els.length : null,
+        diff: els ? compareTitles(titres, els.map((e) => e.title)) : null,
+        mobile: els ? summariseElements(els, now).filter((e) => e.mobile.length).map((e) => e.title) : [],
+      });
+    }
+
+    // 3. L'API de decouverte de l'application mobile.
+    out.discover = [];
+    for (const platform of ['android', 'ios']) {
+      const r = await lireJson(DECOUVERTE(pays, langue, platform));
+      out.discover.push({
+        platform, url: r.url, ok: r.ok, status: r.status, bytes: r.bytes, error: r.error || null,
+        summary: r.json ? summariseUnknown(r.json) : null, debut: r.debut || null,
+      });
+    }
+
+    // 4. La page des jeux gratuits.
+    out.page = await queryHtml(api, {
+      url: 'https://store.epicgames.com/free-games',
+      patterns: [{ name: 'motMobile', source: 'mobile|android|ios' }],
+      samples: [
+        { name: 'blocsMobile', selector: '[class*="mobile" i], [data-testid*="mobile" i], [aria-label*="mobile" i]', limit: 6 },
+        {
+          name: 'donneesEmbarquees',
+          selector: 'script[type="application/json"], script[id], script[data-state]',
+          limit: 6,
+          needles: ['mobile', 'android', 'ios'],
+        },
+      ],
+    });
+
+    resultats.mobile = out;
+
+    const lus = out.promo.elements || [];
+    $('m-promo').textContent = out.promo.ok
+      ? `HTTP ${out.promo.status}, ${lus.length} offre(s) (${pays}, ${langue}), dont ${lus.filter((e) => e.mobile.length).length} qui parlent de mobile`
+      : `echec : ${out.promo.error}`;
+    $('m-promo-liste').textContent = lus.length
+      ? lus.map((e) => `${e.title} [${e.categories.slice(0, 4).join(', ')}]${e.mobile.length ? ' MOBILE' : ''}`).join(' | ')
+      : '--';
+    $('m-plateformes').textContent = out.platforms.map((p) => (p.ok
+      ? `${p.platform} : ${p.count} offre(s), ${p.diff.onlySecond.length} de plus, ${p.diff.onlyFirst.length} de moins`
+      : `${p.platform} : ${p.error || 'HTTP ' + p.status}`)).join(' | ');
+    $('m-decouverte').textContent = out.discover.map((d) => (d.ok
+      ? `${d.platform} : HTTP ${d.status}, ${d.bytes} octets`
+        + (d.summary ? `, ${d.summary.titled.length} objet(s) titre(s), ${d.summary.free.length} mention(s) de gratuite` : ', pas du JSON')
+      : `${d.platform} : echec (${d.error})`)).join(' | ');
+    const page = out.page || {};
+    $('m-page').textContent = page.ok
+      ? `HTTP ${page.status}, ${page.bytes} octets -- mobile : affiche ${page.matches && page.matches.motMobile ? 'oui' : 'non'}`
+        + `, source ${page.matchesRaw && page.matchesRaw.motMobile ? 'oui' : 'non'}`
+      : `echec : ${page.error}`;
+
+    const v = mobileVerdict(out);
+    verdict($('m-verdict'), v.level, v.title, v.detail);
+    $('mobile-state').textContent = 'termine';
+  } catch (e) {
+    verdict($('m-verdict'), 'ko', 'Mesure impossible', String((e && e.message) || e));
+    $('mobile-state').textContent = 'echec';
+  } finally {
+    $('mobile-run').disabled = false;
+    majRapport();
+  }
+}
+
 /* -------------------------------------------------------------- le rapport */
 
 function majRapport() {
@@ -619,15 +741,61 @@ function majRapport() {
     }
   }
 
+  if (resultats.mobile) {
+    const r = resultats.mobile;
+    l.push('## V8 -- jeux mobiles Epic');
+    l.push(`Pays / langue              : ${r.pays} / ${r.langue}`);
+    l.push('### 1. freeGamesPromotions');
+    if (r.promo.ok) {
+      l.push(`HTTP ${r.promo.status}, ${r.promo.bytes} octets, ${r.promo.ms} ms -- ${r.promo.url}`);
+      for (const e of r.promo.elements) {
+        l.push(`  - ${e.title} | ${e.offerType} | gratuit maintenant : ${e.freeNow ? 'oui' : 'non'}, a venir : ${e.upcoming ? 'oui' : 'non'}`);
+        l.push(`    categories : ${e.categories.join(', ') || '--'}`);
+        l.push(`    attributs  : ${e.attributes.join(', ') || '--'} ; etiquettes : ${e.tags}`);
+        for (const h of e.mobile) l.push(`    MOBILE ${h.path} = ${h.value}`);
+      }
+    } else {
+      l.push(`echec : ${r.promo.error}${r.promo.shape ? ' -- forme : ' + r.promo.shape : ''}`);
+    }
+    l.push('### 2. filtre de plateforme');
+    for (const p of r.platforms) l.push(`  ${JSON.stringify(p)}`);
+    l.push('### 3. egs-platform-service (decouverte)');
+    for (const d of r.discover) {
+      l.push(`  ${d.platform} : ${d.ok ? 'HTTP ' + d.status + ', ' + d.bytes + ' octets' : 'echec ' + d.error} -- ${d.url}`);
+      if (d.debut) l.push(`    debut (pas du JSON) : ${JSON.stringify(d.debut)}`);
+      if (!d.summary) continue;
+      l.push(`    forme : ${d.summary.shape}`);
+      for (const t of d.summary.titled) l.push(`    titre ${t.path} = ${t.title} {${t.keys.join(', ')}}`);
+      for (const h of d.summary.free) l.push(`    gratuit ${h.path} = ${h.value}`);
+      for (const h of d.summary.mobile) l.push(`    mobile ${h.path} = ${h.value}`);
+    }
+    l.push('### 4. page des jeux gratuits');
+    const page = r.page || {};
+    if (page.ok) {
+      l.push(`HTTP ${page.status}, ${page.bytes} octets, titre « ${page.title} »`);
+      l.push(`  mobile : rendu ${page.matches && page.matches.motMobile ? 'oui' : 'non'}, source ${page.matchesRaw && page.matchesRaw.motMobile ? 'oui' : 'non'}`);
+      for (const [cle, lot] of Object.entries(page.samples || {})) {
+        l.push(`  -- echantillons ${cle} (${lot.length}) --`);
+        for (const e of lot) l.push(`     ${JSON.stringify(e)}`);
+      }
+    } else {
+      l.push(`echec : ${page.error}`);
+    }
+    const v = mobileVerdict(r);
+    l.push(`Verdict : ${v.title}. ${v.detail}`);
+    l.push('');
+  }
+
   $('report').value = l.join('\n');
-  const faites = (resultats.throttle ? 1 : 0) + (resultats.offscreen ? 1 : 0) + (resultats.sonde ? 1 : 0);
-  $('report-state').textContent = `${faites} / 3 mesures`;
+  const faites = (resultats.throttle ? 1 : 0) + (resultats.offscreen ? 1 : 0) + (resultats.sonde ? 1 : 0) + (resultats.mobile ? 1 : 0);
+  $('report-state').textContent = `${faites} / 4 mesures`;
 }
 
 /* --------------------------------------------------------------- cablage */
 
 $('throttle-run').addEventListener('click', lancerThrottling);
 $('sonde-run').addEventListener('click', lancerSonde);
+$('mobile-run').addEventListener('click', lancerMobile);
 $('throttle-stop').addEventListener('click', () => { if (mesureEnCours) mesureEnCours.nettoyer(); });
 $('offscreen-run').addEventListener('click', lancerOffscreen);
 $('report-copy').addEventListener('click', async () => {

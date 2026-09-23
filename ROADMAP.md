@@ -198,6 +198,25 @@ reste en place et la ligne `forme :` du rapport dit ou chercher.
 `platforms: { ... steam_deck_compat_category ... }`. Si `platforms` y manque,
 les pastilles Deck restent simplement absentes -- rien ne s'affiche a tort.
 
+## 5. Les jeux mobiles gratuits d'Epic
+
+*Pourquoi.* Epic offre aussi, chaque semaine, des jeux pour Android et iOS.
+L'extension ne les voit pas, et on ne sait pas ou Epic les expose. La
+capture de `freeGamesPromotions` du 2026-08-27 (12 offres) n'en contient
+aucune qui parle de mobile -- ce qui ne prouve rien, puisqu'elle a ete prise
+sans savoir qu'on chercherait ca.
+
+*Ce qu'il faut.* Diagnostics -> V8 « Jeux mobiles Epic » -> Lancer la mesure,
+un jour ou un jeu mobile est offert, puis Copier le rapport. Elle interroge
+quatre endroits, sans cookies et sans permission de plus : l'API deja lue, la
+meme filtree par `platform=android|ios`, l'API de decouverte de l'application
+mobile (`egs-platform-service`), et la page des jeux gratuits.
+
+*A quoi on reconnaitra que c'est fini.* Le verdict nomme l'endroit, le rapport
+nomme le champ -- et la source Epic apprend a les lire. Si Epic ne les expose
+nulle part hors de l'application, l'entree passe dans « Hors perimetre », avec
+le rapport pour preuve.
+
 ---
 
 ## Hors perimetre, et pourquoi

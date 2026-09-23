@@ -4,6 +4,39 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.56.0 -- 2026-09-23
+
+**Une mesure pour les jeux mobiles d'Epic (V8)**
+
+Epic offre aussi, chaque semaine, des jeux pour Android et iOS ; l'extension
+ne les voit pas, et on ne sait pas ou Epic les expose. Regle du depot : une
+hypothese se mesure avant de s'ecrire. La page Diagnostics gagne donc une
+mesure, V8, qui pose la question a quatre endroits, avec le pays et la
+langue choisis :
+
+1. `freeGamesPromotions`, l'API deja lue : une categorie, une etiquette ou
+   un attribut distingue-t-il une offre mobile ?
+2. la meme, avec `&platform=android` puis `&platform=ios` : la reponse
+   change-t-elle ?
+3. l'API de decouverte de l'application mobile, `egs-platform-service` --
+   sur un hote que le manifeste couvre deja (`*.epicgames.com`) ;
+4. la page des jeux gratuits : parle-t-elle de mobile, et dans quel bloc ?
+
+Tout est lu sans cookies : des offres publiques, rien du compte. Le verdict
+nomme l'endroit, le rapport nomme le champ (chemin et valeur) -- de quoi
+ecrire la source du premier coup. Une lecture qui echoue ne conclut rien : le
+verdict dit alors « a relancer », pas « Epic ne les expose pas ».
+
+L'analyse vit dans `watch/epic-mobile.js`, testee a part : sur la vraie
+capture du 2026-08-27, aucune des 12 offres ne parle de mobile ; les mots
+« automobile » ou « Studios » ne passent pas pour des indices.
+
+Verifie dans Chromium sur la vraie page : avec des reponses simulees (un jeu
+Android que seul le filtre fait apparaitre), le verdict le trouve ; sans
+reseau, il dit « Rien n'a pu etre lu ».
+
+1184 tests.
+
 ## 2.55.0 -- 2026-09-23
 
 **Le moteur parle la langue du lecteur, avec ses accents**

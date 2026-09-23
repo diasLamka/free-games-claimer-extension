@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
+| `epic-mobile.js` | la mesure V8 : ou Epic expose ses jeux mobiles gratuits -- elle resume, elle ne decide rien |
 | `engine-text.js` | les phrases du moteur : il envoie une cle et ses valeurs, le lanceur et le worker composent dans la langue du lecteur |
 | `self-update.js` | installee depuis un dossier : se recharge quand une version plus recente y arrive, jamais en pleine reclamation |
 | `annotations.js` | le backlog : etat, note, tirage au sort parmi ce qu'on veut essayer |
@@ -158,7 +159,7 @@ pages/                      les pages de l'extension, une paire .html / .js chac
   historique                  ce qui est passe, pris ou rate, et ce que cela valait
   journal                     le journal de la veille, 500 entrees persistees
   sentinel                    le mode repli : reessayer une source en panne, sous surveillance
-  diagnostics                 mesures V0-2, V0-3 et V6-V7
+  diagnostics                 mesures V0-2, V0-3, V6-V7 et V8 (jeux mobiles Epic)
   offscreen-html              lecture de HTML pour le service worker, qui n'a pas de DOM
   probe-offscreen             la sonde hors ecran des diagnostics
 content/                    ce qui s'injecte dans les pages de magasin

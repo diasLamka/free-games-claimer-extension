@@ -454,6 +454,52 @@
     </div>
   </section>
 
+  <section>
+    <div class="head">
+      <span class="tag">V8</span>
+      <h2>Jeux mobiles Epic</h2>
+      <span class="state" id="mobile-state">non mesure</span>
+    </div>
+    <div class="body">
+      <p class="lead">
+        Epic offre aussi, chaque semaine, des jeux pour Android et iOS. L'extension
+        ne les voit pas : on ne sait pas encore ou Epic les expose. Cette mesure le
+        demande a quatre endroits, avec votre pays et votre langue.
+      </p>
+      <p>
+        <b>1. L'API deja lue</b> (<code>freeGamesPromotions</code>) : une categorie,
+        une etiquette ou un attribut distingue-t-il une offre mobile ?
+        <b>2. La meme, filtree</b> par <code>platform=android</code> et
+        <code>platform=ios</code> : la reponse change-t-elle ?
+        <b>3. L'API de decouverte</b> de l'application mobile
+        (<code>egs-platform-service.store.epicgames.com</code>, deja couvert par le
+        manifeste) : repond-elle, et avec quoi ?
+        <b>4. La page des jeux gratuits</b> : parle-t-elle de mobile, et dans quel bloc ?
+      </p>
+      <p>
+        Tout est lu <b>sans vos cookies</b> : des offres publiques, rien de votre
+        compte. Le rapport recopie des titres et des categories de jeux, rien d'autre.
+        A lancer quand un jeu mobile est offert (Epic en offre un chaque semaine) ;
+        s'il n'y en a pas, la mesure le dira.
+      </p>
+
+      <div class="controls">
+        <button id="mobile-run">Lancer la mesure</button>
+      </div>
+
+      <div id="mobile-out" class="hidden">
+        <table>
+          <tr><th>API des jeux gratuits</th><td id="m-promo">--</td></tr>
+          <tr><th>Offres, et ce qui les distingue</th><td id="m-promo-liste">--</td></tr>
+          <tr><th>Filtre de plateforme</th><td id="m-plateformes">--</td></tr>
+          <tr><th>API de decouverte mobile</th><td id="m-decouverte">--</td></tr>
+          <tr><th>Page des jeux gratuits</th><td id="m-page">--</td></tr>
+        </table>
+        <div class="verdict" id="m-verdict"><b>--</b></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ---------------------------------------------------------- rapport -->
   <section>
     <div class="head">
