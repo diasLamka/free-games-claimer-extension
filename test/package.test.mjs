@@ -118,8 +118,8 @@ test('ni la documentation, ni le manifeste npm', () => {
 test('les artefacts ecrits hors du depot ne sont jamais atteignables', () => {
   const noms = [...nomsDansLeZip('chrome')];
 
-  /* Le build ecrit free-games-claimer.user.js et test.txt dans le dossier
-     PARENT du depot. Un chemin qui remonte signerait une fermeture qui a
+  /* Le build a longtemps ecrit le userscript dans le dossier PARENT du depot
+     (jusqu'a la 2.48.0). Un chemin qui remonte signerait une fermeture qui a
      suivi une reference vers l'exterieur. */
   const dehors = noms.filter((n) => n.startsWith('..') || n.includes('/../'));
   assert.deepEqual(dehors, [], 'aucun chemin hors du depot');

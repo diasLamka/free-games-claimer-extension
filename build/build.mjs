@@ -512,20 +512,15 @@ function stampManifest(file) {
 
 const banner = read(join(SRC, 'meta', 'banner.txt'))
   .replace(/v\d+\.\d+\.\d+/, 'v' + VERSION);
-const userscriptHeader = read(join(SRC, 'meta', 'userscript-header.txt'))
-  .replace(/(@version\s+)\S+/, `$1${VERSION}`);
 
-// userscript-header.txt s'arrete sur "// ==/UserScript==" : la ligne vide qui
-// le separait du bandeau est reinjectee ici.
 const contentScript = banner + code;
-const userscript = userscriptHeader + '\r\n' + banner + code;
 
+/* Un seul artefact depuis la 2.48.1 : le script de contenu de l'extension.
+   Le userscript Tampermonkey n'est plus produit -- l'extension fait tout ce
+   qu'il faisait, et les deux sur la meme page reclameraient deux fois. Le
+   build n'ecrit donc plus rien hors du depot (il deposait
+   ../free-games-claimer.user.js et ../test.txt dans le dossier parent). */
 writeFileSync(join(ROOT, 'content/free-games-claimer.js'), contentScript, 'latin1');
-// Les deux copies du userscript a la racine du lecteur restent synchronisees :
-// free-games-claimer.user.js est le nom canonique, test.txt le fichier
-// historiquement colle dans Tampermonkey.
-writeFileSync(join(ROOT, '..', 'free-games-claimer.user.js'), userscript, 'latin1');
-writeFileSync(join(ROOT, '..', 'test.txt'), userscript, 'latin1');
 
 const manifestsTouches = ['manifest.json', 'manifest.firefox.json'].filter(stampManifest);
 
@@ -654,7 +649,5 @@ writeFileSync(join(ROOT, 'lib/i18n-tables.js'), tablesJs, 'utf8');
 console.log(`version                        : ${VERSION}`);
 console.log(`modules                        : ${moduleNames.length}`);
 console.log(`free-games-claimer.js          : ${contentScript.length} octets`);
-console.log(`../free-games-claimer.user.js  : ${userscript.length} octets`);
-console.log(`../test.txt                    : ${userscript.length} octets`);
 if (manifestsTouches.length) console.log(`manifestes remis a jour        : ${manifestsTouches.join(', ')}`);
 console.log(`i18n-tables.js                 : ${LOCALES.length} locales, ${clesReference.size} cles`);

@@ -4,6 +4,21 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.48.1 -- 2026-09-23
+
+**Le userscript Tampermonkey n'est plus produit**
+
+L'extension fait tout ce qu'il faisait -- et davantage, puisque Tampermonkey
+n'a pas d'execution de fond. Garder les deux actifs sur la meme page les
+faisait reclamer chacun de leur cote.
+
+Le build n'ecrit donc plus rien hors du depot : il deposait
+`../free-games-claimer.user.js` et `../test.txt` dans le dossier PARENT a
+chaque passage. `src/meta/userscript-header.txt` est retire. Le moteur, lui,
+ne change pas d'un octet : il parle toujours l'API `GM_*`, que
+`content/gm-shim.js` lui fournit dans l'extension, et le controle au bit pres
+contre sa copie figee tient.
+
 ## 2.48.0 -- 2026-09-23
 
 **Une passe de securite, et un depot ou l'on se retrouve**

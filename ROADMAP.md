@@ -204,7 +204,7 @@ que ce soit ecrit une fois pour toutes.
 |---|---|
 | Reclamer sur Steam SANS le demander | Son contrat d'abonnement interdit les scripts pour interagir avec ses services (4.C), fermeture du compte sans preavis (4.D). Par defaut : detecte, affiche, mis a un clic -- jamais clique. Depuis la 2.22.0, l'utilisateur peut prendre ce risque lui-meme : une option coupee par defaut, activee seulement apres un avertissement qui cite le contrat (`watch/steam-claim.js`). |
 | itch.io | Le formulaire qui porte le lien de reclamation gratuite porte AUSSI le champ de prix et les boutons Stripe et PayPal. Le seul magasin ou un selecteur un peu large demarre un paiement dans une fenetre invisible. |
-| La veille dans le userscript | Tampermonkey n'a pas d'execution de fond. Le userscript garde la reclamation sur page ouverte, et rien de plus (design §3). |
+| Le userscript Tampermonkey | Plus produit depuis la 2.48.1. L'extension fait tout ce qu'il faisait, et Tampermonkey n'a pas d'execution de fond (design §3). Les deux actifs sur la meme page reclameraient deux fois. |
 | Un service commun entre utilisateurs | Non-objectif du design : aucune mise en commun de donnees, aucune dependance a un serveur propre. |
 | Contourner un captcha ou une limite de debit | Non-objectif. Un defi de securite rend la main a l'humain et remonte l'onglet dans sa fenetre (2.13.4). |
 | Prime Gaming (`gaming.amazon.com`) | **Mesure le 2026-09-17** : le domaine repond, mais sert l'application Luna -- titre « Amazon Luna Cloud Gaming », aucune mention de Prime Gaming, aucun bloc de donnees embarquees. Le commentaire du moteur disait vrai, et les reclamations Prime vivent deja sous `luna.amazon.*/claims`, que l'extension couvre. |

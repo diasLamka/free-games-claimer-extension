@@ -1,14 +1,16 @@
 # Free Games Auto-Claimer -- extension Chrome / Firefox
 
 Recuperation automatique des jeux gratuits sur Epic Games Store, GOG et Amazon
-Luna. L'extension et le userscript Tampermonkey partagent le meme moteur.
+Luna, et reperage sur Steam. Extension Chrome / Edge / Firefox (Manifest V3).
+Le userscript Tampermonkey d'origine n'est plus produit depuis la 2.48.1 : son
+moteur tourne desormais dans l'extension, par `content/gm-shim.js`.
 
 Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
 
 ## Le moteur est genere
 
-`content/free-games-claimer.js` et `../free-games-claimer.user.js` **ne s'editent pas a
-la main**. Ils sont produits a partir de `src/core/*.js` :
+`content/free-games-claimer.js` **ne s'edite pas a la main**. Il est produit a
+partir de `src/core/*.js` :
 
 ```
 npm run build     # regenere les artefacts
@@ -51,7 +53,7 @@ script en production :
 | Contrainte | Pourquoi |
 |---|---|
 | ASCII pur | Les libelles accentues passent par `\uXXXX`. v2.3.0, v2.5.0 et v2.7.0 ont chacune corrige un motif non accentue qui ne matchait plus rien sur l'interface francaise. |
-| Aucun template literal | Le linter integre de Tampermonkey ne lit pas les backticks (v2.1.0). |
+| Aucun template literal | Heritee du userscript : le linter de Tampermonkey ne lisait pas les backticks (v2.1.0). Gardee, parce que le moteur est verifie au bit pres contre sa copie figee. |
 | Fins de ligne CRLF | Convention du projet. |
 
 ## Tests
@@ -170,7 +172,7 @@ watch/                      la veille de fond, en ES modules (voir plus haut)
   sources/                    une source de decouverte par fichier
 src/                        les sources du moteur
   core/                       34 modules ES5, concatenes dans l'ordre des noms
-  meta/                       bandeau, en-tete userscript, tete v2.7.0 pour --verify
+  meta/                       bandeau du fichier genere, tete v2.7.0 pour --verify
 
 build/                      outils : build, controles, archives, apercu
   references/                 les temoins figes du moteur ; reference.json designe le courant
@@ -242,14 +244,17 @@ Les interrupteurs ecrivent les memes cles que le moteur (`FGC_epic_auto_mode`,
 `storage.onChanged` : un interrupteur bascule dans le popup est pris en compte
 immediatement par les onglets deja ouverts.
 
-## Differences avec Tampermonkey
+## Le moteur dans l'extension
 
-| Point | Tampermonkey | Extension |
-|---|---|---|
-| Commandes | menu de l'icone TM | popup, ou console : `FGC.menu()` puis `FGC.run(3)` |
-| Stockage | `GM_setValue` | `chrome.storage.local` (cles du moteur prechargees a l'injection) |
-| Notifications | natives TM | `chrome.notifications` (le clic n'est pas transmis) |
-| Mises a jour | `@updateURL` | manuelles, ou via le Web Store |
+Le moteur a ete ecrit pour Tampermonkey et parle encore l'API `GM_*` :
+`content/gm-shim.js` la lui fournit sur les API de l'extension.
+
+| Point | Dans l'extension |
+|---|---|
+| Commandes | le popup, ou la console de la page : `FGC.menu()` puis `FGC.run(3)` |
+| Stockage | `chrome.storage.local` (cles du moteur prechargees a l'injection) |
+| Notifications | `chrome.notifications` |
+| Mises a jour | par archive ou par le magasin d'extensions |
 
 ## Icone
 
