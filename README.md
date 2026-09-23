@@ -162,7 +162,7 @@ test/
   fake-chrome.mjs           faux chrome.* : storage, alarms, notifications
   fixtures/                 captures reelles des deux API
   *.test.mjs                tests unitaires (node --test)
-docs/superpowers/specs/     design de la veille, constats V0 et V6-V7
+docs/specs/                 design de la veille, constats V0 et V6-V7
 .github/workflows/          check.yml a chaque push, release.yml sur un tag
 store/                      fiches, permissions et confidentialite pour les magasins
 host/                       le programme de la passerelle locale, installe a la main

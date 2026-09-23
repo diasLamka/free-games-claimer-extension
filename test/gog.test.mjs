@@ -7,7 +7,7 @@
  * VALEURS de prix, de titre et de disponibilite changent d'un cas a l'autre ;
  * le schema, lui, est mesure.
  *
- * Voir docs/superpowers/specs/2026-09-17-v6-v7-constats.md.
+ * Voir docs/specs/2026-09-17-v6-v7-constats.md.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

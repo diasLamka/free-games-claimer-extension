@@ -12,7 +12,7 @@
  * manquaient : dire depuis quand, ne le dire qu'une fois, et savoir que c'est
  * fini.
  *
- * Conception : docs/superpowers/specs/2026-09-22-chien-de-garde-design.md
+ * Conception : docs/specs/2026-09-22-chien-de-garde-design.md
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

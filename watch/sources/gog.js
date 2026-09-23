@@ -10,7 +10,7 @@
  *
  *     /games/ajax/filtered?mediaType=game&price=free&sort=popularity
  *
- * Mesure du 2026-09-17 (voir docs/superpowers/specs/2026-09-17-v6-v7-constats.md) :
+ * Mesure du 2026-09-17 (voir docs/specs/2026-09-17-v6-v7-constats.md) :
  * l'adresse repond 200 en application/json, avec les cles `products`, `page`,
  * `totalPages`, `totalResults`. La meme requete SANS le filtre rend 7 591
  * octets de vrais produits -- l'endpoint n'est donc pas desaffecte, et une

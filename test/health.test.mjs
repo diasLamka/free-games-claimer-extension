@@ -6,7 +6,7 @@
  * l'absence de cycle. Il lui faut un point d'entree a lui, jouable sans rien
  * demarrer.
  *
- * Conception : docs/superpowers/specs/2026-09-22-chien-de-garde-design.md
+ * Conception : docs/specs/2026-09-22-chien-de-garde-design.md
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

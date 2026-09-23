@@ -5,14 +5,14 @@ quoi on reconnaitra que c'est fini. Il ne dit pas quand : rien n'est date, et
 l'ordre ci-dessous est un avis, pas un engagement.
 
 Le design de fond est ailleurs --
-`docs/superpowers/specs/2026-08-27-veille-jeux-gratuits-design.md`, qui decoupe
+`docs/specs/2026-08-27-veille-jeux-gratuits-design.md`, qui decoupe
 le travail en vagues V0 a V7. Six vagues et demie sont livrees ; ce qui suit
 est ce qu'il en reste, plus ce que les corrections des dernieres versions ont
 fait apparaitre.
 
 La premiere entree attend une mesure qu'on ne peut pas provoquer : il faut
 qu'un giveaway GOG tourne. Les quatre constats deja pris sont dans
-`docs/superpowers/specs/2026-09-17-v6-v7-constats.md`.
+`docs/specs/2026-09-17-v6-v7-constats.md`.
 
 Une regle du design vaut aussi ici, et c'est la plus utile : **une hypothese se
 mesure avant de s'ecrire** (§13). Chaque entree dit donc ce qu'il faut
@@ -22,7 +22,7 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 
 | Vague | Sujet | Etat |
 |---|---|---|
-| V0 | Verifications | livree -- `docs/superpowers/specs/2026-08-27-v0-constats.md` |
+| V0 | Verifications | livree -- `docs/specs/2026-08-27-v0-constats.md` |
 | V1 | Decoupage du moteur | livree -- `src/core/`, 34 modules, build reproductible au bit pres |
 | V2 | Veille en notification seule | livree -- `watch/`, 2.8.0 |
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |

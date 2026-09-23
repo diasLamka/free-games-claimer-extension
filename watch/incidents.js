@@ -15,7 +15,7 @@
  * plomberie est dans background.js -- et c'est la, pas dans le cycle, que le
  * detecteur de veille arretee doit tourner. Voir `isStalled`.
  *
- * Conception : docs/superpowers/specs/2026-09-22-chien-de-garde-design.md
+ * Conception : docs/specs/2026-09-22-chien-de-garde-design.md
  */
 import { alerts as canaryAlerts, alertLine } from './canary.js';
 import { failingSources } from './sentinel.js';

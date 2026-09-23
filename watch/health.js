@@ -14,7 +14,7 @@
  * `record`, et jusqu'au niveau de permission. C'est ce qui le rend jouable de
  * bout en bout dans les tests, comme le cycle.
  *
- * Conception : docs/superpowers/specs/2026-09-22-chien-de-garde-design.md
+ * Conception : docs/specs/2026-09-22-chien-de-garde-design.md
  */
 import { KEY_CANARY } from './canary.js';
 import { KEY_SESSIONS } from './session.js';
