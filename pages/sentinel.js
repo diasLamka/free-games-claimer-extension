@@ -10,14 +10,14 @@
  * apres trois echecs. Ce pouvoir ne vaut que pendant qu'un humain regarde,
  * d'ou le fait qu'il meurt avec l'onglet.
  */
-import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
+import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
 import {
   BEAT_PERIOD_MS,
   beatDelay,
   failingSources,
   recovered,
-} from './watch/sentinel.js';
-import { KEY_JOURNAL, sanitise } from './watch/journal.js';
+} from '../watch/sentinel.js';
+import { KEY_JOURNAL, sanitise } from '../watch/journal.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 

@@ -8,14 +8,14 @@
  * Elle se rafraichit sur `storage.onChanged` : pendant une importation, chaque
  * magasin apparait des qu'il est lu, sans sondage.
  */
-import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
-import { STORE_LABELS } from './watch/offer.js';
-import { KEY_LIBRARY } from './watch/library.js';
+import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { STORE_LABELS } from '../watch/offer.js';
+import { KEY_LIBRARY } from '../watch/library.js';
 import {
   KEY_ANNOTATIONS, STATUS, annotationKey, pickToTry, readAnnotation, setStatus,
-} from './watch/annotations.js';
-import { GAMES_ORIGIN, KEY_PLAYTIME, mirror } from './watch/playtime.js';
-import { BRIDGE_PERMISSION } from './watch/bridge.js';
+} from '../watch/annotations.js';
+import { GAMES_ORIGIN, KEY_PLAYTIME, mirror } from '../watch/playtime.js';
+import { BRIDGE_PERMISSION } from '../watch/bridge.js';
 import {
   KEY_COLLECTION,
   COLLECTION_STORES,
@@ -29,7 +29,7 @@ import {
   effectiveStatus,
   storePageUrl,
   launchUrl,
-} from './watch/collection.js';
+} from '../watch/collection.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 

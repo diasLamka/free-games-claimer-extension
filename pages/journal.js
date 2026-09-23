@@ -8,7 +8,7 @@
  * Elle se rafraichit sur `storage.onChanged` plutot qu'a intervalle : une
  * page ouverte pendant un cycle voit les lignes arriver, sans sonder.
  */
-import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
+import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
 import {
   KEY_JOURNAL,
   filterEntries,
@@ -16,7 +16,7 @@ import {
   sanitise,
   toText,
   journalFileName,
-} from './watch/journal.js';
+} from '../watch/journal.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 

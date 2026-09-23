@@ -26,9 +26,9 @@ constater d'abord. Une entree sans mesure est une entree qui n'est pas prete.
 | V1 | Decoupage du moteur | livree -- `src/core/`, 34 modules, build reproductible au bit pres |
 | V2 | Veille en notification seule | livree -- `watch/`, 2.8.0 |
 | V3 | Reclamation autonome | livree -- 2.9.1, invisible depuis 2.13.0 |
-| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`journal.html`) ; les quatre autres vues vivent dans le popup. Hors design, la **collection** a aussi sa page (2.21.0) |
+| V4 | Onglet dedie, journal persistant | **journal livre** en 2.14.0 (`pages/journal.html`) ; les quatre autres vues vivent dans le popup. Hors design, la **collection** a aussi sa page (2.21.0) |
 | V5 | Prediction, couche B | livree -- `watch/schedule/prediction.js`, bande 24 h dans le popup |
-| V6 | Sources HTML, mode repli | **livree** -- repli (`sentinel.html`), lecture HTML (`watch/offscreen.js`) et source GOG en propre (2.15.0) |
+| V6 | Sources HTML, mode repli | **livree** -- repli (`pages/sentinel.html`), lecture HTML (`watch/offscreen.js`) et source GOG en propre (2.15.0) |
 | V7 | Elargissement | **Prime Gaming mesure et ferme** le 2026-09-17 ; trois magasins reclamables, un quatrieme seulement detecte |
 
 ---
@@ -43,7 +43,7 @@ dans `CHANGELOG.md` :
   classement se fait par elimination -- reconnaitre la forme d'un echec de
   selecteur aurait rate les trois derniers.
 - **Le journal persistant.** 500 entrees qui survivent a la mort du service
-  worker, lisibles et exportables depuis `journal.html`.
+  worker, lisibles et exportables depuis `pages/journal.html`.
 - **Les codes qui survivent a la desinstallation.** Reglage coupe par defaut,
   les codes seuls, coupes par les plus anciens quand le lot deborde.
 - **Ne pas ouvrir un onglet pour un jeu deja acquis.** Le filtre lit enfin le
@@ -54,7 +54,7 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
 ## Livre depuis
 
 - **Le mode repli sentinelle** (design §10). Apres trois echecs consecutifs
-  d'une source, `sentinel.html` la reessaie sur une horloge fiable, en passant
+  d'une source, `pages/sentinel.html` la reessaie sur une horloge fiable, en passant
   outre le recul qui l'endort des heures -- le seul pouvoir du repli, et il ne
   vaut que pendant qu'un humain regarde. Il ne devient jamais le mode par
   defaut : son battement perime en trois minutes, et rien de ce qu'il laisse ne
@@ -133,7 +133,7 @@ tournait lors des quatre mesures du 2026-09-17 -- ni element de classe
 etre observe.
 
 *Ce qu'il faut pour le fermer.* Une seule mesure, prise pendant qu'un giveaway
-tourne : `diagnostics.html`, section V6-V7. Les echantillons de structure
+tourne : `pages/diagnostics.html`, section V6-V7. Les echantillons de structure
 diront alors ou il vit, et la source l'ajoutera en second signal. D'ici la,
 l'agregateur le voit, et le journal dit lequel des deux a parle.
 

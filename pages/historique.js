@@ -10,17 +10,17 @@
  * quelque chose, parce qu'un taux de capture qui s'effondre a toujours une
  * cause qu'on peut corriger.
  */
-import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
-import { STORE_LABELS } from './watch/offer.js';
-import { KEY_OUTCOMES, OUTCOMES } from './watch/outcomes.js';
-import { KEY_LIBRARY } from './watch/library.js';
-import { KEY_RATES } from './watch/rates.js';
-import { worthLabel, sumWorths } from './money.js';
-import { normaliseTitle, displayTitle } from './watch/offer.js';
-import { recurrenceIndex, recurring } from './watch/recurrence.js';
+import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { STORE_LABELS } from '../watch/offer.js';
+import { KEY_OUTCOMES, OUTCOMES } from '../watch/outcomes.js';
+import { KEY_LIBRARY } from '../watch/library.js';
+import { KEY_RATES } from '../watch/rates.js';
+import { worthLabel, sumWorths } from '../lib/money.js';
+import { normaliseTitle, displayTitle } from '../watch/offer.js';
+import { recurrenceIndex, recurring } from '../watch/recurrence.js';
 import {
   byMonth, filterHistory, historyRows, summariseHistory,
-} from './watch/history.js';
+} from '../watch/history.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 

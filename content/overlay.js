@@ -18,6 +18,14 @@
  *  3. AUCUNE ECRITURE, AUCUN CLIC. Ce script LIT, et affiche. Il ne reclame
  *     rien, ne remplit aucun formulaire, ne touche a rien de la page.
  *
+ *  4. RIEN DE LISIBLE PAR LA PAGE (2.48.0). Le bandeau dit ce que vous
+ *     possedez AILLEURS -- « deja a vous sur GOG depuis mars » -- et il vivait
+ *     dans le DOM ordinaire de la page : les scripts d'Epic, de Steam ou de
+ *     GOG, et les outils d'enregistrement de session qu'ils embarquent,
+ *     pouvaient le lire. Il vit desormais dans une racine d'ombre FERMEE, que
+ *     le monde de la page ne peut pas ouvrir. La page voit qu'un element
+ *     existe ; elle ne voit pas ce qu'il dit.
+ *
  * Il est volontairement separe du moteur : celui-ci agit, celui-ci informe, et
  * les deux n'ont pas les memes droits.
  */
@@ -25,7 +33,10 @@
   'use strict';
 
   var api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
-  var MARQUE = 'fgc-overlay';
+
+  /* L'element pose dans la page, et rien d'autre : pas d'identifiant qu'un
+     script de la page puisse chercher. Garde ici pour pouvoir le retirer. */
+  var hote = null;
 
   /* ------------------------------------------------------------ le titre */
 
@@ -106,21 +117,25 @@
   }
 
   function render(faits) {
-    var ancien = document.getElementById(MARQUE);
-    if (ancien) ancien.remove();
+    if (hote) { hote.remove(); hote = null; }
 
     // Regle 2 : rien quand il n'y a rien a dire.
     if (!faits || !faits.length) return;
 
+    /* Regle 4 : le texte vit dans une racine FERMEE. Sans `attachShadow`
+       (navigateur trop ancien), on se tait plutot que d'exposer. */
+    if (typeof document.body.attachShadow !== 'function') return;
+    hote = document.createElement('div');
+    hote.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483000';
+    var racine = hote.attachShadow({ mode: 'closed' });
+
     var boite = el('div');
-    boite.id = MARQUE;
     boite.setAttribute('role', 'note');
 
     /* Le style est pose par propriete, pas par feuille : injecter une feuille
        dans une page tierce peut en modifier le rendu, et ce script n'a le
        droit de rien casser. */
     boite.style.cssText = [
-      'position:fixed', 'right:16px', 'bottom:16px', 'z-index:2147483000',
       'max-width:320px', 'padding:10px 12px', 'border-radius:10px',
       'background:#14101F', 'color:#EDE9F5', 'border:1px solid #2E2745',
       'font:13px/1.45 system-ui,sans-serif', 'box-shadow:0 6px 24px rgba(0,0,0,.35)',
@@ -140,10 +155,11 @@
        et il ne revient pas avant le prochain chargement. */
     var fermer = el('button', null, 'Fermer');
     fermer.style.cssText = 'margin-top:8px;background:none;border:0;color:#9A90B8;cursor:pointer;padding:0;font:inherit';
-    fermer.addEventListener('click', function () { boite.remove(); });
+    fermer.addEventListener('click', function () { if (hote) { hote.remove(); hote = null; } });
     boite.append(fermer);
 
-    document.body.append(boite);
+    racine.append(boite);
+    document.body.append(hote);
   }
 
   /* ------------------------------------------------------------ la demande */

@@ -66,14 +66,14 @@ signature AMO qui rend l'installation permanente, et c'est la vraie raison de
 passer par ce magasin plutot que par une archive distribuee a la main.
 
 **Un point propre a AMO, a ne pas decouvrir pendant la relecture.** Le moteur
-livre, `free-games-claimer.js`, est **genere** : il est produit par
+livre, `content/free-games-claimer.js`, est **genere** : il est produit par
 concatenation des 34 modules de `src/core`. AMO exige la source et les
 instructions de construction de tout code genere. Le formulaire « Source
 code » attend donc une archive du depot et ces trois lignes :
 
 ```
 Node.js 22 ou superieur, aucune dependance a installer.
-  npm run build     regenere free-games-claimer.js depuis src/core/*.js
+  npm run build     regenere content/free-games-claimer.js depuis src/core/*.js
   npm run check     verifie que la reconstruction est identique au bit pres
 ```
 

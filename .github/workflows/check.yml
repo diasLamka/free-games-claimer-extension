@@ -2,7 +2,7 @@
 #
 # `npm run check` fait trois choses, et la premiere est la seule qui compte
 # ici : elle reconstruit le moteur a partir de src/core et compare le SHA256 au
-# temoin fige de build/reference.json. Une divergence involontaire est
+# temoin fige de build/references/reference.json. Une divergence involontaire est
 # invisible a l'oeil nu -- d'ou ce workflow.
 #
 # Aucune dependance a installer : package.json n'en declare aucune, il n'y a
@@ -18,6 +18,11 @@ on:
   push:
     branches: ['**']
   workflow_dispatch:
+
+# Lire le depot, rien de plus. Le jeton par defaut peut etre en ecriture selon
+# les reglages du depot ; un controle n'a aucune raison de pouvoir pousser.
+permissions:
+  contents: read
 
 jobs:
   check:

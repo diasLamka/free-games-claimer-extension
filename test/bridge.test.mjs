@@ -13,7 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -160,6 +160,31 @@ test('l\'hote rassemble un message arrive en plusieurs morceaux', () => {
 
   assert.equal(JSON.parse(readFileSync(sortie, 'utf8')).claimed.length, 400);
   rmSync(sortie);
+});
+
+test('l\'hote ignore les arguments que Chrome lui passe (2.48.0)', () => {
+  /* Chrome donne toujours l'origine de l'appelant en premier argument, et
+     `--parent-window=` sous Windows. Jusqu'a la 2.47.0, l'hote prenait
+     l'origine pour son chemin de sortie : l'ecriture echouait a chaque envoi. */
+  const sortie = join(tmpdir(), `fgc-bridge-test-origine-${PROTOCOL_VERSION}.json`);
+  try { rmSync(sortie); } catch { /* absent */ }
+  const instantane = makeSnapshot({ now: T, library: {} });
+
+  const reponse = execFileSync(process.execPath, [HOTE, 'chrome-extension://abcdefghijklmnop/', '--parent-window=0', sortie], {
+    input: Buffer.from(encodeMessage(instantane)),
+  });
+  assert.equal(JSON.parse(readFileSync(sortie, 'utf8')).protocol, PROTOCOL_VERSION);
+  assert.equal(decodeMessages(new Uint8Array(reponse)).messages[0].ok, true);
+  rmSync(sortie);
+
+  // Sans chemin, l'origine seule ne remplace pas la sortie par defaut.
+  const maison = mkdtempSync(join(tmpdir(), 'fgc-maison-'));
+  execFileSync(process.execPath, [HOTE, 'chrome-extension://abcdefghijklmnop/'], {
+    input: Buffer.from(encodeMessage(instantane)),
+    env: { ...process.env, HOME: maison, USERPROFILE: maison },
+  });
+  assert.equal(JSON.parse(readFileSync(join(maison, 'free-games-claimer-snapshot.json'), 'utf8')).protocol, PROTOCOL_VERSION);
+  rmSync(maison, { recursive: true });
 });
 
 /* ------------------------------------------------------------- les noms */

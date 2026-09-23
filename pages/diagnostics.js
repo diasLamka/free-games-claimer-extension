@@ -7,7 +7,7 @@
  * est ouvert -- a condition de rester au premier plan, sinon Chrome la bride
  * exactement comme la cible qu'elle mesure.
  */
-import { queryHtml } from './watch/offscreen.js';
+import { queryHtml } from '../watch/offscreen.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -271,7 +271,7 @@ async function lancerOffscreen() {
   try {
     try { await api.offscreen.closeDocument(); } catch (e) { /* aucun document ouvert */ }
     await api.offscreen.createDocument({
-      url: 'probe-offscreen.html',
+      url: 'pages/probe-offscreen.html',
       reasons: ['DOM_PARSER'],
       justification: 'Analyser le HTML des pages de magasin pour la veille des offres gratuites.',
     });

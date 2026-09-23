@@ -16,35 +16,35 @@
  *     everywhere; the build refuses a key that does not exist in both locales,
  *     which is the only way a missing translation shows up before shipping.
  */
-import { t, translateDocument, setLocale, intlLocale } from './i18n.js';
-import { STORE_LABELS, STORES, normaliseTitle, displayTitle } from './watch/offer.js';
+import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { STORE_LABELS, STORES, normaliseTitle, displayTitle } from '../watch/offer.js';
 import {
   preview, judge, REASONS, readWorth,
-} from './watch/filters.js';
-import { KEY_RATES, toBase, baseOf } from './watch/rates.js';
-import { money, worthLabel as worthLabelIn } from './money.js';
-import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from './watch/locale.js';
-import { claimsMade, tally, mainStore, buildExport, exportFileName, alreadyYours } from './watch/tally.js';
-import { band24h, isTrustworthy } from './watch/schedule/prediction.js';
-import { claimableStoresFor } from './watch/sources/index.js';
-import { DEFAULT_SETTINGS } from './watch/storage.js';
+} from '../watch/filters.js';
+import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
+import { money, worthLabel as worthLabelIn } from '../lib/money.js';
+import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from '../watch/locale.js';
+import { claimsMade, tally, mainStore, buildExport, exportFileName, alreadyYours } from '../watch/tally.js';
+import { band24h, isTrustworthy } from '../watch/schedule/prediction.js';
+import { claimableStoresFor } from '../watch/sources/index.js';
+import { DEFAULT_SETTINGS } from '../watch/storage.js';
 
-import { KEY_LIBRARY, ownedTitles, ownedKeys } from './watch/library.js';
-import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from './watch/collection.js';
-import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from './watch/calendar.js';
-import { KEY_CANARY, alerts as canaryAlerts } from './watch/canary.js';
-import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from './watch/incidents.js';
-import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from './watch/wishlist.js';
-import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from './watch/codes.js';
-import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from './watch/permissions.js';
-import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from './watch/phone.js';
-import { KEY_TAUGHT, SURFACES, wouldAccept } from './watch/teaching.js';
-import { KEY_SYNC_CODES } from './watch/backup.js';
-import { readLibraryMirror } from './watch/library-sync.js';
-import { failingSources, reasonText } from './watch/sentinel.js';
+import { KEY_LIBRARY, ownedTitles, ownedKeys } from '../watch/library.js';
+import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from '../watch/collection.js';
+import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from '../watch/calendar.js';
+import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
+import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from '../watch/wishlist.js';
+import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from '../watch/codes.js';
+import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
+import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
+import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
+import { KEY_SYNC_CODES } from '../watch/backup.js';
+import { readLibraryMirror } from '../watch/library-sync.js';
+import { failingSources, reasonText } from '../watch/sentinel.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
-} from './watch/session.js';
+} from '../watch/session.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -1460,7 +1460,7 @@ function renderHealth(all) {
      ne repare pas. Ce qui s'est passe avant l'arret y est ecrit, et c'est cela
      qu'il faut lire. */
   const voir = el('button', null, t('openJournal'));
-  voir.addEventListener('click', () => openTab(api.runtime.getURL('journal.html')));
+  voir.addEventListener('click', () => openTab(api.runtime.getURL('pages/journal.html')));
   host.append(voir);
 }
 
@@ -1483,7 +1483,7 @@ function renderFallback(all) {
   tete.append(el('span', 'canary-store', t('sentinelBanner', casse.map((s) => s.name).join(', '))));
 
   const ouvrir = el('button', 'link', t('openSentinel'));
-  ouvrir.addEventListener('click', () => openTab(api.runtime.getURL('sentinel.html')));
+  ouvrir.addEventListener('click', () => openTab(api.runtime.getURL('pages/sentinel.html')));
   tete.append(ouvrir);
   bloc.append(tete);
 
@@ -2417,7 +2417,12 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
     // Un fichier choisi a la main reste une entree non fiable : un tableau ou
     // une chaine a la place d'un objet corromprait les reglages du worker.
     if (isPlainObject(data.filters)) await setValue(KEY_FILTERS, data.filters);
-    if (isPlainObject(data.settings)) await setValue(KEY_SETTINGS, data.settings);
+    /* Sauf la recuperation Steam : elle ne s'active qu'apres l'avertissement
+       qui cite le contrat Steam, et un fichier n'a pas le droit de sauter
+       cette etape a la place de l'utilisateur. Le reglage en place est garde. */
+    if (isPlainObject(data.settings)) {
+      await setValue(KEY_SETTINGS, { ...data.settings, steamAutoClaim: behaviourCache.steamAutoClaim === true });
+    }
 
     say(added.length ? t('importRestored', String(added.length)) : t('importNoNew'));
     await load();
@@ -2449,7 +2454,7 @@ document.getElementById('resume').addEventListener('click', async () => {
 
 document.getElementById('open-collection').addEventListener('click', (e) => {
   e.preventDefault();
-  openTab(api.runtime.getURL('collection.html'));
+  openTab(api.runtime.getURL('pages/collection.html'));
 });
 
 /* --- the watch log, on its own page: 500 lines do not fit in 328 px */
@@ -2486,17 +2491,17 @@ document.getElementById('codes-add').addEventListener('click', async () => {
   zone.value = '';
 });
 
-document.getElementById('open-history').addEventListener('click', () => openTab(api.runtime.getURL('historique.html')));
+document.getElementById('open-history').addEventListener('click', () => openTab(api.runtime.getURL('pages/historique.html')));
 document.getElementById('open-journal').addEventListener('click', (e) => {
   e.preventDefault();
-  openTab(api.runtime.getURL('journal.html'));
+  openTab(api.runtime.getURL('pages/journal.html'));
 });
 
 /* --- diagnostics stays in the foreground during its measurements */
 
 document.getElementById('open-diagnostics').addEventListener('click', (e) => {
   e.preventDefault();
-  openTab(api.runtime.getURL('diagnostics.html'));
+  openTab(api.runtime.getURL('pages/diagnostics.html'));
 });
 
 /* --- tabs and keyboard */

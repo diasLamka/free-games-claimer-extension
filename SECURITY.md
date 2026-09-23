@@ -18,7 +18,7 @@ lire.
 | Espace | Cles | Contenu |
 |---|---|---|
 | Veille | `veille:*` (27 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi) |
-| Moteur | `FGC_*` (`gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
+| Moteur | `FGC_*` (`content/gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
 fermeture du navigateur : le verrou de cycle, les liens de notification, et la
@@ -110,11 +110,20 @@ GamerPower. A chaque ouverture, ces CDN recoivent votre adresse IP et savent
 quels jeux vous sont presentes. Ce n'est pas une requete de l'extension, c'est
 un `<img>` -- mais l'effet est le meme, et il vaut d'etre dit.
 
+### Ce que la page d'un magasin peut voir
+
+Sur une fiche Epic, GOG ou Steam, la surcouche (`content/overlay.js`) affiche ce
+que l'extension sait du jeu -- dont ce que vous possedez sur les AUTRES
+magasins. Jusqu'a la 2.47.0 ce bandeau vivait dans le DOM ordinaire de la
+page : les scripts du magasin, et les outils d'enregistrement de session
+qu'il embarque, pouvaient le lire. Depuis la 2.48.0 il vit dans une racine
+d'ombre **fermee** : la page voit qu'un element existe, pas ce qu'il dit.
+
 ## Ce que l'extension ne fait pas
 
 - **Aucune telemetrie.** Pas d'identifiant d'installation, pas de rapport
   d'erreur distant, pas de ping de demarrage. Les erreurs vont dans le journal
-  local (`journal.html`) et nulle part ailleurs.
+  local (`pages/journal.html`) et nulle part ailleurs.
 - **Aucun serveur.** C'est un non-objectif ecrit du design : « mettre en commun
   des donnees entre utilisateurs, ou dependre d'un serveur propre ».
 - **Aucun mot de passe, aucun jeton d'authentification, aucun cookie stocke.**

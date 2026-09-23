@@ -23,8 +23,18 @@ import { homedir } from 'node:os';
 
 /* La sortie par defaut : un fichier dans le dossier personnel. Un chemin
    passe en argument le remplace, ce qui permet a chacun de le poser la ou son
-   lanceur de jeux ira le lire. */
-const SORTIE = process.argv[2] || join(homedir(), 'free-games-claimer-snapshot.json');
+   lanceur de jeux ira le lire.
+
+   LE NAVIGATEUR PASSE SES PROPRES ARGUMENTS, et c'etait le piege jusqu'a la
+   2.47.0. Chrome donne TOUJOURS l'origine de l'appelant en premier
+   (`chrome-extension://ID/`), et sous Windows `--parent-window=...` ensuite.
+   Avec le lanceur `.bat ... %*` de host/README.md, l'origine etait prise pour
+   un chemin : l'ecriture echouait a chaque envoi, et le fichier n'est jamais
+   arrive. On ne retient donc que ce qui ressemble a un chemin -- ni une
+   adresse a schema, ni une option. */
+const EST_ADRESSE = /^[a-z][a-z0-9+.-]*:\/\//i;
+const choisi = process.argv.slice(2).find((a) => a && !EST_ADRESSE.test(a) && !a.startsWith('--'));
+const SORTIE = choisi || join(homedir(), 'free-games-claimer-snapshot.json');
 
 /* --- cadrage : quatre octets de longueur, boutisme natif, puis du JSON --- */
 

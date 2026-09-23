@@ -61,7 +61,7 @@ import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
-import { t } from './i18n.js';
+import { t } from './lib/i18n.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -206,7 +206,7 @@ async function showNotice({ id, title, message, url = null, kind = null, catalog
   try {
     await rememberNotification(api, id, { url, catalogKey, kind });
 
-    const base = { type: 'basic', iconUrl: 'icon128.png', title, message };
+    const base = { type: 'basic', iconUrl: 'icons/icon128.png', title, message };
     const boutons = buttonsFor(kind).map((b) => ({ title: t(b.label) }));
 
     if (!boutons.length) {
@@ -244,7 +244,7 @@ async function runNoticeAction(id, index) {
   if (!action) return;
 
   if (action === ACTIONS.JOURNAL) {
-    await api.tabs.create({ url: api.runtime.getURL('journal.html'), active: true });
+    await api.tabs.create({ url: api.runtime.getURL('pages/journal.html'), active: true });
     return;
   }
   if (!retenu.catalogKey) return;
@@ -298,7 +298,7 @@ async function inspectHealth(now) {
     notify: async ({ id, title, message }) => {
       await api.notifications.create(id, {
         type: 'basic',
-        iconUrl: 'icon128.png',
+        iconUrl: 'icons/icon128.png',
         title,
         message,
       });
@@ -717,8 +717,8 @@ api.notifications.onClicked.addListener((id) => {
   // Mener a l'offre, jamais a une page d'accueil : c'est tout l'interet du
   // clic. Le popup reste le repli quand on ne sait pas ou aller.
   readNotificationLink(api, id)
-    .then((url) => api.tabs.create({ url: url || api.runtime.getURL('popup.html'), active: true }))
-    .catch(() => api.tabs.create({ url: api.runtime.getURL('popup.html'), active: true }))
+    .then((url) => api.tabs.create({ url: url || api.runtime.getURL('pages/popup.html'), active: true }))
+    .catch(() => api.tabs.create({ url: api.runtime.getURL('pages/popup.html'), active: true }))
     .catch((e) => record('warn', 'ouverture depuis la notification impossible', e));
   api.notifications.clear(id).catch(() => { /* deja fermee */ });
 });
@@ -793,7 +793,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg.type === 'fgc-notify') {
     // create() rend une promesse : le try/catch d'origine ne voyait jamais son rejet.
     api.notifications.create('', {
-      type: 'basic', iconUrl: 'icon128.png', title: String(msg.title || ''), message: String(msg.text || ''),
+      type: 'basic', iconUrl: 'icons/icon128.png', title: String(msg.title || ''), message: String(msg.text || ''),
     }).catch((e) => record('warn', 'notification impossible', e));
     return;
   }

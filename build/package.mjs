@@ -36,13 +36,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
  * l'empaquetage si une page du depot n'est jointe par personne.
  */
 const PAGES_A_L_EXECUTION = Object.freeze([
-  'journal.html',
-  'collection.html',
-  'sentinel.html',
-  'diagnostics.html',
-  'historique.html',
-  'offscreen-html.html',
-  'probe-offscreen.html',
+  'pages/journal.html',
+  'pages/collection.html',
+  'pages/sentinel.html',
+  'pages/diagnostics.html',
+  'pages/historique.html',
+  'pages/offscreen-html.html',
+  'pages/probe-offscreen.html',
 ]);
 
 /** Les manifestes, par variante. La cle est le nom DANS l'archive. */

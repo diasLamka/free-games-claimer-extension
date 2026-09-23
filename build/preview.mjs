@@ -182,7 +182,7 @@ export function createPreviewServer({ root = ROOT, data = {}, lang = 'fr' } = {}
 
     const { pathname } = new URL(req.url, 'http://127.0.0.1');
     if (pathname === STUB_PATH) { send(200, TYPES['.js'], stub); return; }
-    if (pathname === '/') { res.writeHead(302, { location: '/popup.html' }); res.end(); return; }
+    if (pathname === '/') { res.writeHead(302, { location: '/pages/popup.html' }); res.end(); return; }
 
     const file = resolveInside(root, pathname);
     if (!file || !existsSync(file) || statSync(file).isDirectory()) { send(404, 'text/plain', '404'); return; }
@@ -226,8 +226,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const args = parseArgs(process.argv.slice(2));
   const { data, from } = loadData(args);
   createPreviewServer({ data, lang: args.lang }).listen(args.port, '127.0.0.1', () => {
-    console.log(`apercu : http://127.0.0.1:${args.port}/popup.html`);
+    console.log(`apercu : http://127.0.0.1:${args.port}/pages/popup.html`);
     console.log(`donnees : ${from}, ${Object.keys(data).length} cle(s)`);
-    console.log('aussi : /collection.html, /historique.html, /journal.html -- Ctrl+C pour arreter');
+    console.log('aussi : /pages/collection.html, /pages/historique.html, /pages/journal.html -- Ctrl+C pour arreter');
   });
 }

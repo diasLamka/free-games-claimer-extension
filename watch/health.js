@@ -26,7 +26,7 @@ import { STORE_LABELS } from './offer.js';
 import { ALERTS, badgeState, decideAlert } from './notify-policy.js';
 import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
-import { t } from '../i18n.js';
+import { t } from '../lib/i18n.js';
 
 /**
  * Regarde, dit une fois, peint le badge.

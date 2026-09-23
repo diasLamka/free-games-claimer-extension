@@ -4,6 +4,70 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.48.0 -- 2026-09-23
+
+**Une passe de securite, et un depot ou l'on se retrouve**
+
+### Ce que la page d'un magasin pouvait lire
+
+La surcouche des fiches Epic, GOG et Steam affichait ce que vous possedez
+AILLEURS -- « deja a vous sur GOG depuis mars », « deja offert, et manque » --
+dans le DOM ordinaire de la page. Les scripts du magasin, et les outils
+d'enregistrement de session qu'il embarque, pouvaient le lire. Le bandeau vit
+maintenant dans une racine d'ombre FERMEE, sans identifiant a chercher : la
+page voit un element vide. Verifie dans Chromium : `innerText`, `innerHTML` et
+`shadowRoot` ne rendent rien du contenu.
+
+### La passerelle locale n'a jamais ecrit son fichier
+
+Chrome passe TOUJOURS l'origine de l'appelant (`chrome-extension://ID/`) en
+premier argument a un programme de messagerie native, et `--parent-window=`
+sous Windows. `host/fgc-host.mjs` prenait ce premier argument pour son chemin
+de sortie : avec le lanceur `.bat ... %*` de host/README.md, l'ecriture
+echouait a chaque envoi. L'hote ne retient plus que ce qui ressemble a un
+chemin. Le test qui le prouve echoue sur l'ancien hote.
+
+### Un fichier de reglages ne saute plus l'avertissement Steam
+
+Importer une sauvegarde pouvait activer la recuperation Steam sans passer par
+l'avertissement qui cite le contrat Steam. Le reglage en place est garde ;
+seul l'avertissement l'active.
+
+### Le controle en integration continue ne peut plus ecrire
+
+`check.yml` declare `permissions: contents: read`. Selon les reglages du
+depot, le jeton par defaut pouvait etre en ecriture ; un controle n'a aucune
+raison de pouvoir pousser.
+
+### Le depot range
+
+La racine portait quarante entrees. Elle n'a plus que ce que les navigateurs
+exigent d'y trouver, et les documents :
+
+| Dossier | Contenu |
+|---|---|
+| `pages/` | les huit pages de l'extension, une paire .html / .js chacune |
+| `content/` | ce qui s'injecte dans les magasins : le moteur genere, `gm-shim.js`, `overlay.js` |
+| `lib/` | partage par les pages, le worker et la veille : traduction, montants |
+| `icons/` | `icon.svg` et ses quatre PNG |
+| `build/references/` | les temoins figes du moteur, a part des outils |
+
+Deplacements par `git mv` : l'historique de chaque fichier suit. Verifie de
+trois facons : les garde-fous du build (chaque chemin cite par un manifeste,
+une page ou un import existe), les deux archives decompressees -- 81 fichiers,
+aucun chemin casse, `getURL` compris --, et les six pages ouvertes dans
+Chromium depuis `pages/`, sans erreur ni image cassee.
+
+### Aussi
+
+- La cle de traduction `mirrorLine`, que plus rien ne citait, est retiree : le
+  build ne l'annonce plus a chaque passage.
+- `store/permissions.md` citait `api.frankfurter.app` ; le manifeste declare
+  `api.frankfurter.dev` depuis la 2.40.1. C'est ce texte qu'on recopie dans la
+  console du Chrome Web Store.
+
+1096 tests.
+
 ## 2.47.0 -- 2026-09-23
 
 **Ce qui demande un humain arrive sur le telephone**

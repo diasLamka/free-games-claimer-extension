@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BUNDLE = join(ROOT, 'free-games-claimer.js');
+const BUNDLE = join(ROOT, 'content/free-games-claimer.js');
 
 const noop = () => {};
 
@@ -161,7 +161,7 @@ export function loadEngine(options = {}) {
   sandbox.globalThis = sandbox;
 
   vm.createContext(sandbox);
-  vm.runInContext(readFileSync(BUNDLE, 'latin1'), sandbox, { filename: 'free-games-claimer.js' });
+  vm.runInContext(readFileSync(BUNDLE, 'latin1'), sandbox, { filename: 'content/free-games-claimer.js' });
 
   if (!sandbox.__FGC__) {
     throw new Error('__FGC__ absent : le hook de test ne s\'est pas execute (garde d\'iframe ?)');

@@ -60,14 +60,14 @@ const fichiers = [
   ...lister(join(ROOT, 'watch')),
   ...lister(join(ROOT, 'test')).filter((p) => /\.mjs$/.test(p)),
   join(ROOT, 'background.js'),
-  join(ROOT, 'diagnostics.js'),
+  join(ROOT, 'pages/diagnostics.js'),
   /* popup.js n'est ici que pour la premiere passe corrective, ou il portait
      encore quelques noms issus de la table. Il est ecrit en anglais des le
      depart, et il garde des replis DELIBERES vers les anciens noms de champs
      (`w.start ?? w.debut`) pour le cas ou il s'ouvre avant que le service
      worker n'ait migre le stockage. Renommer ces replis les replierait sur
      eux-memes, ce qui les supprimerait en silence. */
-  ...(NOM_TABLE === 'PASSE_2' ? [join(ROOT, 'popup.js')] : []),
+  ...(NOM_TABLE === 'PASSE_2' ? [join(ROOT, 'pages/popup.js')] : []),
 ];
 
 /* --- garde-fous ------------------------------------------------------------- */

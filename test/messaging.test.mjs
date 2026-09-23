@@ -26,11 +26,11 @@ const BASE = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop/';
 
 test('l\'URL tranche avant l\'onglet : une page d\'extension en a un aussi', () => {
   // Le popup : pas d'onglet du tout.
-  assert.equal(senderKind({ url: BASE + 'popup.html' }, BASE), 'page');
+  assert.equal(senderKind({ url: BASE + 'pages/popup.html' }, BASE), 'page');
   // Le journal : une page de l'extension, mais dans un onglet. C'est le cas
   // qui casserait une detection fondee sur la seule presence de sender.tab.
-  assert.equal(senderKind({ url: BASE + 'journal.html', tab: { id: 7 } }, BASE), 'page');
-  assert.equal(senderKind({ url: BASE + 'collection.html', tab: { id: 8 } }, BASE), 'page');
+  assert.equal(senderKind({ url: BASE + 'pages/journal.html', tab: { id: 7 } }, BASE), 'page');
+  assert.equal(senderKind({ url: BASE + 'pages/collection.html', tab: { id: 8 } }, BASE), 'page');
 
   // Un script de contenu : un onglet, et une URL de magasin.
   assert.equal(senderKind({ url: 'https://store.epicgames.com/p/x', tab: { id: 9 } }, BASE), 'content');

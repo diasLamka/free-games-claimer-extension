@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.47.0",
+  "version": "2.48.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -77,8 +77,8 @@
         "https://gaming.amazon.com/*"
       ],
       "js": [
-        "gm-shim.js",
-        "free-games-claimer.js"
+        "content/gm-shim.js",
+        "content/free-games-claimer.js"
       ],
       "run_at": "document_idle",
       "all_frames": true
@@ -91,7 +91,7 @@
         "https://store.steampowered.com/app/*"
       ],
       "js": [
-        "overlay.js"
+        "content/overlay.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -99,18 +99,18 @@
   ],
   "action": {
     "default_title": "__MSG_appName__",
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_icon": {
-      "16": "icon16.png",
-      "32": "icon32.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "icons": {
-    "16": "icon16.png",
-    "32": "icon32.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }

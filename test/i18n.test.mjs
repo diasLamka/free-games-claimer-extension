@@ -35,7 +35,7 @@ function setNavigator(languages) {
 
 setNavigator(['en-US']);
 
-const { t, currentLocale, setLocale, LOCALES, intlLocale } = await import('../i18n.js');
+const { t, currentLocale, setLocale, LOCALES, intlLocale } = await import('../lib/i18n.js');
 
 test.afterEach(() => {
   setLocale(null);

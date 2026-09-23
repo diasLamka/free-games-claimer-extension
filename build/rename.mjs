@@ -92,10 +92,10 @@ const EXTENSIONS = /\.(js|mjs|json)$/;
 
 /* Artefacts generes, temoins figes, et les fichiers deja ecrits en anglais. */
 const EXCLUS = new Set([
-  'free-games-claimer.js',
-  'popup.js',
-  'i18n.js',
-  'i18n-tables.js',
+  'content/free-games-claimer.js',
+  'pages/popup.js',
+  'lib/i18n.js',
+  'lib/i18n-tables.js',
   'watch/field-renames.js',
   'package-lock.json',
 ]);

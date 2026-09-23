@@ -175,7 +175,7 @@ test('le faux chrome lit, ecrit et previent comme le vrai', async () => {
 });
 
 test('aucun chemin ne sort du depot', () => {
-  assert.equal(resolveInside(ROOT, '/popup.html'), join(ROOT, 'popup.html'));
+  assert.equal(resolveInside(ROOT, '/pages/popup.html'), join(ROOT, 'pages', 'popup.html'));
   assert.equal(resolveInside(ROOT, '/../package.json'), null);
   assert.equal(resolveInside(ROOT, '/%2e%2e/%2e%2e/secret'), null);
   assert.equal(resolveInside(ROOT, '/..%5C..%5Csecret'), null);
@@ -199,7 +199,7 @@ test('le serveur sert le vrai popup avec le faux chrome', async () => {
   const server = createPreviewServer({ data: { 'veille:etat': { booted: true } } });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   try {
-    const page = await get(server, '/popup.html');
+    const page = await get(server, '/pages/popup.html');
     assert.equal(page.status, 200);
     assert.ok(page.body.includes('__preview-stub.js'));
 
@@ -207,7 +207,7 @@ test('le serveur sert le vrai popup avec le faux chrome', async () => {
     assert.ok(stub.body.includes('"veille:etat"'));
 
     assert.equal((await get(server, '/')).status, 302);
-    assert.equal((await get(server, '/popup.html', 'POST')).status, 405);
+    assert.equal((await get(server, '/pages/popup.html', 'POST')).status, 405);
   } finally {
     await new Promise((r) => server.close(r));
   }

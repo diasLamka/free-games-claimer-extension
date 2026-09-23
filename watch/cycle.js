@@ -39,7 +39,7 @@ import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours,
 } from './notify-policy.js';
 import { PRIORITY, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
-import { t } from '../i18n.js';
+import { t } from '../lib/i18n.js';
 import {
   claimOffer,
   hasRoom,

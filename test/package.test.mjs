@@ -45,8 +45,8 @@ test('la fermeture Chrome porte le manifeste, le worker et le popup', () => {
 
   assert.ok(noms.has('manifest.json'), 'manifest.json');
   assert.ok(noms.has('background.js'), 'background.js');
-  assert.ok(noms.has('popup.html'), 'popup.html');
-  assert.ok(noms.has('popup.js'), 'popup.js');
+  assert.ok(noms.has('pages/popup.html'), 'pages/popup.html');
+  assert.ok(noms.has('pages/popup.js'), 'pages/popup.js');
 });
 
 test('la fermeture suit les imports du service worker jusqu\'a la veille', () => {
@@ -68,8 +68,8 @@ test('les six pages ouvertes a l\'execution sont du voyage', () => {
   /* Aucune n'est citee par un manifeste : elles s'ouvrent par
      chrome.tabs.create ou chrome.offscreen.createDocument, depuis une
      chaine litterale. C'est exactement le cas qu'une fermeture naive rate. */
-  for (const page of ['journal.html', 'collection.html', 'sentinel.html',
-    'diagnostics.html', 'offscreen-html.html', 'probe-offscreen.html']) {
+  for (const page of ['pages/journal.html', 'pages/collection.html', 'pages/sentinel.html',
+    'pages/diagnostics.html', 'pages/offscreen-html.html', 'pages/probe-offscreen.html']) {
     assert.ok(noms.has(page), page);
   }
 });
@@ -77,9 +77,9 @@ test('les six pages ouvertes a l\'execution sont du voyage', () => {
 test('le moteur genere, la passerelle et les icones sont du voyage', () => {
   const noms = nomsDansLeZip('chrome');
 
-  assert.ok(noms.has('free-games-claimer.js'), 'free-games-claimer.js');
-  assert.ok(noms.has('gm-shim.js'), 'gm-shim.js');
-  for (const icone of ['icon16.png', 'icon32.png', 'icon48.png', 'icon128.png']) {
+  assert.ok(noms.has('content/free-games-claimer.js'), 'content/free-games-claimer.js');
+  assert.ok(noms.has('content/gm-shim.js'), 'content/gm-shim.js');
+  for (const icone of ['icons/icon16.png', 'icons/icon32.png', 'icons/icon48.png', 'icons/icon128.png']) {
     assert.ok(noms.has(icone), icone);
   }
 });
@@ -110,7 +110,7 @@ test('ni la documentation, ni le manifeste npm', () => {
   const noms = nomsDansLeZip('chrome');
 
   for (const hors of ['README.md', 'CHANGELOG.md', 'ROADMAP.md', 'SECURITY.md',
-    'package.json', '.gitattributes', 'icon.svg']) {
+    'package.json', '.gitattributes', 'icons/icon.svg']) {
     assert.ok(!noms.has(hors), `${hors} ne doit pas etre publie`);
   }
 });
@@ -150,8 +150,8 @@ test('Firefox emporte le code, quelle que soit la forme de son bloc background',
      s'installe, et qui ne fait rien. */
   assert.ok(noms.has('background.js'), 'background.js');
   assert.ok(noms.has('watch/cycle.js'), 'watch/cycle.js');
-  assert.ok(noms.has('popup.html'), 'popup.html');
-  assert.ok(noms.has('free-games-claimer.js'), 'free-games-claimer.js');
+  assert.ok(noms.has('pages/popup.html'), 'pages/popup.html');
+  assert.ok(noms.has('content/free-games-claimer.js'), 'content/free-games-claimer.js');
 });
 
 /* ------------------------------------------------------ le garde anti-oubli */
@@ -238,7 +238,7 @@ test('l\'archive se relit entiere, octet pour octet', () => {
   const source = [
     { nom: 'manifest.json', octets: Buffer.from('{"manifest_version":3}', 'utf8') },
     { nom: 'watch/cycle.js', octets: Buffer.from('export const x = 1;\r\n'.repeat(200), 'utf8') },
-    { nom: 'icon16.png', octets: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x10]) },
+    { nom: 'icons/icon16.png', octets: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x10]) },
   ];
 
   const relu = lireZip(construireZip(source));
@@ -287,18 +287,18 @@ test('le moteur genere traverse l\'archive sans perdre un octet', () => {
      l'empaqueter remplacerait chaque octet haut par U+FFFD -- un moteur qui
      ne reconnait plus aucun bouton, sans la moindre erreur au chargement. */
   const relu = lireZip(archive('chrome'));
-  const moteur = relu.find((e) => e.nom === 'free-games-claimer.js');
+  const moteur = relu.find((e) => e.nom === 'content/free-games-claimer.js');
 
   assert.ok(moteur, 'free-games-claimer.js est dans l\'archive');
-  assert.ok(moteur.octets.equals(readFileSync('free-games-claimer.js')));
+  assert.ok(moteur.octets.equals(readFileSync('content/free-games-claimer.js')));
 });
 
 test('une icone PNG traverse l\'archive sans perdre un octet', () => {
   const relu = lireZip(archive('chrome'));
-  const icone = relu.find((e) => e.nom === 'icon128.png');
+  const icone = relu.find((e) => e.nom === 'icons/icon128.png');
 
   assert.ok(icone, 'icon128.png est dans l\'archive');
-  assert.ok(icone.octets.equals(readFileSync('icon128.png')));
+  assert.ok(icone.octets.equals(readFileSync('icons/icon128.png')));
 });
 
 test('l\'archive Firefox porte bien le manifeste de Firefox', () => {

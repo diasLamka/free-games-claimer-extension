@@ -31,7 +31,7 @@
  *   entre deux cycles maintiendrait le service worker en vie pour rien.
  */
 
-export const OFFSCREEN_URL = 'offscreen-html.html';
+export const OFFSCREEN_URL = 'pages/offscreen-html.html';
 
 /** Le motif declare a Chrome. Il doit correspondre a l'usage reel. */
 export const REASON = 'DOM_PARSER';

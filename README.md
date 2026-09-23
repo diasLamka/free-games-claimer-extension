@@ -7,7 +7,7 @@ Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
 
 ## Le moteur est genere
 
-`free-games-claimer.js` et `../free-games-claimer.user.js` **ne s'editent pas a
+`content/free-games-claimer.js` et `../free-games-claimer.user.js` **ne s'editent pas a
 la main**. Ils sont produits a partir de `src/core/*.js` :
 
 ```
@@ -30,7 +30,7 @@ reecrire un seul appel de fonction, donc sans risque de regression.
 
 ### Le controle de non-regression
 
-`build/reference.json` designe une copie figee du moteur (`build/reference-v*.js`).
+`build/references/reference.json` designe une copie figee du moteur (`build/references/reference-v*.js`).
 `npm run verify` reconstruit ce fichier a partir des modules et compare les
 SHA256. Tant que les modules ne sont pas modifies, la reconstruction doit etre
 **identique au bit pres**.
@@ -141,49 +141,48 @@ D'ou l'alarme filet periodique, et le rearmement en tete de cycle.
 ## Arborescence
 
 ```
-src/
-  core/            34 modules ES5, concatenes dans l'ordre des noms
-  meta/
-    banner.txt              bandeau des fichiers generes
-    userscript-header.txt   bloc ==UserScript==
-    legacy-header.txt       tete v2.7.0, temoin pour --verify
-watch/             la veille de fond, en ES modules
-  offer.js  catalog.js  storage.js  cycle.js  claim.js  ...
-  journal.js canary.js backup.js offscreen.js  library.js  filters.js
-  outcomes.js incidents.js health.js notify-actions.js
-  wishlist.js annotations.js history.js codes.js permissions.js teaching.js calendar.js
-  phone.js
-  lookup.js recurrence.js playtime.js bridge.js
-  schedule/  clock.js  prediction.js  scheduler.js
-  sources/   index.js  epic.js  gamerpower.js  gog.js  steam.js
-build/
-  build.mjs                 build et controles
-  package.mjs               les archives publiables : liste blanche, zip, garde anti-oubli
-  reference.json            designe le temoin fige du moteur (build/reference-v*.js)
-test/
-  harness.mjs               chargement du moteur ES5 en vm
-  fake-chrome.mjs           faux chrome.* : storage, alarms, notifications
-  fixtures/                 captures reelles des deux API
-  *.test.mjs                tests unitaires (node --test)
-docs/specs/                 design de la veille, constats V0 et V6-V7
-.github/workflows/          check.yml a chaque push, release.yml sur un tag
-store/                      fiches, permissions et confidentialite pour les magasins
-host/                       le programme de la passerelle locale, installe a la main
-dist/                       les archives produites, ignore par git
-overlay.js                  la surcouche des pages de magasin : elle lit, elle n'agit jamais
-gm-shim.js                  passerelle GM_* -> API d'extension
-background.js               service worker (module ES) : relais + veille
-popup.html / popup.js       popup
-journal.html / journal.js   le journal de la veille, 500 entrees persistees
-historique.html / .js       ce qui est passe, pris ou rate, et ce que cela valait
-sentinel.html / sentinel.js le mode repli : reessayer une source en panne, sous surveillance
-collection.html / .js       Ma collection : vos jeux des quatre magasins, en une page
-offscreen-html.html / .js   lecture de HTML pour le service worker, qui n'a pas de DOM
-diagnostics.html / .js      mesures V0-2, V0-3 et V6-V7
 manifest.json               Chrome / Edge
 manifest.firefox.json       Firefox
-CHANGELOG.md                historique du moteur
-ROADMAP.md                  ce qui n'est pas encore fait, et pourquoi
+background.js               service worker (module ES) : relais + veille
+_locales/                   textes de l'interface, fr et en (emplacement impose)
+
+pages/                      les pages de l'extension, une paire .html / .js chacune
+  popup                       le popup
+  collection                  Ma collection : vos jeux des quatre magasins, en une page
+  historique                  ce qui est passe, pris ou rate, et ce que cela valait
+  journal                     le journal de la veille, 500 entrees persistees
+  sentinel                    le mode repli : reessayer une source en panne, sous surveillance
+  diagnostics                 mesures V0-2, V0-3 et V6-V7
+  offscreen-html              lecture de HTML pour le service worker, qui n'a pas de DOM
+  probe-offscreen             la sonde hors ecran des diagnostics
+content/                    ce qui s'injecte dans les pages de magasin
+  free-games-claimer.js       le moteur -- GENERE depuis src/core, ne s'edite pas
+  gm-shim.js                  passerelle GM_* -> API d'extension
+  overlay.js                  la surcouche des fiches : elle lit, elle n'agit jamais
+lib/                        partage par les pages, le worker et la veille
+  i18n.js                     traduction
+  i18n-tables.js              tables de traduction -- GENEREES depuis _locales
+  money.js                    montants et devises
+icons/                      icon.svg (la source) et ses PNG 16/32/48/128
+
+watch/                      la veille de fond, en ES modules (voir plus haut)
+  schedule/                   quand regarder : horloge, prediction, ordonnanceur
+  sources/                    une source de decouverte par fichier
+src/                        les sources du moteur
+  core/                       34 modules ES5, concatenes dans l'ordre des noms
+  meta/                       bandeau, en-tete userscript, tete v2.7.0 pour --verify
+
+build/                      outils : build, controles, archives, apercu
+  references/                 les temoins figes du moteur ; reference.json designe le courant
+  pre-rename/                 le temoin du renommage francais -> anglais
+test/                       tests unitaires (node --test), harnais et captures reelles
+host/                       le programme de la passerelle locale, installe a la main
+store/                      fiches, permissions et confidentialite pour les magasins
+docs/specs/                 design de la veille, constats V0 et V6-V7
+.github/workflows/          check.yml a chaque push, release.yml sur un tag
+dist/                       les archives produites, ignore par git
+
+README.md  CHANGELOG.md  ROADMAP.md  SECURITY.md
 ```
 
 ## Installation
@@ -239,7 +238,7 @@ dit ce qui y attend encore une main humaine.
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
 Les interrupteurs ecrivent les memes cles que le moteur (`FGC_epic_auto_mode`,
-`FGC_luna_auto_mode`, `FGC_luna_claim_dlc`), et `gm-shim.js` ecoute
+`FGC_luna_auto_mode`, `FGC_luna_claim_dlc`), et `content/gm-shim.js` ecoute
 `storage.onChanged` : un interrupteur bascule dans le popup est pris en compte
 immediatement par les onglets deja ouverts.
 
@@ -254,5 +253,5 @@ immediatement par les onglets deja ouverts.
 
 ## Icone
 
-`icon.svg` est la source (coupon a echanger, ambre sur encre violette) ; les PNG
+`icons/icon.svg` est la source (coupon a echanger, ambre sur encre violette) ; les PNG
 16/32/48/128 en sont generes. Aucun logo tiers.

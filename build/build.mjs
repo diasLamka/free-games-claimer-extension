@@ -33,7 +33,7 @@ const SRC = join(ROOT, 'src');
  * Le fichier JSON garde la date et le motif, pour qu'on sache plus tard ce que
  * chaque temoin protegeait.
  */
-const FICHE_REFERENCE = join(ROOT, 'build', 'reference.json');
+const FICHE_REFERENCE = join(ROOT, 'build', 'references', 'reference.json');
 
 function lireFicheReference() {
   return JSON.parse(readFileSync(FICHE_REFERENCE, 'utf8'));
@@ -231,10 +231,10 @@ for (const fichier of ['manifest.json', 'manifest.firefox.json']) {
  * designe un module de la plateforme, pas un fichier du paquet.
  */
 const AVEC_IMPORTS = [
-  'background.js', 'popup.js', 'journal.js', 'sentinel.js', 'diagnostics.js',
-  'probe-offscreen.js', 'offscreen-html.js', 'i18n.js', 'collection.js',
-  'historique.js', 'money.js',
-  'overlay.js',
+  'background.js', 'pages/popup.js', 'pages/journal.js', 'pages/sentinel.js', 'pages/diagnostics.js',
+  'pages/probe-offscreen.js', 'pages/offscreen-html.js', 'lib/i18n.js', 'pages/collection.js',
+  'pages/historique.js', 'lib/money.js',
+  'content/overlay.js',
   ...readdirSync(join(ROOT, 'watch')).filter((f) => f.endsWith('.js')).map((f) => `watch/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'schedule')).map((f) => `watch/schedule/${f}`),
   ...readdirSync(join(ROOT, 'watch', 'sources')).map((f) => `watch/sources/${f}`),
@@ -252,8 +252,8 @@ for (const fichier of AVEC_IMPORTS) {
 }
 
 /** Sources locales citees par une page HTML de l'extension. */
-for (const page of ['popup.html', 'journal.html', 'sentinel.html', 'diagnostics.html',
-  'probe-offscreen.html', 'offscreen-html.html', 'collection.html', 'historique.html']) {
+for (const page of ['pages/popup.html', 'pages/journal.html', 'pages/sentinel.html', 'pages/diagnostics.html',
+  'pages/probe-offscreen.html', 'pages/offscreen-html.html', 'pages/collection.html', 'pages/historique.html']) {
   if (!existe(page)) { problems.push(`page attendue absente : ${page}`); continue; }
   const src = readFileSync(join(ROOT, page), 'utf8');
   const re = /(?:src|href)="([^"#:]+)"/g;
@@ -282,9 +282,9 @@ const { undefinedRefs } = await import('./undefined-refs.mjs');
 
 const { useBeforeDeclaration } = await import('./tdz.mjs');
 
-for (const fichier of ['popup.js', 'journal.js', 'sentinel.js', 'background.js', 'diagnostics.js',
-  'i18n.js', 'probe-offscreen.js', 'offscreen-html.js', 'collection.js', 'historique.js',
-  'overlay.js', 'money.js']) {
+for (const fichier of ['pages/popup.js', 'pages/journal.js', 'pages/sentinel.js', 'background.js', 'pages/diagnostics.js',
+  'lib/i18n.js', 'pages/probe-offscreen.js', 'pages/offscreen-html.js', 'pages/collection.js', 'pages/historique.js',
+  'content/overlay.js', 'lib/money.js']) {
   for (const { mot, ligne } of undefinedRefs(join(ROOT, fichier))) {
     problems.push(`${fichier} ligne ~${ligne} : « ${mot} » n'est defini nulle part`);
   }
@@ -382,8 +382,8 @@ function citeeQuelquePart(cle, sources) {
   return sources.some((src) => mot.test(src));
 }
 
-const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js',
-  'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js',
+const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.html', 'pages/journal.js',
+  'pages/sentinel.html', 'pages/sentinel.js', 'background.js', 'watch/cycle.js',
   /* Le tour d'inspection compose ses propres titres de notification depuis la
      2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
      une faute de frappe y serait restee invisible. */
@@ -393,7 +393,7 @@ const citees = clesCitees(['popup.html', 'popup.js', 'journal.html', 'journal.js
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'collection.html', 'collection.js', 'historique.html', 'historique.js', 'money.js']);
+  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -407,8 +407,8 @@ const MSG_MANIFESTE = new Set(['appName', 'appDesc']);
    en prose, et « ended » dans « that is how ALREADY_OWNED ended up... » faisait
    passer une cle morte pour vivante. Le HTML garde ses commentaires -- ce qu'on
    y cherche vit dans les attributs. */
-const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
-  'sentinel.html', 'sentinel.js', 'background.js', 'watch/cycle.js',
+const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html', 'pages/journal.js',
+  'pages/sentinel.html', 'pages/sentinel.js', 'background.js', 'watch/cycle.js',
   /* Le tour d'inspection compose ses propres titres de notification depuis la
      2.28.0. Sans lui dans cette liste, ses cles passaient pour orphelines et
      une faute de frappe y serait restee invisible. */
@@ -418,7 +418,7 @@ const SOURCES_I18N = ['popup.html', 'popup.js', 'journal.html', 'journal.js',
      exactement le cas que la distinction entre les deux prevoit. */
   'watch/notify-actions.js',
   'watch/permissions.js',
-  'collection.html', 'collection.js', 'historique.html', 'historique.js', 'money.js'].map((f) => {
+  'pages/collection.html', 'pages/collection.js', 'pages/historique.html', 'pages/historique.js', 'lib/money.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src
@@ -447,7 +447,7 @@ if (FREEZE) {
   const nom = `reference-v${version}.js`;
   const contenu = legacy + code;
 
-  writeFileSync(join(ROOT, 'build', nom), contenu, 'latin1');
+  writeFileSync(join(ROOT, 'build', 'references', nom), contenu, 'latin1');
   const motif = process.argv[process.argv.indexOf('--freeze') + 1] || 'non precise';
   writeFileSync(FICHE_REFERENCE, JSON.stringify({
     fichier: nom,
@@ -457,7 +457,7 @@ if (FREEZE) {
     motif,
   }, null, 2) + '\n', 'utf8');
 
-  console.log(`nouveau temoin fige : build/${nom}`);
+  console.log(`nouveau temoin fige : build/references/${nom}`);
   console.log(`sha256              : ${sha(contenu)}`);
   console.log(`motif               : ${motif}`);
   process.exit(0);
@@ -466,7 +466,7 @@ if (FREEZE) {
 if (VERIFY) {
   const fiche = lireFicheReference();
   const rebuilt = legacy + code;
-  const original = read(join(ROOT, 'build', fiche.fichier));
+  const original = read(join(ROOT, 'build', 'references', fiche.fichier));
 
   const a = sha(rebuilt);
   const b = sha(original);
@@ -520,7 +520,7 @@ const userscriptHeader = read(join(SRC, 'meta', 'userscript-header.txt'))
 const contentScript = banner + code;
 const userscript = userscriptHeader + '\r\n' + banner + code;
 
-writeFileSync(join(ROOT, 'free-games-claimer.js'), contentScript, 'latin1');
+writeFileSync(join(ROOT, 'content/free-games-claimer.js'), contentScript, 'latin1');
 // Les deux copies du userscript a la racine du lecteur restent synchronisees :
 // free-games-claimer.user.js est le nom canonique, test.txt le fichier
 // historiquement colle dans Tampermonkey.
@@ -649,7 +649,7 @@ const tablesJs = [
   '',
 ].join('\r\n');
 
-writeFileSync(join(ROOT, 'i18n-tables.js'), tablesJs, 'utf8');
+writeFileSync(join(ROOT, 'lib/i18n-tables.js'), tablesJs, 'utf8');
 
 console.log(`version                        : ${VERSION}`);
 console.log(`modules                        : ${moduleNames.length}`);
