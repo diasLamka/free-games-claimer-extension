@@ -38,6 +38,10 @@ export const DEFAULT_PHONE = Object.freeze({
   token: '',
   /** Aussi les jeux de la liste de souhaits, pas seulement les pannes. */
   wished: true,
+  /** Aussi les jeux mobiles offerts par Epic (2.57.0) : ils se recuperent SUR
+      le telephone, c'est la qu'ils doivent arriver. Sans effet tant que le
+      magasin « Epic Games (mobile) » n'est pas suivi. */
+  mobile: true,
 });
 
 /** Le serveur public, celui que « Nouveau sujet » propose. */
@@ -71,6 +75,7 @@ export function readPhone(raw) {
     url: typeof p.url === 'string' ? p.url.trim() : '',
     token: typeof p.token === 'string' ? p.token.trim() : '',
     wished: p.wished !== false,
+    mobile: p.mobile !== false,
   };
 }
 
@@ -100,7 +105,7 @@ export function phoneTarget(raw) {
   if (!url) return null;
   // Un jeton porte dans un en-tete HTTP : rien hors de l'ASCII imprimable.
   const token = /^[\x21-\x7e]{1,200}$/.test(p.token) ? p.token : '';
-  return { url, token, wished: p.wished };
+  return { url, token, wished: p.wished, mobile: p.mobile };
 }
 
 /** Le motif de permission a demander pour ce serveur : `https://hote/*`. */
@@ -160,6 +165,22 @@ export function wishedMessage(offers, { title, line }) {
     priority: PRIORITY.HIGH,
     tags: ['video_game'],
     click: liste[0].url || liste[0].resolveUrl || null,
+  };
+}
+
+/**
+ * Les jeux mobiles offerts par Epic, pour le telephone (2.57.0). Pas urgents
+ * comme un jeu attendu : une priorite ordinaire, et le lien de la page.
+ */
+export function mobileMessage(offers, { title, line }) {
+  const liste = (offers || []).filter((o) => o && o.title);
+  if (!liste.length) return null;
+  return {
+    title: title(liste[0].title),
+    message: liste.map(line).join('\n'),
+    priority: PRIORITY.DEFAULT,
+    tags: ['mobile_phone'],
+    click: liste[0].url || null,
   };
 }
 

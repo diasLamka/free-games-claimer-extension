@@ -6,6 +6,7 @@
  * nommement.
  */
 import * as epic from './epic.js';
+import * as epicMobile from './epic-mobile.js';
 import * as gamerpower from './gamerpower.js';
 import * as gog from './gog.js';
 import * as steam from './steam.js';
@@ -32,8 +33,10 @@ export const CLAIMABLE_STORES = Object.freeze([
   STORES.AMAZON,
 ]);
 
-/** Magasins detectes et affiches, mais jamais reclames sans option explicite. */
-export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM]);
+/** Magasins detectes et affiches, mais jamais reclames sans option explicite.
+    Les jeux mobiles d'Epic, eux, ne se reclament jamais : ils se recuperent
+    dans l'application du telephone (2.57.0). */
+export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM, STORES.EPIC_MOBILE]);
 
 /**
  * Les magasins reclamables pour CES reglages.
@@ -57,7 +60,15 @@ export function claimableStoresFor(settings, base = CLAIMABLE_STORES) {
  */
 export function activeSourcesFor(settings) {
   const active = (settings && Array.isArray(settings.activeSources)) ? settings.activeSources : [];
-  return settings && settings.steamAutoClaim === true ? [...new Set([...active, steam.NAME])] : [...active];
+  const out = new Set(active);
+  if (settings && settings.steamAutoClaim === true) out.add(steam.NAME);
+  /* Les jeux mobiles d'Epic (2.57.0) : la source tourne si, et seulement si,
+     le magasin est suivi. Sa reponse pese pres de 500 Ko : la payer pour un
+     magasin que personne ne regarde serait du trafic pour rien. */
+  const suivis = settings && Array.isArray(settings.watchedStores) ? settings.watchedStores : [];
+  if (suivis.includes(STORES.EPIC_MOBILE)) out.add(epicMobile.NAME);
+  else out.delete(epicMobile.NAME);
+  return [...out];
 }
 
 export const SOURCES = Object.freeze({
@@ -140,6 +151,26 @@ export const SOURCES = Object.freeze({
     minIntervalMs: 15 * 60 * 1000,
   }),
 
+  [epicMobile.NAME]: Object.freeze({
+    name: epicMobile.NAME,
+    libelle: 'Epic Games (mobile)',
+    discover: epicMobile.discover,
+    /**
+     * La rubrique des jeux offerts rend la liste entiere : une offre qui en
+     * disparait est terminee. La reponse le dit elle-meme (`complete`) : faux
+     * si l'une des deux plateformes n'a pas pu etre lue.
+     */
+    completeList: true,
+    authoritativeFor: STORES.EPIC_MOBILE,
+    /** Epic publie ses jeux mobiles au meme rythme que les autres. */
+    zone: 'America/New_York',
+    /** Pres de 800 Ko pour les deux plateformes : pas plus d'une fois toutes les trois heures. */
+    minIntervalMs: 3 * 60 * 60 * 1000,
+    /** Jamais interrogee pour un magasin qu'on ne suit pas, meme par « Verifier maintenant ». */
+    onlyWhenActive: true,
+    autoClaim: false,
+  }),
+
   [steam.NAME]: Object.freeze({
     name: steam.NAME,
     libelle: 'Steam',
@@ -161,4 +192,4 @@ export const SOURCES = Object.freeze({
 
 export const NAMES = Object.freeze(Object.keys(SOURCES));
 
-export { epic, gamerpower, steam };
+export { epic, epicMobile, gamerpower, steam };

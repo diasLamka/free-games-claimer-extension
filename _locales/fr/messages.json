@@ -851,6 +851,15 @@
   "engNotifyGogManual": {
     "message": "Impossible d'échanger automatiquement le code de « $1 » : $2 (copié dans le presse-papiers). Saisissez-le sur gog.com/redeem."
   },
+  "phoneMobileLabel": {
+    "message": "Aussi les jeux mobiles offerts par Epic (à récupérer dans l'appli)"
+  },
+  "phoneMobileTitle": {
+    "message": "Offert sur Epic mobile : $1"
+  },
+  "mobileInApp": {
+    "message": "dans l'appli Epic"
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer : cliquer pour ouvrir, glisser pour déplacer"
   },

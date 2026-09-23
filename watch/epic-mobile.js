@@ -124,6 +124,29 @@ export function summariseUnknown(json, { limit = 25 } = {}) {
 }
 
 /**
+ * La rubrique des jeux offerts, recopiee pour le rapport (2.57.0).
+ *
+ * La source lit deja `title`, `mapping.slug` et `systemSpecs.platform` --
+ * mesures. Restent `purchase` (la date de fin) et `media` (la vignette), lus
+ * avec prudence faute de forme connue : la premiere offre, en entier, les
+ * montrera. Donnees publiques ; bornees a 6000 caracteres.
+ */
+export function freeTopicDump(json) {
+  const rubriques = json && Array.isArray(json.data) ? json.data : [];
+  return rubriques
+    .filter((r) => r && typeof r.topicId === 'string' && /free-game$/.test(r.topicId))
+    .map((r) => ({
+      topicId: r.topicId,
+      title: typeof r.title === 'string' ? court(r.title, 80) : null,
+      type: r.type || null,
+      size: r.size || null,
+      link: r.link || null,
+      offers: Array.isArray(r.offers) ? r.offers.length : 0,
+      first: Array.isArray(r.offers) && r.offers.length ? JSON.stringify(r.offers[0]).slice(0, 6000) : null,
+    }));
+}
+
+/**
  * Le verdict de la mesure, en clair : ou lire les jeux mobiles, ou pourquoi on
  * ne sait toujours pas. `r` rassemble les lectures (voir pages/diagnostics.js).
  */

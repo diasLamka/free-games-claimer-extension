@@ -200,6 +200,13 @@ les pastilles Deck restent simplement absentes -- rien ne s'affiche a tort.
 
 ## 5. Les jeux mobiles gratuits d'Epic
 
+**Mesure le 2026-09-23 (V8), livre en 2.57.0.** Ils ne sont pas dans
+`freeGamesPromotions`, filtre de plateforme ou non ; ils sont dans l'API de
+decouverte de l'application, rubrique `mobile-android-free-game` /
+`mobile-ios-free-game`. Reste a mesurer : la forme de `purchase` (la date de
+fin) et de `media` (la vignette) -- la mesure V8 recopie desormais la
+premiere offre de la rubrique en entier ; un rapport de plus suffira.
+
 *Pourquoi.* Epic offre aussi, chaque semaine, des jeux pour Android et iOS.
 L'extension ne les voit pas, et on ne sait pas ou Epic les expose. La
 capture de `freeGamesPromotions` du 2026-08-27 (12 offres) n'en contient

@@ -74,6 +74,9 @@ const PRIMARY = [
  * says exactly that rather than implying more.
  */
 const SECONDARY = [
+  /* The weekly free MOBILE games (2.57.0). Claimed in the Epic app on the
+     phone, never by the extension -- "watched and notified" is exactly it. */
+  { id: STORES.EPIC_MOBILE, tag: 'EPIC MOBILE' },
   { id: STORES.MICROSOFT, tag: 'MS' },
   { id: STORES.UBISOFT, tag: 'UBI' },
   { id: STORES.EA, tag: 'EA' },
@@ -136,7 +139,7 @@ const DROP_KEYS = {
   [REASONS.NO_DESTINATION]: 'dropNoPage',
 };
 
-const SOURCE_LABELS = { 'epic-api': 'Epic Games', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
+const SOURCE_LABELS = { 'epic-api': 'Epic Games', 'epic-mobile': 'Epic Games (mobile)', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
 
 /* ------------------------------------------------------------------ storage */
 
@@ -784,7 +787,8 @@ function gameCard({ key, offer }, ctx) {
          la rangee est vide tant qu'on ne survole pas, et chaque carte Steam
          portait une ligne de plus pour le dire. Le survol la cede aux
          boutons (voir .game:hover .why). */
-      const cle = DROP_KEYS[verdict.reason];
+      // A mobile game is not "open it yourself": it is claimed in the Epic app.
+      const cle = offer.store === STORES.EPIC_MOBILE ? 'mobileInApp' : DROP_KEYS[verdict.reason];
       if (cle) actions.append(el('span', 'why', t(cle)));
     }
   }
@@ -2211,6 +2215,7 @@ function renderPhone(all) {
   document.getElementById('phone-on').checked = p.on;
   document.getElementById('phone-fields').hidden = !p.on;
   document.getElementById('phone-wished').checked = p.wished;
+  document.getElementById('phone-mobile').checked = p.mobile;
   // Jamais sous les doigts : un rendu remettrait la valeur stockee.
   const url = document.getElementById('phone-url');
   if (document.activeElement !== url) url.value = p.url;
@@ -2310,6 +2315,7 @@ document.getElementById('phone-test').addEventListener('click', async () => {
 });
 
 document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
+document.getElementById('phone-mobile').addEventListener('change', (e) => writePhone({ mobile: e.target.checked }));
 document.getElementById('phone-token').addEventListener('change', (e) => writePhone({ token: e.target.value.trim() }));
 
 /* --- mise a jour a la demande (2.54.0)

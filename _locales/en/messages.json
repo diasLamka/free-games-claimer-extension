@@ -851,6 +851,15 @@
   "engNotifyGogManual": {
     "message": "Could not redeem the code for “$1” automatically: $2 (copied to the clipboard). Enter it on gog.com/redeem."
   },
+  "phoneMobileLabel": {
+    "message": "Also Epic's free mobile games (claimed in the Epic app)"
+  },
+  "phoneMobileTitle": {
+    "message": "Free on Epic mobile: $1"
+  },
+  "mobileInApp": {
+    "message": "in the Epic app"
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: click to open, drag to move"
   },

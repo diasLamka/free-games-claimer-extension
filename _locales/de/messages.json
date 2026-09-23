@@ -851,6 +851,15 @@
   "engNotifyGogManual": {
     "message": "Der Code für „$1“ konnte nicht automatisch eingelöst werden: $2 (in die Zwischenablage kopiert). Gib ihn auf gog.com/redeem ein."
   },
+  "phoneMobileLabel": {
+    "message": "Auch die Gratis-Handyspiele von Epic (in der Epic-App abholen)"
+  },
+  "phoneMobileTitle": {
+    "message": "Gratis bei Epic mobil: $1"
+  },
+  "mobileInApp": {
+    "message": "in der Epic-App"
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: zum Öffnen klicken, zum Verschieben ziehen"
   },

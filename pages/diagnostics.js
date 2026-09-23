@@ -9,7 +9,7 @@
  */
 import { queryHtml } from '../watch/offscreen.js';
 import { epicApiUrls, KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from '../watch/locale.js';
-import { compareTitles, mobileVerdict, promoElements, summariseElements, summariseUnknown } from '../watch/epic-mobile.js';
+import { compareTitles, freeTopicDump, mobileVerdict, promoElements, summariseElements, summariseUnknown } from '../watch/epic-mobile.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -626,6 +626,7 @@ async function lancerMobile() {
       out.discover.push({
         platform, url: r.url, ok: r.ok, status: r.status, bytes: r.bytes, error: r.error || null,
         summary: r.json ? summariseUnknown(r.json) : null, debut: r.debut || null,
+        freeTopic: r.json ? freeTopicDump(r.json) : [],
       });
     }
 
@@ -768,6 +769,10 @@ function majRapport() {
       for (const t of d.summary.titled) l.push(`    titre ${t.path} = ${t.title} {${t.keys.join(', ')}}`);
       for (const h of d.summary.free) l.push(`    gratuit ${h.path} = ${h.value}`);
       for (const h of d.summary.mobile) l.push(`    mobile ${h.path} = ${h.value}`);
+      for (const f of d.freeTopic || []) {
+        l.push(`    RUBRIQUE ${f.topicId} « ${f.title} » type=${f.type} taille=${f.size} lien=${JSON.stringify(f.link)} : ${f.offers} offre(s)`);
+        if (f.first) l.push(`    premiere offre : ${f.first}`);
+      }
     }
     l.push('### 4. page des jeux gratuits');
     const page = r.page || {};

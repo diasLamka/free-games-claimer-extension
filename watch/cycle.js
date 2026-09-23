@@ -38,7 +38,7 @@ import { split } from './filters.js';
 import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours,
 } from './notify-policy.js';
-import { PRIORITY, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
+import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../lib/i18n.js';
 import {
   claimOffer,
@@ -223,8 +223,10 @@ export async function runCycle({
 
     // La source Steam s'active avec l'option Steam : elle seule donne le paquet.
     const actives = activeSourcesFor(ctx.settings);
+    /* `onlyWhenActive` : une source couteuse, qu'on n'interroge pour un
+       magasin non suivi ni par un cycle, ni par « Verifier maintenant ». */
     const names = Object.keys(sources).filter(
-      (n) => forceAll
+      (n) => (forceAll && (!sources[n].onlyWhenActive || actives.includes(n)))
         || (forcedList ? forcedList.includes(n) : actives.includes(n)),
     );
 
@@ -531,6 +533,20 @@ export async function runCycle({
         line: (o) => `${o.title} -- ${STORE_LABELS[o.store] || o.store}`,
       });
       if (msg && fetchImpl) await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'jeu attendu' });
+    }
+
+    /* Les jeux mobiles d'Epic (2.57.0) : ils se recuperent SUR le telephone,
+       c'est donc la qu'ils arrivent -- une fois, comme les jeux attendus, et
+       jamais en double avec eux. */
+    if (tel && tel.mobile && !decision.hold) {
+      const msg = mobileMessage(
+        watched.filter((o) => o.store === STORES.EPIC_MOBILE && !(tel.wished && o.wished)),
+        {
+          title: (titre) => t('phoneMobileTitle', titre),
+          line: (o) => `${o.title}${o.platforms ? ` -- ${o.platforms}` : ''}`,
+        },
+      );
+      if (msg && fetchImpl) await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'jeu mobile Epic' });
     }
 
     /* ---- rappel avant expiration ---- */

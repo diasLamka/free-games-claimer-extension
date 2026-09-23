@@ -26,7 +26,7 @@ celui-ci l'a autorise.
 
 | Hote | Justification a recopier |
 |---|---|
-| `https://*.epicgames.com/*` | Lire l'API publique des jeux offerts, ouvrir la fiche d'un jeu offert et y jouer l'etape de recuperation. Le joker couvre `store.`, `www.` et `accounts.`, ce dernier etant requis par l'import de bibliotheque a la demande de l'utilisateur. |
+| `https://*.epicgames.com/*` | Lire l'API publique des jeux offerts, ouvrir la fiche d'un jeu offert et y jouer l'etape de recuperation. Le joker couvre `store.`, `www.` et `accounts.`, ce dernier etant requis par l'import de bibliotheque a la demande de l'utilisateur ; et `egs-platform-service.store.`, l'API publique ou Epic publie ses jeux MOBILES offerts, lue sans cookie et seulement si l'utilisateur suit ce magasin. |
 | `https://www.gog.com/*`, `https://gog.com/*` | Lire le catalogue filtre par prix pour reperer les jeux a 0, jouer l'etape de recuperation, et echanger un code de rachat. |
 | `https://luna.amazon.*/claims/*` (15 domaines) | Lire les codes de rachat offerts par Amazon Luna sur la page de reclamation, pour chacun des pays ou le service existe. Chemin borne a `/claims/`. |
 | `https://gaming.amazon.com/*` | Meme service Amazon, servi sous un second nom de domaine. |

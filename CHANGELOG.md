@@ -4,6 +4,55 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.57.0 -- 2026-09-23
+
+**Les jeux mobiles offerts par Epic**
+
+La mesure V8 a tranche (rapport du 2026-09-23) : Epic ne met PAS ses jeux
+mobiles dans `freeGamesPromotions` -- 13 offres, aucune mobile, et le filtre
+`&platform=android|ios` ne change rien. Il les publie dans l'API de
+decouverte de son application, `egs-platform-service`, sous la rubrique
+`mobile-android-free-game` (`mobile-ios-free-game` sur iOS). La page des
+jeux gratuits, elle, ne fait que renvoyer vers l'appli.
+
+- **Une source**, `watch/sources/epic-mobile.js`, ecrite sur la forme
+  mesuree : la rubrique, puis pour chaque offre `content.title`,
+  `mapping.slug` et `systemSpecs.platform`. Le meme jeu a un slug par
+  plateforme (« calico-android-83faf9 », « calico-ios-868e00 ») : il n'en
+  fait qu'une offre, « Android, iOS ». La rubrique des free-to-play
+  (`mobile-*-genre-free`), elle, est ignoree.
+- **Un magasin a part, « Epic Games (mobile) »**, a cocher dans Magasins ->
+  Plus de magasins. Ces jeux se recuperent DANS L'APPLICATION EPIC du
+  telephone : l'extension les detecte, les annonce -- « dans l'appli Epic »
+  sur leur carte -- et ne tente jamais de les reclamer. La source Epic (PC)
+  ne les balaie pas : chacune fait autorite sur son magasin.
+- **Au telephone** : ils se recuperent la, c'est donc la qu'ils arrivent,
+  si l'alerte telephone est active (nouvelle option « Aussi les jeux mobiles
+  offerts par Epic », cochee par defaut). Une fois par jeu, jamais en double
+  avec un jeu attendu.
+- **Sobre** : la reponse pese pres de 800 Ko pour les deux plateformes. La
+  source ne tourne que si le magasin est suivi -- meme « Verifier
+  maintenant » ne la paie pas sinon -- et pas plus d'une fois toutes les
+  trois heures. Sans cookies.
+- **Prudente** : une plateforme en panne rend la liste incomplete, et rien
+  n'est declare termine ; une rubrique disparue est une erreur qui le dit,
+  pas « aucun jeu cette semaine ».
+
+**Pas encore mesure** : la forme de `purchase` (la date de fin) et de
+`media` (la vignette). Elles sont lues avec prudence -- une cle qui dit
+« fin » et une date a venir, une image https -- et sinon rien : la carte dit
+« fin inconnue », et l'offre vit tant que la rubrique la porte. La mesure V8
+recopie desormais la premiere offre de la rubrique en entier : un rapport de
+plus, et ces deux champs seront lus exactement.
+
+Verifie : la source sur des reponses de la forme mesuree (deux plateformes,
+panne d'une plateforme, rubrique disparue) ; dans un vrai cycle, l'annonce
+et l'envoi au telephone une seule fois, et aucune requete quand le magasin
+n'est pas suivi ; dans Chromium, la carte « EPIC MOBILE » et la case du
+magasin.
+
+1197 tests.
+
 ## 2.56.0 -- 2026-09-23
 
 **Une mesure pour les jeux mobiles d'Epic (V8)**

@@ -66,6 +66,7 @@ l'evenement, qui n'en porte qu'une empreinte de 32 bits (`watch/calendar.js`).
 | Destination | Ce qu'elle apprend de vous |
 |---|---|
 | API publique Epic (`store-site-backend-static.ak.epicgames.com`) | Votre pays et votre langue, choisis dans le popup |
+| API de decouverte mobile d'Epic (`egs-platform-service.store.epicgames.com`) | **Seulement si vous suivez « Epic Games (mobile) »** (2.57.0). Votre pays et votre langue, et la plateforme demandee (Android, iOS) -- pas la votre : l'extension demande les deux. Au plus une fois toutes les trois heures |
 | `www.gog.com` (catalogue filtre) | Rien. Anonyme **deliberement** : connecte, GOG masque ce que le compte possede deja, et la veille croirait l'offre terminee |
 | `www.gamerpower.com` | Rien |
 | `store.steampowered.com` (recherche), `api.steampowered.com` (confirmation) | Les identifiants des jeux candidats, votre pays, votre langue. **Depuis la 2.27.0, pour tout le monde** : la detection Steam ne depend plus de l'option de reclamation. Voir la note ci-dessous |

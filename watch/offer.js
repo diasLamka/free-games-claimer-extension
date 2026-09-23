@@ -16,6 +16,11 @@ import { instantFromLocal } from './schedule/clock.js';
 /** Identifiants internes des magasins. Le reste du code ne connait que ceux-la. */
 export const STORES = Object.freeze({
   EPIC: 'epic',
+  /* Les jeux mobiles offerts par Epic (2.57.0) : ils se recuperent dans
+     l'application du telephone, jamais par l'extension. Un magasin a part,
+     pour que la source Epic (PC) ne les balaie pas et que rien ne tente de
+     les reclamer. */
+  EPIC_MOBILE: 'epic-mobile',
   GOG: 'gog',
   STEAM: 'steam',
   AMAZON: 'amazon',
@@ -33,6 +38,7 @@ export const STORES = Object.freeze({
 
 export const STORE_LABELS = Object.freeze({
   epic: 'Epic Games Store',
+  'epic-mobile': 'Epic Games (mobile)',
   gog: 'GOG.com',
   steam: 'Steam',
   amazon: 'Amazon Games',

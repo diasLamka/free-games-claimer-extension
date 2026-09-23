@@ -851,6 +851,15 @@
   "engNotifyGogManual": {
     "message": "No se pudo canjear automáticamente el código de «$1»: $2 (copiado al portapapeles). Introdúcelo en gog.com/redeem."
   },
+  "phoneMobileLabel": {
+    "message": "También los juegos móviles gratis de Epic (se reclaman en la app de Epic)"
+  },
+  "phoneMobileTitle": {
+    "message": "Gratis en Epic móvil: $1"
+  },
+  "mobileInApp": {
+    "message": "en la app de Epic"
+  },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: haz clic para abrir, arrastra para mover"
   },
