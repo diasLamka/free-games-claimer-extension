@@ -960,7 +960,7 @@
     "message": "Les codes en attente ne se reconstruisent pas : un code perdu est un jeu perdu."
   },
   "shortcutsTitle": {
-    "message": "Clavier"
+    "message": "Raccourcis clavier"
   },
   "shortcutsBody": {
     "message": "1 2 3 changent d’onglet. / place le curseur dans la recherche. Entrée ouvre le premier jeu. Échap efface la recherche."
@@ -1885,5 +1885,26 @@
   },
   "wishGogTitle": {
     "message": "Dans votre liste de souhaits GOG : à retirer sur GOG, sinon il revient à la prochaine importation"
+  },
+  "cmdOpenPopup": {
+    "message": "Ouvrir l'extension"
+  },
+  "cmdOpenDashboard": {
+    "message": "Ouvrir le tableau de bord"
+  },
+  "cmdCheckNow": {
+    "message": "Chercher les jeux gratuits"
+  },
+  "shortcutsHint": {
+    "message": "Ils marchent depuis n'importe quelle page du navigateur. Une vérification tourne en arrière-plan : les nouveaux jeux arrivent en notification."
+  },
+  "shortcutsEdit": {
+    "message": "Changer les raccourcis"
+  },
+  "shortcutNone": {
+    "message": "non attribué"
+  },
+  "shortcutsCount": {
+    "message": "$1 actif(s)"
   }
 }

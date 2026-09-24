@@ -960,7 +960,7 @@
     "message": "Ausstehende Codes lassen sich nicht wiederherstellen: ein verlorener Code ist ein verlorenes Spiel."
   },
   "shortcutsTitle": {
-    "message": "Tastatur"
+    "message": "Tastenkürzel"
   },
   "shortcutsBody": {
     "message": "1 2 3 wechseln die Tabs. / setzt den Fokus ins Suchfeld. Enter öffnet das erste Spiel. Escape leert die Suche."
@@ -1885,5 +1885,26 @@
   },
   "wishGogTitle": {
     "message": "Auf deiner GOG-Wunschliste: entferne ihn dort, sonst kommt er beim nächsten Import zurück"
+  },
+  "cmdOpenPopup": {
+    "message": "Erweiterung öffnen"
+  },
+  "cmdOpenDashboard": {
+    "message": "Übersicht öffnen"
+  },
+  "cmdCheckNow": {
+    "message": "Gratisspiele suchen"
+  },
+  "shortcutsHint": {
+    "message": "Sie funktionieren auf jeder Seite des Browsers. Eine Suche läuft im Hintergrund: Neue Spiele kommen als Benachrichtigung."
+  },
+  "shortcutsEdit": {
+    "message": "Kürzel ändern"
+  },
+  "shortcutNone": {
+    "message": "nicht belegt"
+  },
+  "shortcutsCount": {
+    "message": "$1 aktiv"
   }
 }

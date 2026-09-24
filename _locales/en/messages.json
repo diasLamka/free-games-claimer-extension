@@ -960,7 +960,7 @@
     "message": "Pending codes cannot be rebuilt: a lost code is a lost game."
   },
   "shortcutsTitle": {
-    "message": "Keyboard"
+    "message": "Keyboard shortcuts"
   },
   "shortcutsBody": {
     "message": "1 2 3 switch tabs. / focuses the search box. Enter opens the first game. Escape clears the search."
@@ -1885,5 +1885,26 @@
   },
   "wishGogTitle": {
     "message": "On your GOG wishlist: remove it there, it would come back at the next import"
+  },
+  "cmdOpenPopup": {
+    "message": "Open the extension"
+  },
+  "cmdOpenDashboard": {
+    "message": "Open the dashboard"
+  },
+  "cmdCheckNow": {
+    "message": "Check for free games"
+  },
+  "shortcutsHint": {
+    "message": "They work from any page of the browser. A check runs in the background: new games arrive as notifications."
+  },
+  "shortcutsEdit": {
+    "message": "Change shortcuts"
+  },
+  "shortcutNone": {
+    "message": "not set"
+  },
+  "shortcutsCount": {
+    "message": "$1 active"
   }
 }

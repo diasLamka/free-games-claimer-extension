@@ -4,6 +4,26 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.69.0 -- 2026-09-24
+
+**Des raccourcis clavier**
+
+- **Alt+Maj+G** ouvre l'extension, **Alt+Maj+D** le tableau de bord (l'onglet
+  deja ouvert s'il existe), **Alt+Maj+V** lance une verification, par le meme
+  chemin que le bouton du popup -- depuis n'importe quelle page du
+  navigateur. Aucune permission : un raccourci n'est qu'un geste de plus.
+- **Reglages -> Raccourcis clavier** montre les touches que le navigateur a
+  VRAIMENT attribuees, lues dans `commands.getAll` : celles du manifeste ne
+  sont que suggerees, Chrome n'en donne pas une qui entre en conflit, et on
+  peut les changer. « Changer les raccourcis » ouvre
+  chrome://extensions/shortcuts ; sous Firefox, ou une extension ne peut pas
+  ouvrir about:addons, le bouton n'apparait pas.
+
+Verifie dans l'extension chargee dans Chromium : les trois touches sont
+attribuees telles que suggerees, et le pli les affiche.
+
+1284 tests.
+
 ## 2.68.0 -- 2026-09-24
 
 **Le prix et la fiche des jeux mobiles d'Epic**

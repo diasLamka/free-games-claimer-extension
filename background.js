@@ -586,6 +586,27 @@ api.alarms.onAlarm.addListener((alarme) => {
   }
 });
 
+/* Les raccourcis clavier (2.69.0), declares dans `commands` du manifeste.
+ *
+ * Le popup a le sien, `_execute_action`, que le navigateur traite seul. Les
+ * deux autres arrivent ici : ouvrir le tableau de bord -- la page d'options,
+ * donc l'onglet deja ouvert s'il existe -- et verifier maintenant, par le meme
+ * chemin que le bouton du popup. Aucune permission : un raccourci n'est qu'un
+ * geste de plus de l'utilisateur. Firefox les prend tels quels. */
+if (api.commands && api.commands.onCommand) {
+  api.commands.onCommand.addListener((commande) => {
+    if (commande === 'open-dashboard') {
+      api.runtime.openOptionsPage().catch((e) => record('warn', 'tableau de bord impossible a ouvrir (raccourci)', e));
+      return;
+    }
+    if (commande === 'check-now') {
+      record('info', 'verification demandee au clavier');
+      startCycle('raccourci clavier', { force: true })
+        .catch((e) => record('error', 'cycle impossible (raccourci clavier)', e));
+    }
+  });
+}
+
 api.runtime.onStartup.addListener(() => planifier('demarrage'));
 
 // Une mise a jour efface les alarmes : 'update' compte autant que 'install'.

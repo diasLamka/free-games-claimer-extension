@@ -960,7 +960,7 @@
     "message": "Los códigos pendientes no se pueden reconstruir: un código perdido es un juego perdido."
   },
   "shortcutsTitle": {
-    "message": "Teclado"
+    "message": "Atajos de teclado"
   },
   "shortcutsBody": {
     "message": "1 2 3 cambian de pestaña. / lleva a la búsqueda. Intro abre el primer juego. Escape borra la búsqueda."
@@ -1885,5 +1885,26 @@
   },
   "wishGogTitle": {
     "message": "En tu lista de deseos de GOG: quítalo allí, o volverá en la próxima importación"
+  },
+  "cmdOpenPopup": {
+    "message": "Abrir la extensión"
+  },
+  "cmdOpenDashboard": {
+    "message": "Abrir el panel"
+  },
+  "cmdCheckNow": {
+    "message": "Buscar juegos gratis"
+  },
+  "shortcutsHint": {
+    "message": "Funcionan desde cualquier página del navegador. La búsqueda se hace en segundo plano: los juegos nuevos llegan como notificación."
+  },
+  "shortcutsEdit": {
+    "message": "Cambiar los atajos"
+  },
+  "shortcutNone": {
+    "message": "sin asignar"
+  },
+  "shortcutsCount": {
+    "message": "$1 activo(s)"
   }
 }

@@ -1566,6 +1566,47 @@ function renderStores(all, behaviour) {
  * La demande elle-meme exige un geste utilisateur : elle vit dans l'ecouteur
  * du bas, jamais dans un rendu.
  */
+/* Les raccourcis clavier (2.69.0).
+ *
+ * Lus dans le navigateur, pas recopies du manifeste : ceux du manifeste ne
+ * sont que SUGGERES. Chrome n'en attribue pas un qui entre en conflit, et
+ * l'utilisateur peut les changer. Afficher la suggestion comme un fait
+ * montrerait une touche qui ne fait rien. */
+const SHORTCUT_LABELS = Object.freeze({
+  _execute_action: 'cmdOpenPopup',
+  'open-dashboard': 'cmdOpenDashboard',
+  'check-now': 'cmdCheckNow',
+});
+
+/** Firefox gere les raccourcis dans about:addons, qu'une extension ne peut pas ouvrir. */
+const SHORTCUTS_PAGE = api.runtime.getURL('').startsWith('moz-extension:') ? null : 'chrome://extensions/shortcuts';
+
+async function renderShortcuts() {
+  const host = document.getElementById('shortcuts');
+  if (!host || !api.commands || typeof api.commands.getAll !== 'function') return;
+  let commandes = [];
+  try { commandes = await api.commands.getAll(); } catch { return; }
+  host.textContent = '';
+  let actifs = 0;
+  for (const nom of Object.keys(SHORTCUT_LABELS)) {
+    const c = commandes.find((x) => x && x.name === nom);
+    if (!c) continue;
+    const row = el('div', 'row');
+    row.append(el('span', 'label', t(SHORTCUT_LABELS[nom])));
+    const touche = el('span', 'aside');
+    if (c.shortcut) {
+      actifs++;
+      touche.append(el('kbd', null, c.shortcut));
+    } else {
+      touche.textContent = t('shortcutNone');
+    }
+    row.append(touche);
+    host.append(row);
+  }
+  foldSay('fold-keys', t('shortcutsCount', String(actifs)));
+  document.getElementById('shortcuts-edit').hidden = !SHORTCUTS_PAGE;
+}
+
 async function renderBackground() {
   const supported = Boolean(api.permissions)
     && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
@@ -2031,6 +2072,7 @@ async function render() {
   renderSyncCodes(behaviourCache);
   renderSyncLibrary(behaviourCache);
   renderPhone(all);
+  renderShortcuts();
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
   document.getElementById('luna-auto').checked = all.FGC_luna_auto_mode !== false;
@@ -2338,6 +2380,10 @@ document.getElementById('dry-run').addEventListener('click', async (e) => {
     button.textContent = t('dryRunButton');
     await load();
   }
+});
+
+document.getElementById('shortcuts-edit').addEventListener('click', () => {
+  if (SHORTCUTS_PAGE) openTab(SHORTCUTS_PAGE);
 });
 
 document.getElementById('check-now').addEventListener('click', async (e) => {

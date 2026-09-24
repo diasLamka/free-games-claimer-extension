@@ -298,6 +298,12 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
+**Les raccourcis clavier** (2.69.0), depuis n'importe quelle page du
+navigateur : Alt+Maj+G ouvre l'extension, Alt+Maj+D le tableau de bord,
+Alt+Maj+V lance une verification. Ce ne sont que des suggestions : Reglages ->
+Raccourcis clavier montre ceux que le navigateur a vraiment attribues, et
+mene a chrome://extensions/shortcuts pour les changer.
+
 **Le recap du jeudi soir** (2.65.0, Reglages -> Notifications) : une
 notification par semaine, a 18 h le jeudi -- une heure apres la rotation
 d'Epic -- qui dit ce que la veille a recupere depuis le jeudi d'avant (et pour

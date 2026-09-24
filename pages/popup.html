@@ -798,6 +798,18 @@
   .dot.off { background: var(--line); }
   .dot.bad { background: var(--rose); }
 
+  /* Les raccourcis clavier (2.69.0) : la touche a droite, en petites capsules. */
+  #shortcuts .row .aside kbd {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    padding: 1px 5px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: var(--paper);
+    background: var(--ink-2);
+  }
+
   /* L'essai a blanc (2.64.0) : une ligne par magasin, puis ce que la page a
      montre. Meme gabarit que l'etat de session juste au-dessus. */
   #dry-run-results { padding: 4px var(--pad) 0; }
@@ -1529,6 +1541,15 @@
           <span class="switch"></span>
           <span class="toggle-label" data-i18n="hideOwnedLabel"></span>
         </label>
+      </details>
+    </section>
+
+    <section>
+      <details class="fold" id="fold-keys">
+        <summary><h2 data-i18n="shortcutsTitle"></h2><span class="aside" id="fold-keys-say"></span></summary>
+        <div id="shortcuts"></div>
+        <p class="hint" data-i18n="shortcutsHint"></p>
+        <div class="log-foot"><button class="btn-sm" id="shortcuts-edit" data-i18n="shortcutsEdit" hidden></button></div>
       </details>
     </section>
 
