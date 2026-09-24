@@ -4,6 +4,26 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.68.0 -- 2026-09-24
+
+**Le prix et la fiche des jeux mobiles d'Epic**
+
+- **Le prix normal sur la carte** : « 5,39 EUR » pour Mindcop, lu dans
+  l'option `Purchase` de la reponse -- le nombre et la devise, que le reste
+  de l'extension sait deja afficher et convertir. Un jeu offert pour toujours
+  n'a pas d'option payante : pas de valeur inventee.
+- **Un clic ouvre la fiche du jeu** sur le site d'Epic, et plus la page des
+  jeux gratuits : la carte, la notification et l'alerte du telephone. Mesure
+  du 2026-09-24 dans Chromium : `store.epicgames.com/fr/p/mindcop-android-
+  0f4bac` repond 200 et se range en `/p/mindcop-android-0f4bac?lang=fr`, la
+  vraie fiche de Mindcop. La fiche d'un slug iOS n'a pas pu etre ouverte
+  (Cloudflare a arrete les essais suivants) : un jeu offert seulement sur iOS
+  garde la page des jeux gratuits.
+- Les offres deja au catalogue prennent le prix et la fiche au prochain
+  passage de la source.
+
+1281 tests.
+
 ## 2.67.0 -- 2026-09-24
 
 **Le bouton est la sur toutes les pages des magasins**

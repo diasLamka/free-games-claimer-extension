@@ -45,6 +45,7 @@
  */
 import { makeOffer, STORES } from '../offer.js';
 import { normaliseCountry, normaliseLang } from '../locale.js';
+import { storeUrl } from './epic.js';
 
 export const NAME = 'epic-mobile';
 export const PLATFORMS = Object.freeze(['android', 'ios']);
@@ -53,11 +54,46 @@ export const PLATFORMS = Object.freeze(['android', 'ios']);
 export const FREE_TOPIC = /^mobile-(android|ios)-free-game$/;
 
 /**
- * La page qu'ouvre un clic : celle des jeux gratuits, qui AFFICHE la rubrique
- * mobile (mesure V8 : « Installer l'appli mobile pour en profiter »). Une
- * page produit par jeu mobile n'a pas ete mesuree.
+ * La page qu'ouvre un clic quand la fiche du jeu n'est pas connue : celle des
+ * jeux gratuits, qui AFFICHE la rubrique mobile (mesure V8 : « Installer
+ * l'appli mobile pour en profiter »).
  */
 export const PAGE_URL = 'https://store.epicgames.com/free-games';
+
+/**
+ * La fiche du jeu sur le site d'Epic (2.67.0), par le slug ANDROID.
+ *
+ * Mesure du 2026-09-24 dans Chromium : `store.epicgames.com/fr/p/
+ * mindcop-android-0f4bac` repond 200 et se range en `/p/mindcop-android-
+ * 0f4bac?lang=fr` -- la vraie fiche, « Mindcop | Telecharger et acheter
+ * aujourd'hui », titre en h1. Le slug iOS (« mindcop-ios-11d53d ») n'a pas pu
+ * etre ouvert : Cloudflare a arrete les essais suivants. Un jeu iOS seul garde
+ * donc la page des jeux gratuits -- un lien mesure plutot qu'un lien suppose.
+ */
+export function productUrl(slug) {
+  const s = String(slug || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{1,120}-android-[0-9a-f]{4,}$/.test(s)) return null;
+  return storeUrl(`/p/${s}`);
+}
+
+/**
+ * Le prix normal, lu dans l'option `Purchase` (2.67.0), ou null.
+ *
+ * Mesure du 2026-09-23 (test/fixtures) : Mindcop porte `Claim` a 0, puis
+ * `Purchase` a `decimalPrice` 5.39 EUR, affiche « 5,39 € ». Le nombre et la
+ * devise, pas le texte affiche : c'est la forme que le reste de l'extension
+ * sait lire et convertir.
+ */
+export function readPrice(purchase) {
+  for (const o of Array.isArray(purchase) ? purchase : []) {
+    if (!o || String(o.purchaseType || '').toLowerCase() !== 'purchase') continue;
+    const p = o.price || {};
+    const n = Number(p.decimalPrice);
+    const code = String(p.currencyCode || '');
+    if (Number.isFinite(n) && n > 0 && /^[A-Z]{3}$/.test(code)) return `${n.toFixed(2)} ${code}`;
+  }
+  return null;
+}
 
 export function discoverUrl(country, lang, platform) {
   const c = normaliseCountry(country);
@@ -208,9 +244,11 @@ export function mapMobileOffers(parPlateforme, now) {
       const titre = c && typeof c.title === 'string' ? c.title.trim() : '';
       const base = baseSlug(c && c.mapping && c.mapping.slug);
       if (!titre || !base) { dropped.push({ plateforme, raison: 'titre ou slug illisible' }); continue; }
-      const jeu = jeux.get(base) || { titre, base, plateformes: new Set(), image: null, fin: null, ids: [] };
+      const jeu = jeux.get(base) || { titre, base, plateformes: new Set(), image: null, fin: null, ids: [], page: null, prix: null };
       jeu.plateformes.add(plateforme === 'ios' ? 'iOS' : 'Android');
       jeu.image = jeu.image || readImage(c.media);
+      jeu.page = jeu.page || productUrl(c.mapping.slug);
+      jeu.prix = jeu.prix || readPrice(c.purchase);
       const fin = readEnd(c.purchase, now);
       if (fin !== null && (jeu.fin === null || fin < jeu.fin)) jeu.fin = fin;
       if (o.offerId) jeu.ids.push(String(o.offerId));
@@ -223,8 +261,9 @@ export function mapMobileOffers(parPlateforme, now) {
     store: STORES.EPIC_MOBILE,
     storeId: j.base,
     title: j.titre,
-    url: PAGE_URL,
+    url: j.page || PAGE_URL,
     image: j.image,
+    worth: j.prix,
     end: j.fin === null ? null : new Date(j.fin).toISOString(),
     platforms: [...j.plateformes].sort().join(', '),
     category: 'game',

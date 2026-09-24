@@ -116,7 +116,7 @@ est declare `"type": "module"`.
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de ses listes Steam et GOG |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
-| `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames |
+| `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
 | `epic-mobile.js` | la mesure V8 : ou Epic expose ses jeux mobiles gratuits -- elle resume, elle ne decide rien |
 | `engine-text.js` | les phrases du moteur : il envoie une cle et ses valeurs, le lanceur et le worker composent dans la langue du lecteur |

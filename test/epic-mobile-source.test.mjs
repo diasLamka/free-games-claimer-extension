@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   NAME, PAGE_URL, discoverUrl, baseSlug, freeTopicOffers, readImage, readEnd, findImage, findEnd, mapMobileOffers, discover,
+  productUrl, readPrice,
 } from '../watch/sources/epic-mobile.js';
 import { SOURCES, CLAIMABLE_STORES, DETECT_ONLY_STORES, activeSourcesFor } from '../watch/sources/index.js';
 import { STORES, STORE_LABELS, makeOffer } from '../watch/offer.js';
@@ -162,7 +163,9 @@ test('Android et iOS : un jeu, deux plateformes, jamais reclamable', () => {
   assert.equal(calico.storeId, 'calico');
   assert.equal(calico.source, NAME);
   assert.equal(calico.platforms, 'Android, iOS');
-  assert.equal(calico.url, PAGE_URL);
+  assert.equal(calico.url, productUrl('calico-android-83faf9'), 'la fiche du jeu, par son slug Android');
+  assert.match(calico.url, /^https:\/\/store\.epicgames\.com\/p\/calico-android-83faf9(\?lang=[a-z-]+)?$/i);
+  assert.equal(offers.find((o) => o.title === 'Mutazione').url, PAGE_URL, 'iOS seul : la fiche iOS n\'a pas ete mesuree');
   assert.equal(calico.image, 'https://cdn1.epicgames.com/calico.jpg');
   assert.equal(calico.end, Date.parse(fin));
   assert.equal(calico.keepable, true);
@@ -216,6 +219,25 @@ test('la vraie reponse : un jeu, Android et iOS, avec sa fin et sa vignette', ()
   assert.equal(o.platforms, 'Android, iOS');
   assert.equal(o.end, FIN_MINDCOP);
   assert.equal(o.image, 'https://cdn1.epicgames.com/spt-assets/984cdc148ea6423e866ca6e04a1b429f/mindcop-kplp1.jpg');
+  // 2.67.0 : le prix normal de l'option Purchase, et la fiche mesuree le 2026-09-24.
+  assert.equal(o.worth, '5.39 EUR');
+  assert.equal(o.url, productUrl('mindcop-android-0f4bac'));
+});
+
+test('le prix normal : l\'option Purchase, jamais la gratuite ni un texte', () => {
+  assert.equal(readPrice([{ purchaseType: 'Claim', price: { decimalPrice: 0, currencyCode: 'EUR' } },
+    { purchaseType: 'Purchase', price: { decimalPrice: 5.39, currencyCode: 'EUR' }, priceDisplay: '5,39 €' }]), '5.39 EUR');
+  assert.equal(readPrice([{ purchaseType: 'Claim', price: { decimalPrice: 0, currencyCode: 'EUR' } }]), null, 'offert pour toujours : aucune valeur inventee');
+  assert.equal(readPrice([{ purchaseType: 'Purchase', price: { decimalPrice: 'x', currencyCode: 'EUR' } }]), null);
+  assert.equal(readPrice([{ purchaseType: 'Purchase', price: { decimalPrice: 3, currencyCode: 'euro' } }]), null);
+  assert.equal(readPrice(null), null);
+});
+
+test('la fiche : un slug Android bien forme, rien d\'autre', () => {
+  assert.equal(productUrl('mindcop-ios-11d53d'), null);
+  assert.equal(productUrl('mindcop'), null);
+  assert.equal(productUrl('../x-android-123456'), null);
+  assert.equal(productUrl(null), null);
 });
 
 /* ------------------------------------------------------------ la decouverte */
