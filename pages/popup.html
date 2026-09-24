@@ -18,6 +18,9 @@
     --amber-d:#FF8A3D;
     --jade:   #56D6A0;
     --rose:   #FF6B81;
+    /* La couleur des batons du Bilan (2.72.0), validee contre le fond : un
+       ambre plus sourd que --amber, qui sortait de la bande de clarte. */
+    --chart:  #CC7A20;
 
     --epic:   #E4DDF5;
     --gog:    #A567FF;
@@ -47,6 +50,7 @@
       --mute:   #6E6488;
       --amber:  #B96A00;
       --amber-d:#A85400;
+      --chart:  #B96A00;
       --jade:   #12805B;
       --rose:   #D62B47;
       --epic:   #3D3459;
@@ -67,6 +71,7 @@
     --mute:   #6E6488;
     --amber:  #B96A00;
     --amber-d:#A85400;
+    --chart:  #B96A00;
     --jade:   #12805B;
     --rose:   #D62B47;
     --epic:   #3D3459;
@@ -793,6 +798,38 @@
   .sessions-head .aside { color: var(--mute); font-size: 11px; }
   .sessions-head .aside.hi { color: var(--amber); }
 
+  /* Le graphique du Bilan (2.72.0) : une serie, des colonnes fines a bout
+     arrondi posees sur une ligne de base, la valeur ecrite sur deux batons
+     seulement -- le plus haut et le mois en cours --, le reste dans
+     l'infobulle et le tableau. */
+  .mchart { position: relative; margin: 12px 0 4px; }
+  .mchart-title { font-size: 11px; color: var(--mute); margin: 0 0 8px; }
+  .mchart-plot { display: flex; align-items: flex-end; gap: 2px; height: 78px; border-bottom: 1px solid var(--line); }
+  :root[data-vue="onglet"] .mchart-plot { height: 128px; }
+  .mcol {
+    flex: 1; min-width: 0; height: 100%;
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+    border-radius: 4px; outline: none;
+  }
+  .mcol:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  .mbar { width: min(24px, 72%); border-radius: 4px 4px 0 0; background: var(--chart); }
+  .mcol:hover .mbar, .mcol:focus-visible .mbar { filter: brightness(1.15); }
+  .mval { font: 600 10px/1 var(--mono); color: var(--paper); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .mchart-months { display: flex; gap: 2px; margin-top: 4px; }
+  .mchart-months span { flex: 1; min-width: 0; text-align: center; font-size: 9.5px; color: var(--mute); text-transform: capitalize; }
+  .mchart-tip {
+    position: absolute; z-index: 3; pointer-events: none; transform: translate(-50%, -100%);
+    padding: 5px 8px; border-radius: 6px; background: var(--ink-3); border: 1px solid var(--line);
+    font-size: 11px; line-height: 1.35; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
+  .mchart-tip b { color: var(--paper); font-weight: 600; }
+  .mchart-tip span { color: var(--mute); }
+  .mchart-table summary { font-size: 11px; color: var(--mute); cursor: pointer; margin-top: 8px; }
+  .mchart-table table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11px; }
+  .mchart-table th, .mchart-table td { padding: 2px 4px; text-align: right; font-variant-numeric: tabular-nums; }
+  .mchart-table th { color: var(--mute); font-weight: 500; }
+  .mchart-table th:first-child, .mchart-table td:first-child { text-align: left; }
+
   .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--jade); }
   .dot.paused { background: var(--amber); }
   .dot.off { background: var(--line); }
@@ -1314,6 +1351,16 @@
         <summary><h2 data-i18n="summary"></h2><span class="aside" id="fold-tally-say"></span></summary>
         <p class="tally" id="tally"></p>
         <p class="hint" id="tally-extra"></p>
+        <figure class="mchart" id="tally-chart" hidden>
+          <figcaption class="mchart-title" data-i18n="chartTitle"></figcaption>
+          <div class="mchart-plot" id="tally-chart-plot" role="list"></div>
+          <div class="mchart-months" id="tally-chart-months" aria-hidden="true"></div>
+          <div class="mchart-tip" id="tally-chart-tip" role="tooltip" hidden></div>
+          <details class="mchart-table">
+            <summary data-i18n="chartTable"></summary>
+            <table id="tally-chart-table"></table>
+          </details>
+        </figure>
         <div id="tally-stores"></div>
       </details>
     </section>

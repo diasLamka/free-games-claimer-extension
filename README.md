@@ -175,6 +175,7 @@ content/                    ce qui s'injecte dans les pages de magasin
 lib/                        partage par les pages, le worker et la veille
   dashboard.js                le popup se sait-il ouvert dans un onglet ? (tableau de bord)
   store-chips.js              les puces de magasin au-dessus des jeux
+  month-chart.js              le graphique du Bilan : les jeux recuperes, mois par mois
   i18n.js                     traduction
   i18n-tables.js              tables de traduction -- GENEREES depuis _locales
   money.js                    montants et devises
@@ -297,6 +298,11 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Le graphique du Bilan** (2.72.0) : les jeux recuperes sur douze mois, en
+colonnes -- le plus haut mois et le mois en cours portent leur nombre ;
+survol ou clavier donnent le nombre et la valeur de chaque mois, et « Voir en
+tableau » les donne tous. Plus grand dans le tableau de bord.
 
 **Le panneau des pages de magasin suit le theme** (2.70.0) choisi dans
 Reglages -> Apparence : clair, sombre, ou celui du systeme -- et il change en

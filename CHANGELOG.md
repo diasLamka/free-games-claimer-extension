@@ -4,6 +4,38 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.72.0 -- 2026-09-24
+
+**Le graphique du Bilan, mois par mois**
+
+Le Bilan disait « 24 jeux recuperes » et « meilleur mois : aout 2026 avec
+5 ». Le rythme -- une annee qui s'accelere, un magasin qui se tait -- ne se lit
+que dessine.
+
+- **Douze mois en colonnes**, dans Reglages -> Bilan, et plus grand dans le
+  tableau de bord. Une seule serie, les jeux que l'extension a pris : ce qui
+  etait deja a vous n'y compte pas, comme dans le bilan. Les mois sont ceux de
+  « meilleur mois », pour que les deux designent le meme.
+- **Deux chiffres seulement sur les batons** : le mois le plus haut et le mois
+  en cours. Le survol -- ou la touche Tab -- donne le nombre et la valeur de
+  chaque mois ; « Voir en tableau » les donne tous, sans pointeur.
+- **La valeur n'a pas de second axe** : autre grandeur, et parfois deux
+  devises qui ne s'additionnent pas. Elle est dans l'infobulle et le tableau,
+  convertie comme ailleurs dans le popup.
+- **Une couleur validee** contre le fond, en sombre et en clair : un ambre
+  plus sourd que celui des boutons, qui sortait de la bande de clarte
+  lisible pour des colonnes.
+- Pas de graphique tant qu'un seul mois a quelque chose : un baton seul ne
+  montre aucun rythme.
+- Le CHANGELOG de la 2.71.0 retrouve son nombre de tests, perdu a la fusion
+  avec la 2.70.1.
+
+Verifie dans l'extension chargee dans Chromium, sur un an de reclamations :
+popup en sombre et en clair, tableau de bord, infobulle a la souris et au
+clavier, aucun debordement a 328 px.
+
+1305 tests.
+
 ## 2.71.0 -- 2026-09-24
 
 **Les alertes sur Discord ou Telegram**
@@ -35,6 +67,8 @@ Discord et Telegram en local : l'essai arrive a chacun, en JSON, au bon
 chemin. La boite de permission du navigateur, elle, a ete court-circuitee
 pour l'essai ; avec la permission accordee pour de vrai, l'extension n'est
 pas soumise au CORS de ces services.
+
+1299 tests.
 
 ## 2.70.1 -- 2026-09-24
 

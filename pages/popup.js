@@ -44,6 +44,7 @@ import {
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
+import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/month-chart.js';
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
@@ -1755,13 +1756,97 @@ function renderPrediction(all) {
 
 /* ------------------------------------------------------------------- tally */
 
+/* Le graphique du Bilan (2.72.0) : les jeux recuperes, mois par mois, sur
+   douze mois. Une seule serie -- le titre la nomme, pas de legende --, la
+   valeur economisee dans l'infobulle et le tableau, jamais sur un second axe.
+   Tout passe par textContent : les titres viennent des magasins. */
+function monthName(aaaaMm, style) {
+  const [an, m] = aaaaMm.split('-').map(Number);
+  return new Date(Date.UTC(an, m - 1, 1)).toLocaleDateString(intlLocale(), { ...style, timeZone: 'UTC' });
+}
+
+function monthGames(n) {
+  return t(n === 1 ? 'chartOne' : 'chartMany', String(n));
+}
+
+function renderMonthChart(rows) {
+  const figure = document.getElementById('tally-chart');
+  if (!figure) return;
+  const series = monthlySeries(rows, Date.now());
+  figure.hidden = !worthDrawing(series);
+  if (figure.hidden) return;
+
+  const plot = document.getElementById('tally-chart-plot');
+  const mois = document.getElementById('tally-chart-months');
+  const tip = document.getElementById('tally-chart-tip');
+  const table = document.getElementById('tally-chart-table');
+  plot.textContent = '';
+  mois.textContent = '';
+  table.textContent = '';
+  tip.hidden = true;
+
+  const max = Math.max(...series.map((p) => p.count));
+  const ecrits = labelledMonths(series);
+  const valeur = (p) => (Object.keys(p.totals).length ? moneyTotals(p.totals) : null);
+
+  const montrer = (col, barre, p) => {
+    tip.textContent = '';
+    tip.append(el('b', null, monthGames(p.count)), ' ', el('span', null, monthName(p.month, { month: 'long', year: 'numeric' })));
+    const v = valeur(p);
+    if (v) { tip.append(document.createElement('br'), el('span', null, t('chartWorth', v))); }
+    tip.hidden = false;
+    const cadre = figure.getBoundingClientRect();
+    // Au-dessus du chiffre quand le baton en porte un : l'infobulle ne le cache pas.
+    const cible = (col.querySelector('.mval') || barre || col).getBoundingClientRect();
+    const demi = tip.offsetWidth / 2;
+    const x = Math.min(Math.max(cible.left + cible.width / 2 - cadre.left, demi), cadre.width - demi);
+    tip.style.left = `${Math.round(x)}px`;
+    tip.style.top = `${Math.round((barre ? cible.top : cible.bottom) - cadre.top - 6)}px`;
+  };
+  const cacher = () => { tip.hidden = true; };
+
+  series.forEach((p, i) => {
+    const col = el('div', 'mcol');
+    col.setAttribute('role', 'listitem');
+    col.tabIndex = 0;
+    const v = valeur(p);
+    col.setAttribute('aria-label', `${monthName(p.month, { month: 'long', year: 'numeric' })} : ${monthGames(p.count)}${v ? `, ${v}` : ''}`);
+    let barre = null;
+    if (p.count > 0) {
+      if (ecrits.has(i)) col.append(el('span', 'mval', String(p.count)));
+      barre = el('div', 'mbar');
+      barre.style.height = `calc((100% - 16px) * ${barHeight(p.count, max).toFixed(3)})`;
+      col.append(barre);
+    }
+    col.addEventListener('pointerenter', () => montrer(col, barre, p));
+    col.addEventListener('focus', () => montrer(col, barre, p));
+    col.addEventListener('pointerleave', cacher);
+    col.addEventListener('blur', cacher);
+    plot.append(col);
+    mois.append(el('span', null, monthName(p.month, { month: 'narrow' })));
+  });
+
+  // Le tableau : tout ce que l'infobulle dit, sans pointeur. Le plus recent d'abord.
+  const tete = el('tr');
+  for (const cle of ['chartMonth', 'chartGames', 'chartValue']) tete.append(el('th', null, t(cle)));
+  table.append(tete);
+  for (const p of [...series].reverse()) {
+    if (!p.count) continue;
+    const ligne = el('tr');
+    ligne.append(el('td', null, monthName(p.month, { month: 'long', year: 'numeric' })), el('td', null, String(p.count)), el('td', null, valeur(p) || '—'));
+    table.append(ligne);
+  }
+}
+
 function renderTally(all) {
   const histories = Object.fromEntries(
     Object.entries(HISTORY_KEYS).map(([label, key]) => [label, get(all, key, {})]),
   );
-  const b = tally(claimsMade(histories, get(all, KEY_CATALOG, {}), { library: get(all, KEY_LIBRARY, {}) }));
+  const rows = claimsMade(histories, get(all, KEY_CATALOG, {}), { library: get(all, KEY_LIBRARY, {}) });
+  const b = tally(rows);
   const zone = document.getElementById('tally');
   zone.textContent = '';
+  renderMonthChart(rows);
 
   foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))
     : b.already ? t('foldTallyAlready', String(b.already)) : '');

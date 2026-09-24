@@ -1933,5 +1933,29 @@
   },
   "phoneSentTo": {
     "message": "Test sent: look at $1"
+  },
+  "chartTitle": {
+    "message": "Games claimed, month by month"
+  },
+  "chartTable": {
+    "message": "Show as a table"
+  },
+  "chartOne": {
+    "message": "1 game"
+  },
+  "chartMany": {
+    "message": "$1 games"
+  },
+  "chartWorth": {
+    "message": "worth $1"
+  },
+  "chartMonth": {
+    "message": "Month"
+  },
+  "chartGames": {
+    "message": "Games"
+  },
+  "chartValue": {
+    "message": "Value"
   }
 }
