@@ -56,6 +56,9 @@
   var api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
   var KEY_POSITION = 'veille:lanceur';
+  /* Les preferences d'affichage du popup, dont le theme (2.70.0). Lues ici,
+     jamais ecrites : le popup en est le seul ecrivain. */
+  var KEY_UI = 'veille:ui';
   var TAILLE = 40;
   var ECART = 10;
   var BORD = 12;
@@ -69,7 +72,7 @@
   /* L'air laisse entre le bouton et celui d'un voisin. */
   var ESPACE = 6;
 
-  var C = {
+  var SOMBRE = {
     fond: '#14101F', bord: '#2E2745', texte: '#EDE9F5', doux: '#9A90B8',
     ambre: '#FFB454', ambreClair: '#FFC47A', icone: '#FFA554', encre: '#181128',
     eteint: '#3A3350', idle: '#9A90B8', running: '#F5A623', ok: '#4CC38A', error: '#E5484D',
@@ -77,7 +80,30 @@
        magasin -- les memes que dans le popup. */
     carte: '#1E1830', carteSurvol: '#262038', rose: '#FF6B81', jade: '#56D6A0',
     epic: '#E4DDF5', 'epic-mobile': '#E4DDF5', gog: '#A567FF', steam: '#66C0F4', amazon: '#00C2FF',
+    /* Le theme clair (2.70.0) a demande de separer ce que l'ambre faisait
+       seul : le bouton plein, l'accent de texte, la pastille. */
+    bouton: '#FFB454', boutonSurvol: '#FFC47A', boutonTexte: '#181128',
+    pastilleFond: '#EDE9F5', pastilleTexte: '#181128',
+    ombre: 'rgba(0,0,0,.5)', ombreBulle: 'rgba(0,0,0,.4)', schema: 'dark',
   };
+
+  /* Le theme clair (2.70.0) : les couleurs du popup en clair, pour que le
+     panneau suive le theme choisi dans l'extension -- ou celui du systeme.
+     L'icone et le bouton plein gardent leurs couleurs : ce sont la marque. */
+  var CLAIR = {
+    fond: '#FBFAFE', bord: '#DCD5EC', texte: '#1B1528', doux: '#6E6488',
+    ambre: '#9E5A00', ambreClair: '#8A4E00', icone: '#FFA554', encre: '#181128',
+    eteint: '#CFC7E2', idle: '#6E6488', running: '#D98A00', ok: '#12805B', error: '#D62B47',
+    carte: '#F2EFF9', carteSurvol: '#E8E3F3', rose: '#D62B47', jade: '#12805B',
+    epic: '#3D3459', 'epic-mobile': '#3D3459', gog: '#7A32E0', steam: '#1872A6', amazon: '#00709C',
+    bouton: '#FFB454', boutonSurvol: '#FFC47A', boutonTexte: '#181128',
+    pastilleFond: '#1B1528', pastilleTexte: '#FBFAFE',
+    ombre: 'rgba(27,21,40,.18)', ombreBulle: 'rgba(27,21,40,.16)', schema: 'light',
+  };
+
+  /* La palette en cours. Chaque couleur est posee a la construction : changer
+     de palette, c'est reconstruire (appliquerTheme). */
+  var C = SOMBRE;
   var POLICE = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 
   /* Les libelles, par nom. Ceux du worker d'abord : ils suivent la langue
@@ -497,8 +523,8 @@
 
     /* La pastille : combien la fiche a de choses a dire. */
     var pastille = el('span', 'position:absolute;top:-6px;left:-6px;min-width:16px;height:16px;padding:0 3px;'
-      + 'box-sizing:border-box;border-radius:8px;border:2px solid ' + C.fond + ';background:' + C.texte + ';color:'
-      + C.encre + ';font:700 9px/12px ' + POLICE + ';text-align:center;display:none');
+      + 'box-sizing:border-box;border-radius:8px;border:2px solid ' + C.fond + ';background:' + C.pastilleFond + ';color:'
+      + C.pastilleTexte + ';font:700 9px/12px ' + POLICE + ';text-align:center;display:none');
     pastille.setAttribute('aria-hidden', 'true');
     bouton.appendChild(pastille);
 
@@ -513,7 +539,7 @@
     var bulle = el('div', 'position:absolute;top:50%;transform:translateY(-50%);box-sizing:border-box;'
       + 'width:max-content;max-width:300px;padding:8px 12px 8px 8px;border-radius:12px;cursor:pointer;'
       + 'background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';font:12.5px/1.35 ' + POLICE
-      + ';box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;align-items:center;gap:10px');
+      + ';box-shadow:0 8px 24px ' + C.ombreBulle + ';display:none;align-items:center;gap:10px');
     bulle.setAttribute('role', 'status');
     bulle.addEventListener('click', function () { ouvrir(); });
 
@@ -627,7 +653,7 @@
   function construirePanneau() {
     var boite = el('div', 'position:absolute;box-sizing:border-box;width:340px;border-radius:14px;background:' + C.fond
       + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';font:13px/1.45 ' + POLICE
-      + ';box-shadow:0 14px 40px rgba(0,0,0,.5);overflow-y:auto;overflow-x:hidden;color-scheme:dark;text-align:left;display:none');
+      + ';box-shadow:0 14px 40px ' + C.ombre + ';overflow-y:auto;overflow-x:hidden;color-scheme:' + C.schema + ';text-align:left;display:none');
     boite.setAttribute('role', 'dialog');
     boite.setAttribute('aria-label', 'Free Games Auto-Claimer');
 
@@ -665,13 +691,13 @@
     statut.appendChild(statutPoint);
     statut.appendChild(statutTexte);
     var reclamer = el('button', 'all:initial;display:block;box-sizing:border-box;width:100%;padding:9px 12px;'
-      + 'border-radius:10px;background:' + C.ambre + ';color:' + C.encre + ';font:700 13px/1.2 ' + POLICE
+      + 'border-radius:10px;background:' + C.bouton + ';color:' + C.boutonTexte + ';font:700 13px/1.2 ' + POLICE
       + ';text-align:center;cursor:pointer');
     reclamer.type = 'button';
     reclamer.addEventListener('click', function () {
       if (etat.moteur) etat.moteur.claim();
     });
-    survol(reclamer, function () { reclamer.style.background = C.ambreClair; }, function () { reclamer.style.background = C.ambre; });
+    survol(reclamer, function () { reclamer.style.background = C.boutonSurvol; }, function () { reclamer.style.background = C.bouton; });
 
     var auto = el('button', 'all:initial;display:flex;align-items:center;justify-content:space-between;gap:10px;'
       + 'box-sizing:border-box;width:100%;margin-top:10px;padding:2px 0;color:' + C.texte + ';font:13px/1.35 ' + POLICE
@@ -1208,6 +1234,56 @@
       );
     } catch (e) { /* contexte invalide apres une mise a jour : on se tait */ }
   }
+
+  /* ------------------------------------------------------------ le theme */
+
+  var themeChoisi = 'system';
+
+  function paletteVoulue() {
+    if (themeChoisi === 'light') return CLAIR;
+    if (themeChoisi === 'dark') return SOMBRE;
+    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? CLAIR : SOMBRE; } catch (e) { return SOMBRE; }
+  }
+
+  /** Le theme du popup -- 'system', 'light' ou 'dark' -- applique au lanceur.
+      Ce qui est affiche est reconstruit : chaque couleur y est posee une fois. */
+  function appliquerTheme(theme) {
+    if (theme === 'light' || theme === 'dark' || theme === 'system') themeChoisi = theme;
+    var voulue = paletteVoulue();
+    if (voulue === C) return;
+    C = voulue;
+    if (!hote) return;
+    var ouvert = etat.ouvert;
+    detruire();
+    mettreAJour();
+    if (ouvert && hote) ouvrir();
+  }
+
+  /** Le reglage tel que le popup l'ecrit : un objet, ou son texte JSON. */
+  function themeDe(v) {
+    var o = v;
+    if (typeof o === 'string') { try { o = JSON.parse(o); } catch (e) { o = null; } }
+    return o && typeof o.theme === 'string' ? o.theme : null;
+  }
+
+  try {
+    api.storage.local.get(KEY_UI, function (items) {
+      void api.runtime.lastError;
+      appliquerTheme(themeDe(items && items[KEY_UI]));
+    });
+    if (api.storage.onChanged) {
+      api.storage.onChanged.addListener(function (changes, zone) {
+        if (zone === 'local' && changes[KEY_UI]) appliquerTheme(themeDe(changes[KEY_UI].newValue));
+      });
+    }
+  } catch (e) { /* contexte invalide apres une mise a jour : on se tait */ }
+  /* En theme systeme, le lanceur suit le systeme quand il change. */
+  try {
+    var requete = window.matchMedia('(prefers-color-scheme: light)');
+    if (requete && typeof requete.addEventListener === 'function') {
+      requete.addEventListener('change', function () { appliquerTheme(themeChoisi); });
+    }
+  } catch (e) {}
 
   /* Sur un magasin, le bouton n'attend pas le worker (regle 2) : il arrive
      des que sa place est relue, avec les libelles du navigateur, et la

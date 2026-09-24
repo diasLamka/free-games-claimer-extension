@@ -298,6 +298,10 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
+**Le panneau des pages de magasin suit le theme** (2.70.0) choisi dans
+Reglages -> Apparence : clair, sombre, ou celui du systeme -- et il change en
+direct, meme ouvert.
+
 **Les raccourcis clavier** (2.69.0), depuis n'importe quelle page du
 navigateur : Alt+Maj+G ouvre l'extension, Alt+Maj+D le tableau de bord,
 Alt+Maj+V lance une verification. Ce ne sont que des suggestions : Reglages ->

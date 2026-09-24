@@ -4,6 +4,30 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.70.0 -- 2026-09-24
+
+**Le panneau des pages de magasin en clair**
+
+Le bouton et le panneau poses sur Steam, Epic, GOG et Luna etaient toujours
+sombres, meme quand le popup etait en clair.
+
+- **Ils suivent le theme choisi dans Reglages -> Apparence** : clair, sombre,
+  ou « systeme », qui suit celui de l'ordinateur -- et changent avec lui.
+  Un changement se voit tout de suite, panneau ouvert compris.
+- **Une palette claire a part entiere**, reprise du popup, et reglee pour se
+  lire : chaque couleur de texte -- magasins compris -- depasse un contraste
+  de 4,5 sur le fond, ce qu'un test verifie. L'ambre et les bleus de Steam et
+  d'Amazon y sont un peu plus fonces que dans le popup pour y arriver.
+- La pastille du nombre s'inverse en clair (sinon elle disparaissait sur le
+  fond), le bouton « Recuperer » et l'icone gardent leur ambre : c'est la
+  marque.
+
+Verifie dans l'extension chargee dans Chromium, sur une fausse fiche Steam :
+le panneau ouvert en clair, puis passe en sombre sans se fermer quand le
+reglage change.
+
+1287 tests.
+
 ## 2.69.0 -- 2026-09-24
 
 **Des raccourcis clavier**

@@ -141,7 +141,7 @@ const dans = (z, x, y) => x >= z.left && x <= z.left + z.width && y >= z.top && 
  */
 function charger({
   hostname = 'luna.amazon.com', pathname = '/claims/home', h1 = null, reponse = {}, top = true, stored,
-  voisins = [], reduit = false,
+  voisins = [], reduit = false, ui, clair = false,
 } = {}) {
   const { doc, El } = makeDom();
   if (h1) { doc.h1 = new El('h1'); doc.h1.textContent = h1; }
@@ -154,7 +154,7 @@ function charger({
     innerWidth: 1200,
     addEventListener(t, f) { (ecoutes[t] ||= []).push(f); },
     removeEventListener(t, f) { ecoutes[t] = (ecoutes[t] || []).filter((g) => g !== f); },
-    matchMedia: () => ({ matches: reduit }),
+    matchMedia: (q) => ({ matches: /color-scheme: light/.test(q) ? clair : reduit }),
     getComputedStyle: (n) => ({ position: n.fixed ? 'fixed' : 'static' }),
   };
 
@@ -181,6 +181,7 @@ function charger({
     return pile;
   };
   const messages = [];
+  const changements = [];
   const chrome = {
     runtime: {
       lastError: undefined,
@@ -190,9 +191,11 @@ function charger({
     i18n: { getMessage: (k) => `nav:${k}` },
     storage: {
       local: {
-        get: (k, cb) => cb(stored === undefined ? {} : { [k]: stored }),
+        /* Le theme vit sous sa propre cle (2.70.0) : `ui`, a part de la place. */
+        get: (k, cb) => cb(k === 'veille:ui' ? (ui === undefined ? {} : { [k]: ui }) : (stored === undefined ? {} : { [k]: stored })),
         set: (o, cb) => { ecrits.push(JSON.parse(JSON.stringify(o))); if (cb) cb(); },
       },
+      onChanged: { addListener: (f) => changements.push(f) },
     },
   };
   const ctx = {
@@ -232,6 +235,8 @@ function charger({
   const pos = () => ({ left: hote().style.left, top: hote().style.top });
   return {
     doc, win, api: win.FGC_PAGE_UI, envoyes, ecrits, minuteries, hote, parts, elements, jouer, jouerJusqua, redimensionner, pos,
+    /** Le popup change un reglage d'affichage. */
+    changerUi: (valeur) => { for (const f of changements) f({ 'veille:ui': { newValue: valeur } }, 'local'); },
     /** Ce que le lanceur repond a un message du worker. */
     demander: (msg) => {
       let r;
@@ -825,4 +830,54 @@ test('ouvrir le panneau relit l\'extension : les comptes a rebours ne vieillisse
   const avant = p.envoyes.filter((m) => m.type === 'fgc-lookup').length;
   p.parts().bouton.fire('click');
   assert.equal(p.envoyes.filter((m) => m.type === 'fgc-lookup').length, avant + 1);
+});
+
+/* ------------------------------------------------------------ le theme (2.70.0) */
+
+const fondDe = (p) => p.parts().panneau.style.background;
+
+test('le panneau suit le theme choisi dans le popup, sinon celui du systeme', () => {
+  const sombre = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: null });
+  assert.equal(fondDe(sombre), '#14101F', 'par defaut, systeme sombre : sombre');
+  const systemeClair = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: null, clair: true });
+  assert.equal(fondDe(systemeClair), '#FBFAFE');
+  const choisi = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: null, ui: { theme: 'light' } });
+  assert.equal(fondDe(choisi), '#FBFAFE');
+  const texte = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: null, ui: JSON.stringify({ theme: 'dark' }), clair: true });
+  assert.equal(fondDe(texte), '#14101F', 'le reglage bat le systeme, meme ecrit en texte');
+});
+
+test('changer de theme dans le popup redessine le lanceur, ouvert ou non', () => {
+  const p = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: { facts: [], lines: [], free: { total: 0, offers: [] } } });
+  p.parts().bouton.fire('click');
+  assert.equal(p.parts().panneau.style.display !== 'none', true);
+  p.changerUi({ theme: 'light' });
+  assert.equal(fondDe(p), '#FBFAFE');
+  assert.notEqual(p.parts().panneau.style.display, 'none', 'reste ouvert');
+  assert.equal(p.parts().pastille.style.background, '#1B1528', 'la pastille s\'inverse, sinon elle disparait');
+  p.changerUi({ theme: 'dark' });
+  assert.equal(fondDe(p), '#14101F');
+  p.changerUi({ density: 'compact' });
+  assert.equal(fondDe(p), '#14101F', 'un autre reglage ne touche a rien');
+});
+
+test('les deux palettes ont les memes couleurs, et le clair se lit', () => {
+  const bloc = (nom) => {
+    const m = new RegExp(`var ${nom} = \\{([\\s\\S]*?)\\n  \\};`).exec(SRC);
+    assert.ok(m, nom);
+    return Object.fromEntries([...m[1].matchAll(/'?([\w-]+)'?: '([^']+)'/g)].map((x) => [x[1], x[2]]));
+  };
+  const sombre = bloc('SOMBRE');
+  const clair = bloc('CLAIR');
+  assert.deepEqual(Object.keys(clair).sort(), Object.keys(sombre).sort());
+  const lum = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contraste = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  for (const cle of ['texte', 'doux', 'ambre', 'rose', 'jade', 'epic', 'gog', 'steam', 'amazon']) {
+    assert.ok(contraste(clair[cle], clair.fond) >= 4.5, `${cle} sur le fond clair : ${contraste(clair[cle], clair.fond).toFixed(2)}`);
+  }
+  assert.ok(contraste(clair.pastilleTexte, clair.pastilleFond) >= 4.5);
+  assert.ok(contraste(clair.boutonTexte, clair.bouton) >= 4.5);
 });
