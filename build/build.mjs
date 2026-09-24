@@ -399,7 +399,9 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   'watch/lookup.js',
   /* Les messages du bouton « Mettre a jour maintenant » : le popup les lit
      par une cle rendue par updateMessage, jamais ecrite en toutes lettres. */
-  'watch/self-update.js']);
+  'watch/self-update.js',
+  /* Le recap du jeudi (2.65.0) compose sa notification lui-meme. */
+  'watch/recap.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -430,7 +432,9 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   'watch/lookup.js',
   /* Les messages du bouton « Mettre a jour maintenant » : le popup les lit
      par une cle rendue par updateMessage, jamais ecrite en toutes lettres. */
-  'watch/self-update.js'].map((f) => {
+  'watch/self-update.js',
+  /* Le recap du jeudi (2.65.0) compose sa notification lui-meme. */
+  'watch/recap.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

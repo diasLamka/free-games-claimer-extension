@@ -4,6 +4,48 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.65.0 -- 2026-09-24
+
+**Le recap du jeudi soir**
+
+Epic change ses jeux le jeudi a 17 h. C'est le rendez-vous de la semaine, et
+le bon moment pour dire en une notification ce que l'extension a fait pendant
+qu'on ne regardait pas.
+
+- **Une notification par semaine, le jeudi a 18 h** (heure de l'ordinateur),
+  une heure apres la rotation -- le temps qu'un cycle voie les nouveaux jeux
+  et les prenne : « Votre semaine : 3 jeux recuperes », puis
+  « Recuperes : ... (valeur 24,98 EUR) », « A prendre vous-meme : Dwarven
+  Realms (Steam), Mindcop (Epic Games (mobile)) », « Rates : ... »,
+  « Bientot : Astrea Six Sided Oracles, Mechabellum ». Un clic ouvre le
+  tableau de bord.
+- **Ce qu'il compte** : les reclamations du moteur depuis le recap precedent,
+  sans ce qu'il a seulement trouve deja a vous, plus Steam ; les offres en
+  cours que l'extension ne prendra pas (Steam sans l'option, jeux mobiles,
+  reclamation arretee sur une connexion ou un defi) ; les offres finies sans
+  que le jeu arrive ; les ouvertures qu'Epic annonce dans les huit jours. La
+  valeur n'est donnee que dans une seule devise -- dollars et euros ne
+  s'additionnent pas.
+- **Un seul par semaine.** Un ordinateur eteint le jeudi soir le recoit au
+  reveil, jusqu'au dimanche soir ; lundi, il ne part plus. La date est ecrite
+  avant la notification : mieux vaut en perdre un que l'envoyer deux fois.
+  Une semaine sans rien a dire n'envoie rien. Les heures calmes le retiennent
+  jusqu'au matin.
+- **Reglages -> Notifications -> « Recap du jeudi soir »**, actif par defaut ;
+  il suit « Me prevenir » (coupe, il ne part pas sur l'ordinateur). Sur le
+  telephone, une case a part, « Aussi le recap du jeudi soir ».
+- Les titres de l'agregateur y sont nettoyes comme dans le popup, et la
+  liste « Bientot » du popup et celle du recap sont desormais la meme
+  fonction.
+
+Verifie dans l'extension chargee dans Chromium, reglee sur le fuseau de Tokyo
+pour y etre jeudi 18 h 04 : apres un cycle sur les vrais magasins, la
+notification est partie une fois, avec les vraies offres du jour ; relancee
+une heure plus tard, rien. Les tests le verifient aussi a Paris et a Los
+Angeles.
+
+1268 tests.
+
 ## 2.64.0 -- 2026-09-24
 
 **Tester la recuperation, sans rien recuperer**

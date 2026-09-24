@@ -48,7 +48,7 @@ test('une adresse de sujet : https, un chemin, rien d\'autre', () => {
 test('la cible n\'existe que si l\'alerte est active ET l\'adresse valide', () => {
   assert.equal(phoneTarget({ on: false, url: 'https://ntfy.sh/a' }), null);
   assert.equal(phoneTarget({ on: true, url: 'http://ntfy.sh/a' }), null);
-  assert.deepEqual(phoneTarget({ on: true, url: 'https://ntfy.sh/a' }), { url: 'https://ntfy.sh/a', token: '', wished: true, mobile: true });
+  assert.deepEqual(phoneTarget({ on: true, url: 'https://ntfy.sh/a' }), { url: 'https://ntfy.sh/a', token: '', wished: true, mobile: true, recap: true });
   assert.equal(phoneTarget({ on: true, url: 'https://ntfy.sh/a', wished: false }).wished, false);
   // Les jeux mobiles d'Epic (2.57.0) : actifs par defaut, coupables a part.
   assert.equal(phoneTarget({ on: true, url: 'https://ntfy.sh/a', mobile: false }).mobile, false);

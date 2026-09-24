@@ -1831,5 +1831,38 @@
   },
   "justNow": {
     "message": "justo ahora"
+  },
+  "recapLabel": {
+    "message": "Resumen del jueves por la tarde"
+  },
+  "recapHint": {
+    "message": "Una vez por semana, después de los juegos nuevos de Epic: lo obtenido, lo que te queda y lo que se perdió"
+  },
+  "phoneRecapLabel": {
+    "message": "También el resumen del jueves por la tarde"
+  },
+  "recapTitle": {
+    "message": "Tu semana de juegos gratis"
+  },
+  "recapTitleOne": {
+    "message": "Tu semana: 1 juego obtenido"
+  },
+  "recapTitleMany": {
+    "message": "Tu semana: $1 juegos obtenidos"
+  },
+  "recapClaimed": {
+    "message": "Obtenidos: $1"
+  },
+  "recapClaimedWorth": {
+    "message": "Obtenidos: $1 (valor $2)"
+  },
+  "recapManual": {
+    "message": "Para obtener tú: $1"
+  },
+  "recapMissed": {
+    "message": "Perdidos: $1"
+  },
+  "recapNext": {
+    "message": "Próximamente: $1"
   }
 }

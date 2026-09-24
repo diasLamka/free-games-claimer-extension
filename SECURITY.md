@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (28 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin |
+| Veille | `veille:*` (30 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin, dernier essai a blanc (ce que chaque page a montre), date du dernier recap du jeudi |
 | Moteur | `FGC_*` (`content/gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -43,7 +43,8 @@ L'**alerte telephone** (Reglages -> Notifications, depuis la 2.47.0,
 `watch/phone.js`) envoie a un serveur ntfy -- `ntfy.sh` par defaut, ou le
 votre -- un titre et quelques lignes : une panne de l'extension, un defi de
 securite en attente, le nom d'un jeu de votre liste de souhaits et le lien de
-sa fiche. **Jamais un code de rachat, jamais un cookie** (`credentials:
+sa fiche, et depuis la 2.65.0 le recap du jeudi -- des titres de jeux et une
+valeur, rien d'autre. **Jamais un code de rachat, jamais un cookie** (`credentials:
 'omit'`). Sur `ntfy.sh`, qui connait le nom du sujet lit ces messages : le
 bouton « Nouveau sujet » en tire un au hasard (cent bits). L'adresse et le
 jeton vivent sous leur propre cle, `veille:telephone`, et non dans les

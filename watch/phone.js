@@ -42,6 +42,8 @@ export const DEFAULT_PHONE = Object.freeze({
       le telephone, c'est la qu'ils doivent arriver. Sans effet tant que le
       magasin « Epic Games (mobile) » n'est pas suivi. */
   mobile: true,
+  /** Aussi le recap du jeudi soir (2.65.0). */
+  recap: true,
 });
 
 /** Le serveur public, celui que « Nouveau sujet » propose. */
@@ -76,6 +78,7 @@ export function readPhone(raw) {
     token: typeof p.token === 'string' ? p.token.trim() : '',
     wished: p.wished !== false,
     mobile: p.mobile !== false,
+    recap: p.recap !== false,
   };
 }
 
@@ -105,7 +108,7 @@ export function phoneTarget(raw) {
   if (!url) return null;
   // Un jeton porte dans un en-tete HTTP : rien hors de l'ASCII imprimable.
   const token = /^[\x21-\x7e]{1,200}$/.test(p.token) ? p.token : '';
-  return { url, token, wished: p.wished, mobile: p.mobile };
+  return { url, token, wished: p.wished, mobile: p.mobile, recap: p.recap };
 }
 
 /** Le motif de permission a demander pour ce serveur : `https://hote/*`. */

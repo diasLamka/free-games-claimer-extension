@@ -241,6 +241,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
   quiet: Object.freeze({ on: false, start: '23:00', end: '08:00' }),
   /** Heures avant la fin d'une offre pour un second signal. 0 coupe. */
   reminderHours: 6,
+  /**
+   * Le recap du jeudi soir (2.65.0) : recupere, a prendre soi-meme, rate,
+   * annonce. Une notification par semaine au plus, et aucune quand il n'y a
+   * rien a dire. Suit `notifyMode` : qui a coupe les notifications ne le
+   * recoit pas sur l'ordinateur. Voir watch/recap.js.
+   */
+  weeklyRecap: true,
   /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
   watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
 

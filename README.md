@@ -111,6 +111,7 @@ est declare `"type": "module"`.
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
+| `recap.js` | le recap du jeudi soir : recupere, a prendre soi-meme, rate, annonce -- une fois par semaine, jamais vide |
 | `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de sa liste Steam |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
@@ -295,6 +296,15 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Le recap du jeudi soir** (2.65.0, Reglages -> Notifications) : une
+notification par semaine, a 18 h le jeudi -- une heure apres la rotation
+d'Epic -- qui dit ce que la veille a recupere depuis le jeudi d'avant (et pour
+quelle valeur), ce qui reste a prendre soi-meme (Steam sans l'option, jeux
+mobiles, reclamation arretee sur une connexion), ce qui a ete rate et ce
+qu'Epic annonce. Un ordinateur eteint le jeudi soir le recoit au reveil,
+jusqu'au dimanche soir ; une semaine sans rien a dire n'envoie rien. Il suit
+les heures calmes, et part aussi sur le telephone si l'alerte ntfy est active.
 
 **Tester la recuperation** (2.64.0), sous les sessions : pour chaque magasin
 que l'extension reclame, la page d'un jeu offert en ce moment s'ouvre dans une

@@ -43,6 +43,7 @@ import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
 import { DRY, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
+import { announcedWindows } from '../watch/recap.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -977,29 +978,9 @@ function renderGames(all, behaviour) {
 /* Les offres annoncees, la plus proche d'abord, une fois par jeu. Lue par la
    section « Bientot » et par l'agenda : deux lectures de la meme liste
    finiraient par ne plus montrer les memes jeux. */
-function upcomingWindows(sources, now) {
-  const windows = [];
-  for (const [name, s] of Object.entries(sources)) {
-    // Seule la source Epic annonce ses fenetres ; le nom le dit.
-    const store = name.startsWith('epic') ? STORES.EPIC : null;
-    for (const w of s.announcedWindows || []) {
-      // Earlier versions stored only the instant.
-      if (typeof w === 'number') { if (w > now) windows.push({ start: w, title: null, store }); }
-      else if (w && (w.start ?? w.debut) > now) windows.push({ store, ...w, start: w.start ?? w.debut });
-    }
-  }
-  windows.sort((a, b) => a.start - b.start);
-
-  // One game can have several announced windows; only the nearest matters.
-  // Without this filter "Breathedge" showed up twice.
-  const seen = new Set();
-  return windows.filter((w) => {
-    const k = (w.title || String(w.start)).toLowerCase();
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-}
+/* La meme liste que le recap du jeudi (2.65.0) : elle vit desormais dans
+   watch/recap.js, pour que les deux ne divergent pas. */
+const upcomingWindows = announcedWindows;
 
 function renderUpcoming(all) {
   const next = upcomingWindows(get(all, KEY_SOURCES, {}), Date.now());
@@ -1931,6 +1912,8 @@ function renderNotifications(behaviour) {
   const hours = Number.isFinite(behaviour.reminderHours) ? behaviour.reminderHours : 6;
   document.getElementById('reminder').value = String(hours);
   document.getElementById('reminder-value').textContent = hours > 0 ? String(hours) : t('reminderOff');
+  // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
+  document.getElementById('weekly-recap').checked = behaviour.weeklyRecap !== false;
 }
 
 function applyLook() {
@@ -2292,6 +2275,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
   document.getElementById('reminder-value').textContent = v > 0 ? String(v) : t('reminderOff');
 });
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
+document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 
 /* The slider writes the floor; the daily cap follows from it on the scheduler
    side, and is never entered separately. */
@@ -2379,6 +2363,7 @@ function renderPhone(all) {
   document.getElementById('phone-fields').hidden = !p.on;
   document.getElementById('phone-wished').checked = p.wished;
   document.getElementById('phone-mobile').checked = p.mobile;
+  document.getElementById('phone-recap').checked = p.recap;
   // Jamais sous les doigts : un rendu remettrait la valeur stockee.
   const url = document.getElementById('phone-url');
   if (document.activeElement !== url) url.value = p.url;
@@ -2479,6 +2464,7 @@ document.getElementById('phone-test').addEventListener('click', async () => {
 
 document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
 document.getElementById('phone-mobile').addEventListener('change', (e) => writePhone({ mobile: e.target.checked }));
+document.getElementById('phone-recap').addEventListener('change', (e) => writePhone({ recap: e.target.checked }));
 document.getElementById('phone-token').addEventListener('change', (e) => writePhone({ token: e.target.value.trim() }));
 
 /* --- mise a jour a la demande (2.54.0)

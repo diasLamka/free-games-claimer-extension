@@ -64,7 +64,10 @@ import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js'
 import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
-import { badgeState } from './watch/notify-policy.js';
+import { badgeState, inQuietHours } from './watch/notify-policy.js';
+import { runRecap } from './watch/recap.js';
+import { money } from './lib/money.js';
+import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { notificationImage } from './watch/notify-image.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
@@ -167,6 +170,10 @@ async function ensureSchedule(now = Date.now()) {
   try {
     await inspectHealth(now);
   } catch (e) { record('warn', 'tour d\'inspection impossible', e); }
+
+  /* Le recap du jeudi part aussi d'ici : un ordinateur qui se reveille le
+     vendredi matin n'attend pas le prochain cycle pour le recevoir. */
+  await maybeRecap(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -393,6 +400,8 @@ async function startCycle(origine, options = {}) {
 
       if (result && !result.ignore && !result.stopped) {
         await armMain(result.nextWake, Date.now());
+        // Apres le cycle : les jeux du jeudi viennent d'etre vus et pris.
+        await maybeRecap(Date.now());
       }
       return result;
     } catch (e) {
@@ -406,6 +415,43 @@ async function startCycle(origine, options = {}) {
   })();
 
   return cycleRunning;
+}
+
+/* ---------------------------------------------------------- recap du jeudi */
+
+/** Garde intra-instance : le cycle et l'alarme filet peuvent arriver ensemble. */
+let recapRunning = null;
+
+/**
+ * Le recap du jeudi soir, s'il est du (2.65.0). La decision et le texte vivent
+ * dans watch/recap.js ; ici, les quatre choses qui touchent la plateforme. Ne
+ * jette jamais : un recap rate n'est pas une panne de la veille.
+ */
+function maybeRecap(now = Date.now()) {
+  if (recapRunning) return recapRunning;
+  recapRunning = (async () => {
+    await langue;
+    const settings = await readSettings(api);
+    const { [KEY_PHONE]: phoneRaw } = await readKeys(api, KEY_PHONE);
+    const tel = phoneTarget(phoneRaw);
+    return runRecap({
+      chrome: api,
+      now,
+      t,
+      storeLabel: (s) => STORE_LABELS[s] || s,
+      format: money,
+      quietNow: inQuietHours(settings.quiet, now),
+      // Un clic mene au tableau de bord : le detail de la semaine y est.
+      notify: ({ id, title, message }) => showNotice({ id, title, message, url: api.runtime.getURL(DASHBOARD_PAGE) }),
+      phone: tel && tel.recap
+        ? (msg) => pushToPhone({ chrome: api, fetch: (u, i) => fetch(u, i), target: tel, msg, now, record, why: 'recap du jeudi' })
+        : null,
+      record,
+    });
+  })()
+    .catch((e) => record('warn', 'recap du jeudi impossible', e))
+    .finally(() => { recapRunning = null; });
+  return recapRunning;
 }
 
 /* --------------------------------------------------------------- collection */

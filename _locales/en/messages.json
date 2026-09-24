@@ -1831,5 +1831,38 @@
   },
   "justNow": {
     "message": "just now"
+  },
+  "recapLabel": {
+    "message": "Thursday evening recap"
+  },
+  "recapHint": {
+    "message": "Once a week, after Epic's new games: what was claimed, what is left for you, what was missed"
+  },
+  "phoneRecapLabel": {
+    "message": "Also the Thursday evening recap"
+  },
+  "recapTitle": {
+    "message": "Your week of free games"
+  },
+  "recapTitleOne": {
+    "message": "Your week: 1 game claimed"
+  },
+  "recapTitleMany": {
+    "message": "Your week: $1 games claimed"
+  },
+  "recapClaimed": {
+    "message": "Claimed: $1"
+  },
+  "recapClaimedWorth": {
+    "message": "Claimed: $1 (worth $2)"
+  },
+  "recapManual": {
+    "message": "For you to claim: $1"
+  },
+  "recapMissed": {
+    "message": "Missed: $1"
+  },
+  "recapNext": {
+    "message": "Coming up: $1"
   }
 }

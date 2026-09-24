@@ -1831,5 +1831,38 @@
   },
   "justNow": {
     "message": "gerade eben"
+  },
+  "recapLabel": {
+    "message": "Donnerstagabend-Rückblick"
+  },
+  "recapHint": {
+    "message": "Einmal pro Woche, nach Epics neuen Spielen: was abgeholt wurde, was für dich bleibt, was verpasst wurde"
+  },
+  "phoneRecapLabel": {
+    "message": "Auch den Donnerstagabend-Rückblick"
+  },
+  "recapTitle": {
+    "message": "Deine Woche mit Gratisspielen"
+  },
+  "recapTitleOne": {
+    "message": "Deine Woche: 1 Spiel abgeholt"
+  },
+  "recapTitleMany": {
+    "message": "Deine Woche: $1 Spiele abgeholt"
+  },
+  "recapClaimed": {
+    "message": "Abgeholt: $1"
+  },
+  "recapClaimedWorth": {
+    "message": "Abgeholt: $1 (Wert $2)"
+  },
+  "recapManual": {
+    "message": "Selbst abholen: $1"
+  },
+  "recapMissed": {
+    "message": "Verpasst: $1"
+  },
+  "recapNext": {
+    "message": "Demnächst: $1"
   }
 }

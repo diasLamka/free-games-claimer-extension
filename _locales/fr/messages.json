@@ -1831,5 +1831,38 @@
   },
   "justNow": {
     "message": "à l'instant"
+  },
+  "recapLabel": {
+    "message": "Récap du jeudi soir"
+  },
+  "recapHint": {
+    "message": "Une fois par semaine, après les nouveaux jeux d'Epic : ce qui a été récupéré, ce qui reste pour vous, ce qui a été raté"
+  },
+  "phoneRecapLabel": {
+    "message": "Aussi le récap du jeudi soir"
+  },
+  "recapTitle": {
+    "message": "Votre semaine de jeux gratuits"
+  },
+  "recapTitleOne": {
+    "message": "Votre semaine : 1 jeu récupéré"
+  },
+  "recapTitleMany": {
+    "message": "Votre semaine : $1 jeux récupérés"
+  },
+  "recapClaimed": {
+    "message": "Récupérés : $1"
+  },
+  "recapClaimedWorth": {
+    "message": "Récupérés : $1 (valeur $2)"
+  },
+  "recapManual": {
+    "message": "À prendre vous-même : $1"
+  },
+  "recapMissed": {
+    "message": "Ratés : $1"
+  },
+  "recapNext": {
+    "message": "Bientôt : $1"
   }
 }
