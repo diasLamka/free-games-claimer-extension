@@ -71,6 +71,13 @@
   var RAYON_MAX = 480;
   /* L'air laisse entre le bouton et celui d'un voisin. */
   var ESPACE = 6;
+  /* La navigation sans rechargement (2.70.1). Le chemin se relit au rythme du
+     moteur (CONFIG.pollInterval) ; le titre de la nouvelle page, toutes les
+     400 ms, au plus douze fois. */
+  var GUET_MS = 1500;
+  var PAS_TITRE_MS = 400;
+  var ESSAIS_TITRE = 12;
+  var RELECTURE_MS = 2500;
 
   var SOMBRE = {
     fond: '#14101F', bord: '#2E2745', texte: '#EDE9F5', doux: '#9A90B8',
@@ -163,6 +170,12 @@
   var dernierStatut = 'idle';
   /* Jusqu'a quand l'arrivee se joue : la bulle attend qu'elle soit finie. */
   var arriveeJusqua = 0;
+  /* La page lue : son chemin, son numero (une reponse d'une page precedente
+     est ignoree), le titre envoye au worker, et le guet de son titre. */
+  var chemin = location.pathname;
+  var pageCourante = 0;
+  var titreDemande = null;
+  var minuterieTitre = null;
 
   /* ------------------------------------------------------------ outils */
 
@@ -1180,13 +1193,18 @@
    */
   function ask() {
     var store = storeOfHost();
+    var titre = pageTitle(store);
+    var pourPage = pageCourante;
+    titreDemande = titre;
     try {
       api.runtime.sendMessage(
-        { type: 'fgc-lookup', title: pageTitle(store), store: store },
+        { type: 'fgc-lookup', title: titre, store: store },
         function (reponse) {
           // Le worker peut dormir : une absence de reponse n'est pas une erreur.
           void api.runtime.lastError;
           if (!reponse) return;
+          // Partie pour la page d'avant : ce qu'elle dit ne vaut plus ici.
+          if (pourPage !== pageCourante) return;
 
           var libelles = {};
           var recus = reponse.labels || {};
@@ -1295,5 +1313,59 @@
      elle evite un observateur permanent sur une page qu'on ne possede pas. */
   if (document.readyState === 'complete') ask();
   else window.addEventListener('load', ask, { once: true });
-  setTimeout(ask, 2500);
+  setTimeout(function () { if (pageCourante === 0) ask(); }, RELECTURE_MS);
+
+  /* ------------------------------------------------------------ la navigation */
+
+  /* Epic change de page sans recharger (2.70.1). La fiche d'un jeu offert,
+   * ouverte depuis l'accueil, gardait le bouton de l'accueil -- ni pastille ni
+   * bulle -- jusqu'au prochain rechargement ; et depuis la 2.67.0 le bouton
+   * reste sur toutes les pages, donc on le regardait.
+   *
+   * Seul le CHEMIN compte : Epic et Amazon reecrivent la query en permanence
+   * (suivi, ?lang=), et le moteur a deja appris a l'ignorer
+   * (src/core/29-spa-watch.js). Un script de contenu ne voit pas les
+   * pushState de la page : le chemin se relit donc a intervalle, comme le
+   * moteur le fait, et aussitot sur un retour arriere.
+   *
+   * Le titre arrive APRES l'adresse. Lire tout de suite, ce serait lire la
+   * fiche d'avant et l'annoncer sur celle d'apres : on attend que le titre
+   * lu change, au plus ESSAIS_TITRE fois, puis une relecture differee, comme
+   * au chargement. Et une reponse partie pour l'ancienne page est ignoree.
+   */
+  function nouvellePage() {
+    if (location.pathname === chemin) return;
+    chemin = location.pathname;
+    pageCourante++;
+    var page = pageCourante;
+    var avant = titreDemande;
+    clearTimeout(minuterieTitre);
+
+    etat.jeu = null;
+    etat.lignes = [];
+    etat.faits = [];
+    etat.magasinsFaits = [];
+    etat.bulleFaits = false;
+    cacherBulle(true);
+    mettreAJour();
+
+    var restants = ESSAIS_TITRE;
+    (function guetter() {
+      minuterieTitre = null;
+      if (page !== pageCourante) return;
+      var titre = pageTitle(storeOfHost());
+      if ((titre && titre !== avant) || --restants <= 0) {
+        ask();
+        setTimeout(function () { if (page === pageCourante) ask(); }, RELECTURE_MS);
+        return;
+      }
+      minuterieTitre = setTimeout(guetter, PAS_TITRE_MS);
+    }());
+  }
+
+  window.addEventListener('popstate', nouvellePage);
+  (function guet() {
+    if (!document.hidden) nouvellePage();
+    setTimeout(guet, GUET_MS);
+  }());
 }());

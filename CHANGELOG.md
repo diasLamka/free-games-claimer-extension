@@ -4,6 +4,38 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.70.1 -- 2026-09-24
+
+**Le bouton suit la navigation d'Epic**
+
+Epic change de page sans recharger. La fiche d'un jeu offert, ouverte depuis
+l'accueil de la boutique, gardait le bouton de l'accueil : ni pastille, ni
+bulle « Gratuit · encore 1 j 5 h », jusqu'au prochain rechargement. La meme
+fiche chargee directement les avait. Le bouton lisait la page au chargement,
+2,5 s apres, et a l'ouverture du panneau -- jamais apres un changement de
+page. Depuis la 2.67.0 il reste sur toutes les pages : on le regardait.
+
+- **Le bouton relit la page quand son CHEMIN change** : aussitot sur un
+  retour arriere, sinon au rythme ou le moteur surveille deja la navigation
+  (1,5 s). Epic et Amazon reecrivent la query en permanence (suivi,
+  `?lang=`) : comme le moteur, le bouton l'ignore.
+- **Jamais la fiche d'avant sur celle d'apres.** Le titre arrive apres
+  l'adresse : on attend qu'il change -- 400 ms entre deux lectures, douze
+  au plus -- puis une relecture differee, comme au chargement. Ce qu'on
+  savait de la page quittee s'efface aussitot, et une reponse partie pour
+  elle est ignoree.
+- La bulle d'une fiche se dit une fois par page, et non plus une fois par
+  onglet.
+
+Verifie dans l'extension chargee dans Chromium, sur une boutique Epic
+factice servie a sa vraie adresse, qui change de page par `pushState` et
+rend son titre 600 ms apres : avant, la fiche de Shogun Showdown n'avait ni
+pastille ni bulle ; apres, « 1 » et « Free on Epic Games Store · 1 d 5 h
+left », et le retour a l'accueil les efface. Cinq des six nouveaux tests
+echouent sur la version d'avant.
+
+1293 tests.
+
 ## 2.70.0 -- 2026-09-24
 
 **Le panneau des pages de magasin en clair**

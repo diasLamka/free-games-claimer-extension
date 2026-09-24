@@ -141,7 +141,7 @@ const dans = (z, x, y) => x >= z.left && x <= z.left + z.width && y >= z.top && 
  */
 function charger({
   hostname = 'luna.amazon.com', pathname = '/claims/home', h1 = null, reponse = {}, top = true, stored,
-  voisins = [], reduit = false, ui, clair = false,
+  voisins = [], reduit = false, ui, clair = false, differe = false,
 } = {}) {
   const { doc, El } = makeDom();
   if (h1) { doc.h1 = new El('h1'); doc.h1.textContent = h1; }
@@ -182,11 +182,20 @@ function charger({
   };
   const messages = [];
   const changements = [];
+  /* Les reponses gardees pour plus tard (`differe`) : un worker lent. */
+  const enAttente = [];
+  const lieu = { hostname, pathname };
   const chrome = {
     runtime: {
       lastError: undefined,
       onMessage: { addListener: (f) => messages.push(f) },
-      sendMessage(msg, cb) { envoyes.push(JSON.parse(JSON.stringify(msg))); if (reponse) cb(JSON.parse(JSON.stringify(reponse))); },
+      sendMessage(msg, cb) {
+        envoyes.push(JSON.parse(JSON.stringify(msg)));
+        const r = typeof reponse === 'function' ? reponse(msg) : reponse;
+        if (!r || !cb) return;
+        const repondre = () => cb(JSON.parse(JSON.stringify(r)));
+        if (differe) enAttente.push(repondre); else repondre();
+      },
     },
     i18n: { getMessage: (k) => `nav:${k}` },
     storage: {
@@ -201,7 +210,7 @@ function charger({
   const ctx = {
     window: win,
     document: doc,
-    location: { hostname, pathname },
+    location: lieu,
     chrome,
     setTimeout: (fn, ms) => { minuteries.push({ fn, ms }); return minuteries.length; },
     clearTimeout() {},
@@ -237,6 +246,20 @@ function charger({
     doc, win, api: win.FGC_PAGE_UI, envoyes, ecrits, minuteries, hote, parts, elements, jouer, jouerJusqua, redimensionner, pos,
     /** Le popup change un reglage d'affichage. */
     changerUi: (valeur) => { for (const f of changements) f({ 'veille:ui': { newValue: valeur } }, 'local'); },
+    /** Change de page sans recharger : le chemin, et le titre rendu (ou pas encore). */
+    naviguer(chemin, titre) {
+      lieu.pathname = chemin;
+      if (titre !== undefined) this.titre(titre);
+    },
+    titre(t) {
+      if (t === null) { doc.h1 = null; return; }
+      doc.h1 = new El('h1');
+      doc.h1.textContent = t;
+    },
+    /** Un evenement de la fenetre (popstate). */
+    evenement: (type) => { for (const f of [...(ecoutes[type] || [])]) f({ type }); },
+    /** Les reponses differees, rendues dans l'ordre. */
+    repondre: () => { for (const f of enAttente.splice(0)) f(); },
     /** Ce que le lanceur repond a un message du worker. */
     demander: (msg) => {
       let r;
@@ -880,4 +903,99 @@ test('les deux palettes ont les memes couleurs, et le clair se lit', () => {
   }
   assert.ok(contraste(clair.pastilleTexte, clair.pastilleFond) >= 4.5);
   assert.ok(contraste(clair.boutonTexte, clair.bouton) >= 4.5);
+});
+
+/* ------------------------------------------------------------ la navigation sans rechargement (2.70.1) */
+
+/* Le faux worker d'une boutique Epic : Shogun Showdown est offert, le reste
+   n'a rien a dire. La reponse depend du titre envoye, comme la vraie. */
+const SHOGUN = {
+  title: 'Shogun Showdown', store: 'epic', storeLabel: 'Epic Games Store', end: 1790262000000,
+  left: '1 j 5 h', urgency: 'calm', image: null, url: 'https://store.epicgames.com/fr/p/shogun-showdown', dlc: false,
+};
+const EPIC = {
+  hostname: 'store.epicgames.com', pathname: '/fr/', h1: 'Accueil',
+  reponse: (msg) => (msg.title === 'Shogun Showdown'
+    ? { facts: [{ kind: 'freeNow', store: 'epic' }], lines: ['Offert en ce moment sur Epic.'], game: SHOGUN, free: { total: 1, offers: [SHOGUN] } }
+    : { facts: [], lines: [], free: { total: 1, offers: [SHOGUN] } }),
+};
+const lus = (p) => p.envoyes.filter((m) => m.type === 'fgc-lookup').map((m) => m.title);
+
+test('une fiche ouverte sans rechargement a sa pastille et sa bulle, comme chargee directement', () => {
+  const p = charger(EPIC);
+  p.jouerJusqua(700);
+  assert.equal(p.parts().pastille.style.display, 'none', 'l\'accueil : rien a compter');
+
+  p.naviguer('/fr/p/shogun-showdown', 'Shogun Showdown');
+  p.jouer(1500); // le guet du chemin
+  p.jouerJusqua(700); // la bulle attend la fin de l'arrivee du bouton
+  assert.equal(lus(p).at(-1), 'Shogun Showdown');
+  const { pastille, bulle } = p.parts();
+  assert.equal(pastille.textContent, '1');
+  assert.equal(bulle.style.display, 'flex', 'une nouvelle page peut se dire une fois');
+  assert.match(bulle.textContent, /Shogun Showdown/);
+});
+
+test('le titre arrive apres l\'adresse : la fiche d\'avant n\'est jamais lue pour celle d\'apres', () => {
+  const p = charger({ ...EPIC, pathname: '/fr/p/shogun-showdown', h1: 'Shogun Showdown' });
+  p.jouerJusqua(700);
+  assert.equal(p.parts().pastille.textContent, '1');
+  const avant = lus(p).length;
+
+  // L'adresse change, la page affiche encore l'ancien titre.
+  p.naviguer('/fr/p/autre-jeu');
+  p.evenement('popstate');
+  assert.equal(lus(p).length, avant, 'rien n\'est demande avec l\'ancien titre');
+  assert.equal(p.parts().pastille.style.display, 'none', 'ce qu\'on savait de l\'ancienne page s\'efface aussitot');
+  assert.notEqual(p.parts().bulle.style.display, 'flex');
+
+  p.jouer(400);
+  assert.equal(lus(p).length, avant, 'toujours l\'ancien titre : on attend');
+  p.titre('Autre Jeu');
+  p.jouer(400);
+  assert.equal(lus(p).at(-1), 'Autre Jeu');
+  assert.equal(p.parts().pastille.style.display, 'none');
+});
+
+test('un titre qui ne change pas finit quand meme par etre lu, puis relu', () => {
+  const p = charger({ ...EPIC, pathname: '/fr/p/shogun-showdown', h1: 'Shogun Showdown' });
+  const avant = lus(p).length;
+  p.naviguer('/fr/p/shogun-showdown/achievements');
+  p.evenement('popstate');
+  for (let i = 0; i < 20 && lus(p).length === avant; i++) p.jouer(400);
+  assert.equal(lus(p).length, avant + 1, 'une seule demande, au bout de l\'attente');
+  assert.equal(lus(p).at(-1), 'Shogun Showdown', 'la sous-page du meme jeu');
+  p.jouer(2500);
+  assert.equal(lus(p).length, avant + 2, 'la relecture differee, comme au chargement');
+});
+
+test('seul le chemin compte : Epic reecrit la query sans changer de page', () => {
+  const p = charger(EPIC);
+  const avant = lus(p).length;
+  p.jouer(1500);
+  p.evenement('popstate');
+  p.jouer(1500);
+  assert.equal(lus(p).length, avant, 'meme chemin : aucune relecture');
+});
+
+test('une reponse partie pour la page d\'avant est ignoree', () => {
+  const p = charger({ ...EPIC, pathname: '/fr/p/shogun-showdown', h1: 'Shogun Showdown', differe: true });
+  // La reponse pour Shogun Showdown tarde ; on est deja sur l'accueil.
+  p.naviguer('/fr/', 'Accueil');
+  p.evenement('popstate');
+  p.repondre();
+  const { pastille, bulle } = p.parts();
+  assert.equal(pastille.style.display, 'none', 'Shogun Showdown n\'est pas annonce sur l\'accueil');
+  assert.notEqual(bulle.style.display, 'flex');
+  assert.equal(lus(p).at(-1), 'Accueil', 'la page courante a sa propre question');
+});
+
+test('la relecture du chargement ne part pas pour une page qu\'on a deja quittee', () => {
+  const p = charger({ ...EPIC, pathname: '/fr/p/shogun-showdown', h1: 'Shogun Showdown' });
+  const relecture = p.minuteries.find((m) => m.ms === 2500);
+  p.naviguer('/fr/', 'Accueil');
+  p.evenement('popstate');
+  const avant = lus(p).length;
+  relecture.fn();
+  assert.equal(lus(p).length, avant, 'elle appartenait a la page d\'avant');
 });
