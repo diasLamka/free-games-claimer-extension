@@ -258,7 +258,7 @@ export async function sweepTabs(chrome, now) {
 
 /* -------------------------------------------------------------- utilitaires */
 
-function awaitLoad(chrome, tabId, timeoutMs) {
+export function awaitLoad(chrome, tabId, timeoutMs) {
   return new Promise((resolve) => {
     let done = false;
     const finished = (worth) => {
@@ -286,7 +286,7 @@ function awaitLoad(chrome, tabId, timeoutMs) {
   });
 }
 
-async function tabUrl(chrome, tabId) {
+export async function tabUrl(chrome, tabId) {
   try {
     const t = await chrome.tabs.get(tabId);
     return (t && t.url) || null;

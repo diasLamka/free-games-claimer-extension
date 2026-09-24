@@ -4,6 +4,41 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.64.0 -- 2026-09-24
+
+**Tester la recuperation, sans rien recuperer**
+
+La panne la plus frequente de ce projet est un magasin qui change sa page. Le
+canari la voit, mais apres deux echecs de vraies reclamations -- quand un jeu
+a deja failli etre rate. Desormais on peut demander avant.
+
+- **Un bouton « Tester la recuperation »**, dans Reglages -> Magasins, sous
+  les sessions. Pour chaque magasin que l'extension reclame (Epic, GOG,
+  Amazon ; Steam si sa recuperation est activee), elle ouvre la page d'un jeu
+  offert en ce moment dans une fenetre reduite, comme pour une reclamation,
+  et le moteur la lit comme juste avant son premier clic : session, defi de
+  securite, bouton reconnu. Puis la fenetre se referme.
+- **Une ligne par magasin** : « bouton trouve -- « Obtenir » serait clique
+  sur Shogun Showdown », « page reconnue » pour un jeu deja pris, « connexion
+  requise », « verification anti-robot », « aucun bouton » avec **les boutons
+  vus a la place** -- ce sont eux qui disent quel libelle a change --, ou
+  « rien a tester » quand le magasin n'offre rien.
+- **Rien n'est clique.** Le moteur recoit `fgc-inspecte`, jamais
+  `fgc-reclame`, et le bloc qui lui repond n'appelle que des lectures ; un
+  test y cherche tout clic, envoi de formulaire ou navigation. Steam rejoue
+  son etape en `dryRun`. Un bouton reconnu mais payant est dit « refuse »,
+  comme il le serait au clic. L'arret d'urgence empeche l'essai de partir.
+- « il y a 0 min » devient « a l'instant », partout dans le popup.
+
+Verifie dans l'extension chargee dans Chromium, contre de fausses pages
+servies en local : Epic « Obtenir » trouve, GOG « aucun bouton » avec
+« Acheter maintenant · Liste de souhaits », Steam « Add to Account » trouve,
+Amazon « rien a tester » -- et le serveur n'a recu aucun clic ni aucun
+formulaire. Sur les vraies pages, non connecte : GOG et Steam disent
+« connexion requise », Epic « verification anti-robot » (Cloudflare).
+
+1257 tests.
+
 ## 2.63.0 -- 2026-09-24
 
 **Les notifications montrent le jeu**

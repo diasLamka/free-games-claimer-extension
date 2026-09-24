@@ -33,6 +33,7 @@
       lunaCardKey: lunaCardKey,
       standingEntry: standingEntry,
       pilotSettled: pilotSettled,
+      inspectPage: inspectPage,
       runEpicGamesModule: runEpicGamesModule,
       PILOT_SETTLE_MS: PILOT_SETTLE_MS,
       PILOT_EMPTY_REASON: PILOT_EMPTY_REASON,

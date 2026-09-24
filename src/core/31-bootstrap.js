@@ -165,10 +165,139 @@
     }, PILOT_POLL_MS);
   }
 
+  // ---------------------------------------------------------------------------
+  // Essai a blanc (2.64.0) : lire la page comme pour reclamer, sans cliquer
+  // ---------------------------------------------------------------------------
+  //
+  // Ordonne par le bouton "Tester la recuperation" du popup. Le moteur fait
+  // ce qu'il fait avant son premier clic -- session, defi de securite, bouton
+  // reconnu -- et s'arrete la. Il rend ce qu'il a vu : le libelle du bouton
+  // qu'il aurait clique, ou, faute de mieux, ceux qu'il a vus a la place.
+  //
+  // C'est la reponse a la question que le canari ne pose qu'apres coup. Le
+  // canari compte les echecs de vraies reclamations ; ici, l'utilisateur
+  // demande AVANT qu'un jeu soit rate. Le bogue GOG de la 2.62.0 -- chaque
+  // jeu pris pour un DLC -- n'aurait pas ete vu ainsi, mais un libelle qui
+  // change, la panne la plus frequente du changelog, l'aurait ete.
+  //
+  // AUCUN CLIC. Ce bloc n'appelle que des lectures : findActionElement,
+  // findShortestActionElement, collectLunaOffers, visibleActionLabels,
+  // isLikelyLoggedOut, detectSecurityChallenge. Un test verifie que
+  // robustClick n'y apparait pas.
+
+  var INSPECT_WAIT_MS = 15000;
+
+  // Ce qu'il faut chercher sur cette page : le signe "deja possede" et le
+  // bouton qu'on aurait clique. null quand la page n'est pas une page de
+  // reclamation que le moteur connait.
+  function inspectionTargets() {
+    var host = location.hostname;
+    var enabled = function (el) { return !!el && !el.disabled && el.getAttribute('aria-disabled') !== 'true'; };
+    if (host.indexOf('epicgames.com') !== -1) {
+      if (isEpicNotFoundPage(location.pathname)) return null;
+      return {
+        owned: function () { return findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }); },
+        claim: function () {
+          return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
+            || findActionElement(document, EPIC_MAIN_CTA_PATTERNS)
+            || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
+        }
+      };
+    }
+    if (host.indexOf('gog.com') !== -1) {
+      if (isGogRedeemPage(location.pathname)) return null;
+      return {
+        owned: function () { return findActionElement(document, GOG_OWNED_PATTERNS, { mustBeEnabled: false }); },
+        claim: function () { return findActionElement(document, GOG_CLAIM_PATTERNS); }
+      };
+    }
+    if (host.indexOf('luna.amazon.') !== -1) {
+      if (isLunaOfferDetailPage(location.pathname)) {
+        var lunaCta = function () {
+          var box = document.querySelector('[data-a-target="buy-box"]');
+          if (!box) return null;
+          return { box: box, cta: box.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(box, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true }) };
+        };
+        return {
+          owned: function () {
+            var r = lunaCta();
+            return r && !enabled(r.cta) && LUNA_CLAIMED_TEXT.test(spacedText(r.box)) ? r.box : null;
+          },
+          claim: function () {
+            var r = lunaCta();
+            return r && enabled(r.cta) ? r.cta : null;
+          },
+          allowed: lunaClaimLabelAllowed
+        };
+      }
+      if (isLunaClaimsListPage(location.pathname)) {
+        return {
+          owned: function () {
+            var offers = collectLunaOffers();
+            return offers.length && offers.every(function (o) { return o.collected; }) ? offers[0].card : null;
+          },
+          claim: function () {
+            var offers = collectLunaOffers().filter(function (o) { return !o.collected && o.hasCta; });
+            if (!offers.length) return null;
+            return offers[0].button || offers[0].card.querySelector('[data-a-target="FGWPOffer"]') || offers[0].card;
+          },
+          allowed: lunaClaimLabelAllowed
+        };
+      }
+    }
+    return null;
+  }
+
+  function inspectPage(then) {
+    var platform = platformNameForHost(location.hostname);
+    function done(verdict, el, extra) {
+      var r = { type: 'fgc-inspection', verdict: verdict, plateforme: platform, url: String(location.href).split(/[?#]/)[0] };
+      if (el) r.label = actionText(el).slice(0, 80);
+      if (extra) Object.keys(extra).forEach(function (k) { r[k] = extra[k]; });
+      then(r);
+    }
+
+    // Les deux arrets nets de la reclamation, dans le meme ordre.
+    if (isLikelyLoggedOut()) { done('needs_login'); return; }
+    if (document.querySelector('[data-a-target="sign-in-button"]')
+      || (location.hostname.indexOf('luna.amazon.') !== -1 && isLunaReauthVisible())) { done('needs_login'); return; }
+    if (detectSecurityChallenge()) { done('challenge'); return; }
+
+    var targets = inspectionTargets();
+    if (!targets) { done('wrong_page', null, { visible: visibleActionLabels(8) }); return; }
+
+    var owned = false;
+    waitForElement(function () {
+      var o = targets.owned();
+      if (o) { owned = true; return o; }
+      return targets.claim();
+    }, { timeout: INSPECT_WAIT_MS, interval: 500 }).then(function (el) {
+      if (owned) { done('owned', el); return; }
+      // Les memes garde-fous qu'au clic : un libelle qui parle d'argent, ou
+      // que la liste Luna n'autorise pas, aurait ete refuse.
+      var text = actionText(el);
+      if (looksPaid(text) || (targets.allowed && !targets.allowed(el))) {
+        done('refused', el, { visible: visibleActionLabels(8) });
+        return;
+      }
+      done('ready', el);
+    }, function () {
+      if (detectSecurityChallenge()) { done('challenge'); return; }
+      if (isLikelyLoggedOut()) { done('needs_login'); return; }
+      done('no_button', null, { visible: visibleActionLabels(8) });
+    });
+  }
+
   function listenForOrders() {
     try {
       chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-        if (!msg || msg.type !== 'fgc-reclame') return;
+        if (!msg) return;
+        if (msg.type === 'fgc-inspecte') {
+          sendResponse({ recu: true });
+          inspectPage(sendToPilot);
+          return true;
+        }
+        if (msg.type !== 'fgc-reclame') return;
         sendResponse({ recu: true });
         runClaimOrder(msg.budgetMs || 5 * 60 * 1000);
         return true;

@@ -1747,5 +1747,89 @@
   },
   "densityCompact": {
     "message": "Compact"
+  },
+  "dryRunButton": {
+    "message": "Test claiming"
+  },
+  "dryRunRunning": {
+    "message": "Testing..."
+  },
+  "dryRunHint": {
+    "message": "Opens the page of a free game from each store in the background and checks that the extension finds the right button there. Nothing is clicked."
+  },
+  "dryRunWhen": {
+    "message": "tested $1"
+  },
+  "dryRunNever": {
+    "message": "never tested"
+  },
+  "dryRunStopped": {
+    "message": "Emergency stop is on: nothing was opened."
+  },
+  "dryRunNoStore": {
+    "message": "No store to test: none of the stores you follow is claimed automatically."
+  },
+  "dryStateReady": {
+    "message": "button found"
+  },
+  "dryStateOwned": {
+    "message": "page recognised"
+  },
+  "dryStateLogin": {
+    "message": "sign-in needed"
+  },
+  "dryStateChallenge": {
+    "message": "robot check"
+  },
+  "dryStateNoButton": {
+    "message": "no button"
+  },
+  "dryStateRefused": {
+    "message": "refused"
+  },
+  "dryStateWrongPage": {
+    "message": "wrong page"
+  },
+  "dryStateNothing": {
+    "message": "nothing to test"
+  },
+  "dryStateError": {
+    "message": "test failed"
+  },
+  "dryStateRunning": {
+    "message": "testing..."
+  },
+  "dryTextReady": {
+    "message": "“$1” would be clicked on $2."
+  },
+  "dryTextOwned": {
+    "message": "$1 is already in your library, and the page says so as expected."
+  },
+  "dryTextLogin": {
+    "message": "Sign in to this store, then run the test again."
+  },
+  "dryTextChallenge": {
+    "message": "The store is showing a security check: open it once yourself."
+  },
+  "dryTextNoButton": {
+    "message": "No known button on the page of $1. The store has probably changed its page."
+  },
+  "dryTextRefused": {
+    "message": "The button “$1” would be refused by the safety checks."
+  },
+  "dryTextWrongPage": {
+    "message": "The link of $1 does not lead to the store page."
+  },
+  "dryTextNothing": {
+    "message": "No free game in this store right now."
+  },
+  "dryTextError": {
+    "message": "The test did not finish: $1"
+  },
+  "drySeen": {
+    "message": "Buttons seen: $1"
+  },
+  "justNow": {
+    "message": "just now"
   }
 }

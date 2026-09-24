@@ -99,6 +99,7 @@ est declare `"type": "module"`.
 | `claim.js` | reclamation pilotee : fenetre reduite, verdict, menage |
 | `journal.js` | 500 entrees qui survivent a la mort du service worker |
 | `canary.js` | compte les echecs de selecteur : un magasin qui a bouge le dit |
+| `dry-run.js` | « Tester la recuperation » : la page d'un jeu offert, lue comme avant un clic -- sans clic |
 | `backup.js` | les codes en attente, recopies dans la zone synchronisee |
 | `library-sync.js` | le registre des jeux recuperes, d'un ordinateur a l'autre (en option) |
 | `offscreen.js` | lire une page HTML depuis un contexte qui n'a pas de DOM |
@@ -291,9 +292,17 @@ dit ce qui y attend encore une main humaine.
 | Zone | Ce que vous y faites |
 |---|---|
 | Codes a echanger | copier un code, ouvrir la page d'echange, voir les jours restants |
-| Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic |
+| Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Tester la recuperation** (2.64.0), sous les sessions : pour chaque magasin
+que l'extension reclame, la page d'un jeu offert en ce moment s'ouvre dans une
+fenetre reduite, le moteur la lit comme juste avant son premier clic, et la
+ligne dit ce qu'il a vu -- « Obtenir » trouve, deja dans la bibliotheque,
+connexion requise, ou aucun bouton reconnu, avec les boutons vus a la place.
+Rien n'est clique. C'est le moyen de savoir qu'un magasin a change sa page
+avant qu'un jeu soit rate.
 
 **Le tableau de bord** (2.58.0) est ce meme popup ouvert en grand : le bouton
 en fleches de son en-tete, ou clic droit sur l'icone -> Options. Au-dela de

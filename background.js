@@ -37,7 +37,7 @@ import {
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
 import {
-  claimAllNow, claimOneNow, prioritise, pruneNow, readPlaytime, retryNow,
+  claimAllNow, claimOneNow, isStopped, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
 } from './watch/commands.js';
 import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory } from './watch/library.js';
@@ -69,6 +69,7 @@ import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { notificationImage } from './watch/notify-image.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
 import { windowsLackLinks } from './watch/sources/epic.js';
+import { KEY_DRY_RUN, dryRunStores, storesToTest } from './watch/dry-run.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -490,6 +491,28 @@ async function probeSessions(stores) {
   return etat;
 }
 
+/* ------------------------------------------------------ essai a blanc */
+
+/** Garde intra-instance : deux essais simultanes ouvriraient deux fois les memes pages. */
+let dryRunning = null;
+
+/**
+ * L'essai a blanc de chaque magasin reclame (2.64.0). L'arret d'urgence le
+ * coupe comme il coupe tout ce qui ouvre une page de magasin.
+ */
+async function runDryRun() {
+  if (await isStopped(api)) return { stopped: true };
+  const raw = await readKeys(api, [KEYS.OFFERS]);
+  const settings = await readSettings(api);
+  return dryRunStores(storesToTest(settings), {
+    chrome: api,
+    catalog: raw[KEYS.OFFERS] || {},
+    now: Date.now(),
+    record,
+    write: (etat) => write(api, { [KEY_DRY_RUN]: etat }),
+  });
+}
+
 /* --------------------------------------------------- listeners, au niveau racine */
 
 /* Un listener ne peut rien faire d'une promesse rejetee : sans ce catch, un
@@ -837,7 +860,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return true;
   }
 
-  if (msg.type === 'fgc-pret' || msg.type === 'fgc-verdict') {
+  if (msg.type === 'fgc-pret' || msg.type === 'fgc-verdict' || msg.type === 'fgc-inspection') {
     const tabId = sender && sender.tab && sender.tab.id;
     if (tabId !== undefined) reportVerdict(tabId, msg.type, msg);
     return;
@@ -1254,6 +1277,22 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         sendResponse({ ok: false, error: String((e && e.message) || e) });
       })
       .finally(() => { sessionRunning = null; });
+    return true;
+  }
+
+  /* Tester la recuperation, sans rien recuperer (2.64.0). Un geste, jamais
+     un automatisme : chaque essai ouvre une page de magasin avec la session
+     de l'utilisateur. Voir watch/dry-run.js. */
+  if (msg.type === 'fgc-dry-run') {
+    if (dryRunning) { sendResponse({ busy: true }); return; }
+    dryRunning = runDryRun();
+    dryRunning
+      .then((etat) => sendResponse({ ok: true, ...etat }))
+      .catch((e) => {
+        record('warn', 'essai a blanc impossible', e);
+        sendResponse({ ok: false, error: String((e && e.message) || e) });
+      })
+      .finally(() => { dryRunning = null; });
     return true;
   }
 

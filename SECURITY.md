@@ -104,6 +104,13 @@ lit jamais un compte de sa propre initiative. C'est pour tenir cette phrase
 qu'une fonction de sonde automatique, ecrite puis relue, a ete retiree avant
 d'etre livree (voir le commentaire en fin de `watch/session.js`).
 
+**Tester la recuperation** (2.64.0) ouvre, sur un geste lui aussi, la page
+d'un jeu offert dans chaque magasin reclame, avec votre session -- comme vous
+le feriez en la visitant. Le moteur recoit l'ordre `fgc-inspecte`, jamais
+`fgc-reclame`, et ce bloc du moteur ne contient aucun clic, ce qu'un test
+verifie ; Steam rejoue son etape en `dryRun`. L'arret d'urgence l'empeche de
+partir. La fenetre reduite est refermee apres chaque magasin.
+
 ### Fuite passive a connaitre
 
 Le popup affiche les vignettes des offres depuis les CDN d'Epic, GOG, Steam et

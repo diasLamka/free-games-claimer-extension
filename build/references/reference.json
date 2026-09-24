@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.55.0.js",
-  "sha256": "4643937FF1B1935E1D70CA3C684E72FF1F046FED9D3CF1CCD2B7B862EC9EE10D",
-  "octets": 218206,
-  "version": "2.55.0",
-  "motif": "2.55.0 : le moteur ne compose plus de phrase, il envoie des cles traduites (uiText)"
+  "fichier": "reference-v2.64.0.js",
+  "sha256": "1B7562D1C64E9EC991CF3490028CE707C9D7851C59E4D99D0131F4FE9EB76FEC",
+  "octets": 224518,
+  "version": "2.64.0",
+  "motif": "2.64.0 : essai a blanc (fgc-inspecte, inspectPage) et motifs GOG nommes"
 }

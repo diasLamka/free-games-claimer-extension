@@ -81,6 +81,10 @@ export const UI_COMMANDS = Object.freeze([
      la machine, par le relais que l'utilisateur a installe : reservee aux
      pages, comme la passerelle. */
   'fgc-maj',
+  /* L'essai a blanc (2.64.0). Il ouvre des pages de magasin avec la session
+     de l'utilisateur, sans rien y cliquer : reserve aux pages, comme la
+     sonde de session. */
+  'fgc-dry-run',
 ]);
 
 /**
@@ -101,6 +105,9 @@ export const CONTENT_MESSAGES = Object.freeze([
   /* Le bouton « tableau de bord » du panneau (2.62.0) : ouvre la page
      d'options, sans adresse dans le message -- rien a detourner. */
   'fgc-open-dashboard',
+  /* La reponse du moteur a l'essai a blanc (2.64.0) : ce qu'il a vu sur la
+     page, jamais un clic. Meme chemin que `fgc-verdict`. */
+  'fgc-inspection',
 ]);
 
 /**

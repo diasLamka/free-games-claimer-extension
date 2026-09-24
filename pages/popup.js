@@ -42,6 +42,7 @@ import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topi
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
+import { DRY, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -198,6 +199,7 @@ const KEYS_READ = [
   KEY_TAUGHT,
   KEY_SEEN,
   KEY_COLLECTION,
+  KEY_DRY_RUN,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -294,6 +296,8 @@ function readableDelay(ms) {
 function since(instant, now = Date.now()) {
   if (typeof instant !== 'number') return null;
   const d = now - instant;
+  // « il y a 0 min » se lisait partout juste apres un geste.
+  if (d >= 0 && d < 60000) return t('justNow');
   return d >= 0 ? t('ago', readableDelay(d)) : t('inFuture', readableDelay(-d));
 }
 
@@ -1384,6 +1388,78 @@ function sessionLine(entry, storeId) {
   return line;
 }
 
+/* L'essai a blanc (2.64.0), sous les sessions.
+ *
+ * Une ligne par magasin teste : un point, le nom, l'etat en un mot, puis la
+ * phrase qui dit ce que la page a montre. Quand aucun bouton n'est reconnu,
+ * les boutons VUS suivent -- ce sont eux qui disent quel libelle a change,
+ * comme la ligne du canari. */
+const DRY_TEXTS = Object.freeze({
+  [DRY.READY]: ['dryStateReady', 'ok'],
+  [DRY.OWNED]: ['dryStateOwned', 'ok'],
+  [DRY.LOGIN]: ['dryStateLogin', 'paused'],
+  [DRY.CHALLENGE]: ['dryStateChallenge', 'paused'],
+  [DRY.NO_BUTTON]: ['dryStateNoButton', 'bad'],
+  [DRY.REFUSED]: ['dryStateRefused', 'bad'],
+  [DRY.WRONG_PAGE]: ['dryStateWrongPage', 'bad'],
+  [DRY.NOTHING]: ['dryStateNothing', 'off'],
+  [DRY.ERROR]: ['dryStateError', 'bad'],
+  [DRY.RUNNING]: ['dryStateRunning', 'paused'],
+});
+
+function dryText(r) {
+  const titre = r.title || '';
+  switch (r.status) {
+    case DRY.READY: return t('dryTextReady', r.label || '', titre);
+    case DRY.OWNED: return t('dryTextOwned', titre);
+    case DRY.LOGIN: return t('dryTextLogin');
+    case DRY.CHALLENGE: return t('dryTextChallenge');
+    case DRY.NO_BUTTON: return t('dryTextNoButton', titre);
+    case DRY.REFUSED: return t('dryTextRefused', r.label || '');
+    case DRY.WRONG_PAGE: return t('dryTextWrongPage', titre);
+    case DRY.NOTHING: return t('dryTextNothing');
+    case DRY.ERROR: return t('dryTextError', r.details || '');
+    default: return '';
+  }
+}
+
+/** Ce que le dernier clic a appris sans rien ecrire : arret d'urgence, ou aucun magasin. */
+let dryNotice = null;
+
+function renderDryRun(all, behaviour) {
+  const quand = document.getElementById('dry-run-when');
+  const host = document.getElementById('dry-run-results');
+  const bouton = document.getElementById('dry-run');
+  if (!quand || !host) return;
+  const etat = get(all, KEY_DRY_RUN, null);
+  host.textContent = '';
+
+  const enCours = Boolean(etat && etat.running);
+  bouton.disabled = enCours;
+  bouton.textContent = t(enCours ? 'dryRunRunning' : 'dryRunButton');
+  quand.textContent = dryNotice && !enCours ? dryNotice
+    : etat && etat.at && !enCours ? t('dryRunWhen', since(etat.at) || '')
+      : enCours ? '' : t('dryRunNever');
+
+  if (!etat || !etat.results) return;
+  const ordre = storesToTest(behaviour || {});
+  const stores = Object.keys(etat.results).sort((a, b) => ordre.indexOf(a) - ordre.indexOf(b));
+  for (const store of stores) {
+    const r = etat.results[store] || {};
+    const [cle, teinte] = DRY_TEXTS[r.status] || DRY_TEXTS[DRY.ERROR];
+    const row = el('div', 'row');
+    row.append(el('span', `dot ${teinte === 'ok' ? '' : teinte}`.trim()));
+    row.append(el('span', 'label', STORE_LABELS[store] || store));
+    row.append(el('span', `aside ${recognised(r.status) ? 'ok' : teinte === 'bad' ? 'bad' : ''}`.trim(), t(cle)));
+    host.append(row);
+    const phrase = dryText(r);
+    if (phrase) host.append(el('p', 'dry-text', phrase));
+    if (Array.isArray(r.visible) && r.visible.length && !recognised(r.status)) {
+      host.append(el('p', 'dry-text', t('drySeen', r.visible.join(' · '))));
+    }
+  }
+}
+
 function renderStores(all, behaviour) {
   const host = document.getElementById('stores');
   host.textContent = '';
@@ -1951,6 +2027,7 @@ async function render() {
   renderBackground();
   renderCanary(all);
   renderStores(all, behaviourCache);
+  renderDryRun(all, behaviourCache);
   renderFallback(all);
   renderSources(all, behaviourCache);
   renderPrediction(all);
@@ -2240,6 +2317,28 @@ document.getElementById('session-probe').addEventListener('click', async (e) => 
   } finally {
     button.disabled = false;
     button.textContent = avant;
+    await load();
+  }
+});
+
+/* Tester la recuperation. Un geste explicite, pour la meme raison que la
+   sonde de session : chaque essai ouvre une page de magasin avec la session
+   de l'utilisateur. L'avancement arrive par le stockage, magasin par
+   magasin ; la reponse finale ne sert qu'aux deux cas sans ecriture. */
+document.getElementById('dry-run').addEventListener('click', async (e) => {
+  const button = e.currentTarget;
+  button.disabled = true;
+  button.textContent = t('dryRunRunning');
+  dryNotice = null;
+  const quand = document.getElementById('dry-run-when');
+  if (quand) quand.textContent = '';
+  try {
+    const reponse = await tell('fgc-dry-run');
+    if (reponse && reponse.stopped) dryNotice = t('dryRunStopped');
+    else if (reponse && reponse.ok && reponse.results && !Object.keys(reponse.results).length) dryNotice = t('dryRunNoStore');
+  } finally {
+    button.disabled = false;
+    button.textContent = t('dryRunButton');
     await load();
   }
 });

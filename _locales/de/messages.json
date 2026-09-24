@@ -1747,5 +1747,89 @@
   },
   "densityCompact": {
     "message": "Kompakt"
+  },
+  "dryRunButton": {
+    "message": "Abholen testen"
+  },
+  "dryRunRunning": {
+    "message": "Wird getestet..."
+  },
+  "dryRunHint": {
+    "message": "Öffnet im Hintergrund die Seite eines Gratisspiels jedes Shops und prüft, ob die Erweiterung dort den richtigen Button findet. Es wird nichts angeklickt."
+  },
+  "dryRunWhen": {
+    "message": "getestet $1"
+  },
+  "dryRunNever": {
+    "message": "nie getestet"
+  },
+  "dryRunStopped": {
+    "message": "Der Notstopp ist aktiv: Es wurde nichts geöffnet."
+  },
+  "dryRunNoStore": {
+    "message": "Kein Shop zu testen: Keiner der verfolgten Shops wird automatisch abgeholt."
+  },
+  "dryStateReady": {
+    "message": "Button gefunden"
+  },
+  "dryStateOwned": {
+    "message": "Seite erkannt"
+  },
+  "dryStateLogin": {
+    "message": "Anmeldung nötig"
+  },
+  "dryStateChallenge": {
+    "message": "Roboterprüfung"
+  },
+  "dryStateNoButton": {
+    "message": "kein Button"
+  },
+  "dryStateRefused": {
+    "message": "abgelehnt"
+  },
+  "dryStateWrongPage": {
+    "message": "falsche Seite"
+  },
+  "dryStateNothing": {
+    "message": "nichts zu testen"
+  },
+  "dryStateError": {
+    "message": "Test fehlgeschlagen"
+  },
+  "dryStateRunning": {
+    "message": "läuft..."
+  },
+  "dryTextReady": {
+    "message": "„$1“ würde bei $2 angeklickt."
+  },
+  "dryTextOwned": {
+    "message": "$1 ist schon in deiner Bibliothek, und die Seite zeigt das wie erwartet."
+  },
+  "dryTextLogin": {
+    "message": "Melde dich bei diesem Shop an und starte den Test erneut."
+  },
+  "dryTextChallenge": {
+    "message": "Der Shop zeigt eine Sicherheitsprüfung: Öffne ihn einmal selbst."
+  },
+  "dryTextNoButton": {
+    "message": "Kein bekannter Button auf der Seite von $1. Der Shop hat wahrscheinlich seine Seite geändert."
+  },
+  "dryTextRefused": {
+    "message": "Der Button „$1“ würde von den Schutzprüfungen abgelehnt."
+  },
+  "dryTextWrongPage": {
+    "message": "Der Link von $1 führt nicht zur Shopseite."
+  },
+  "dryTextNothing": {
+    "message": "Gerade kein Gratisspiel in diesem Shop."
+  },
+  "dryTextError": {
+    "message": "Der Test wurde nicht abgeschlossen: $1"
+  },
+  "drySeen": {
+    "message": "Gesehene Buttons: $1"
+  },
+  "justNow": {
+    "message": "gerade eben"
   }
 }
