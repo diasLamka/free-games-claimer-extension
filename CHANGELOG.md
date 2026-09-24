@@ -4,6 +4,10 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.60.1 -- 2026-09-24
+
+- « Repartir de zero » est centre sous la liste « Deja recupere ».
+
 ## 2.60.0 -- 2026-09-24
 
 **Des boutons, pas des textes soulignes -- et une heure fausse en moins**
