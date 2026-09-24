@@ -427,7 +427,7 @@ export async function runCycle({
       /* Ce que l'utilisateur ATTENDAIT passe devant, et echappe au resume :
          un jeu guette depuis des mois ne se noie pas dans « 5 jeux gratuits ».
          Le drapeau est derive a la lecture, jamais persiste. */
-      announcements = byUrgency(markWished(pending, ctx.wishlist, normaliseTitle, ctx.steamWishlist), now);
+      announcements = byUrgency(markWished(pending, ctx.wishlist, normaliseTitle, ctx.steamWishlist, ctx.gogWishlist), now);
     }
 
     const unseen = openOffers(catalog, now).filter((o) => !o.seen).length;

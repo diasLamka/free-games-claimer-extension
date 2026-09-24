@@ -35,6 +35,14 @@ import { deckFromItem } from './deck.js';
 
 export const GOG_LIBRARY_URL = 'https://www.gog.com/account/getFilteredProducts';
 
+/* La liste de souhaits GOG (2.66.0). Mesure du 2026-09-24, SANS session : 403
+   et le meme corps que la bibliotheque, « Full authentication is required » --
+   alors qu'une adresse inventee au meme endroit rend 404. L'adresse existe
+   donc, et demande la session. Sa forme AVEC session, les outils de
+   bibliotheque GOG la donnent pour celle de getFilteredProducts : `products`
+   et `totalPages`. Elle n'a pas pu etre vue d'ici ; le rapport la decrit. */
+export const GOG_WISHLIST_URL = 'https://www.gog.com/account/wishlist/search';
+
 /* L'hote des comptes, pas www. Mesure du 2026-09-19 : l'adresse historique
    sur www.epicgames.com repond 302 vers accounts.epicgames.com, qui renvoie
    lui-meme vers la connexion quand il n'y a pas de session. On vise
@@ -320,6 +328,53 @@ export function gogPageUrl(page) {
   return `${GOG_LIBRARY_URL}?mediaType=1&sortBy=title&page=${page}`;
 }
 
+export function gogWishlistPageUrl(page) {
+  return `${GOG_WISHLIST_URL}?hiddenFlag=0&mediaType=0&sortBy=date_added&page=${page}`;
+}
+
+/**
+ * La liste de souhaits GOG : [{ id, title }], ou null quand elle n'a pas pu
+ * etre lue ENTIERE. Null garde la precedente -- une liste tronquee ferait
+ * oublier des jeux attendus. Un echec ici ne fait jamais echouer l'import de
+ * la bibliotheque, qui a deja reussi.
+ */
+export async function readGogWishlist({ fetch: fetchImpl = fetch, pause = defaultPause, maxPages = MAX_PAGES, lines = [] } = {}) {
+  const out = new Map();
+  let totalPages = 1;
+  for (let page = 1; page <= totalPages; page++) {
+    const url = gogWishlistPageUrl(page);
+    const res = await fetchJson(fetchImpl, url);
+    const bad = judge(res);
+    if (bad) {
+      lines.push(`  liste de souhaits : ${describeResponse(res, url)} (${bad.note}), la precedente est gardee`);
+      return null;
+    }
+    const j = res.json;
+    const products = j && j.products;
+    const pages = Number(j && j.totalPages);
+    if (page === 1) lines.push(`  liste de souhaits, forme : ${describeShape(j, { depth: 2 })}`);
+    if (!Array.isArray(products) || !Number.isFinite(pages)) {
+      lines.push('  liste de souhaits : products ou totalPages absent, la precedente est gardee');
+      return null;
+    }
+    if (page === 1) {
+      totalPages = Math.max(1, pages);
+      if (totalPages > maxPages) {
+        lines.push(`  liste de souhaits : ${totalPages} pages annoncees, la precedente est gardee`);
+        return null;
+      }
+    }
+    for (const p of products) {
+      if (!p || p.id === undefined || p.id === null || !/^\d+$/.test(String(p.id))) continue;
+      out.set(String(p.id), { id: String(p.id), title: p.title ? String(p.title) : null });
+      if (out.size >= MAX_STEAM_WISHES) break;
+    }
+    if (page < totalPages) await pause();
+  }
+  lines.push(`  liste de souhaits : ${out.size} jeu(x)`);
+  return [...out.values()];
+}
+
 export async function importGog({ fetch: fetchImpl = fetch, pause = defaultPause, maxPages = MAX_PAGES } = {}) {
   const lines = [`GOG -- ${GOG_LIBRARY_URL}`];
   const items = new Map();
@@ -365,7 +420,9 @@ export async function importGog({ fetch: fetchImpl = fetch, pause = defaultPause
   }
 
   lines.push(`  ${items.size} jeu(x) sur ${totalPages} page(s)`);
-  return result(IMPORT_STATUS.OK, { items: [...items.values()], note: `${items.size} jeux`, lines });
+  const wishlist = await readGogWishlist({ fetch: fetchImpl, pause, maxPages, lines });
+  const note = `${items.size} jeux${wishlist ? ` · ${wishlist.length} souhait(s)` : ''}`;
+  return result(IMPORT_STATUS.OK, { items: [...items.values()], note, lines, wishlist });
 }
 
 /* -------------------------------------------------------------------- Epic */

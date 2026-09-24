@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (30 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, liste de souhaits Steam importee (appids et noms, 2000 au plus), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin, dernier essai a blanc (ce que chaque page a montre), date du dernier recap du jeudi |
+| Veille | `veille:*` (31 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, listes de souhaits Steam et GOG importees (identifiants et noms, 2000 au plus chacune), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin, dernier essai a blanc (ce que chaque page a montre), date du dernier recap du jeudi |
 | Moteur | `FGC_*` (`content/gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -89,7 +89,10 @@ identifiants de **tous** vos jeux -- et, depuis la 2.46.0, ceux de votre liste
 de souhaits -- partent par lots de 50 vers `api.steampowered.com` pour en
 recuperer les noms. Sans cookie, et seulement sur un clic de votre part. La
 liste de souhaits elle-meme n'ajoute aucune requete avec cookie : elle voyage
-dans la reponse de `dynamicstore/userdata` que l'import lisait deja.
+dans la reponse de `dynamicstore/userdata` que l'import lisait deja. Celle de
+GOG (2.66.0) en ajoute une, au meme moment et au meme hote que la
+bibliotheque GOG : `www.gog.com/account/wishlist/search`, avec vos cookies,
+page apres page. Elle ne part qu'avec l'import GOG.
 
 ### Avec vos cookies (`credentials: 'include'`)
 

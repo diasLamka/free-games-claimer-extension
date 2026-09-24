@@ -34,7 +34,7 @@ import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from '../watch/collect
 import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from '../watch/calendar.js';
 import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
-import { KEY_WISHLIST, KEY_STEAM_WISHLIST, WISH_ORIGIN, wishOrigin } from '../watch/wishlist.js';
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, WISH_ORIGIN, wishOrigin } from '../watch/wishlist.js';
 import { DECK } from '../watch/deck.js';
 import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from '../watch/codes.js';
 import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
@@ -195,6 +195,7 @@ const KEYS_READ = [
   KEY_INCIDENTS,
   KEY_WISHLIST,
   KEY_STEAM_WISHLIST,
+  KEY_GOG_WISHLIST,
   KEY_PHONE,
   KEY_PHONE_STATE,
   KEY_TAUGHT,
@@ -729,16 +730,16 @@ function gameCard({ key, offer }, ctx) {
   /* Le souhait porte sur le TITRE, pas sur cette offre : c'est ce qui lui
      permet de reconnaitre le meme jeu quand il repassera sur un autre magasin,
      dans six mois. Un coeur accroche a l'offre disparaitrait avec elle. */
-  const origin = wishOrigin(ctx.wishlist, offer, normaliseTitle, ctx.steamWishlist);
+  const origin = wishOrigin(ctx.wishlist, offer, normaliseTitle, ctx.steamWishlist, ctx.gogWishlist);
   const wished = origin !== null;
   const heart = el('button', `pin${wished ? ' on' : ''}`, wished ? '♥' : '♡');
-  if (origin === WISH_ORIGIN.STEAM) {
+  if (origin === WISH_ORIGIN.STEAM || origin === WISH_ORIGIN.GOG) {
     /* Un souhait IMPORTE ne se retire pas d'ici : il reviendrait a la
        prochaine importation. Le coeur le dit par son infobulle, et le clic
        ne fait rien d'autre que ne pas ouvrir la carte. Pas desactive : un
        bouton desactive perd son infobulle, et l'opacite de .pin:disabled le
        ferait passer pour un coeur vide. */
-    heart.title = t('wishSteamTitle');
+    heart.title = t(origin === WISH_ORIGIN.GOG ? 'wishGogTitle' : 'wishSteamTitle');
     heart.setAttribute('aria-label', heart.title);
     heart.addEventListener('click', (e) => e.stopPropagation());
   } else {
@@ -885,6 +886,7 @@ function renderGames(all, behaviour) {
     fresh: markFresh(rows),
     wishlist: get(all, KEY_WISHLIST, []),
     steamWishlist: get(all, KEY_STEAM_WISHLIST, null),
+    gogWishlist: get(all, KEY_GOG_WISHLIST, null),
   };
 
   document.getElementById('n-games').textContent = rows.length || '';

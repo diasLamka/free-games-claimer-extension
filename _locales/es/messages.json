@@ -1864,5 +1864,8 @@
   },
   "recapNext": {
     "message": "Próximamente: $1"
+  },
+  "wishGogTitle": {
+    "message": "En tu lista de deseos de GOG: quítalo allí, o volverá en la próxima importación"
   }
 }

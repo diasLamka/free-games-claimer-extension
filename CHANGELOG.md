@@ -4,6 +4,33 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.66.0 -- 2026-09-24
+
+**La liste de souhaits GOG**
+
+La liste de souhaits Steam s'importait depuis la 2.46.0 : un jeu qu'on y
+attend, offert n'importe ou, passe devant les autres, a sa notification a lui
+et part sur le telephone. Celle de GOG restait a recopier a la main.
+
+- **Importee avec la bibliotheque GOG**, par « Tout importer » dans Ma
+  collection : une lecture de plus, au meme hote et avec la meme session. Un
+  jeu de la liste GOG offert sur GOG est reconnu par son numero de produit,
+  meme sous un autre titre ; offert sur Epic ou Steam, par son titre.
+- **Son coeur est plein et ne se retire pas d'ici** : il reviendrait a
+  l'importation suivante. L'infobulle dit de le retirer sur GOG, comme pour
+  Steam. La saisie passe devant Steam, et Steam devant GOG.
+- **Une liste illisible garde la precedente** et ne fait jamais echouer
+  l'import de la bibliotheque : refus, forme inattendue, page en panne au
+  milieu. Le rapport de l'import dit laquelle, sans recopier un titre.
+
+Mesure du 2026-09-24, sans session : `www.gog.com/account/wishlist/search`
+repond 403 « Full authentication is required », le meme refus que la
+bibliotheque, alors qu'une adresse inventee au meme endroit repond 404. Sa
+forme avec session n'a pas pu etre vue d'ici : le premier « Tout importer »
+connecte la decrira dans le rapport.
+
+1274 tests.
+
 ## 2.65.0 -- 2026-09-24
 
 **Le recap du jeudi soir**

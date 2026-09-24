@@ -35,6 +35,8 @@ import {
 import {
   importEpic,
   importGog,
+  GOG_WISHLIST_URL,
+  gogWishlistPageUrl,
   importSteam,
   importStore,
   readSteamWishlist,
@@ -338,12 +340,48 @@ test('GOG : toutes les pages annoncees sont lues, puis appliquees ensemble', asy
 
   const r = await importGog({ fetch: f, pause: sansPause });
   assert.equal(r.status, IMPORT_STATUS.OK);
-  assert.deepEqual(f.appels.map((a) => a.url), [gogPageUrl(1), gogPageUrl(2)]);
+  assert.deepEqual(f.appels.map((a) => a.url).slice(0, 2), [gogPageUrl(1), gogPageUrl(2)]);
   assert.equal(f.appels[0].init.credentials, 'include');
   assert.deepEqual(r.items.map((i) => i.url), [
     'https://www.gog.com/game/un', 'https://www.gog.com/game/deux', 'https://www.gog.com/game/trois',
   ]);
   assert.ok(!r.report.includes('Prive'), 'le rapport ne recopie aucun titre');
+});
+
+test('GOG : la liste de souhaits est lue apres la bibliotheque, avec la meme session (2.66.0)', async () => {
+  const f = fauxFetch((url) => {
+    if (url.startsWith(GOG_WISHLIST_URL)) {
+      return { body: pageGog(1, 1, [{ id: 1207658924, title: 'Jeu Attendu Prive', url: '/game/x' }, { id: 'pas-un-nombre', title: 'x' }, { id: 42 }]) };
+    }
+    return { body: pageGog(1, 1, [{ id: 1, title: 'Un', url: '/game/un' }]) };
+  });
+  const r = await importGog({ fetch: f, pause: sansPause });
+  assert.equal(r.status, IMPORT_STATUS.OK);
+  assert.deepEqual(f.appels.map((a) => a.url), [gogPageUrl(1), gogWishlistPageUrl(1)]);
+  assert.equal(f.appels[1].init.credentials, 'include');
+  assert.deepEqual(r.wishlist, [{ id: '1207658924', title: 'Jeu Attendu Prive' }, { id: '42', title: null }]);
+  assert.match(r.note, /1 jeux · 2 souhait\(s\)/);
+  assert.ok(!r.report.includes('Prive'), 'le rapport ne recopie aucun titre');
+});
+
+test('GOG : une liste de souhaits illisible ne fait pas echouer la bibliotheque, et garde la precedente', async () => {
+  const refus = { status: 403, code: 403, message: 'Full authentication is required to access this resource.' };
+  for (const [nom, rep] of [
+    ['refus mesure', { status: 403, body: refus }],
+    ['forme inattendue', { body: { items: [] } }],
+    ['page 2 en panne', null],
+  ]) {
+    const f = fauxFetch((url) => {
+      if (!url.startsWith(GOG_WISHLIST_URL)) return { body: pageGog(1, 1, [{ id: 1, title: 'Un' }]) };
+      if (rep) return rep;
+      return Number(new URL(url).searchParams.get('page')) === 1 ? { body: pageGog(1, 2, [{ id: 5, title: 'A' }]) } : { status: 500, body: 'x', type: 'text/plain' };
+    });
+    const r = await importGog({ fetch: f, pause: sansPause });
+    assert.equal(r.status, IMPORT_STATUS.OK, nom);
+    assert.equal(r.items.length, 1, nom);
+    assert.equal(r.wishlist, null, nom);
+    assert.match(r.report, /la precedente est gardee/, nom);
+  }
 });
 
 test('GOG : une page ratee au milieu annule tout -- jamais une photographie tronquee', async () => {

@@ -1864,5 +1864,8 @@
   },
   "recapNext": {
     "message": "Demnächst: $1"
+  },
+  "wishGogTitle": {
+    "message": "Auf deiner GOG-Wunschliste: entferne ihn dort, sonst kommt er beim nächsten Import zurück"
   }
 }

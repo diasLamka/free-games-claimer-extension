@@ -1864,5 +1864,8 @@
   },
   "recapNext": {
     "message": "Coming up: $1"
+  },
+  "wishGogTitle": {
+    "message": "On your GOG wishlist: remove it there, it would come back at the next import"
   }
 }

@@ -31,7 +31,7 @@ import { KEY_COLLECTION } from './collection.js';
    sans que son issue ait ete figee, et l'information n'existe plus nulle part
    ailleurs. */
 import { KEY_OUTCOMES } from './outcomes.js';
-import { KEY_WISHLIST, KEY_STEAM_WISHLIST } from './wishlist.js';
+import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST } from './wishlist.js';
 import { KEY_PHONE } from './phone.js';
 
 export const PREFIX = 'veille:';
@@ -356,7 +356,7 @@ export async function readContext(chrome) {
        lisait une liste toujours vide, et un jeu attendu n'a jamais echappe au
        resume -- le popup, qui lit la cle lui-meme, affichait pourtant son
        coeur. */
-    KEY_WISHLIST, KEY_STEAM_WISHLIST,
+    KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST,
     // Le telephone (2.47.0) : lu ici, jamais ecrit -- le popup en est le seul ecrivain.
     KEY_PHONE,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
@@ -385,6 +385,7 @@ export async function readContext(chrome) {
     outcomes: raw[KEY_OUTCOMES] || {},
     wishlist: raw[KEY_WISHLIST] || [],
     steamWishlist: raw[KEY_STEAM_WISHLIST] || null,
+    gogWishlist: raw[KEY_GOG_WISHLIST] || null,
     phone: raw[KEY_PHONE] || null,
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),

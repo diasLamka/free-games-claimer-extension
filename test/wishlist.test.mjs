@@ -16,7 +16,9 @@ import assert from 'node:assert/strict';
 import {
   KEY_WISHLIST, MAX_WISHES, addWish, isWished, markWished, removeWish, wishes,
   KEY_STEAM_WISHLIST, MAX_STEAM_WISHES, WISH_ORIGIN, makeSteamWishlist, steamWishes, wishOrigin,
+  KEY_GOG_WISHLIST, makeImportedWishlist,
 } from '../watch/wishlist.js';
+import { readFileSync } from 'node:fs';
 import { makeOffer, normaliseTitle, STORES } from '../watch/offer.js';
 
 const T = Date.UTC(2026, 8, 22, 12, 0, 0);
@@ -166,4 +168,39 @@ test('sans liste Steam, rien ne change', () => {
 test('markWished lit aussi la liste Steam', () => {
   const s = makeSteamWishlist([{ id: '1', title: 'A' }], normaliseTitle, T);
   assert.deepEqual(markWished([offre('A'), offre('B')], [], normaliseTitle, s).map((o) => o.wished), [true, false]);
+});
+
+/* ------------------------------------------------------------ la liste GOG (2.66.0) */
+
+test('la liste GOG a sa propre cle, et la meme photographie que Steam', () => {
+  assert.equal(KEY_GOG_WISHLIST, 'veille:souhaits-gog');
+  assert.equal(makeSteamWishlist, makeImportedWishlist, 'l\'ancien nom reste, pour ce qui l\'utilise encore');
+  const g = makeImportedWishlist([{ id: '1207658924', title: 'Unreal Gold' }, { id: 'x', title: 'y' }], normaliseTitle, T);
+  assert.deepEqual(g.wishes.map((w) => w.id), ['1207658924']);
+});
+
+test('une offre GOG se reconnait par son numero de produit, pas par son slug', () => {
+  const g = makeImportedWishlist([{ id: '1207658924', title: null }], normaliseTitle, T);
+  const gog = offre('Titre traduit', { source: 'gog', sourceId: '1207658924', store: STORES.GOG, storeId: 'unreal_gold' });
+  assert.equal(wishOrigin([], gog, normaliseTitle, null, g), WISH_ORIGIN.GOG);
+  // Le meme numero venu de l'agregateur ne dit rien : ce n'est pas un numero GOG.
+  const agregateur = offre('Titre traduit', { source: 'gamerpower', sourceId: '1207658924', store: STORES.GOG });
+  assert.equal(wishOrigin([], agregateur, normaliseTitle, null, g), null);
+});
+
+test('un souhait GOG reconnait le meme jeu offert sur Epic ; la saisie et Steam passent devant', () => {
+  const g = makeImportedWishlist([{ id: '1', title: 'Hollow Knight' }], normaliseTitle, T);
+  const s = makeImportedWishlist([{ id: '367520', title: 'Hollow Knight' }], normaliseTitle, T);
+  assert.equal(wishOrigin([], offre('Hollow Knight'), normaliseTitle, null, g), WISH_ORIGIN.GOG);
+  assert.equal(wishOrigin([], offre('Hollow Knight'), normaliseTitle, s, g), WISH_ORIGIN.STEAM);
+  assert.equal(wishOrigin(addWish([], 'Hollow Knight', normaliseTitle), offre('Hollow Knight'), normaliseTitle, s, g), WISH_ORIGIN.MANUAL);
+  assert.deepEqual(markWished([offre('Hollow Knight'), offre('B')], [], normaliseTitle, null, g).map((o) => o.wished), [true, false]);
+});
+
+test('la liste GOG est lue par le cycle, ecrite par l\'import, montree par le popup', () => {
+  const lire = (f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+  assert.match(lire('watch/storage.js'), /gogWishlist: raw\[KEY_GOG_WISHLIST\] \|\| null,/);
+  assert.match(lire('watch/cycle.js'), /markWished\(pending, ctx\.wishlist, normaliseTitle, ctx\.steamWishlist, ctx\.gogWishlist\)/);
+  assert.match(lire('background.js'), /\{ steam: KEY_STEAM_WISHLIST, gog: KEY_GOG_WISHLIST \}\[store\]/);
+  assert.match(lire('pages/popup.js'), /wishOrigin\(ctx\.wishlist, offer, normaliseTitle, ctx\.steamWishlist, ctx\.gogWishlist\)/);
 });

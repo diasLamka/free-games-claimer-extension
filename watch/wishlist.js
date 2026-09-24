@@ -53,8 +53,15 @@ export const KEY_STEAM_WISHLIST = 'veille:souhaits-steam';
  */
 export const MAX_STEAM_WISHES = 2000;
 
+/**
+ * La liste de souhaits GOG (2.66.0), importee avec la bibliotheque GOG de Ma
+ * collection. Meme regle que Steam : une photographie, remplacee a chaque
+ * importation reussie, et qui se retire sur GOG.
+ */
+export const KEY_GOG_WISHLIST = 'veille:souhaits-gog';
+
 /** D'ou vient le souhait qui designe une offre. */
-export const WISH_ORIGIN = Object.freeze({ MANUAL: 'manual', STEAM: 'steam' });
+export const WISH_ORIGIN = Object.freeze({ MANUAL: 'manual', STEAM: 'steam', GOG: 'gog' });
 
 /**
  * Ce qu'on garde d'un souhait.
@@ -94,14 +101,15 @@ export function removeWish(list, title, normalise) {
 }
 
 /**
- * La photographie de la liste Steam, prete a etre stockee.
+ * La photographie d'une liste importee -- Steam ou GOG --, prete a etre
+ * stockee.
  *
- * `entries` : [{ id, title }], l'appid et le nom que GetItems a rendu -- ou
- * null quand il n'en a rendu aucun. Un souhait sans nom reste : il reconnait
- * encore une offre STEAM par son appid, il ne reconnait simplement pas le
- * meme jeu offert ailleurs.
+ * `entries` : [{ id, title }], l'identifiant du magasin (appid Steam, numero
+ * de produit GOG) et le nom -- ou null quand le magasin n'en a rendu aucun. Un
+ * souhait sans nom reste : il reconnait encore une offre de SON magasin par
+ * son identifiant, il ne reconnait simplement pas le meme jeu offert ailleurs.
  */
-export function makeSteamWishlist(entries, normalise, now) {
+export function makeImportedWishlist(entries, normalise, now) {
   const norm = requireNormalise(normalise);
   const vus = new Set();
   const out = [];
@@ -116,9 +124,30 @@ export function makeSteamWishlist(entries, normalise, now) {
   return { at: now, wishes: out };
 }
 
-/** Les souhaits Steam d'une photographie stockee, ou aucun. */
+/** Le nom d'avant la 2.66.0, quand seule la liste Steam s'importait. */
+export const makeSteamWishlist = makeImportedWishlist;
+
+/** Les souhaits d'une photographie stockee, ou aucun. */
 export function steamWishes(stored) {
   return stored && Array.isArray(stored.wishes) ? stored.wishes : [];
+}
+
+/** L'identifiant d'une offre DANS SON magasin, tel qu'une liste importee le porte. */
+function storeIdOf(offer, store) {
+  if (!offer || offer.store !== store) return null;
+  if (store === 'steam' && offer.storeId) return String(offer.storeId);
+  // Chez GOG, `storeId` est le slug ; le numero de produit est `sourceId`.
+  if (store === 'gog' && offer.source === 'gog' && offer.sourceId) return String(offer.sourceId);
+  return null;
+}
+
+/** Cette liste importee attend-elle l'offre ? Par identifiant chez son magasin, par titre ailleurs. */
+function importedMatch(stored, store, offer, key) {
+  const importes = steamWishes(stored);
+  if (!importes.length) return false;
+  const id = storeIdOf(offer, store);
+  if (id && importes.some((w) => w.id === id)) return true;
+  return Boolean(key) && importes.some((w) => w.key === key);
 }
 
 /**
@@ -134,16 +163,12 @@ export function steamWishes(stored) {
  * de trop, jamais un jeu rate : c'est pour cela qu'un souhait peut se fier au
  * titre, et le filtre « deja possede » jamais.
  */
-export function wishOrigin(list, offer, normalise, steam = null) {
+export function wishOrigin(list, offer, normalise, steam = null, gog = null) {
   if (!offer) return null;
   const key = offer.title ? normalise(offer.title) : '';
   if (key && wishes(list).some((w) => w.key === key)) return WISH_ORIGIN.MANUAL;
-
-  const importes = steamWishes(steam);
-  if (!importes.length) return null;
-  const appid = offer.store === 'steam' && offer.storeId ? String(offer.storeId) : null;
-  if (appid && importes.some((w) => w.id === appid)) return WISH_ORIGIN.STEAM;
-  if (key && importes.some((w) => w.key === key)) return WISH_ORIGIN.STEAM;
+  if (importedMatch(steam, 'steam', offer, key)) return WISH_ORIGIN.STEAM;
+  if (importedMatch(gog, 'gog', offer, key)) return WISH_ORIGIN.GOG;
   return null;
 }
 
@@ -153,8 +178,8 @@ export function wishOrigin(list, offer, normalise, steam = null) {
  * Une liste vide ne rend jamais rien attendu -- le cas du premier jour, ou
  * tout rendre prioritaire ferait de la nouveaute une regression.
  */
-export function isWished(list, offer, normalise, steam = null) {
-  return wishOrigin(list, offer, normalise, steam) !== null;
+export function isWished(list, offer, normalise, steam = null, gog = null) {
+  return wishOrigin(list, offer, normalise, steam, gog) !== null;
 }
 
 /**
@@ -164,8 +189,8 @@ export function isWished(list, offer, normalise, steam = null) {
  * changer entre deux cycles, et une offre marquee une fois pour toutes
  * resterait prioritaire apres le retrait du souhait.
  */
-export function markWished(offers, list, normalise, steam = null) {
-  return (offers || []).map((o) => ({ ...o, wished: isWished(list, o, normalise, steam) }));
+export function markWished(offers, list, normalise, steam = null, gog = null) {
+  return (offers || []).map((o) => ({ ...o, wished: isWished(list, o, normalise, steam, gog) }));
 }
 
 /**

@@ -59,7 +59,7 @@ import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watc
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
-import { KEY_STEAM_WISHLIST, makeSteamWishlist } from './watch/wishlist.js';
+import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, makeImportedWishlist } from './watch/wishlist.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
 import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
@@ -485,11 +485,13 @@ async function importCollection(stores) {
       const apres = await readKeys(api, KEY_COLLECTION);
       await write(api, { [KEY_COLLECTION]: applyImport(apres[KEY_COLLECTION], store, result, Date.now()) });
 
-      /* La liste de souhaits Steam voyage dans la meme reponse. Elle n'est
-         remplacee que par une liste LUE : une importation ratee, ou une
+      /* La liste de souhaits voyage avec la bibliotheque : dans la meme
+         reponse chez Steam, dans une lecture de plus chez GOG (2.66.0). Elle
+         n'est remplacee que par une liste LUE : une importation ratee, ou une
          reponse qui ne la porte pas, laisse la precedente en place. */
-      if (result.status === IMPORT_STATUS.OK && Array.isArray(result.wishlist)) {
-        await write(api, { [KEY_STEAM_WISHLIST]: makeSteamWishlist(result.wishlist, normaliseTitle, Date.now()) });
+      const cleSouhaits = { steam: KEY_STEAM_WISHLIST, gog: KEY_GOG_WISHLIST }[store];
+      if (cleSouhaits && result.status === IMPORT_STATUS.OK && Array.isArray(result.wishlist)) {
+        await write(api, { [cleSouhaits]: makeImportedWishlist(result.wishlist, normaliseTitle, Date.now()) });
       }
 
       const niveau = result.status === IMPORT_STATUS.OK ? 'info' : 'warn';
