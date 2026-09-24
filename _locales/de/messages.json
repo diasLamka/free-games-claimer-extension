@@ -38,6 +38,12 @@
   "sortStore": {
     "message": "Nach Shop"
   },
+  "chipAll": {
+    "message": "Alle"
+  },
+  "chipsLabel": {
+    "message": "Nach Shop filtern"
+  },
   "freeNow": {
     "message": "Jetzt kostenlos"
   },

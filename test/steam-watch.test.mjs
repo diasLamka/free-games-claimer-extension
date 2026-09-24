@@ -26,7 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { activeSourcesFor, claimableStoresFor, CLAIMABLE_STORES } from '../watch/sources/index.js';
-import { discover, OWNED_URL, SEARCH_URL, ITEMS_URL, NAME } from '../watch/sources/steam.js';
+import { discover, OWNED_URL, SEARCH_URL, ITEMS_URL, NAME, ASSETS_BASE, itemsUrl, steamImage } from '../watch/sources/steam.js';
 import { DEFAULT_SETTINGS } from '../watch/storage.js';
 import { STORES } from '../watch/offer.js';
 import { KEYS } from '../watch/storage.js';
@@ -209,4 +209,27 @@ test('une valeur presque vraie ne suffit pas a faire lire un compte', async () =
     const s = await cycleAvec({ steamAutoClaim: presque });
     assert.equal(s.recu[0].withOwned, false, `accepte a tort : ${JSON.stringify(presque)}`);
   }
+});
+
+/* La vignette (2.61.0). Mesure du 2026-09-24 sur un vrai GetItems : `header`
+   est un NOM DE FICHIER, et `asset_url_format` dit ou le poser. La requete ne
+   demandait pas `include_assets` : aucune offre Steam n'avait d'image. */
+test('la vignette Steam : le nom de fichier pose dans son format, sur le CDN', () => {
+  const mesure = {
+    asset_url_format: 'steam/apps/4355480/${FILENAME}?t=1789400832',
+    main_capsule: 'ff03a4e114e53dea039335bb6927bd91723a50f5/capsule_616x353.jpg',
+    header: '4f140de54ebd2306321005daaab93a2ba8fc9457/header.jpg',
+    hero_capsule: '235cdf3f21f7a74c87cfd592490fa4a061cfbc06/hero_capsule.jpg',
+  };
+  assert.equal(steamImage(mesure),
+    'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4355480/4f140de54ebd2306321005daaab93a2ba8fc9457/header.jpg?t=1789400832');
+  assert.ok(steamImage(mesure).startsWith(ASSETS_BASE));
+  const { header, ...sansEnTete } = mesure;
+  assert.match(steamImage(sansEnTete), /capsule_616x353\.jpg/, 'a defaut, la capsule principale');
+  assert.equal(steamImage({ header: 'x/header.jpg' }), null, 'sans format, pas d\'adresse inventee');
+  assert.equal(steamImage({ ...mesure, header: '../../evil.jpg' }), null);
+  assert.equal(steamImage({ ...mesure, header: 'a b/header.jpg' }), null);
+  assert.equal(steamImage(undefined), null);
+  const requete = JSON.parse(decodeURIComponent(itemsUrl(['4355480']).split('input_json=')[1]));
+  assert.equal(requete.data_request.include_assets, true, 'sans lui, Steam ne rend aucune image');
 });

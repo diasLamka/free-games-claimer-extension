@@ -38,6 +38,12 @@
   "sortStore": {
     "message": "By store"
   },
+  "chipAll": {
+    "message": "All"
+  },
+  "chipsLabel": {
+    "message": "Filter by store"
+  },
   "freeNow": {
     "message": "Free now"
   },

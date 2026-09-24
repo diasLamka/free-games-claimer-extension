@@ -170,6 +170,7 @@ content/                    ce qui s'injecte dans les pages de magasin
                               deplacable, il s'ecarte des boutons des autres extensions
 lib/                        partage par les pages, le worker et la veille
   dashboard.js                le popup se sait-il ouvert dans un onglet ? (tableau de bord)
+  store-chips.js              les puces de magasin au-dessus des jeux
   i18n.js                     traduction
   i18n-tables.js              tables de traduction -- GENEREES depuis _locales
   money.js                    montants et devises

@@ -381,8 +381,37 @@
   input[type="search"]:focus-visible, input[type="url"]:focus-visible, input[type="password"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
 
   .toolbar { display: flex; gap: 6px; padding: 9px var(--pad); border-bottom: 1px solid var(--line); }
+
+  /* ------------------------------------------------ les puces de magasin */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px var(--pad);
+    border-bottom: 1px solid var(--line);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--mute);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .chip .n { font-variant-numeric: tabular-nums; opacity: .8; }
+  .chip:hover { color: var(--paper); border-color: var(--mute); }
+  .chip[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--amber) 16%, transparent);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
   .toolbar input[type="search"] { flex: 1; }
-  .toolbar select { flex: none; max-width: 41%; }
+  /* 48 % : a 41, « Fin la plus proche » etait coupe en « Fin la plus proc ». */
+  .toolbar select { flex: none; max-width: 48%; }
 
   button {
     appearance: none;
@@ -1185,6 +1214,9 @@
         <option value="store" data-i18n="sortStore"></option>
       </select>
     </div>
+    <!-- Les puces de magasin (2.61.0) : remplies par popup.js, cachees s'il n'y
+         a qu'une boutique. -->
+    <div class="chips" id="store-chips" role="group" data-i18n-attr="aria-label:chipsLabel" hidden></div>
 
     <section id="waiting-section" hidden>
       <h2><span data-i18n="waitingOnYou"></span><span class="count" id="waiting-count"></span></h2>

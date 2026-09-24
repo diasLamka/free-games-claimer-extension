@@ -4,6 +4,35 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.61.0 -- 2026-09-24
+
+**Filtrer les jeux par magasin, et les vignettes Steam**
+
+- **Des puces au-dessus des jeux** : « Tous 5 · Epic 2 · Steam 2 · Epic
+  mobile 1 ». Un clic ne garde que les offres d'un magasin, un second clic
+  revient a tout. Une puce par magasin qui a des offres, la plus fournie
+  d'abord ; rien s'il n'y a qu'une boutique. Dans le popup comme dans le
+  tableau de bord, et avec la recherche.
+- **Le choix n'est pas memorise** d'une ouverture a l'autre, comme la
+  recherche : un filtre « Steam » oublie cacherait, a la prochaine
+  ouverture, le jeu Epic arrive entre-temps. Un magasin choisi qui n'a plus
+  d'offre fait revenir a « Tous ».
+- **Les offres Steam ont leur vignette.** La requete a Steam ne demandait pas
+  les images (`include_assets`) : aucune offre Steam n'en avait, et la carte
+  montrait une lettre. Mesure du 2026-09-24 : Steam rend un NOM DE FICHIER
+  (`header`) et un modele d'adresse (`asset_url_format`) ; l'image est sous
+  `shared.akamai.steamstatic.com/store_item_assets/`. Rien d'illisible ne
+  devient une adresse.
+- Le menu de tri ne coupe plus « Fin la plus proche ».
+
+Verifie sur les vrais magasins, dans l'extension chargee dans Chromium : les
+cinq sources repondent sans erreur (Epic, Epic mobile, GamerPower, GOG,
+Steam) ; les puces « Tous 5 · Epic 2 · Steam 2 · Epic mobile 1 » ; le clic
+sur Steam ne laisse que ses deux offres ; le pack Dying Light affiche sa
+vraie vignette. Et le popup a 328 px, sans debordement.
+
+1221 tests.
+
 ## 2.60.1 -- 2026-09-24
 
 - « Repartir de zero » est centre sous la liste « Deja recupere ».

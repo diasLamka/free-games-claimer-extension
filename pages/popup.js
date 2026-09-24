@@ -41,6 +41,7 @@ import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground 
 import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
+import { ALL, byStore, storeChips } from '../lib/store-chips.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -463,6 +464,9 @@ function dismissUndo() {
 /* ------------------------------------------------------------------- games */
 
 let searchQuery = '';
+/* Le magasin choisi dans les puces (2.61.0). En memoire seulement, comme la
+   recherche : voir lib/store-chips.js. */
+let storeFilter = ALL;
 
 function openOffers(catalog, behaviour, now) {
   const watched = behaviour.watchedStores || DEFAULT_WATCHED;
@@ -473,6 +477,37 @@ function openOffers(catalog, behaviour, now) {
     .filter(([key]) => !ui.dismissed.includes(key))
     .filter(([, o]) => !(ui.hideOwned && o.alreadyOwned === true))
     .map(([key, o]) => ({ key, offer: o }));
+}
+
+/** « EPIC MOBILE » -> « Epic mobile » ; un sigle court (« GOG ») reste un sigle. */
+function chipLabel(store) {
+  const tag = String(TAGS[store] || STORE_LABELS[store] || store);
+  return tag.length <= 3 ? tag : tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+}
+
+/**
+ * Les puces de magasin au-dessus des jeux (2.61.0) : « Tous », puis un
+ * magasin par puce avec son nombre d'offres. Cachees quand il n'y a qu'une
+ * boutique -- elles ne distingueraient rien.
+ */
+function renderStoreChips(puces) {
+  const host = document.getElementById('store-chips');
+  host.textContent = '';
+  host.hidden = !puces.useful;
+  if (!puces.useful) return;
+  const puce = (valeur, libelle, n, actif) => {
+    const b = el('button', 'chip');
+    b.setAttribute('aria-pressed', String(actif));
+    b.append(el('span', null, libelle), el('span', 'n', String(n)));
+    b.addEventListener('click', async () => {
+      // Un second clic sur la puce active revient a tout.
+      storeFilter = actif ? ALL : valeur;
+      renderGames(await readAll(), behaviourCache);
+    });
+    return b;
+  };
+  host.append(puce(ALL, t('chipAll'), puces.total, puces.active === ALL));
+  for (const c of puces.chips) host.append(puce(c.store, chipLabel(c.store), c.count, c.active));
 }
 
 function matchesQuery(offer) {
@@ -821,7 +856,10 @@ function renderGames(all, behaviour) {
   const now = Date.now();
 
   const rows = openOffers(catalog, behaviour, now);
-  const visible = sortOffers(rows.filter(({ offer }) => matchesQuery(offer)), now);
+  const puces = storeChips(rows, storeFilter, [...PRIMARY, ...SECONDARY].map((s) => s.id));
+  storeFilter = puces.active;
+  renderStoreChips(puces);
+  const visible = sortOffers(byStore(rows.filter(({ offer }) => matchesQuery(offer)), puces.active), now);
 
   const ctx = {
     now,

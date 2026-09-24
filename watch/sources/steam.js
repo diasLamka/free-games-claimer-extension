@@ -52,8 +52,10 @@ export function itemsUrl(appids, { lang = 'french', pays = 'FR' } = {}) {
     ids: appids.map((appid) => ({ appid: Number(appid) })),
     context: { language: lang, country_code: pays },
     /* `include_platforms` ajoute la categorie Steam Deck a chaque element,
-       dans la MEME reponse -- voir watch/deck.js. */
-    data_request: { include_basic_info: true, include_platforms: true },
+       dans la MEME reponse -- voir watch/deck.js. `include_assets` y ajoute
+       les images (2.61.0) : sans lui, `assets` n'arrivait jamais, et chaque
+       offre Steam s'affichait avec une lettre a la place de sa vignette. */
+    data_request: { include_basic_info: true, include_platforms: true, include_assets: true },
   };
   return `${ITEMS_URL}?input_json=${encodeURIComponent(JSON.stringify(input))}`;
 }
@@ -71,6 +73,32 @@ export function itemsUrl(appids, { lang = 'french', pays = 'FR' } = {}) {
 export function isFreeToKeep(item) {
   const offer = item && item.best_purchase_option;
   return Boolean(offer && offer.is_free_to_keep === true);
+}
+
+/** Le CDN des images du magasin Steam, auquel `asset_url_format` est relatif. */
+export const ASSETS_BASE = 'https://shared.akamai.steamstatic.com/store_item_assets/';
+
+/**
+ * La vignette d'un element GetItems, en adresse complete.
+ *
+ * Mesure du 2026-09-24 (« Dying Light: The Beast - Discharge Weapon Pack ») :
+ * `assets.header` n'est PAS une adresse, c'est un nom de fichier
+ * (« 4f14.../header.jpg »), et `asset_url_format` dit ou le poser
+ * (« steam/apps/4355480/${FILENAME}?t=1789400832 »). L'image est sous
+ * ASSETS_BASE. L'en-tete (460 x 215) est en paysage, comme les cartes ; a
+ * defaut, la capsule principale. Rien d'illisible ne devient une adresse.
+ */
+export function steamImage(assets) {
+  if (!assets || typeof assets !== 'object') return null;
+  const fichier = [assets.header, assets.main_capsule, assets.small_capsule]
+    .find((f) => typeof f === 'string' && f.trim());
+  if (!fichier) return null;
+  if (/^https:\/\//i.test(fichier)) return fichier;
+  const format = typeof assets.asset_url_format === 'string' ? assets.asset_url_format : '';
+  if (!format.includes('${FILENAME}') || !/^[\w./-]+$/.test(fichier)) return null;
+  const chemin = format.replace('${FILENAME}', fichier);
+  if (chemin.includes('..') || !/^[\w./?=&-]+$/.test(chemin)) return null;
+  return ASSETS_BASE + chemin;
 }
 
 export function mapItem(item, now, owned) {
@@ -105,7 +133,7 @@ export function mapItem(item, now, owned) {
     storeId: appid,
     title: item.name || `Application ${appid}`,
     url: path,
-    image: item.assets && item.assets.header ? item.assets.header : null,
+    image: steamImage(item.assets),
     end,
     worth: formatted
       || (Number.isFinite(originalPrice) && originalPrice > 0 ? (originalPrice / 100).toFixed(2) : null),
