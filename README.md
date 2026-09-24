@@ -169,7 +169,8 @@ pages/                      les pages de l'extension, une paire .html / .js chac
 content/                    ce qui s'injecte dans les pages de magasin
   free-games-claimer.js       le moteur -- GENERE depuis src/core, ne s'edite pas
   gm-shim.js                  passerelle GM_* -> API d'extension
-  launcher.js                 le bouton sur la page : etat du moteur, faits de la fiche, commandes ;
+  launcher.js                 le bouton sur la page : etat du moteur, faits de la fiche, commandes,
+                              gratuit en ce moment ; sur toute page de Steam, Epic, GOG et Luna ;
                               deplacable, il s'ecarte des boutons des autres extensions
 lib/                        partage par les pages, le worker et la veille
   dashboard.js                le popup se sait-il ouvert dans un onglet ? (tableau de bord)

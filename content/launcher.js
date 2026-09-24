@@ -19,9 +19,14 @@
  *  1. AUCUN innerHTML. Tout se construit par noeuds et textContent : le titre
  *     affiche vient d'une API tierce.
  *
- *  2. RIEN QUAND IL N'Y A RIEN A DIRE. Le bouton n'existe que si le moteur
- *     tourne sur la page, ou si la fiche a quelque chose a dire. Une fiche
- *     Steam inconnue de l'extension ne recoit rien.
+ *  2. TOUJOURS SUR UN MAGASIN, AILLEURS SEULEMENT S'IL A QUELQUE CHOSE A
+ *     DIRE. Sur les pages des magasins que l'extension couvre -- Steam, Epic,
+ *     GOG, Luna --, le bouton est la meme sans rien a dire de la page : son
+ *     panneau montre ce qui est gratuit en ce moment et ouvre le tableau de
+ *     bord (2.67.0). Jusque-la, une fiche Steam inconnue de l'extension ne
+ *     recevait rien, et l'accueil de Steam jamais rien : on cherchait le
+ *     bouton sans le trouver. Ailleurs (le reste de *.epicgames.com), il
+ *     n'existe que si le moteur tourne ou si la fiche a quelque chose a dire.
  *
  *  3. CE SCRIPT NE RECLAME RIEN. Les deux commandes du panneau appellent le
  *     moteur, qui les offrait deja par ses propres boutons : lui seul agit.
@@ -94,6 +99,7 @@
     freeNoEnd: 'launcherFreeNoEnd',
     cardLeft: 'launcherCardLeft',
     cardNoEnd: 'launcherCardNoEnd',
+    nothing: 'launcherNothing',
   };
 
   var etat = {
@@ -282,17 +288,23 @@
     hote.style.top = Math.round(place.top) + 'px';
   }
 
-  function lirePosition() {
+  /** Relit la place retenue, puis appelle `puis` -- lue ou non, sauf si
+      l'extension n'est plus joignable : un bouton sans elle ne ferait rien. */
+  function lirePosition(puis) {
+    var fait = false;
+    function ensuite() { if (!fait && puis) { fait = true; puis(); } }
     try {
       api.storage.local.get(KEY_POSITION, function (items) {
         void api.runtime.lastError;
         var p = items && items[KEY_POSITION];
-        if (!p || !fraction(p.y)) return;
-        // Avant la 2.52.0, seule la hauteur etait retenue : le bouton vivait au bord droit.
-        etat.pos = { x: fraction(p.x) ? p.x : X_DEFAUT, y: p.y };
-        if (hote) { poser(versPixels(etat.pos), false); adapter(); }
+        if (p && fraction(p.y)) {
+          // Avant la 2.52.0, seule la hauteur etait retenue : le bouton vivait au bord droit.
+          etat.pos = { x: fraction(p.x) ? p.x : X_DEFAUT, y: p.y };
+          if (hote) { poser(versPixels(etat.pos), false); adapter(); }
+        }
+        ensuite();
       });
-    } catch (e) { /* contexte invalide apres une mise a jour */ }
+    } catch (e) { /* contexte invalide apres une mise a jour : on se tait */ }
   }
 
   function sauverPosition() {
@@ -690,10 +702,14 @@
     var liste = el('div', 'display:none');
     corps.appendChild(liste);
 
+    /* 4. Rien de tout cela : le panneau le dit plutot que de s'ouvrir vide. */
+    var vide = el('div', 'display:none;color:' + C.doux + ';font-size:12.5px');
+    corps.appendChild(vide);
+
     return {
       boite: boite, fermer: fermerBtn, grand: grand, page: page, pageTitre: pageTitre, carte: carte, faits: faits,
       statut: statut, statutPoint: statutPoint, statutTexte: statutTexte, actions: actions, reclamer: reclamer,
-      auto: auto, autoTexte: autoTexte, rail: rail, curseur: curseur, liste: liste,
+      auto: auto, autoTexte: autoTexte, rail: rail, curseur: curseur, liste: liste, vide: vide,
     };
   }
 
@@ -712,7 +728,15 @@
 
   /* ------------------------------------------------------------ rendu */
 
-  function visible() { return !!etat.moteur || etat.lignes.length > 0; }
+  /* Les magasins ou le bouton est toujours la (regle 2). Le reste de
+     *.epicgames.com -- compte, portail des developpeurs -- n'en est pas. */
+  function surUnMagasin() {
+    var h = location.hostname;
+    return /^store\.epicgames\.com$/.test(h) || /^(www\.)?gog\.com$/.test(h)
+      || /^store\.steampowered\.com$/.test(h) || /^luna\.amazon\./.test(h) || /^gaming\.amazon\.com$/.test(h);
+  }
+
+  function visible() { return !!etat.moteur || etat.lignes.length > 0 || surUnMagasin(); }
 
   function mettreAJour() {
     if (!visible()) { if (hote) detruire(); return; }
@@ -851,6 +875,10 @@
       anneauFocus(tout, C.ambre);
       p.liste.appendChild(tout);
     }
+
+    var rien = !jeu && !montres && !etat.moteur && !offres.length;
+    p.vide.style.display = rien ? 'block' : 'none';
+    p.vide.textContent = rien ? (libelle('nothing') || 'No free games right now.') : '';
   }
 
   /** Une offre de la liste : un lien vers sa fiche, dans un nouvel onglet. */
@@ -1181,7 +1209,10 @@
     } catch (e) { /* contexte invalide apres une mise a jour : on se tait */ }
   }
 
-  lirePosition();
+  /* Sur un magasin, le bouton n'attend pas le worker (regle 2) : il arrive
+     des que sa place est relue, avec les libelles du navigateur, et la
+     reponse les remplace : un worker qui dort ne le fait plus disparaitre. */
+  lirePosition(function () { if (surUnMagasin()) mettreAJour(); });
 
   /* Les magasins rendent leur fiche cote client : le titre n'existe pas encore
      au moment ou ce script s'execute. Une seule relecture differee suffit, et

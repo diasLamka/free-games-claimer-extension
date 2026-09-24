@@ -2,8 +2,9 @@
  *
  * Deux boites se chevauchaient dans le coin de la page : celle du moteur et
  * celle de la surcouche. Il n'en reste qu'une, et ces tests tiennent ses
- * promesses : rien quand il n'y a rien a dire, rien hors du cadre principal,
- * une racine fermee, et le moteur seul a agir.
+ * promesses : toujours la sur un magasin, ailleurs rien quand il n'y a rien a
+ * dire (2.67.0), rien hors du cadre principal, une racine fermee, et le
+ * moteur seul a agir.
  *
  * content/launcher.js tourne ici pour de vrai, dans un bac a sable, sur un
  * faux document juste assez complet pour lui -- voisins compris : d'autres
@@ -212,12 +213,12 @@ function charger({
   const parts = () => {
     const [bouton, bulle, panneau] = hote().shadow.childNodes;
     const [tete, corps] = panneau.childNodes;
-    const [page, actions, liste] = corps.childNodes;
+    const [page, actions, liste, vide] = corps.childNodes;
     const [, carte, faits] = page.childNodes;
     const [statut, reclamer, auto] = actions.childNodes;
     const [pastille, point] = bouton.childNodes.slice(1);
     const [, , grand, fermer] = tete.childNodes;
-    return { bouton, bulle, panneau, page, carte, faits, statut, actions, reclamer, auto, liste, grand, fermer, pastille, point };
+    return { bouton, bulle, panneau, page, carte, faits, statut, actions, reclamer, auto, liste, vide, grand, fermer, pastille, point };
   };
   /** Les minuteries en attente d'un delai donne, jouees et oubliees. */
   const jouer = (ms) => {
@@ -261,10 +262,62 @@ function moteur(extra = {}) {
 
 /* ------------------------------------------------------------ rien a dire */
 
-test('une fiche Steam dont on ne sait rien ne recoit rien', () => {
+test('une fiche Steam dont on ne sait rien : le bouton, sans pastille ni bulle (2.67.0)', () => {
+  /* Jusqu'a la 2.66.1, elle ne recevait rien : on cherchait le bouton sur
+     Steam sans le trouver. */
   const p = charger({ hostname: 'store.steampowered.com', pathname: '/app/1/', h1: 'Inconnu', reponse: { facts: [], lines: [] } });
-  assert.equal(p.hote(), null);
   assert.deepEqual(p.envoyes[0], { type: 'fgc-lookup', title: 'Inconnu', store: 'steam' });
+  p.jouerJusqua(700);
+  assert.ok(p.hote(), 'le bouton est la');
+  const { pastille, bulle, page } = p.parts();
+  assert.equal(pastille.style.display, 'none', 'rien a compter');
+  assert.notEqual(bulle.style.display, 'flex', 'rien a annoncer');
+  assert.equal(page.style.display, 'none', 'rien a dire de la fiche');
+});
+
+test('toutes les pages d\'un magasin ont le bouton : l\'accueil de Steam, ses recherches, Epic, GOG, Luna (2.67.0)', () => {
+  for (const [hostname, pathname] of [
+    ['store.steampowered.com', '/'], ['store.steampowered.com', '/search/'], ['store.epicgames.com', '/fr/'],
+    ['www.gog.com', '/fr/'], ['gog.com', '/en/games'], ['luna.amazon.fr', '/claims/home'], ['gaming.amazon.com', '/home'],
+  ]) {
+    const p = charger({ hostname, pathname, reponse: { facts: [], lines: [], free: LIBRE } });
+    assert.ok(p.hote(), `${hostname}${pathname}`);
+    assert.equal(p.envoyes[0].title, '', 'hors d\'une fiche, aucun titre');
+  }
+});
+
+test('hors d\'un magasin, sans moteur ni fait, toujours rien', () => {
+  for (const hostname of ['www.epicgames.com', 'dev.epicgames.com', 'accounts.epicgames.com', 'store.epicgames.com.example.org']) {
+    const p = charger({ hostname, pathname: '/site/fr/home', reponse: { facts: [], lines: [], free: LIBRE } });
+    assert.equal(p.hote(), null, hostname);
+  }
+});
+
+test('sur un magasin, un worker muet n\'empeche pas le bouton : les libelles du navigateur', () => {
+  const p = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: null });
+  assert.ok(p.hote());
+  assert.equal(p.parts().bouton.getAttribute('aria-label'), 'nav:launcherButton');
+});
+
+test('un panneau sans rien a montrer le dit, au lieu de s\'ouvrir vide', () => {
+  const p = charger({
+    hostname: 'store.steampowered.com', pathname: '/',
+    reponse: { facts: [], lines: [], labels: { nothing: 'Aucun jeu gratuit en ce moment.' }, free: { total: 0, offers: [] } },
+  });
+  p.parts().bouton.fire('click');
+  const { vide, liste, page, actions } = p.parts();
+  assert.equal(vide.style.display, 'block');
+  assert.equal(vide.textContent, 'Aucun jeu gratuit en ce moment.');
+  assert.equal(liste.style.display, 'none');
+  assert.equal(page.style.display, 'none');
+  assert.equal(actions.style.display, 'none');
+
+  // Des offres en cours : la liste, et plus de phrase vide.
+  const q = charger({ hostname: 'store.steampowered.com', pathname: '/', reponse: { facts: [], lines: [], free: LIBRE } });
+  q.parts().bouton.fire('click');
+  assert.equal(q.parts().liste.style.display, 'block');
+  assert.equal(q.parts().vide.style.display, 'none');
+  assert.equal(q.parts().vide.textContent, '');
 });
 
 test('hors du cadre principal, le lanceur ne s\'installe pas', () => {
@@ -276,7 +329,7 @@ test('hors du cadre principal, le lanceur ne s\'installe pas', () => {
 test('hors d\'une fiche, la question part sans titre : seuls les libelles reviennent', () => {
   const p = charger({ hostname: 'luna.amazon.com', reponse: { facts: [], lines: [] } });
   assert.deepEqual(p.envoyes[0], { type: 'fgc-lookup', title: '', store: null });
-  assert.equal(p.hote(), null, 'sans moteur ni fait, toujours rien');
+  assert.equal(p.parts().pastille.style.display, 'none', 'un magasin : le bouton, mais rien a compter');
 });
 
 /* ------------------------------------------------------------ la fiche */
@@ -309,7 +362,9 @@ test('un nombre de phrases qui ne correspond pas aux faits n\'est pas affiche', 
     hostname: 'store.steampowered.com', pathname: '/app/1/', h1: 'X',
     reponse: { facts: [{ kind: 'owned' }], lines: ['une', 'deux'] },
   });
-  assert.equal(p.hote(), null);
+  // Le bouton d'un magasin reste ; aucune des deux phrases n'est montree.
+  assert.equal(p.parts().pastille.style.display, 'none');
+  assert.equal(p.parts().faits.childNodes.length, 0);
 });
 
 /* ------------------------------------------------------------ le moteur */
@@ -571,8 +626,8 @@ test('un statut inconnu vaut « au repos »', () => {
   assert.equal(p.parts().point.style.display, 'none');
 });
 
-test('un moteur qui se retire, sans fait a dire, retire le bouton', () => {
-  const p = charger({ reponse: null });
+test('hors d\'un magasin, un moteur qui se retire, sans fait a dire, retire le bouton', () => {
+  const p = charger({ hostname: 'www.epicgames.com', pathname: '/site/fr/home', reponse: null });
   p.api.engine(moteur().spec);
   assert.ok(p.hote());
   p.api.engine(null);
@@ -599,7 +654,7 @@ test('les libelles du lanceur : memes cles des deux cotes, presentes dans chaque
     autoEpic: '<epicAutoLabel>', autoLuna: '<lunaAutoLabel>',
     dashboard: '<dashboardOpen>', thisPage: '<launcherThisPage>', freeNow: '<launcherFreeNow>',
     seeAll: '<launcherSeeAll>', dlc: '<tagDlc>', freeLeft: '<launcherFreeLeft>', freeNoEnd: '<launcherFreeNoEnd>',
-    cardLeft: '<launcherCardLeft>', cardNoEnd: '<launcherCardNoEnd>',
+    cardLeft: '<launcherCardLeft>', cardNoEnd: '<launcherCardNoEnd>', nothing: '<launcherNothing>',
   });
 });
 
@@ -621,7 +676,7 @@ test('le moteur ne pose plus rien dans la page : il parle au lanceur', () => {
   assert.match(ui, /window\.FGC_PAGE_UI/);
 });
 
-test('les deux manifestes : le lanceur partout ou le moteur tourne, plus les fiches Steam, jamais dans un cadre', () => {
+test('les deux manifestes : le lanceur partout ou le moteur tourne, plus tout Steam, jamais dans un cadre', () => {
   for (const f of ['manifest.json', 'manifest.firefox.json']) {
     const m = JSON.parse(readFileSync(new URL(f, ROOT), 'utf8'));
     const tous = m.content_scripts.flatMap((c) => c.js);
@@ -632,7 +687,10 @@ test('les deux manifestes : le lanceur partout ou le moteur tourne, plus les fic
 
     const moteurs = m.content_scripts.find((c) => c.js.includes('content/free-games-claimer.js'));
     for (const motif of moteurs.matches) assert.ok(lanceur[0].matches.includes(motif), `${f} : ${motif}`);
-    assert.ok(lanceur[0].matches.includes('https://store.steampowered.com/app/*'));
+    assert.ok(lanceur[0].matches.includes('https://store.steampowered.com/*'), `${f} : tout Steam, pas seulement les fiches`);
+    assert.ok(!lanceur[0].matches.includes('https://store.steampowered.com/app/*'), `${f} : plus de doublon`);
+    // Aucune permission de plus : Steam est deja un hote autorise.
+    assert.ok(m.host_permissions.includes('https://store.steampowered.com/*'), f);
   }
 });
 

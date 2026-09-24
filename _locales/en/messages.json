@@ -887,6 +887,9 @@
   "launcherCardNoEnd": {
     "message": "Free · end unknown"
   },
+  "launcherNothing": {
+    "message": "No free games right now."
+  },
   "overlayOwned": {
     "message": "You already own it on $1."
   },

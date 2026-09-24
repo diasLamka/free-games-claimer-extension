@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.66.1",
+  "version": "2.67.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -105,7 +105,7 @@
         "https://luna.amazon.pl/claims/*",
         "https://luna.amazon.com.tr/claims/*",
         "https://gaming.amazon.com/*",
-        "https://store.steampowered.com/app/*"
+        "https://store.steampowered.com/*"
       ],
       "js": [
         "content/launcher.js"

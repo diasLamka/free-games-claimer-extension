@@ -32,7 +32,7 @@ celui-ci l'a autorise.
 | `https://gaming.amazon.com/*` | Meme service Amazon, servi sous un second nom de domaine. |
 | `https://store-site-backend-static*.ak.epicgames.com/*` | Les deux adresses de l'API publique Epic qui publie la liste des jeux offerts. Lues sans cookie. |
 | `https://www.gamerpower.com/*` | Agregateur public d'offres, utilise comme source de decouverte de second recours. Lu sans cookie. |
-| `https://store.steampowered.com/*` | Reperer les promotions a -100 % et, si et seulement si l'utilisateur a active l'option apres avertissement, jouer l'etape de recuperation. |
+| `https://store.steampowered.com/*` | Reperer les promotions a -100 %, afficher sur les pages du magasin le bouton de l'extension (ce qu'elle sait du jeu, et ce qui est gratuit en ce moment), et, si et seulement si l'utilisateur a active l'option apres avertissement, jouer l'etape de recuperation. |
 | `https://api.steampowered.com/*` | Confirmer qu'un jeu Steam repere est bien gratuit, et retrouver le nom des jeux lors d'un import de bibliotheque demande par l'utilisateur. Lu sans cookie. |
 | `https://api.frankfurter.dev/*` | Convertir en devise de l'utilisateur la valeur affichee des jeux recuperes. Une requete par 24 h, aucune donnee personnelle transmise. Seul hote qui ne soit pas un magasin de jeux. |
 

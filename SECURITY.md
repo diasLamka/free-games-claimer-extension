@@ -151,6 +151,15 @@ memes pour tout le monde, pas votre bibliotheque. Les images partent sans
 referent (`no-referrer`) : le CDN d'un magasin n'apprend pas quelle page vous
 lisiez. Et une adresse qui n'est pas https n'est ni affichee, ni suivie.
 
+Depuis la 2.67.0, le bouton est la sur TOUTES les pages des magasins couverts
+-- Steam, Epic, GOG, Luna --, meme quand il n'a rien a dire de la page ;
+jusque-la, il n'apparaissait que la ou le moteur tournait ou sur une fiche
+connue de l'extension. Consequence a connaitre : chacun de ces magasins peut
+constater, sur n'importe laquelle de ses pages, qu'un element etranger est
+pose dans son document, donc qu'une extension de ce genre est installee. Il
+n'en lit toujours pas le contenu, et aucune permission n'a ete ajoutee :
+`store.steampowered.com` etait deja un hote autorise.
+
 ## Ce que l'extension ne fait pas
 
 - **Aucune telemetrie.** Pas d'identifiant d'installation, pas de rapport

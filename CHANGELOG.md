@@ -4,6 +4,46 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.67.0 -- 2026-09-24
+
+**Le bouton est la sur toutes les pages des magasins**
+
+On cherchait le bouton de l'extension sur Steam, et il n'y etait pas. Ce
+n'etait pas une panne, c'etait la regle : il n'apparaissait que la ou le
+moteur tournait, ou sur une fiche dont l'extension savait quelque chose (un
+jeu offert, deja a vous, deja rate). Sur Steam, le moteur ne tourne pas ; le
+bouton n'y etait donc que sur la fiche d'un jeu connu, et jamais sur
+l'accueil, la recherche ou les autres pages -- le script n'y etait meme pas
+injecte.
+
+- **Sur toute page de Steam, d'Epic Games Store, de GOG et de Luna**, le
+  bouton est la, meme sans rien a dire de la page. Son panneau montre ce qui
+  est gratuit en ce moment -- ce qui vaut sur n'importe quelle page -- et
+  ouvre le tableau de bord. La pastille et la bulle restent reservees a ce
+  que l'extension sait de la fiche : un jeu inconnu n'affiche aucun compte et
+  n'annonce rien.
+- **Un panneau sans rien a montrer le dit** : « Aucun jeu gratuit en ce
+  moment. », au lieu de s'ouvrir sur un en-tete seul.
+- **Le bouton n'attend plus le service worker.** Il arrive des que sa place
+  est relue, avec les libelles du navigateur, et la reponse du worker les
+  remplace : un worker endormi ne le fait plus disparaitre.
+- Ailleurs sous `*.epicgames.com` (compte, portail des developpeurs), la
+  regle d'avant : rien sans moteur ni fait a dire.
+- **Aucune permission de plus** : `store.steampowered.com` etait deja un
+  hote autorise ; seul le script du bouton y est injecte sur toutes les pages
+  au lieu des seules fiches `/app/`. SECURITY.md dit ce que cela laisse voir :
+  le magasin peut constater, sur chacune de ses pages, qu'un element etranger
+  y est pose.
+
+Verifie dans l'extension chargee dans Chromium, sur l'accueil Steam et la
+fiche de Counter-Strike 2 recopiees telles quelles et servies en local : le
+bouton est present sur les deux ; ouvert sur l'accueil, il dit « No free
+games right now. » sans offre au catalogue, puis liste Shogun Showdown, Dwarven
+Realms et Astrea avec leur magasin et le temps qui reste. Le vrai site n'a pas
+pu etre ouvert depuis le navigateur de cet environnement.
+
+1279 tests.
+
 ## 2.66.1 -- 2026-09-24
 
 **« Tester la recuperation » parle la langue du popup**

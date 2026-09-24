@@ -190,6 +190,8 @@ export const LAUNCHER_LABELS = Object.freeze({
   freeNoEnd: 'launcherFreeNoEnd',
   cardLeft: 'launcherCardLeft',
   cardNoEnd: 'launcherCardNoEnd',
+  /* Le panneau d'une page de magasin sans rien a dire (2.67.0). */
+  nothing: 'launcherNothing',
 });
 
 export function launcherLabels(t) {
