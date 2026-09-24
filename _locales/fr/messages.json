@@ -396,10 +396,10 @@
     "message": "Fins d'offres, prochaines offres et codes à échanger, pour l'agenda de votre téléphone. À refaire pour voir les offres suivantes : les rappels déjà importés sont mis à jour, pas doublés."
   },
   "phoneLabel": {
-    "message": "Alerte sur le téléphone (ntfy)"
+    "message": "Alertes sur le téléphone (ntfy, Discord, Telegram)"
   },
   "phoneHint": {
-    "message": "Pannes, captchas et jeux attendus, sur votre téléphone. Installez l'application ntfy, puis abonnez-vous à l'adresse ci-dessous."
+    "message": "Pannes, captchas, jeux attendus et récap du jeudi, envoyés par ntfy, dans un salon Discord ou sur Telegram."
   },
   "phoneUrlLabel": {
     "message": "Adresse du sujet"
@@ -1906,5 +1906,32 @@
   },
   "shortcutsCount": {
     "message": "$1 actif(s)"
+  },
+  "phoneServiceLabel": {
+    "message": "Service"
+  },
+  "phoneUrlLabelDiscord": {
+    "message": "Adresse du webhook Discord"
+  },
+  "phoneTokenLabelTelegram": {
+    "message": "Jeton du bot (donné par @BotFather)"
+  },
+  "phoneChatLabel": {
+    "message": "Discussion : votre identifiant, ou @canal"
+  },
+  "phoneSecretHintDiscord": {
+    "message": "Paramètres du salon, Intégrations, Webhooks, Nouveau webhook, Copier l'URL. Qui connaît l'adresse peut écrire dans le salon : gardez-la secrète. Rien n'y part jamais d'un code de rachat."
+  },
+  "phoneSecretHintTelegram": {
+    "message": "Créez un bot avec @BotFather, écrivez-lui une fois, puis indiquez votre identifiant (@userinfobot le donne). Le jeton reste dans ce navigateur. Rien n'y part jamais d'un code de rachat."
+  },
+  "phoneInvalidDiscord": {
+    "message": "Adresse invalide : il faut https://discord.com/api/webhooks/…"
+  },
+  "phoneInvalidTelegram": {
+    "message": "Il faut le jeton du bot et l'identifiant de la discussion"
+  },
+  "phoneSentTo": {
+    "message": "Essai envoyé : regardez $1"
   }
 }

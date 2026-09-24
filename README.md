@@ -115,7 +115,7 @@ est declare `"type": "module"`.
 | `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de ses listes Steam et GOG |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
-| `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |
+| `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
 | `epic-mobile.js` | la mesure V8 : ou Epic expose ses jeux mobiles gratuits -- elle resume, elle ne decide rien |
@@ -315,7 +315,12 @@ quelle valeur), ce qui reste a prendre soi-meme (Steam sans l'option, jeux
 mobiles, reclamation arretee sur une connexion), ce qui a ete rate et ce
 qu'Epic annonce. Un ordinateur eteint le jeudi soir le recoit au reveil,
 jusqu'au dimanche soir ; une semaine sans rien a dire n'envoie rien. Il suit
-les heures calmes, et part aussi sur le telephone si l'alerte ntfy est active.
+les heures calmes, et part aussi sur le telephone si l'alerte est active.
+
+**Les alertes sur Discord ou Telegram** (2.71.0), au choix de ntfy dans
+Reglages -> Notifications -> Alertes -> Service : l'adresse d'un webhook de
+salon Discord, ou le jeton d'un bot Telegram et votre identifiant. Les memes
+alertes, aux memes moments.
 
 **Tester la recuperation** (2.64.0), sous les sessions : pour chaque magasin
 que l'extension reclame, la page d'un jeu offert en ce moment s'ouvre dans une

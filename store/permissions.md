@@ -46,7 +46,7 @@ l'utilisateur, et se retire du meme geste.
 | `background` | Garder la veille active apres la fermeture de la derniere fenetre, si l'utilisateur le demande. |
 | `nativeMessaging` | Deposer un instantane de la ludotheque aupres d'un programme local que l'utilisateur a installe lui-meme ; et, pour une installation depuis un dossier, demander au relais de mise a jour (`tools/maj-auto.ps1`) de faire le `git pull`. |
 | `https://steamcommunity.com/*` | Lire le temps de jeu Steam de l'utilisateur, sur un clic, pour comparer les jeux recuperes aux jeux lances. |
-| `https://*/*` | Envoyer les alertes au telephone de l'utilisateur par ntfy, service de notification libre et auto-hebergeable. Le serveur est celui que l'utilisateur choisit (`ntfy.sh` par defaut) : l'extension demande CET hote seul, au moment ou l'alerte est activee. Le joker n'existe que parce que l'hote n'est pas connu a l'avance ; il ne donne aucun acces tant que l'utilisateur n'a pas accorde un hote precis. |
+| `https://*/*` | Envoyer les alertes de l'utilisateur par le service qu'il choisit : ntfy, service de notification libre et auto-hebergeable (`ntfy.sh` par defaut, ou son propre serveur), un webhook de salon Discord (`discord.com`) ou un bot Telegram (`api.telegram.org`). L'extension demande CET hote seul, au moment ou l'alerte est activee. Le joker n'existe que parce que l'hote n'est pas connu a l'avance ; il ne donne aucun acces tant que l'utilisateur n'a pas accorde un hote precis. |
 
 ## Ce que l'extension ne demande pas
 

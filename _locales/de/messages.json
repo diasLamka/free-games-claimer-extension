@@ -396,10 +396,10 @@
     "message": "Angebotsenden, kommende Angebote und einzulösende Codes für den Kalender deines Handys. Exportiere erneut, um spätere Angebote zu sehen: bereits importierte Erinnerungen werden aktualisiert, nicht verdoppelt."
   },
   "phoneLabel": {
-    "message": "Handy-Benachrichtigungen (ntfy)"
+    "message": "Benachrichtigungen aufs Handy (ntfy, Discord, Telegram)"
   },
   "phoneHint": {
-    "message": "Störungen, Captchas und erwartete Spiele auf deinem Handy. Installiere die ntfy-App und abonniere dann die Adresse unten."
+    "message": "Störungen, Captchas, erwartete Spiele und der Donnerstags-Rückblick, per ntfy, in einen Discord-Kanal oder an Telegram."
   },
   "phoneUrlLabel": {
     "message": "Themenadresse"
@@ -1906,5 +1906,32 @@
   },
   "shortcutsCount": {
     "message": "$1 aktiv"
+  },
+  "phoneServiceLabel": {
+    "message": "Dienst"
+  },
+  "phoneUrlLabelDiscord": {
+    "message": "Adresse des Discord-Webhooks"
+  },
+  "phoneTokenLabelTelegram": {
+    "message": "Bot-Token (von @BotFather)"
+  },
+  "phoneChatLabel": {
+    "message": "Chat: deine numerische ID oder @Kanal"
+  },
+  "phoneSecretHintDiscord": {
+    "message": "Kanaleinstellungen, Integrationen, Webhooks, Neuer Webhook, URL kopieren. Wer die Adresse kennt, kann in den Kanal schreiben: halte sie geheim. Es wird nie ein Einlösecode gesendet."
+  },
+  "phoneSecretHintTelegram": {
+    "message": "Erstelle einen Bot mit @BotFather, schreib ihm einmal, und gib dann deine ID ein (@userinfobot nennt sie). Das Token bleibt in diesem Browser. Es wird nie ein Einlösecode gesendet."
+  },
+  "phoneInvalidDiscord": {
+    "message": "Ungültige Adresse: sie muss https://discord.com/api/webhooks/… lauten"
+  },
+  "phoneInvalidTelegram": {
+    "message": "Bot-Token und Chat werden beide benötigt"
+  },
+  "phoneSentTo": {
+    "message": "Test gesendet: schau in $1 nach"
   }
 }

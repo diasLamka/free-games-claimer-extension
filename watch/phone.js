@@ -31,10 +31,22 @@ export const KEY_PHONE = 'veille:telephone';
 /** Le dernier envoi : ecrit par le service worker seul, lu par le popup. */
 export const KEY_PHONE_STATE = 'veille:telephone-etat';
 
+/**
+ * Ou partent les alertes (2.71.0). ntfy d'abord -- une appli de telephone,
+ * un sujet --, puis Discord (un webhook de salon) et Telegram (un bot et une
+ * discussion). Les memes alertes, aux memes moments : seul le transport
+ * change.
+ */
+export const SERVICES = Object.freeze({ NTFY: 'ntfy', DISCORD: 'discord', TELEGRAM: 'telegram' });
+
 export const DEFAULT_PHONE = Object.freeze({
   on: false,
+  service: SERVICES.NTFY,
+  /** ntfy : l'adresse du sujet. Discord : celle du webhook. Telegram : rien. */
   url: '',
-  /** Jeton d'acces, pour un serveur prive. Vide sur ntfy.sh. */
+  /** Telegram : la discussion ou le bot ecrit -- un nombre, ou @canal. */
+  chat: '',
+  /** ntfy : jeton d'acces, pour un serveur prive. Telegram : le jeton du bot. */
   token: '',
   /** Aussi les jeux de la liste de souhaits, pas seulement les pannes. */
   wished: true,
@@ -74,6 +86,8 @@ export function readPhone(raw) {
   const p = { ...DEFAULT_PHONE, ...(raw && typeof raw === 'object' ? raw : {}) };
   return {
     on: p.on === true,
+    service: Object.values(SERVICES).includes(p.service) ? p.service : SERVICES.NTFY,
+    chat: typeof p.chat === 'string' ? p.chat.trim() : '',
     url: typeof p.url === 'string' ? p.url.trim() : '',
     token: typeof p.token === 'string' ? p.token.trim() : '',
     wished: p.wished !== false,
@@ -100,21 +114,71 @@ export function topicUrl(url) {
   return `${u.origin}${chemin}`;
 }
 
-/** La cible d'envoi : { url, token }, seulement si l'alerte est active ET l'adresse valide. */
+/**
+ * L'adresse d'un webhook Discord, verifiee -- ou null (2.71.0).
+ *
+ * Celle que Discord donne dans Parametres du salon -> Integrations ->
+ * Webhooks : `https://discord.com/api/webhooks/<numero>/<jeton>`. Le jeton
+ * EST dans l'adresse : qui la connait peut ecrire dans le salon. Elle se garde
+ * donc comme le jeton ntfy, sous `veille:telephone`, et ne part jamais au
+ * journal.
+ */
+export function discordWebhookUrl(url) {
+  const s = String(url || '').trim();
+  const m = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api\/webhooks\/(\d{5,25})\/([A-Za-z0-9_-]{20,120})$/.exec(s);
+  return m ? `https://discord.com/api/webhooks/${m[1]}/${m[2]}` : null;
+}
+
+/** Le jeton d'un bot Telegram, tel que BotFather le donne (`123456:ABC...`), ou null. */
+export function telegramToken(token) {
+  const s = String(token || '').trim();
+  return /^\d{5,15}:[A-Za-z0-9_-]{30,60}$/.test(s) ? s : null;
+}
+
+/** Une discussion Telegram : un numero (negatif pour un groupe) ou @canal. */
+export function telegramChat(chat) {
+  const s = String(chat || '').trim();
+  return /^-?\d{1,20}$/.test(s) || /^@[A-Za-z0-9_]{5,32}$/.test(s) ? s : null;
+}
+
+/**
+ * L'adresse a laquelle on ecrit, pour ces reglages -- ou null. C'est aussi
+ * celle dont la permission d'hote est demandee.
+ */
+export function serviceUrl(raw) {
+  const p = readPhone(raw);
+  if (p.service === SERVICES.DISCORD) return discordWebhookUrl(p.url);
+  if (p.service === SERVICES.TELEGRAM) {
+    const token = telegramToken(p.token);
+    return token && telegramChat(p.chat) ? `https://api.telegram.org/bot${token}/sendMessage` : null;
+  }
+  return topicUrl(p.url);
+}
+
+/** La cible d'envoi, seulement si l'alerte est active ET la configuration valide. */
 export function phoneTarget(raw) {
   const p = readPhone(raw);
   if (!p.on) return null;
-  const url = topicUrl(p.url);
+  const url = serviceUrl(p);
   if (!url) return null;
+  const choix = { wished: p.wished, mobile: p.mobile, recap: p.recap };
+  if (p.service === SERVICES.DISCORD) return { service: p.service, url, ...choix };
+  if (p.service === SERVICES.TELEGRAM) return { service: p.service, url, chat: telegramChat(p.chat), ...choix };
   // Un jeton porte dans un en-tete HTTP : rien hors de l'ASCII imprimable.
   const token = /^[\x21-\x7e]{1,200}$/.test(p.token) ? p.token : '';
-  return { url, token, wished: p.wished, mobile: p.mobile, recap: p.recap };
+  return { url, token, ...choix };
 }
 
 /** Le motif de permission a demander pour ce serveur : `https://hote/*`. */
 export function originPattern(url) {
-  const ok = topicUrl(url);
+  const ok = topicUrl(url) || discordWebhookUrl(url) || telegramUrl(url);
   return ok ? `${new URL(ok).origin}/*` : null;
+}
+
+/** L'adresse d'envoi d'un bot Telegram, verifiee -- ou null. */
+function telegramUrl(url) {
+  const m = /^https:\/\/api\.telegram\.org\/bot([^/]+)\/sendMessage$/.exec(String(url || ''));
+  return m && telegramToken(m[1]) ? String(url) : null;
 }
 
 /**
@@ -197,11 +261,38 @@ export function mobileMessage(offers, { title, line }) {
  * ferait jeter `fetch` avant meme de partir. Le corps, lui, est de l'UTF-8.
  */
 export function publishRequest(target, msg) {
+  const click = msg.click && /^https:\/\//i.test(msg.click) ? msg.click : null;
+  const corps = String(msg.message || '').trim();
+  const titre = String(msg.title || '').trim();
+
+  /* Discord et Telegram (2.71.0) : du JSON, un seul champ de texte. Le titre
+     en tete, le lien a la fin. Ni mention ni mise en forme interpretee : un
+     titre de jeu ne doit pas pouvoir notifier tout un salon (@everyone) ni
+     casser un balisage. */
+  if (target.service === SERVICES.DISCORD || target.service === SERVICES.TELEGRAM) {
+    const lignes = [titre, corps, click].filter(Boolean);
+    const discord = target.service === SERVICES.DISCORD;
+    const payload = discord
+      ? { content: lignes.join('\n').slice(0, 2000), allowed_mentions: { parse: [] } }
+      : { chat_id: target.chat, text: lignes.join('\n').slice(0, 4096), disable_web_page_preview: true };
+    return {
+      url: target.url,
+      init: {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit',
+        cache: 'no-store',
+        redirect: 'error',
+      },
+    };
+  }
+
   const q = new URLSearchParams();
   if (msg.title) q.set('title', String(msg.title).slice(0, 250));
   if (msg.priority) q.set('priority', String(msg.priority));
   if (msg.tags && msg.tags.length) q.set('tags', msg.tags.join(','));
-  if (msg.click && /^https:\/\//i.test(msg.click)) q.set('click', msg.click);
+  if (click) q.set('click', click);
 
   const headers = {};
   if (target.token) headers.Authorization = `Bearer ${target.token}`;
@@ -234,7 +325,7 @@ export async function sendPhone({ fetch: fetchImpl, target, msg, timeoutMs = TIM
   try {
     const r = await fetchImpl(url, { ...init, signal: stopwatch ? stopwatch.signal : undefined });
     if (r.ok) return { ok: true, status: r.status, note: null };
-    return { ok: false, status: r.status, note: describeStatus(r.status) };
+    return { ok: false, status: r.status, note: describeStatus(r.status, target.service) };
   } catch (e) {
     const aborted = stopwatch && stopwatch.signal.aborted;
     return { ok: false, status: 0, note: aborted ? `delai depasse (${timeoutMs} ms)` : ((e && e.message) || String(e)) };
@@ -243,8 +334,20 @@ export async function sendPhone({ fetch: fetchImpl, target, msg, timeoutMs = TIM
   }
 }
 
-/** Ce qu'un statut ntfy veut dire, pour qui doit corriger sa configuration. */
-export function describeStatus(status) {
+/** Ce qu'un statut veut dire, pour qui doit corriger sa configuration. */
+export function describeStatus(status, service = SERVICES.NTFY) {
+  if (service === SERVICES.DISCORD) {
+    if (status === 401 || status === 403 || status === 404) return `HTTP ${status} : webhook Discord supprime, ou adresse fausse`;
+    if (status === 429) return 'HTTP 429 : Discord limite, trop de messages';
+    return `HTTP ${status}`;
+  }
+  if (service === SERVICES.TELEGRAM) {
+    if (status === 401 || status === 404) return `HTTP ${status} : jeton du bot refuse`;
+    if (status === 400) return 'HTTP 400 : discussion introuvable -- ecrivez d\'abord au bot, ou verifiez le numero';
+    if (status === 403) return 'HTTP 403 : le bot n\'a pas acces a cette discussion';
+    if (status === 429) return 'HTTP 429 : Telegram limite, trop de messages';
+    return `HTTP ${status}`;
+  }
   if (status === 401 || status === 403) return `HTTP ${status} : ce sujet demande un jeton, ou le jeton est refuse`;
   if (status === 404) return 'HTTP 404 : adresse du sujet introuvable';
   if (status === 413) return 'HTTP 413 : message trop long';

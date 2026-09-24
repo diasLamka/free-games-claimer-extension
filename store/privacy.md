@@ -44,7 +44,10 @@ titre et quelques lignes -- une panne de l'extension, un defi de securite en
 attente, le nom d'un jeu attendu et le lien de sa fiche --, **jamais un code
 de rachat ni un cookie**. Le serveur ntfy recoit ce texte et l'adresse IP de
 l'utilisateur ; sur `ntfy.sh`, quiconque connait le nom du sujet peut lire ces
-messages, d'ou un nom tire au hasard par l'extension.
+messages, d'ou un nom tire au hasard par l'extension. Au lieu de ntfy,
+l'utilisateur peut choisir un salon Discord (par un webhook qu'il cree) ou
+Telegram (par un bot qu'il cree) : le meme texte part alors a `discord.com` ou
+a `api.telegram.org`, avec l'adresse IP de l'utilisateur.
 
 Tant que les trois reglages restent coupes, rien ne sort.
 

@@ -4,6 +4,38 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.71.0 -- 2026-09-24
+
+**Les alertes sur Discord ou Telegram**
+
+Les alertes du telephone -- pannes, captchas, jeux attendus, jeux mobiles
+d'Epic, recap du jeudi -- ne partaient que par ntfy, donc vers une appli de
+plus a installer.
+
+- **Un choix de service** dans Reglages -> Notifications -> Alertes : ntfy,
+  Discord ou Telegram. Les memes alertes, aux memes moments ; seul le
+  transport change.
+- **Discord** : l'adresse d'un webhook de salon (Parametres du salon ->
+  Integrations -> Webhooks). Une adresse `discordapp.com` ou `ptb.` est
+  ramenee a `discord.com`. Le message part sans mention possible : un titre
+  de jeu qui contiendrait « @everyone » n'appelle personne.
+- **Telegram** : le jeton d'un bot cree avec @BotFather, et l'identifiant de
+  la discussion (un numero, ou @canal). Texte brut, sans mise en forme
+  interpretee.
+- **Le secret reste secret** : l'adresse du webhook et le jeton du bot
+  suffisent a ecrire a votre place ; ils vivent sous `veille:telephone`, ne
+  vont ni au journal ni dans l'etat du dernier envoi -- un test le verifie.
+  La permission n'est demandee que pour l'hote du service choisi, et un echec
+  dit quoi corriger (« webhook Discord supprime », « discussion introuvable --
+  ecrivez d'abord au bot »).
+- Les champs de texte du popup prennent enfin le style des autres.
+
+Verifie dans l'extension chargee dans Chromium, contre de faux serveurs
+Discord et Telegram en local : l'essai arrive a chacun, en JSON, au bon
+chemin. La boite de permission du navigateur, elle, a ete court-circuitee
+pour l'essai ; avec la permission accordee pour de vrai, l'extension n'est
+pas soumise au CORS de ces services.
+
 ## 2.70.1 -- 2026-09-24
 
 **Le bouton suit la navigation d'Epic**
@@ -4911,7 +4943,6 @@ desactiver le controle. La fiche build/reference.json garde le motif.
 
 288 tests.
 
-
 ## 2.8.2 -- 2026-08-27
 
 Indicateur de chargement dans le popup.
@@ -4948,7 +4979,6 @@ recalcul force entre les deux, sans quoi elle ne rejouerait qu'une fois.
 Sous `prefers-reduced-motion`, l'indicateur reste visible mais cesse de courir :
 une barre a moitie remplie dit « ca travaille » sans mouvement. L'animation
 d'onglet est supprimee.
-
 
 ## 2.8.1 -- 2026-08-27
 
@@ -5001,7 +5031,6 @@ place en TETE de file, pas en queue, et l'oeil doit lire la meme urgence.
 - `popup.js` ne fait plus `storage.local.get(null)` : il enumere ses cles.
   Sans cela, chaque ouverture du popup deserialisait le catalogue entier et les
   statistiques horaires pour afficher trois interrupteurs.
-
 
 ## 2.8.0 -- 2026-08-27
 
@@ -5088,7 +5117,6 @@ inexistante -> premier instant apres le trou ; heure ambigue -> premiere
 occurrence. Verifie sur les deux fenetres annuelles ou l'Europe et les
 Etats-Unis sont desynchronises.
 
-
 ## 2.7.1 -- 2026-08-27
 
 Aucun changement de comportement du moteur : le code genere est identique au
@@ -5126,7 +5154,6 @@ bit pres a celui de la v2.7.0 (`npm run verify`).
   bridage des minuteurs dans un onglet de fond et la capacite d'un document
   offscreen a analyser du HTML. Nouvelles permissions : `scripting`,
   `offscreen`, et l'hote de l'agregateur.
-
 
 // ==/UserScript==
 

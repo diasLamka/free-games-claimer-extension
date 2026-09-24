@@ -38,7 +38,9 @@ import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, WISH_ORIGIN, wishOr
 import { DECK } from '../watch/deck.js';
 import { CODE_STATUS, REDEEM_URLS, addCodes, codeStatus, deadlineDay, parseCodes, redeemUrlFor } from '../watch/codes.js';
 import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground } from '../watch/permissions.js';
-import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topicUrl } from '../watch/phone.js';
+import {
+  KEY_PHONE, KEY_PHONE_STATE, SERVICES, newTopicUrl, originPattern, readPhone, serviceUrl, topicUrl,
+} from '../watch/phone.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
@@ -2416,10 +2418,53 @@ document.getElementById('open-luna').addEventListener('click', () => openTab(PRI
    n'entre pas dans les reglages, que `syncSettings` recopie dans le compte du
    navigateur -- le nom d'un sujet ntfy est un secret. */
 
+/* Ce que chaque service demande (2.71.0) : ntfy une adresse de sujet, Discord
+   celle d'un webhook, Telegram le jeton d'un bot et une discussion. */
+const PHONE_FORMS = Object.freeze({
+  [SERVICES.NTFY]: { url: 'phoneUrlLabel', placeholder: 'https://ntfy.sh/…', token: 'phoneTokenLabel', hint: 'phoneSecretHint', invalid: 'phoneInvalid' },
+  [SERVICES.DISCORD]: { url: 'phoneUrlLabelDiscord', placeholder: 'https://discord.com/api/webhooks/…', token: null, hint: 'phoneSecretHintDiscord', invalid: 'phoneInvalidDiscord' },
+  [SERVICES.TELEGRAM]: { url: null, placeholder: '', token: 'phoneTokenLabelTelegram', hint: 'phoneSecretHintTelegram', invalid: 'phoneInvalidTelegram' },
+});
+
+function showPhoneForm(service) {
+  const f = PHONE_FORMS[service] || PHONE_FORMS[SERVICES.NTFY];
+  document.getElementById('phone-service').value = service;
+  document.getElementById('phone-url-field').hidden = !f.url;
+  if (f.url) {
+    document.getElementById('phone-url-label').textContent = t(f.url);
+    document.getElementById('phone-url').placeholder = f.placeholder;
+  }
+  document.getElementById('phone-chat-field').hidden = service !== SERVICES.TELEGRAM;
+  document.getElementById('phone-token-field').hidden = !f.token;
+  if (f.token) document.getElementById('phone-token-label').textContent = t(f.token);
+  // « Nouveau sujet » et « Copier » ne veulent rien dire hors de ntfy.
+  document.getElementById('phone-new').hidden = service !== SERVICES.NTFY;
+  document.getElementById('phone-copy').hidden = service !== SERVICES.NTFY;
+  document.getElementById('phone-secret-hint').textContent = t(f.hint);
+}
+
+/** Les reglages tels que les champs les montrent : lus d'un trait, sans await. */
+function phoneFromFields() {
+  return {
+    on: true,
+    service: document.getElementById('phone-service').value,
+    url: document.getElementById('phone-url').value.trim(),
+    token: document.getElementById('phone-token').value.trim(),
+    chat: document.getElementById('phone-chat').value.trim(),
+  };
+}
+
+function phoneInvalid(service) {
+  return t((PHONE_FORMS[service] || PHONE_FORMS[SERVICES.NTFY]).invalid);
+}
+
 function renderPhone(all) {
   const p = readPhone(all[KEY_PHONE]);
   document.getElementById('phone-on').checked = p.on;
   document.getElementById('phone-fields').hidden = !p.on;
+  showPhoneForm(p.service);
+  const chat = document.getElementById('phone-chat');
+  if (document.activeElement !== chat) chat.value = p.chat;
   document.getElementById('phone-wished').checked = p.wished;
   document.getElementById('phone-mobile').checked = p.mobile;
   document.getElementById('phone-recap').checked = p.recap;
@@ -2432,7 +2477,7 @@ function renderPhone(all) {
   const etat = all[KEY_PHONE_STATE];
   const zone = document.getElementById('phone-state');
   if (!p.on) zone.textContent = '';
-  else if (p.url && !topicUrl(p.url)) zone.textContent = t('phoneInvalid');
+  else if (!serviceUrl(p)) zone.textContent = phoneInvalid(p.service);
   else if (etat && typeof etat.at === 'number') {
     zone.textContent = etat.ok
       ? t('phoneLastOk', shortDateTime(etat.at))
@@ -2474,29 +2519,53 @@ function freshTopic() {
 }
 
 document.getElementById('phone-on').addEventListener('change', async (e) => {
-  const champ = document.getElementById('phone-url');
+  const champs = phoneFromFields();
   if (!e.target.checked) {
-    const origin = originPattern(champ.value);
+    const origin = originPattern(serviceUrl(champs) || champs.url);
     // Se retire aussi facilement qu'elle s'accorde.
     if (origin) { try { await api.permissions.remove({ origins: [origin] }); } catch { /* deja retiree */ } }
     await writePhone({ on: false });
     return;
   }
-  const url = topicUrl(champ.value) || freshTopic();
-  if (!await askPhoneHost(url)) {
+  /* ntfy s'allume tout pret, sur un sujet tire au hasard. Discord et Telegram
+     demandent d'abord ce que seul l'utilisateur connait : l'alerte s'allume,
+     et partira des que les champs seront remplis. */
+  if (champs.service === SERVICES.NTFY) {
+    const url = topicUrl(champs.url) || freshTopic();
+    if (!await askPhoneHost(url)) {
+      e.target.checked = false;
+      phoneSay(t('phoneDenied'));
+      return;
+    }
+    await writePhone({ on: true, url });
+    return;
+  }
+  const cible = serviceUrl(champs);
+  if (cible && !await askPhoneHost(cible)) {
     e.target.checked = false;
     phoneSay(t('phoneDenied'));
     return;
   }
-  await writePhone({ on: true, url });
+  await writePhone({ on: true });
+  if (!cible) phoneSay(phoneInvalid(champs.service));
 });
 
-document.getElementById('phone-url').addEventListener('change', async (e) => {
-  const brut = e.target.value.trim();
-  if (!topicUrl(brut)) { await writePhone({ url: brut }); phoneSay(t('phoneInvalid')); return; }
-  const accorde = await askPhoneHost(brut);
-  await writePhone({ url: brut });
-  if (!accorde) phoneSay(t('phoneDenied'));
+/* Un champ rempli : la permission de l'hote se demande DANS le geste, puis on
+   ecrit. Une configuration incomplete s'ecrit quand meme, et le dit. */
+async function phoneFieldChanged(patch) {
+  const champs = { ...phoneFromFields(), ...patch };
+  const cible = serviceUrl(champs);
+  const accorde = cible ? await askPhoneHost(cible) : false;
+  await writePhone(patch);
+  if (!cible) phoneSay(phoneInvalid(champs.service));
+  else if (!accorde) phoneSay(t('phoneDenied'));
+}
+
+document.getElementById('phone-url').addEventListener('change', (e) => phoneFieldChanged({ url: e.target.value.trim() }));
+document.getElementById('phone-chat').addEventListener('change', (e) => phoneFieldChanged({ chat: e.target.value.trim() }));
+document.getElementById('phone-service').addEventListener('change', (e) => {
+  showPhoneForm(e.target.value);
+  phoneFieldChanged({ service: e.target.value });
 });
 
 document.getElementById('phone-new').addEventListener('click', async () => {
@@ -2514,17 +2583,23 @@ document.getElementById('phone-copy').addEventListener('click', async () => {
 });
 
 document.getElementById('phone-test').addEventListener('click', async () => {
-  const url = topicUrl(document.getElementById('phone-url').value);
-  if (!url) { phoneSay(t('phoneInvalid')); return; }
+  const champs = phoneFromFields();
+  const url = serviceUrl(champs);
+  if (!url) { phoneSay(phoneInvalid(champs.service)); return; }
   if (!await askPhoneHost(url)) { phoneSay(t('phoneDenied')); return; }
   const r = await tell('fgc-phone-test');
-  phoneSay(r && r.ok ? t('phoneSent') : t('phoneFailed', (r && r.note) || '?'));
+  const ou = champs.service === SERVICES.DISCORD ? 'Discord' : champs.service === SERVICES.TELEGRAM ? 'Telegram' : null;
+  phoneSay(r && r.ok ? (ou ? t('phoneSentTo', ou) : t('phoneSent')) : t('phoneFailed', (r && r.note) || '?'));
 });
 
 document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
 document.getElementById('phone-mobile').addEventListener('change', (e) => writePhone({ mobile: e.target.checked }));
 document.getElementById('phone-recap').addEventListener('change', (e) => writePhone({ recap: e.target.checked }));
-document.getElementById('phone-token').addEventListener('change', (e) => writePhone({ token: e.target.value.trim() }));
+document.getElementById('phone-token').addEventListener('change', (e) => {
+  // Le jeton d'un bot Telegram fait partie de l'adresse : il en change l'hote accorde.
+  if (document.getElementById('phone-service').value === SERVICES.TELEGRAM) phoneFieldChanged({ token: e.target.value.trim() });
+  else writePhone({ token: e.target.value.trim() });
+});
 
 /* --- mise a jour a la demande (2.54.0)
 

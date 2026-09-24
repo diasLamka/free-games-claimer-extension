@@ -14,6 +14,8 @@ import {
   publishRequest, pushToPhone, readPhone, sendPhone, topicUrl, wishedMessage,
 } from '../watch/phone.js';
 import { fakeChrome } from './fake-chrome.mjs';
+import * as P from '../watch/phone.js';
+import { readFileSync } from 'node:fs';
 
 const T = Date.UTC(2026, 8, 23, 12, 0, 0);
 
@@ -177,4 +179,86 @@ test('pushToPhone garde le resultat pour le popup et l\'ecrit au journal', async
   const etat = (await chrome.storage.local.get(KEY_PHONE_STATE))[KEY_PHONE_STATE];
   assert.deepEqual(etat, { at: T, ok: false, status: 429, note: describeStatus(429), why: 'essai' });
   assert.match(journal[0], /^warn: telephone : essai non envoyee/);
+});
+
+/* ------------------------------------------------------------ Discord et Telegram (2.71.0) */
+
+const WEBHOOK = 'https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWxYz_-0123456789abcdef';
+const BOT = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
+
+test('une adresse de webhook Discord : verifiee, et ramenee a discord.com', () => {
+  assert.equal(P.discordWebhookUrl(WEBHOOK), WEBHOOK);
+  assert.equal(P.discordWebhookUrl(WEBHOOK.replace('discord.com', 'discordapp.com')), WEBHOOK);
+  assert.equal(P.discordWebhookUrl(WEBHOOK.replace('discord.com', 'ptb.discord.com')), WEBHOOK);
+  for (const mauvaise of [WEBHOOK.replace('https', 'http'), `${WEBHOOK}?wait=true`, 'https://evil.example/api/webhooks/1234567/abcdefghijklmnopqrstuvwxyz',
+    'https://discord.com/api/webhooks/123/abc', '', null]) {
+    assert.equal(P.discordWebhookUrl(mauvaise), null, String(mauvaise));
+  }
+});
+
+test('Telegram : un jeton de bot et une discussion, sinon rien', () => {
+  assert.equal(P.telegramToken(BOT), BOT);
+  assert.equal(P.telegramToken('123:court'), null);
+  assert.equal(P.telegramChat('-1001234567890'), '-1001234567890');
+  assert.equal(P.telegramChat('@mon_canal'), '@mon_canal');
+  assert.equal(P.telegramChat('mon canal'), null);
+});
+
+test('la cible depend du service ; une configuration incomplete n\'envoie rien', () => {
+  assert.equal(P.readPhone({}).service, 'ntfy', 'une configuration d\'avant la 2.71.0 reste ntfy');
+  const d = P.phoneTarget({ on: true, service: 'discord', url: WEBHOOK });
+  assert.deepEqual(d, { service: 'discord', url: WEBHOOK, wished: true, mobile: true, recap: true });
+  const tg = P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' });
+  assert.equal(tg.url, `https://api.telegram.org/bot${BOT}/sendMessage`);
+  assert.equal(tg.chat, '42');
+  assert.equal(P.phoneTarget({ on: true, service: 'telegram', token: BOT }), null, 'sans discussion');
+  assert.equal(P.phoneTarget({ on: true, service: 'discord', url: 'https://ntfy.sh/x' }), null, 'un sujet ntfy n\'est pas un webhook');
+  assert.equal(P.phoneTarget({ on: true, service: 'inconnu', url: 'https://ntfy.sh/abc' }).url, 'https://ntfy.sh/abc', 'service inconnu : ntfy');
+  assert.equal(P.originPattern(tg.url), 'https://api.telegram.org/*');
+  assert.equal(P.originPattern(d.url), 'https://discord.com/*');
+});
+
+test('Discord : du JSON, sans mention possible ; Telegram : sans mise en forme interpretee', () => {
+  const msg = { title: 'Un jeu attendu est gratuit : @everyone', message: 'Hollow Knight -- Epic', click: 'https://store.epicgames.com/p/x', priority: 4, tags: ['video_game'] };
+  const d = P.publishRequest(P.phoneTarget({ on: true, service: 'discord', url: WEBHOOK }), msg);
+  assert.equal(d.url, WEBHOOK);
+  assert.equal(d.init.headers['Content-Type'], 'application/json');
+  assert.equal(d.init.credentials, 'omit');
+  const corps = JSON.parse(d.init.body);
+  assert.equal(corps.content, 'Un jeu attendu est gratuit : @everyone\nHollow Knight -- Epic\nhttps://store.epicgames.com/p/x');
+  assert.deepEqual(corps.allowed_mentions, { parse: [] });
+
+  const t = P.publishRequest(P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' }), { ...msg, message: 'x'.repeat(5000) });
+  const tc = JSON.parse(t.init.body);
+  assert.equal(tc.chat_id, '42');
+  assert.equal(tc.text.length, 4096);
+  assert.equal(tc.parse_mode, undefined);
+  assert.equal(tc.disable_web_page_preview, true);
+  assert.ok(!('Authorization' in t.init.headers));
+});
+
+test('un refus dit quoi corriger, selon le service -- et jamais l\'adresse, qui porte le secret', async () => {
+  assert.match(P.describeStatus(404, 'discord'), /webhook Discord supprime/);
+  assert.match(P.describeStatus(400, 'telegram'), /discussion introuvable/);
+  assert.match(P.describeStatus(401, 'telegram'), /jeton du bot refuse/);
+  assert.match(P.describeStatus(401), /jeton/);
+  const journal = [];
+  const cible = P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' });
+  const ecrit = {};
+  const chrome = { storage: { local: { set: async (o) => Object.assign(ecrit, o) } } };
+  const r = await P.pushToPhone({ chrome, fetch: async () => ({ ok: false, status: 403 }), target: cible, msg: { title: 'x' }, now: 1, record: (n, m) => journal.push(m) });
+  assert.equal(r.ok, false);
+  assert.ok(!JSON.stringify(journal).includes(BOT), 'le jeton ne va pas au journal');
+  assert.ok(!JSON.stringify(ecrit).includes(BOT), 'ni dans l\'etat lu par le popup');
+  const ok = await P.sendPhone({ fetch: async () => ({ ok: true, status: 204 }), target: P.phoneTarget({ on: true, service: 'discord', url: WEBHOOK }), msg: { title: 'x' } });
+  assert.equal(ok.ok, true, 'Discord repond 204 sans corps');
+});
+
+test('le popup propose les trois services, et chacun a son formulaire', () => {
+  const html = readFileSync(new URL('../pages/popup.html', import.meta.url), 'utf8');
+  for (const v of ['ntfy', 'discord', 'telegram']) assert.match(html, new RegExp(`<option value="${v}">`));
+  assert.match(html, /id="phone-chat-field" hidden/);
+  const js = readFileSync(new URL('../pages/popup.js', import.meta.url), 'utf8');
+  for (const s of ['NTFY', 'DISCORD', 'TELEGRAM']) assert.match(js, new RegExp(`\\[SERVICES\\.${s}\\]: \\{`));
+  assert.match(js, /const url = serviceUrl\(champs\);\s*if \(!url\)/);
 });

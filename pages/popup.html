@@ -365,7 +365,7 @@
   }
 
   /* ------------------------------------------------------------ controls */
-  input[type="search"], input[type="url"], input[type="password"], select {
+  input[type="search"], input[type="url"], input[type="password"], input[type="text"], select {
     appearance: none;
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -378,7 +378,7 @@
   }
   input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   select { padding-right: 22px; cursor: pointer; }
-  input[type="search"]:focus-visible, input[type="url"]:focus-visible, input[type="password"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
+  input[type="search"]:focus-visible, input[type="url"]:focus-visible, input[type="password"]:focus-visible, input[type="text"]:focus-visible, select:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
 
   .toolbar { display: flex; gap: 6px; padding: 9px var(--pad); border-bottom: 1px solid var(--line); }
 
@@ -1444,9 +1444,25 @@
           <span class="toggle-label"><span data-i18n="phoneLabel"></span><small data-i18n="phoneHint"></small></span>
         </label>
         <div id="phone-fields" hidden>
-          <label class="field stack">
-            <span data-i18n="phoneUrlLabel"></span>
+          <div class="field">
+            <span data-i18n="phoneServiceLabel"></span>
+            <select id="phone-service">
+              <option value="ntfy">ntfy</option>
+              <option value="discord">Discord</option>
+              <option value="telegram">Telegram</option>
+            </select>
+          </div>
+          <label class="field stack" id="phone-url-field">
+            <span id="phone-url-label" data-i18n="phoneUrlLabel"></span>
             <input type="url" id="phone-url" placeholder="https://ntfy.sh/…" spellcheck="false" autocomplete="off">
+          </label>
+          <label class="field stack" id="phone-token-field">
+            <span id="phone-token-label" data-i18n="phoneTokenLabel"></span>
+            <input type="password" id="phone-token" spellcheck="false" autocomplete="off">
+          </label>
+          <label class="field stack" id="phone-chat-field" hidden>
+            <span data-i18n="phoneChatLabel"></span>
+            <input type="text" id="phone-chat" placeholder="123456789" spellcheck="false" autocomplete="off">
           </label>
           <div class="actions">
             <button id="phone-new" data-i18n="phoneNewTopic"></button>
@@ -1468,11 +1484,7 @@
             <span class="switch"></span>
             <span class="toggle-label" data-i18n="phoneRecapLabel"></span>
           </label>
-          <label class="field stack">
-            <span data-i18n="phoneTokenLabel"></span>
-            <input type="password" id="phone-token" spellcheck="false" autocomplete="off">
-          </label>
-          <p class="hint" data-i18n="phoneSecretHint"></p>
+          <p class="hint" id="phone-secret-hint" data-i18n="phoneSecretHint"></p>
           <p class="hint" id="phone-state" role="status"></p>
         </div>
       </details>

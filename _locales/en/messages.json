@@ -396,10 +396,10 @@
     "message": "Offer endings, upcoming offers and codes to redeem, for your phone's calendar. Export again to see later offers: reminders already imported are updated, not doubled."
   },
   "phoneLabel": {
-    "message": "Phone alerts (ntfy)"
+    "message": "Alerts on your phone (ntfy, Discord, Telegram)"
   },
   "phoneHint": {
-    "message": "Breakdowns, captchas and awaited games, on your phone. Install the ntfy app, then subscribe to the address below."
+    "message": "Breakdowns, captchas, awaited games and the Thursday recap, sent by ntfy, to a Discord channel or to Telegram."
   },
   "phoneUrlLabel": {
     "message": "Topic address"
@@ -1906,5 +1906,32 @@
   },
   "shortcutsCount": {
     "message": "$1 active"
+  },
+  "phoneServiceLabel": {
+    "message": "Service"
+  },
+  "phoneUrlLabelDiscord": {
+    "message": "Discord webhook address"
+  },
+  "phoneTokenLabelTelegram": {
+    "message": "Bot token (from @BotFather)"
+  },
+  "phoneChatLabel": {
+    "message": "Chat: your numeric ID, or @channel"
+  },
+  "phoneSecretHintDiscord": {
+    "message": "Channel settings, Integrations, Webhooks, New webhook, Copy URL. Anyone who knows the address can post in the channel: keep it secret. No redeem code is ever sent."
+  },
+  "phoneSecretHintTelegram": {
+    "message": "Create a bot with @BotFather, send it one message, then enter your ID (@userinfobot gives it). The token stays in this browser. No redeem code is ever sent."
+  },
+  "phoneInvalidDiscord": {
+    "message": "Invalid address: it must be https://discord.com/api/webhooks/…"
+  },
+  "phoneInvalidTelegram": {
+    "message": "The bot token and the chat are both needed"
+  },
+  "phoneSentTo": {
+    "message": "Test sent: look at $1"
   }
 }

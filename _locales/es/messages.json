@@ -396,10 +396,10 @@
     "message": "Fin de las ofertas, próximas ofertas y códigos por canjear, para el calendario de tu móvil. Exporta de nuevo para ver las ofertas siguientes: los recordatorios ya importados se actualizan, no se duplican."
   },
   "phoneLabel": {
-    "message": "Alertas en el móvil (ntfy)"
+    "message": "Alertas en el móvil (ntfy, Discord, Telegram)"
   },
   "phoneHint": {
-    "message": "Averías, captchas y juegos esperados, en tu móvil. Instala la app ntfy y suscríbete a la dirección de abajo."
+    "message": "Averías, captchas, juegos esperados y el resumen del jueves, enviados por ntfy, a un canal de Discord o a Telegram."
   },
   "phoneUrlLabel": {
     "message": "Dirección del tema"
@@ -1906,5 +1906,32 @@
   },
   "shortcutsCount": {
     "message": "$1 activo(s)"
+  },
+  "phoneServiceLabel": {
+    "message": "Servicio"
+  },
+  "phoneUrlLabelDiscord": {
+    "message": "Dirección del webhook de Discord"
+  },
+  "phoneTokenLabelTelegram": {
+    "message": "Token del bot (de @BotFather)"
+  },
+  "phoneChatLabel": {
+    "message": "Chat: tu ID numérico, o @canal"
+  },
+  "phoneSecretHintDiscord": {
+    "message": "Ajustes del canal, Integraciones, Webhooks, Nuevo webhook, Copiar URL. Quien conozca la dirección puede escribir en el canal: mantenla en secreto. Nunca se envía un código de canje."
+  },
+  "phoneSecretHintTelegram": {
+    "message": "Crea un bot con @BotFather, escríbele una vez y luego indica tu ID (@userinfobot te lo da). El token se queda en este navegador. Nunca se envía un código de canje."
+  },
+  "phoneInvalidDiscord": {
+    "message": "Dirección no válida: debe ser https://discord.com/api/webhooks/…"
+  },
+  "phoneInvalidTelegram": {
+    "message": "Hacen falta el token del bot y el chat"
+  },
+  "phoneSentTo": {
+    "message": "Prueba enviada: mira $1"
   }
 }
