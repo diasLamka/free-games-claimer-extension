@@ -4,6 +4,41 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.63.0 -- 2026-09-24
+
+**Les notifications montrent le jeu**
+
+C'est par une notification qu'on apprend qu'un jeu est offert, et elle ne
+montrait que l'icone de l'extension et « Gratuit sur Epic Games Store ».
+
+- **La jaquette du jeu, en grand**, sous le texte, pour l'annonce d'une offre
+  et pour le rappel avant la fin. Chrome n'accepte pas d'image distante dans
+  une notification : le worker la telecharge, la recadre en 2:1 sans la
+  deformer, la reduit a 720 x 360 et la passe en `data:` -- une vignette Epic
+  de pres d'1 Mo devient une trentaine de Ko. Mesure du 2026-09-24 : les CDN
+  de Steam, Epic et GOG le permettent (`access-control-allow-origin: *`).
+  Sans cookies, sans referent, 4 Mo et 5 secondes au plus ; le moindre
+  echec, et la notification part avec l'icone, comme avant. Un resume de
+  plusieurs jeux n'en porte pas.
+- **Le temps qui reste** : « Gratuit sur Epic Games Store · encore 6 h 29 ».
+  Le rappel suit le meme format -- « 3 h 20 », « 7 j 2 h » -- dans la langue
+  choisie ; il ecrivait « 3 h » en dur, et aurait dit « 168 h » pour une
+  semaine.
+- **Des replis dans l'ordre** : image et boutons, image seule, boutons seuls,
+  notification simple. Une plateforme qui refuse l'un ou l'autre (Firefox)
+  ne fait jamais taire l'annonce.
+- **Trente-cinq textes francais retrouvent leurs accents et leurs
+  apostrophes**, restes de l'epoque ou tout s'ecrivait en ASCII :
+  « Recuperer » sur le bouton des notifications, « Ajouter des cles a la
+  main », « tant que l ordinateur est allume », « Rien n a ete lu »...
+
+Verifie dans l'extension chargee dans Chromium, sur les vrais magasins : une
+offre Epic reapparue est annoncee avec sa jaquette (type image, 25 Ko) et
+« encore 6 h 29 », le rappel du DLC Dying Light avec la sienne ; aucune
+erreur au journal. Le rendu sous Windows, lui, n'a pas pu etre vu d'ici.
+
+1242 tests.
+
 ## 2.62.0 -- 2026-09-24
 
 **Le panneau de la page redessine, et les DLC recuperes**

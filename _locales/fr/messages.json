@@ -141,10 +141,10 @@
     "message": "Dans votre liste de souhaits Steam : à retirer sur Steam, sinon il revient à la prochaine importation"
   },
   "claimThisTitle": {
-    "message": "Recuperer celle-ci maintenant"
+    "message": "Récupérer celle-ci maintenant"
   },
   "snoozeTitle": {
-    "message": "Mettre de cote un moment"
+    "message": "Mettre de côté un moment"
   },
   "snoozedFor": {
     "message": "en pause $1"
@@ -267,16 +267,16 @@
     "message": "Vérifications minimum par jour"
   },
   "backgroundLabel": {
-    "message": "Continuer la veille apres la fermeture du navigateur"
+    "message": "Continuer la veille après la fermeture du navigateur"
   },
   "backgroundGranted": {
-    "message": "La veille continue une fois la derniere fenetre fermee, tant que l ordinateur est allume."
+    "message": "La veille continue une fois la dernière fenêtre fermée, tant que l'ordinateur est allumé."
   },
   "backgroundOffered": {
-    "message": "La veille ne tourne que si le navigateur est ouvert. Cochez la case ci-dessus pour qu elle continue."
+    "message": "La veille ne tourne que si le navigateur est ouvert. Cochez la case ci-dessus pour qu'elle continue."
   },
   "backgroundUnsupported": {
-    "message": "La veille ne tourne que si le navigateur est ouvert. Ce navigateur n offre aucun moyen d y changer quoi que ce soit."
+    "message": "La veille ne tourne que si le navigateur est ouvert. Ce navigateur n'offre aucun moyen d'y changer quoi que ce soit."
   },
   "predictionTitle": {
     "message": "Prochaines 24 heures"
@@ -375,7 +375,7 @@
     "message": "Pays de la boutique"
   },
   "countryHint": {
-    "message": "Epic sert ses prix et ses dates dans ce pays. GOG et GamerPower n'acceptent aucun pays : ce reglage ne les change pas. La devise affichee suit ce choix."
+    "message": "Epic sert ses prix et ses dates dans ce pays. GOG et GamerPower n'acceptent aucun pays : ce réglage ne les change pas. La devise affichée suit ce choix."
   },
   "hideOwnedLabel": {
     "message": "Masquer les jeux que je possède déjà"
@@ -981,31 +981,31 @@
     "message": "Ouvrir la page d’échange"
   },
   "redeemUnknownHint": {
-    "message": "Aucune page d echange n a encore ete mesuree pour ce magasin. Collez le code sur son site."
+    "message": "Aucune page d'échange n'a encore été mesurée pour ce magasin. Collez le code sur son site."
   },
   "codesAddTitle": {
-    "message": "Ajouter des cles a la main"
+    "message": "Ajouter des clés à la main"
   },
   "codesAddHint": {
-    "message": "Collez n importe quoi : titres, puces et lignes vides sont ignores."
+    "message": "Collez n'importe quoi : titres, puces et lignes vides sont ignorés."
   },
   "codesAddPlaceholder": {
     "message": "ABCDE-12345-FGHIJ"
   },
   "codesAddStore": {
-    "message": "Magasin de ces cles"
+    "message": "Magasin de ces clés"
   },
   "codesAddButton": {
     "message": "Ajouter"
   },
   "codesNoneFound": {
-    "message": "Aucune cle trouvee dans ce texte."
+    "message": "Aucune clé trouvée dans ce texte."
   },
   "codesAdded": {
-    "message": "$1 cle(s) ajoutee(s)."
+    "message": "$1 clé(s) ajoutée(s)."
   },
   "codesAllKnown": {
-    "message": "Toutes ces cles etaient deja listees."
+    "message": "Toutes ces clés étaient déjà listées."
   },
   "remove": {
     "message": "Retirer"
@@ -1106,17 +1106,20 @@
   "notifyOneStore": {
     "message": "Gratuit sur $1"
   },
+  "notifyOneStoreLeft": {
+    "message": "Gratuit sur $1 · encore $2"
+  },
   "notifyManyTitle": {
     "message": "$1 jeux gratuits repérés"
   },
   "incidentOneTitle": {
-    "message": "Quelque chose est casse"
+    "message": "Quelque chose est cassé"
   },
   "incidentManyTitle": {
-    "message": "$1 problemes a regarder"
+    "message": "$1 problèmes à regarder"
   },
   "notifyActionClaim": {
-    "message": "Recuperer"
+    "message": "Récupérer"
   },
   "notifyActionSnooze": {
     "message": "Plus tard"
@@ -1128,7 +1131,7 @@
     "message": "La veille de fond ne tourne plus $1."
   },
   "healthMuted": {
-    "message": "Votre systeme bloque les notifications de l extension."
+    "message": "Votre système bloque les notifications de l'extension."
   },
   "notifyManyBody": {
     "message": "$1, et $2 autre(s)"
@@ -1302,7 +1305,7 @@
     "message": "Historique"
   },
   "historySub": {
-    "message": "Ce qui est passe, pris ou rate. Fige a la fin de chaque offre, donc il survit a la purge du catalogue."
+    "message": "Ce qui est passé, pris ou raté. Figé à la fin de chaque offre, donc il survit à la purge du catalogue."
   },
   "historyTaken": {
     "message": "pris"
@@ -1326,7 +1329,7 @@
     "message": "Rafraichir"
   },
   "historyDownload": {
-    "message": "Telecharger en CSV"
+    "message": "Télécharger en CSV"
   },
   "historyWhen": {
     "message": "Termine"
@@ -1350,31 +1353,31 @@
     "message": "Mois"
   },
   "historyRate": {
-    "message": "$1 % des offres tranchees ont fini sur votre compte. Rate : $2 de valeur."
+    "message": "$1 % des offres tranchées ont fini sur votre compte. Raté : $2 de valeur."
   },
   "historyRateNone": {
-    "message": "Rien ne s est encore termine. Revenez quand une offre aura suivi son cours."
+    "message": "Rien ne s'est encore terminé. Revenez quand une offre aura suivi son cours."
   },
   "historyEmpty": {
-    "message": "Aucune offre ne s est terminee depuis l installation de cette version."
+    "message": "Aucune offre ne s'est terminée depuis l'installation de cette version."
   },
   "historyNoMatch": {
-    "message": "Aucune entree ne correspond a ces filtres."
+    "message": "Aucune entrée ne correspond à ces filtres."
   },
   "historyNote": {
-    "message": "Lecture seule. Les 1000 dernieres offres terminees sont conservees."
+    "message": "Lecture seule. Les 1000 dernières offres terminées sont conservées."
   },
   "historyRecurring": {
     "message": "Ce qui revient"
   },
   "historyRecurringSub": {
-    "message": "Les titres que cette extension a vus offerts plus d une fois. Ceux-la, vous pouvez les attendre plutot que les acheter."
+    "message": "Les titres que cette extension a vus offerts plus d'une fois. Ceux-là, vous pouvez les attendre plutôt que les acheter."
   },
   "historyTimes": {
     "message": "Fois"
   },
   "historyLastSeen": {
-    "message": "Vu la derniere fois"
+    "message": "Vu la dernière fois"
   },
   "openJournal": {
     "message": "Journal de la veille"
@@ -1404,7 +1407,7 @@
     "message": "Lequel de ces boutons fallait-il cliquer ?"
   },
   "teachRefused": {
-    "message": "Ce libelle parle d argent. Il ne peut pas etre appris."
+    "message": "Ce libellé parle d'argent. Il ne peut pas être appris."
   },
   "teachLearned": {
     "message": "Appris : $1."
@@ -1626,7 +1629,7 @@
     "message": "Lecture de votre temps de jeu Steam..."
   },
   "mirrorDenied": {
-    "message": "Permission refusee. Rien n a ete lu."
+    "message": "Permission refusée. Rien n'a été lu."
   },
   "mirrorDone": {
     "message": "$1 jeux lus."
@@ -1641,10 +1644,10 @@
     "message": "Envoi vers la passerelle locale..."
   },
   "bridgeDenied": {
-    "message": "Permission refusee. Rien n a ete envoye."
+    "message": "Permission refusée. Rien n'a été envoyé."
   },
   "bridgeDone": {
-    "message": "Ecrit dans $1"
+    "message": "Écrit dans $1"
   },
   "bridgeFailed": {
     "message": "Passerelle injoignable : $1"
@@ -1653,10 +1656,10 @@
     "message": "Backlog"
   },
   "backlogFilterLabel": {
-    "message": "Filtrer par etat"
+    "message": "Filtrer par état"
   },
   "backlogAll": {
-    "message": "Tous les etats"
+    "message": "Tous les états"
   },
   "backlogUntouched": {
     "message": "Non renseigne"
@@ -1674,10 +1677,10 @@
     "message": "Abandonne"
   },
   "backlogSurprise": {
-    "message": "Tire au sort"
+    "message": "Tiré au sort"
   },
   "backlogNothingToTry": {
-    "message": "Aucun jeu n est marque a essayer."
+    "message": "Aucun jeu n'est marqué à essayer."
   },
   "backlogPicked": {
     "message": "Ce soir : $1"

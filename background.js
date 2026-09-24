@@ -66,6 +66,7 @@ import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
 import { badgeState } from './watch/notify-policy.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
+import { notificationImage } from './watch/notify-image.js';
 import { inspectHealth as inspectHealthOf } from './watch/health.js';
 import { windowsLackLinks } from './watch/sources/epic.js';
 
@@ -207,23 +208,35 @@ async function ensureSchedule(now = Date.now()) {
  * Ce qu'il faut pour agir est retenu AVANT l'affichage : le clic peut arriver
  * des heures plus tard, sur un service worker qui a tout oublie.
  */
-async function showNotice({ id, title, message, url = null, kind = null, catalogKey = null }) {
+async function showNotice({ id, title, message, url = null, kind = null, catalogKey = null, image = null }) {
   try {
     await rememberNotification(api, id, { url, catalogKey, kind });
 
     const base = { type: 'basic', iconUrl: 'icons/icon128.png', title, message };
     const boutons = buttonsFor(kind).map((b) => ({ title: t(b.label) }));
 
-    if (!boutons.length) {
-      await api.notifications.create(id, base);
-      return;
-    }
+    /* La jaquette du jeu (2.63.0), en grand sous le texte : voir
+       watch/notify-image.js. Sans elle -- CDN muet, image trop lourde --, la
+       notification part avec l'icone, comme avant. */
+    const imageUrl = image ? await notificationImage(image) : null;
+    const illustree = imageUrl ? { ...base, type: 'image', imageUrl } : null;
 
-    try {
-      await api.notifications.create(id, { ...base, buttons: boutons });
-    } catch (e) {
-      record('info', 'boutons de notification refuses, repli sans boutons', e);
-      await api.notifications.create(id, base);
+    /* Du plus riche au plus simple : une plateforme qui refuse les boutons
+       (Firefox) ou le type image ne doit jamais faire taire la notification. */
+    const essais = [
+      illustree && boutons.length ? { ...illustree, buttons: boutons } : null,
+      illustree,
+      boutons.length ? { ...base, buttons: boutons } : null,
+      base,
+    ].filter(Boolean);
+    for (let i = 0; i < essais.length; i++) {
+      try {
+        await api.notifications.create(id, essais[i]);
+        return;
+      } catch (e) {
+        if (i === essais.length - 1) throw e;
+        record('info', 'notification refusee sous cette forme, repli plus simple', e);
+      }
     }
   } catch (e) {
     record('warn', 'notification impossible', e);
@@ -354,8 +367,8 @@ async function startCycle(origine, options = {}) {
         now,
         sources: SOURCES,
         fetch: (url, init) => fetch(url, init),
-        notify: async ({ title, text, id, url, kind, catalogKey }) => {
-          await showNotice({ id, title, message: text, url, kind, catalogKey });
+        notify: async ({ title, text, id, url, kind, catalogKey, image }) => {
+          await showNotice({ id, title, message: text, url, kind, catalogKey, image });
         },
         updateBadge: async (n) => {
           try {

@@ -111,6 +111,13 @@ GamerPower. A chaque ouverture, ces CDN recoivent votre adresse IP et savent
 quels jeux vous sont presentes. Ce n'est pas une requete de l'extension, c'est
 un `<img>` -- mais l'effet est le meme, et il vaut d'etre dit.
 
+Depuis la 2.63.0, une notification d'offre montre la jaquette du jeu : le
+service worker la telecharge au moment d'annoncer l'offre (Chrome n'accepte
+pas d'image distante dans une notification). C'est la meme image, sur le meme
+CDN, que le popup affiche : sans cookies, sans referent, en https seulement,
+4 Mo au plus, abandonnee apres 5 secondes. Le CDN apprend donc aussi quand
+une offre vous a ete annoncee.
+
 ### Ce que la page d'un magasin peut voir
 
 Sur une page de magasin, le bouton de l'extension (`content/launcher.js`)

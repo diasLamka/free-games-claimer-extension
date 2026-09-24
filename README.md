@@ -110,6 +110,7 @@ est declare `"type": "module"`.
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
+| `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de sa liste Steam |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
 | `phone.js` | l'alerte telephone par ntfy : pannes, defis, jeux attendus -- jamais un code, jamais un cookie |

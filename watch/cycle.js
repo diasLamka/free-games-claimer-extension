@@ -40,6 +40,7 @@ import {
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../lib/i18n.js';
+import { delayText } from './lookup.js';
 import {
   claimOffer,
   hasRoom,
@@ -93,10 +94,13 @@ const MAX_GAPS = 50;
 
 /* --------------------------------------------------------------- notification */
 
-/** "3 h" / "45 min" -- l'unite d'un rappel, jamais des secondes. */
+/**
+ * « 45 min », « 3 h 20 », « 7 j 2 h » : les unites du popup, par la table
+ * (2.63.0). L'ancien « 3 h » ecrit en dur ne connaissait ni la langue ni les
+ * jours -- une offre d'une semaine aurait dit « encore 168 h ».
+ */
 function readableHours(ms) {
-  const min = Math.max(0, Math.round(ms / 60000));
-  return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h`;
+  return delayText(ms, t);
 }
 
 /**
@@ -123,15 +127,18 @@ export function toNotify(catalog, now) {
  * Compose le message. Une notification par offre au-dela de trois, c'est un
  * harcelement : au-dela on resume.
  */
-export function composeAnnouncement(offers, storeLabel) {
+export function composeAnnouncement(offers, storeLabel, now = null) {
   if (offers.length === 1) {
     const o = offers[0];
     // Le libelle du magasin, pas son identifiant : « Epic Games Store » plutot
     // que « epic ». L'injection reste possible pour les tests.
     const store = storeLabel ? storeLabel(o.store) : (STORE_LABELS[o.store] || o.store);
+    /* Le temps qui reste (2.63.0) : « Gratuit sur Epic Games Store · encore
+       7 h ». C'est ce qui decide s'il faut s'en occuper maintenant. */
+    const reste = typeof now === 'number' && typeof o.end === 'number' && o.end > now ? o.end - now : null;
     return {
       title: t('notifyOneTitle', o.title),
-      text: t('notifyOneStore', store),
+      text: reste === null ? t('notifyOneStore', store) : t('notifyOneStoreLeft', store, readableHours(reste)),
     };
   }
   const titles = offers.slice(0, 3).map((o) => o.title).join(', ');
@@ -502,7 +509,7 @@ export async function runCycle({
       const first = watched[0];
       const { title, text } = decision.digest
         ? { title: t('notifyDigestTitle', String(watched.length)), text: watched.map((o) => o.title).join(', ') }
-        : composeAnnouncement(watched);
+        : composeAnnouncement(watched, null, now);
       // Le lien de la premiere offre annoncee : cliquer la notification doit
       // mener a l'offre, pas a une page d'accueil.
       await notify({
@@ -516,6 +523,9 @@ export async function runCycle({
            tout oublie entre-temps. */
         kind: NOTICE.OFFER,
         catalogKey: first.catalogKey,
+        /* La jaquette de la premiere offre (2.63.0) -- pas pour un resume,
+           qui parle de plusieurs jeux a la fois. */
+        image: decision.digest ? null : (first.image || null),
       });
     }
 
@@ -587,6 +597,7 @@ export async function runCycle({
            gagner du temps. Voir watch/notify-actions.js. */
         kind: NOTICE.REMINDER,
         catalogKey: closing[0].catalogKey,
+        image: closing[0].image || null,
       });
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "free-games-claimer-extension",
-  "version": "2.62.0",
+  "version": "2.63.0",
   "private": true,
   "type": "module",
   "description": "MV3 extension that claims free games on Epic, GOG, Amazon Luna, and spots them on Steam.",

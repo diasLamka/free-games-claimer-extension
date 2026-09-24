@@ -1106,6 +1106,9 @@
   "notifyOneStore": {
     "message": "Gratis en $1"
   },
+  "notifyOneStoreLeft": {
+    "message": "Gratis en $1 · quedan $2"
+  },
   "notifyManyTitle": {
     "message": "$1 juegos gratis detectados"
   },
