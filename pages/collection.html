@@ -203,7 +203,14 @@
   button:disabled { opacity: .55; cursor: default; }
   button.primary { border-color: var(--amber); color: var(--amber); font-weight: 600; }
   button.ghost { background: transparent; color: var(--mute); }
-  a.link { color: var(--amber); font-size: 12px; }
+  /* « Se connecter » ouvre le magasin : un lien, habille comme les boutons
+     voisins (2.60.0) -- un texte souligne se perdait a cote d'eux. */
+  a.link {
+    display: inline-flex; align-items: center;
+    padding: 6px 10px; border: 1px solid var(--amber); border-radius: 6px;
+    color: var(--amber); text-decoration: none; font-weight: 600;
+  }
+  a.link:hover { background: color-mix(in srgb, var(--amber) 12%, transparent); }
   label.check { display: inline-flex; gap: 6px; align-items: center; color: var(--mute); cursor: pointer; }
   .spacer { flex: 1 1 auto; }
 

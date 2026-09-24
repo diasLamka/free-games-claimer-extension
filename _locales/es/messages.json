@@ -50,12 +50,6 @@
   "alreadyClaimed": {
     "message": "Ya reclamado"
   },
-  "seeAll": {
-    "message": "Ver todo"
-  },
-  "seeLess": {
-    "message": "Ver menos"
-  },
   "resetLog": {
     "message": "Empezar de nuevo"
   },
@@ -1354,6 +1348,9 @@
   },
   "openJournal": {
     "message": "Registro de la vigilancia"
+  },
+  "navJournal": {
+    "message": "Registro"
   },
   "dashboardOpen": {
     "message": "Abrir en grande, en una pestaña"

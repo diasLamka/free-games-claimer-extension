@@ -50,12 +50,6 @@
   "alreadyClaimed": {
     "message": "Already claimed"
   },
-  "seeAll": {
-    "message": "See all"
-  },
-  "seeLess": {
-    "message": "See less"
-  },
   "resetLog": {
     "message": "Start over"
   },
@@ -1354,6 +1348,9 @@
   },
   "openJournal": {
     "message": "Watch log"
+  },
+  "navJournal": {
+    "message": "Log"
   },
   "dashboardOpen": {
     "message": "Open full size, in a tab"

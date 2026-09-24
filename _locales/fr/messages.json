@@ -50,12 +50,6 @@
   "alreadyClaimed": {
     "message": "Déjà récupéré"
   },
-  "seeAll": {
-    "message": "Tout voir"
-  },
-  "seeLess": {
-    "message": "Réduire"
-  },
   "resetLog": {
     "message": "Repartir de zéro"
   },
@@ -1354,6 +1348,9 @@
   },
   "openJournal": {
     "message": "Journal de la veille"
+  },
+  "navJournal": {
+    "message": "Journal"
   },
   "dashboardOpen": {
     "message": "Ouvrir en grand, dans un onglet"

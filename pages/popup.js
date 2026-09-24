@@ -234,7 +234,6 @@ const DEFAULT_UI = {
   dismissed: [],
   onboarded: false,
   syncSettings: false,
-  showAllLog: false,
 };
 
 /* Behaviour the service worker reads too. Imported, never re-declared: a
@@ -872,7 +871,7 @@ function renderGames(all, behaviour) {
        d'essais. Se reconnecter est exactement le genre de chose qu'on vient de
        faire avant d'appuyer ici, et attendre douze heures pour le verifier
        n'aurait aucun sens. */
-    const retry = el('button', 'link', t('retryNow'));
+    const retry = el('button', 'btn-sm', t('retryNow'));
     retry.addEventListener('click', async (e) => {
       e.stopPropagation();
       retry.disabled = true;
@@ -1052,9 +1051,6 @@ function renderLog(all) {
 
   rows.sort((a, b) => b.ts - a.ts);
 
-  const toggle = document.getElementById('show-all-log');
-  toggle.hidden = rows.length <= 8;
-  toggle.textContent = t(ui.showAllLog ? 'seeLess' : 'seeAll');
   document.getElementById('reset-log').hidden = !rows.length;
 
   if (!rows.length) {
@@ -1063,7 +1059,10 @@ function renderLog(all) {
     return;
   }
 
-  for (const row of ui.showAllLog ? rows.slice(0, 60) : rows.slice(0, 8)) {
+  /* Les dernieres seulement : toute la liste, filtrable, est dans la page
+     Historique (le bouton du pied de page). Le « Tout voir » d'ici en etait
+     une copie plus pauvre, et il est parti en 2.60.0. */
+  for (const row of rows.slice(0, EN_ONGLET ? 16 : 8)) {
     // A known technical reason describes the outcome better than the generic
     // status: "already owned" beats "claimed" when the game already was.
     const [key, css] = REASON_KEYS[row.reason] || VERDICT_KEYS[row.status] || [null, ''];
@@ -1071,7 +1070,12 @@ function renderLog(all) {
     // La jaquette quand le catalogue ou le registre la connait : un titre se
     // reconnait plus vite a son image qu'a son nom.
     if (row.image) li.append(thumb(row.image));
-    li.append(el('time', null, shortDateTime(row.ts)));
+    /* Pas de date (2.60.0). L'heure notee est celle ou le moteur a CONSTATE
+       l'etat sur la page du magasin, pas celle ou le jeu a ete pris : deux
+       jeux « deja possedes » vus a la meme visite affichaient la meme heure,
+       sans rapport avec le jour ou ils sont entres dans la bibliotheque. Une
+       date fausse est pire que pas de date. L'ordre, lui, reste le plus recent
+       d'abord. */
     li.append(el('span', 'what', row.label));
     li.append(el('span', `st ${css}`, key ? t(key) : String(row.status || '')));
     host.append(li);
@@ -1175,7 +1179,7 @@ function renderCodes(codes) {
     if (!cible) go.title = t('redeemUnknownHint');
     go.addEventListener('click', () => { if (cible) openTab(cible); });
 
-    const drop = el('button', 'link', t('remove'));
+    const drop = el('button', 'btn-sm danger', t('remove'));
     drop.addEventListener('click', async () => {
       const before = get(await readAll(), KEY_CODES, []);
       await setValue(KEY_CODES, JSON.stringify(before.filter((c) => c.code !== entry.code)));
@@ -1232,7 +1236,7 @@ function renderCanary(all) {
     titre.append(el('span', 'canary-store', STORE_LABELS[a.store] || a.store));
     titre.append(el('span', 'canary-count', t('canaryStreak', String(a.streak))));
 
-    const seen = el('button', 'link', t('canaryAck'));
+    const seen = el('button', 'btn-sm', t('canaryAck'));
     seen.addEventListener('click', () => {
       // L'etat n'a qu'un ecrivain, le service worker. Le popup demande.
       api.runtime.sendMessage({ type: 'fgc-canary-ack', store: a.store }, () => {
@@ -1264,7 +1268,7 @@ function renderCanary(all) {
       bloc.append(el('p', 'hint', t('teachAsk')));
       for (const libelle of vus.slice(0, 5)) {
         const essai = wouldAccept(surface, libelle);
-        const choix = el('button', 'link', `« ${libelle} »`);
+        const choix = el('button', 'btn-sm choice', `« ${libelle} »`);
         choix.disabled = !essai.ok;
         if (!essai.ok) choix.title = t('teachRefused');
         choix.addEventListener('click', async () => {
@@ -1280,7 +1284,7 @@ function renderCanary(all) {
     const appris = surface ? (get(all, KEY_TAUGHT, {})[surface] || []) : [];
     for (const libelle of appris) {
       const ligne = el('p', 'hint', t('teachLearned', libelle));
-      const oubli = el('button', 'link', t('teachForget'));
+      const oubli = el('button', 'btn-sm', t('teachForget'));
       oubli.addEventListener('click', async () => {
         await tell('fgc-teach', { surface, label: libelle, on: false });
         await load();
@@ -1332,7 +1336,7 @@ function sessionLine(entry, storeId) {
   else line.append(el('span', null, t('sessionNever')));
 
   if (entry.status === SESSION.OUT && LOGIN_URLS[storeId]) {
-    const lien = el('button', 'link', t('sessionSignIn'));
+    const lien = el('button', 'btn-sm', t('sessionSignIn'));
     lien.addEventListener('click', () => openTab(LOGIN_URLS[storeId]));
     line.append(lien);
   }
@@ -1512,7 +1516,7 @@ function renderFallback(all) {
   const tete = el('div', 'canary-head');
   tete.append(el('span', 'canary-store', t('sentinelBanner', casse.map((s) => s.name).join(', '))));
 
-  const ouvrir = el('button', 'link', t('openSentinel'));
+  const ouvrir = el('button', 'btn-sm', t('openSentinel'));
   ouvrir.addEventListener('click', () => openTab(api.runtime.getURL('pages/sentinel.html')));
   tete.append(ouvrir);
   bloc.append(tete);
@@ -2064,8 +2068,6 @@ document.getElementById('epic-country').addEventListener('change', async (e) => 
   await setValue(KEY_LANG, normaliseLang(null, country));
 });
 document.getElementById('hide-owned').addEventListener('change', (e) => writeUi({ hideOwned: e.target.checked }));
-
-document.getElementById('show-all-log').addEventListener('click', () => writeUi({ showAllLog: !ui.showAllLog }));
 
 /* Repartir de zero.
  *

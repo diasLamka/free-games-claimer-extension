@@ -4,6 +4,33 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.60.0 -- 2026-09-24
+
+**Des boutons, pas des textes soulignes -- et une heure fausse en moins**
+
+- **« Deja recupere » n'affiche plus d'heure.** L'heure notee etait celle ou
+  le moteur avait CONSTATE l'etat sur la page du magasin, pas celle ou le jeu
+  avait ete pris : Shogun Showdown et Mindcop, vus « deja possedes » a la
+  meme visite, affichaient tous deux « 23 sept. 19:01 ». Une date fausse est
+  pire que pas de date ; l'ordre reste le plus recent d'abord.
+- **« Tout voir » est parti.** C'etait une copie pauvre de la page
+  Historique, qui montre tout, filtre et exporte. La liste garde les 8
+  dernieres (16 dans le tableau de bord).
+- **Les gestes sont des boutons.** « Repartir de zero », « Reessayer »,
+  « Retirer », « J'ai vu », « Se connecter », « Verifier les sessions »,
+  « oublier », les libelles a apprendre, « Veille en repli » : des liens gris
+  soulignes, qui se lisaient comme des adresses et se perdaient dans le
+  texte. Ce sont maintenant des pilules a bordure, ambre au survol -- rouges
+  pour ce qui efface (« Repartir de zero », « Retirer »).
+- **Le pied de page** : « Ma collection », « Historique » et « Journal » en
+  boutons, et le diagnostic en simple icone -- il ne sert qu'aux mesures.
+- Dans Ma collection, « Se connecter » a l'allure des boutons voisins.
+
+Verifie dans Chromium : le popup a 328 px (liste, pied de page, magasins,
+code a echanger, alerte de magasin) et le tableau de bord a 1440 px.
+
+1215 tests.
+
 ## 2.59.1 -- 2026-09-24
 
 **Jeux mobiles Epic : la date de fin et la vignette sont mesurees**

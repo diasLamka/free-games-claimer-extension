@@ -50,12 +50,6 @@
   "alreadyClaimed": {
     "message": "Bereits abgeholt"
   },
-  "seeAll": {
-    "message": "Alle anzeigen"
-  },
-  "seeLess": {
-    "message": "Weniger anzeigen"
-  },
   "resetLog": {
     "message": "Neu beginnen"
   },
@@ -1354,6 +1348,9 @@
   },
   "openJournal": {
     "message": "Überwachungsprotokoll"
+  },
+  "navJournal": {
+    "message": "Protokoll"
   },
   "dashboardOpen": {
     "message": "Groß öffnen, in einem Tab"
