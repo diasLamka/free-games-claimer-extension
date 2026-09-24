@@ -54,6 +54,22 @@ export const DRY = Object.freeze({
   RUNNING: 'running',
 });
 
+/**
+ * Pourquoi un essai n'a pas abouti. Le popup les traduit ; `details` garde la
+ * phrase technique, pour le journal. Une exception n'a pas de code : son
+ * message est tout ce qu'on en sait, et il s'affiche tel quel.
+ */
+export const DRY_ERRORS = Object.freeze({
+  /** La page n'a rien rendu a l'etape Steam. */
+  NO_ANSWER: 'no_answer',
+  LOAD: 'load',
+  STEAM_AGE: 'steam_age',
+  /** Le moteur ne s'est jamais annonce sur la page. */
+  ENGINE_ABSENT: 'engine_absent',
+  /** Il s'est annonce, puis n'a pas rendu de verdict d'inspection. */
+  ENGINE_SILENT: 'engine_silent',
+});
+
 const ENGINE_VERDICTS = new Set([
   DRY.READY, DRY.OWNED, DRY.LOGIN, DRY.CHALLENGE, DRY.NO_BUTTON, DRY.REFUSED, DRY.WRONG_PAGE,
 ]);
@@ -97,7 +113,7 @@ export function pickTestOffer(catalog, store, now) {
 
 /** La reponse de l'etape Steam, dans le vocabulaire commun. */
 export function fromSteamStep(step) {
-  if (!step) return { status: DRY.ERROR, details: 'aucune reponse de la page' };
+  if (!step) return { status: DRY.ERROR, reason: DRY_ERRORS.NO_ANSWER, details: 'aucune reponse de la page' };
   if (step.ok) return { status: DRY.READY, label: 'Add to Account', details: step.via === 'formulaire' ? 'formulaire de licence gratuite' : null };
   if (step.reason === 'deja-possede') return { status: DRY.OWNED };
   if (step.reason === 'non-connecte') return { status: DRY.LOGIN };
@@ -110,7 +126,7 @@ export function fromSteamStep(step) {
 /** La reponse du moteur, bornee : elle vient d'une page, elle en garde la forme. */
 export function fromEngine(message) {
   if (!message || !ENGINE_VERDICTS.has(message.verdict)) {
-    return { status: DRY.ERROR, details: 'le moteur n\'a pas repondu' };
+    return { status: DRY.ERROR, reason: DRY_ERRORS.ENGINE_SILENT, details: 'le moteur n\'a pas repondu' };
   }
   const court = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
   const r = { status: message.verdict };
@@ -150,12 +166,16 @@ export async function inspectOffer(offer, {
     await markPiloted(chrome, tabId, {
       offer: offer.catalogKey || null, windowId, openedAt: now, expire: now + loadWaitMs + readyWaitMs + inspectWaitMs, test: true,
     });
-    if (!(await awaitLoad(chrome, tabId, loadWaitMs))) return { status: DRY.ERROR, details: 'la page n\'a pas fini de charger' };
+    if (!(await awaitLoad(chrome, tabId, loadWaitMs))) {
+      return { status: DRY.ERROR, reason: DRY_ERRORS.LOAD, details: 'la page n\'a pas fini de charger' };
+    }
     const landed = await tabUrl(chrome, tabId);
 
     if (steam) {
       if (isSteamLoginUrl(landed)) return { status: DRY.LOGIN };
-      if (isSteamAgeCheckUrl(landed)) return { status: DRY.ERROR, details: 'controle d\'age Steam : a passer une fois a la main' };
+      if (isSteamAgeCheckUrl(landed)) {
+        return { status: DRY.ERROR, reason: DRY_ERRORS.STEAM_AGE, details: 'controle d\'age Steam : a passer une fois a la main' };
+      }
       const [injection] = await chrome.scripting.executeScript({
         target: { tabId }, func: steamPageStep, args: [String(offer.packageId), true],
       });
@@ -169,7 +189,7 @@ export async function inspectOffer(offer, {
     }
 
     const ready = await awaitVerdict(tabId, 'fgc-pret', readyWaitMs);
-    if (!ready) return { status: DRY.ERROR, details: 'le moteur ne s\'est pas annonce' };
+    if (!ready) return { status: DRY.ERROR, reason: DRY_ERRORS.ENGINE_ABSENT, details: 'le moteur ne s\'est pas annonce' };
     const reponse = awaitVerdict(tabId, 'fgc-inspection', inspectWaitMs);
     await chrome.tabs.sendMessage(tabId, { type: 'fgc-inspecte' });
     return fromEngine(await reponse);

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  DRY, KEY_DRY_RUN, dryRunStores, fromEngine, fromSteamStep, inspectOffer, pickTestOffer,
+  DRY, DRY_ERRORS, KEY_DRY_RUN, dryRunStores, fromEngine, fromSteamStep, inspectOffer, pickTestOffer,
   recognised, storesToTest,
 } from '../watch/dry-run.js';
 import { reportVerdict } from '../watch/claim.js';
@@ -158,7 +158,34 @@ test('un moteur muet donne « erreur », pas un faux succes', async () => {
   const { chrome } = fauxChrome({ landed: EPIC.url, onOrder: () => ({}) });
   const r = await inspectOffer(EPIC, { chrome, now: NOW, readyWaitMs: 20 });
   assert.equal(r.status, DRY.ERROR);
+  assert.equal(r.reason, DRY_ERRORS.ENGINE_ABSENT);
   assert.match(r.details, /annonce/);
+});
+
+test('un essai qui n\'aboutit pas dit pourquoi dans la langue du popup (2.66.1)', () => {
+  /* La 2.64.0 affichait la phrase technique du journal, en francais sans
+     accents, quelle que soit la langue choisie. */
+  assert.equal(fromSteamStep(null).reason, DRY_ERRORS.NO_ANSWER);
+  assert.equal(fromEngine(null).reason, DRY_ERRORS.ENGINE_SILENT);
+  const src = lire('watch/dry-run.js');
+  const erreurs = [...src.matchAll(/status: DRY\.ERROR[^}]*\}/g)].map((m) => m[0]);
+  const codees = erreurs.filter((e) => /reason: DRY_ERRORS\.[A-Z_]+/.test(e));
+  assert.equal(erreurs.length - codees.length, 1, 'seule l\'exception garde son message brut');
+  for (const nom of Object.keys(DRY_ERRORS)) {
+    assert.ok(codees.some((e) => e.includes(`DRY_ERRORS.${nom}`)), `${nom} sert`);
+  }
+
+  const popup = lire('pages/popup.js');
+  const cles = Object.keys(DRY_ERRORS).map((nom) => {
+    const m = popup.match(new RegExp(`\\[DRY_ERRORS\\.${nom}\\]: '(dryError[A-Za-z]+)'`));
+    assert.ok(m, `le popup traduit ${nom}`);
+    return m[1];
+  });
+  assert.match(popup, /t\('dryTextError', DRY_ERROR_TEXTS\[r\.reason\] \? t\(DRY_ERROR_TEXTS\[r\.reason\]\) : r\.details \|\| ''\)/);
+  for (const l of ['en', 'fr', 'de', 'es']) {
+    const table = JSON.parse(lire(`_locales/${l}/messages.json`));
+    for (const k of cles) assert.ok(table[k] && table[k].message, `${l} ${k}`);
+  }
 });
 
 /* ------------------------------------------------------------ la serie */

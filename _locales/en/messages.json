@@ -1826,6 +1826,21 @@
   "dryTextError": {
     "message": "The test did not finish: $1"
   },
+  "dryErrorNoAnswer": {
+    "message": "the page gave no answer."
+  },
+  "dryErrorLoad": {
+    "message": "the page did not finish loading."
+  },
+  "dryErrorSteamAge": {
+    "message": "Steam is asking for your age. Open the page once yourself."
+  },
+  "dryErrorEngineAbsent": {
+    "message": "the extension did not start on the page."
+  },
+  "dryErrorEngineSilent": {
+    "message": "the extension did not answer on the page."
+  },
   "drySeen": {
     "message": "Buttons seen: $1"
   },

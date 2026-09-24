@@ -42,7 +42,7 @@ import { KEY_PHONE, KEY_PHONE_STATE, newTopicUrl, originPattern, readPhone, topi
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
-import { DRY, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
+import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
@@ -1390,6 +1390,17 @@ const DRY_TEXTS = Object.freeze({
   [DRY.RUNNING]: ['dryStateRunning', 'paused'],
 });
 
+/* Un essai qui n'a pas abouti dit pourquoi dans la langue du popup. Sans code
+   -- une exception, ou un resultat ecrit avant la 2.66.1 --, la phrase
+   technique s'affiche telle quelle. */
+const DRY_ERROR_TEXTS = Object.freeze({
+  [DRY_ERRORS.NO_ANSWER]: 'dryErrorNoAnswer',
+  [DRY_ERRORS.LOAD]: 'dryErrorLoad',
+  [DRY_ERRORS.STEAM_AGE]: 'dryErrorSteamAge',
+  [DRY_ERRORS.ENGINE_ABSENT]: 'dryErrorEngineAbsent',
+  [DRY_ERRORS.ENGINE_SILENT]: 'dryErrorEngineSilent',
+});
+
 function dryText(r) {
   const titre = r.title || '';
   switch (r.status) {
@@ -1401,7 +1412,7 @@ function dryText(r) {
     case DRY.REFUSED: return t('dryTextRefused', r.label || '');
     case DRY.WRONG_PAGE: return t('dryTextWrongPage', titre);
     case DRY.NOTHING: return t('dryTextNothing');
-    case DRY.ERROR: return t('dryTextError', r.details || '');
+    case DRY.ERROR: return t('dryTextError', DRY_ERROR_TEXTS[r.reason] ? t(DRY_ERROR_TEXTS[r.reason]) : r.details || '');
     default: return '';
   }
 }

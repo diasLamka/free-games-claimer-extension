@@ -4,6 +4,34 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.66.1 -- 2026-09-24
+
+**« Tester la recuperation » parle la langue du popup**
+
+- **Un essai qui n'aboutit pas dit pourquoi dans la langue choisie.** La
+  2.64.0 recopiait la phrase technique du journal, en francais et sans
+  accents, quelle que soit la langue : un popup anglais affichait « The test
+  did not finish: la page n'a pas fini de charger ». Chaque cause porte
+  desormais un code -- page trop lente, moteur absent ou muet, page Steam sans
+  reponse, controle d'age Steam -- que le popup traduit ; le journal garde sa
+  phrase. Seule une exception du navigateur s'affiche telle quelle : son
+  message est tout ce qu'on en sait. Un essai enregistre avant cette version
+  s'affiche comme avant.
+- **La feuille de route a jour.** Les entrees 3 (2.42.0) et 5 (2.59.1)
+  rejoignent « Livre depuis » ; l'entree 4 dit comment le premier « Tout
+  importer » connecte mesurera la liste de souhaits GOG ; les issues d'offres
+  ne sont plus « lues par personne » -- l'Historique les lit depuis la
+  2.32.0. L'entree 1 attend toujours son giveaway : la page d'accueil de GOG,
+  relue le 2026-09-24, n'en porte aucun -- des regles de style
+  `giveaway-*`, mais aucun element ni aucune donnee.
+
+Verifie dans le vrai popup (`npm run preview`), en anglais et en francais :
+« The test did not finish: the page did not finish loading. », « Le test n'a
+pas abouti : l'extension ne s'est pas lancee sur la page. », et l'exception
+recopiee telle quelle.
+
+1275 tests.
+
 ## 2.66.0 -- 2026-09-24
 
 **La liste de souhaits GOG**

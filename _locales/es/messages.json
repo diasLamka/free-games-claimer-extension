@@ -1826,6 +1826,21 @@
   "dryTextError": {
     "message": "La prueba no terminó: $1"
   },
+  "dryErrorNoAnswer": {
+    "message": "la página no respondió."
+  },
+  "dryErrorLoad": {
+    "message": "la página no terminó de cargar."
+  },
+  "dryErrorSteamAge": {
+    "message": "Steam pide tu edad. Abre la página una vez tú mismo."
+  },
+  "dryErrorEngineAbsent": {
+    "message": "la extensión no arrancó en la página."
+  },
+  "dryErrorEngineSilent": {
+    "message": "la extensión no respondió en la página."
+  },
   "drySeen": {
     "message": "Botones vistos: $1"
   },

@@ -1826,6 +1826,21 @@
   "dryTextError": {
     "message": "Der Test wurde nicht abgeschlossen: $1"
   },
+  "dryErrorNoAnswer": {
+    "message": "die Seite hat nicht geantwortet."
+  },
+  "dryErrorLoad": {
+    "message": "die Seite wurde nicht fertig geladen."
+  },
+  "dryErrorSteamAge": {
+    "message": "Steam fragt nach deinem Alter. Öffne die Seite einmal selbst."
+  },
+  "dryErrorEngineAbsent": {
+    "message": "die Erweiterung ist auf der Seite nicht gestartet."
+  },
+  "dryErrorEngineSilent": {
+    "message": "die Erweiterung hat auf der Seite nicht geantwortet."
+  },
   "drySeen": {
     "message": "Gesehene Buttons: $1"
   },

@@ -104,9 +104,10 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   SECURITY.md promet qu'aucun compte n'est lu sans geste.
 - **Les issues d'offres sont figees** (2.27.0). Ce qui se termine laisse une
   trace durable : prise, ratee, ou inconnue, avec le titre et la valeur que la
-  purge du catalogue emportait a quatre-vingt-dix jours. Rien ne la lit encore
-  -- c'est la collecte qui devait partir en premier, sans quoi la page de
-  l'entree 5 s'ouvrirait sur un magasin vide.
+  purge du catalogue emportait a quatre-vingt-dix jours. La collecte est partie
+  la premiere, pour qu'une page ne s'ouvre pas sur un magasin vide : la colonne
+  « rate » de l'Historique la lit depuis la 2.32.0, les jeux deja offerts
+  depuis la 2.38.0, le recap du jeudi depuis la 2.65.0.
 - **Steam, en option** (2.22.0). Recuperer aussi sur Steam, coupe par defaut et
   active seulement apres l'avertissement. La page d'une vraie offre a ete
   mesuree a blanc ; le clic lui-meme ne l'a jamais ete -- le premier sera
@@ -124,6 +125,21 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   la demande, et jamais d'effacement sur un echec. Le comportement SANS session
   des trois magasins est mesure ; la forme d'une reponse connectee de GOG et
   d'Epic ne l'est pas encore -- c'est l'entree 4.
+- **Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension** (2.42.0).
+  Une offre Epic (`el.id`), GOG (produit) ou Steam (appid) dont l'identifiant
+  figure dans la collection n'ouvre plus d'onglet ; un titre seul n'ecarte
+  rien -- un faux « deja possede » ferait rater un jeu offert, ce qui coute
+  plus cher qu'un onglet de trop. Seul compte un magasin dont une importation
+  a reussi. C'est aussi ce qui evite, sur un nouvel ordinateur, de tout
+  retenter -- a condition d'y avoir importe la collection.
+- **Les jeux mobiles gratuits d'Epic** (mesure V8 du 2026-09-23, livres en
+  2.57.0, fermes en 2.59.1). Ils ne sont pas dans `freeGamesPromotions`,
+  filtre de plateforme ou non : ils sont dans l'API de decouverte de
+  l'application, rubrique `mobile-android-free-game` / `mobile-ios-free-game`.
+  Date de fin (`purchase[0].discount.discountEndDate` pour l'option `Claim`)
+  et vignette (`media.card16x9.imageSrc`) mesurees depuis
+  (`test/fixtures/epic-mobile-discover-*.json`), et verifiees de bout en bout
+  sur le vrai reseau : Mindcop, Android et iOS, avec sa vignette.
 
 ---
 
@@ -153,26 +169,7 @@ un ecran, a cote du journal et de l'historique qui avaient deja leur page.
 
 ## 3. Ne pas ouvrir un onglet pour un jeu possede AVANT l'extension
 
-*Pourquoi.* La 2.14.0 ecarte ce que l'extension a elle-meme reclame. Elle ne
-sait rien de ce que l'utilisateur possedait avant elle : ces ouvertures-la
-coutent encore un jeton du plafond horaire.
-
-*A mesurer d'abord.* Combien d'ouvertures sont reellement inutiles sur un mois.
-Si la reponse est « une », l'entree ne vaut pas son code, et elle sort de la
-liste.
-
-*Ce qui a change.* La collection (2.21.0) sait desormais ce que vous possediez
-avant l'extension, sur Steam, GOG et Epic : la donnee existe, et la mesure
-ci-dessus se lit dans la page. Si l'entree se confirme, le filtre ne devra
-decider que sur un IDENTIFIANT exact, jamais sur un titre -- un faux « deja
-possede » ferait rater un jeu offert, ce qui coute plus cher qu'un onglet de
-trop.
-
-*Fait en 2.42.0, sur cette regle.* Une offre Epic (`el.id`), GOG (produit) ou
-Steam (appid) dont l'identifiant figure dans la collection n'ouvre plus
-d'onglet ; un titre seul n'ecarte rien. Seul compte un magasin dont une
-importation a reussi. C'est aussi ce qui evite, sur un nouvel ordinateur, de
-tout retenter -- a condition d'y avoir importe la collection.
+**Livre en 2.42.0** -- voir « Livre depuis ».
 
 ## 4. Mesurer Ma collection sur un vrai compte
 
@@ -201,34 +198,16 @@ reste en place et la ligne `forme :` du rapport dit ou chercher.
 `platforms: { ... steam_deck_compat_category ... }`. Si `platforms` y manque,
 les pastilles Deck restent simplement absentes -- rien ne s'affiche a tort.
 
+*Depuis la 2.66.0, elle mesure aussi la liste de souhaits GOG.*
+`www.gog.com/account/wishlist/search` n'a ete lue que SANS session (403, le
+meme refus que la bibliotheque). Si le rapport GOG dit « liste de souhaits :
+N jeu(x) », c'est confirme ; sa ligne « liste de souhaits, forme : » donne la
+forme de la premiere page, et un refus ou une forme inattendue garde la liste
+importee avant.
+
 ## 5. Les jeux mobiles gratuits d'Epic
 
-**Mesure le 2026-09-23 (V8), livre en 2.57.0, ferme en 2.59.1.** Ils ne sont pas dans
-`freeGamesPromotions`, filtre de plateforme ou non ; ils sont dans l'API de
-decouverte de l'application, rubrique `mobile-android-free-game` /
-`mobile-ios-free-game`. La date de fin et la vignette sont mesurees depuis
-(lecture directe du 2026-09-23, `test/fixtures/epic-mobile-discover-*.json`) :
-`purchase[0].discount.discountEndDate` pour l'option `Claim`,
-`media.card16x9.imageSrc` pour l'image large. Verifie de bout en bout, dans
-l'extension, sur le vrai reseau : Mindcop, Android et iOS, jusqu'au 24 a
-15:00 UTC, avec sa vignette.
-
-*Pourquoi.* Epic offre aussi, chaque semaine, des jeux pour Android et iOS.
-L'extension ne les voit pas, et on ne sait pas ou Epic les expose. La
-capture de `freeGamesPromotions` du 2026-08-27 (12 offres) n'en contient
-aucune qui parle de mobile -- ce qui ne prouve rien, puisqu'elle a ete prise
-sans savoir qu'on chercherait ca.
-
-*Ce qu'il faut.* Diagnostics -> V8 « Jeux mobiles Epic » -> Lancer la mesure,
-un jour ou un jeu mobile est offert, puis Copier le rapport. Elle interroge
-quatre endroits, sans cookies et sans permission de plus : l'API deja lue, la
-meme filtree par `platform=android|ios`, l'API de decouverte de l'application
-mobile (`egs-platform-service`), et la page des jeux gratuits.
-
-*A quoi on reconnaitra que c'est fini.* Le verdict nomme l'endroit, le rapport
-nomme le champ -- et la source Epic apprend a les lire. Si Epic ne les expose
-nulle part hors de l'application, l'entree passe dans « Hors perimetre », avec
-le rapport pour preuve.
+**Livre en 2.57.0, ferme en 2.59.1** -- voir « Livre depuis ».
 
 ---
 
