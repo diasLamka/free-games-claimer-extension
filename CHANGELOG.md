@@ -4,6 +4,35 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.59.1 -- 2026-09-24
+
+**Jeux mobiles Epic : la date de fin et la vignette sont mesurees**
+
+L'API de decouverte d'Epic a pu etre lue directement, Android et iOS, le
+2026-09-23 au soir (FR / fr). C'est la mesure qui manquait depuis la 2.57.0 :
+
+- `purchase` est la LISTE des options d'achat. La premiere, `Claim`, a prix
+  nul, porte la fin de la gratuite dans `discount.discountEndDate`
+  (2026-09-24T15:00Z pour Mindcop) ; la seconde, `Purchase`, est le prix
+  normal, qui prend effet a cette fin.
+- `media` porte quatre images, chacune avec son `imageType` : l'icone
+  (`appIcon`), la large (`card16x9`, OfferImageWide), la haute (`card3x4`)
+  et la couverture (`coverImage`).
+
+Les lecteurs de la 2.59.0 prennent deja les bons champs : la date dans
+`purchase[0].discount.discountEndDate`, la vignette dans
+`media.card16x9.imageSrc` -- ni l'icone, ni l'image haute. Cette version ne
+change donc pas le code : elle fige la vraie reponse en capture de test
+(`test/fixtures/epic-mobile-discover-android.json` et `-ios.json`, reduites a
+trois rubriques, donnees publiques), et les tests s'y tiennent.
+
+Verifie de bout en bout, dans l'extension chargee dans Chromium, sur le vrai
+reseau : le magasin « Epic Games (mobile) » suivi, « Verifier maintenant »,
+et la carte Mindcop -- Android, iOS -- s'affiche avec sa vignette et le
+compte a rebours jusqu'au 24 a 15:00 UTC.
+
+1212 tests.
+
 ## 2.59.0 -- 2026-09-23
 
 **Jeux mobiles Epic : la date de fin et la vignette, reprises**

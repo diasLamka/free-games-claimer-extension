@@ -9,6 +9,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   NAME, PAGE_URL, discoverUrl, baseSlug, freeTopicOffers, readImage, readEnd, findImage, findEnd, mapMobileOffers, discover,
@@ -171,6 +172,50 @@ test('Android et iOS : un jeu, deux plateformes, jamais reclamable', () => {
   assert.equal(STORE_LABELS[STORES.EPIC_MOBILE], 'Epic Games (mobile)');
   assert.ok(!CLAIMABLE_STORES.includes(STORES.EPIC_MOBILE), 'ils se recuperent dans l\'appli, jamais par l\'extension');
   assert.ok(DETECT_ONLY_STORES.includes(STORES.EPIC_MOBILE));
+});
+
+/* ------------------------------------------------------------ la vraie reponse (2026-09-23) */
+
+/* Lue le 2026-09-23 au soir, FR / fr, dans les deux plateformes : Mindcop,
+   offert jusqu'au 24 a 15:00 UTC. Reduite a trois rubriques -- la une, les
+   jeux offerts, les free-to-play -- et donnees publiques seulement. C'est la
+   mesure qui manquait a la 2.57.0 : la forme de `purchase` et de `media`. */
+const CAPTURE = Object.fromEntries(['android', 'ios'].map((p) => [p,
+  JSON.parse(readFileSync(new URL(`./fixtures/epic-mobile-discover-${p}.json`, import.meta.url), 'utf8'))]));
+const LE_23_AU_SOIR = Date.parse('2026-09-23T20:00:00Z');
+const FIN_MINDCOP = Date.parse('2026-09-24T15:00:00.000Z');
+
+test('la vraie reponse : purchase liste les options d\'achat, la gratuite porte la fin', () => {
+  const [mindcop] = freeTopicOffers(CAPTURE.android);
+  const { purchase, media } = mindcop.content;
+  // Deux options : Claim a 0, puis Purchase au prix normal, qui prend effet a la fin.
+  assert.deepEqual(purchase.map((o) => o.purchaseType), ['Claim', 'Purchase']);
+  assert.equal(purchase[0].price.decimalPrice, 0);
+  assert.equal(purchase[1].purchaseStateEffectiveDate, '2026-09-24T15:00:00.001Z');
+  assert.deepEqual(findEnd(purchase, LE_23_AU_SOIR), { at: FIN_MINDCOP, path: 'purchase[0].discount.discountEndDate' });
+  // Passe la fin, plus rien a venir : l'offre ne s'invente pas une date.
+  assert.equal(findEnd(purchase, FIN_MINDCOP + 1), null);
+
+  // Quatre images, chacune son genre : l'icone, la large, la haute, la couverture.
+  assert.deepEqual(Object.values(media).map((m) => m.imageType), ['ProductIcon', 'OfferImageWide', 'OfferImageTall', 'coverImage']);
+  assert.deepEqual(findImage(media), {
+    url: 'https://cdn1.epicgames.com/spt-assets/984cdc148ea6423e866ca6e04a1b429f/mindcop-kplp1.jpg',
+    path: 'media.card16x9.imageSrc',
+  });
+});
+
+test('la vraie reponse : un jeu, Android et iOS, avec sa fin et sa vignette', () => {
+  const parPlateforme = { android: freeTopicOffers(CAPTURE.android), ios: freeTopicOffers(CAPTURE.ios) };
+  assert.equal(parPlateforme.android.length, 1, 'la rubrique des free-to-play reste de cote');
+  const { offers, dropped } = mapMobileOffers(parPlateforme, LE_23_AU_SOIR);
+  assert.equal(dropped.length, 0);
+  assert.equal(offers.length, 1);
+  const [o] = offers;
+  assert.equal(o.title, 'Mindcop');
+  assert.equal(o.storeId, 'mindcop', 'mindcop-android-0f4bac et mindcop-ios-11d53d');
+  assert.equal(o.platforms, 'Android, iOS');
+  assert.equal(o.end, FIN_MINDCOP);
+  assert.equal(o.image, 'https://cdn1.epicgames.com/spt-assets/984cdc148ea6423e866ca6e04a1b429f/mindcop-kplp1.jpg');
 });
 
 /* ------------------------------------------------------------ la decouverte */

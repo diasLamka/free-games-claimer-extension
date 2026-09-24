@@ -19,13 +19,18 @@
  *     `systemSpecs.platform` (« android » | « ios »), `categories` (des
  *     chaines, « freegames » en tete), `catalogItemId`, `media`, `purchase`.
  *
- * CE QUI NE L'EST PAS : la forme de `purchase` (donc la date de fin) et celle
- * de `media` (donc la vignette). Elles sont lues avec prudence : une date ou
- * une image qu'on ne trouve pas vaut « on ne sait pas », jamais une valeur
- * inventee. Depuis la 2.59.0, chaque lecture dit aussi le CHEMIN ou elle a
- * pris ce qu'elle retient (findEnd, findImage), et la mesure V8 le recopie :
- * le rapport montre si la lecture est juste, et sinon purchase et media du
- * jeu manque. Sans date de fin, une offre vit tant que la rubrique la porte --
+ * MESURE ENSUITE (lecture directe du 2026-09-23, test/fixtures) :
+ *   - `purchase` est la LISTE des options d'achat : `Claim` a prix nul, dont
+ *     `discount.discountEndDate` est la fin de la gratuite, puis `Purchase`
+ *     au prix normal, qui prend effet a cette fin ;
+ *   - `media` porte quatre images, chacune son `imageType` : `appIcon`
+ *     (ProductIcon), `card16x9` (OfferImageWide), `card3x4` (OfferImageTall)
+ *     et `coverImage`. La vignette est la large.
+ * Les lecteurs restent generaux (findEnd, findImage) : ils trouvent ces deux
+ * chemins sur la vraie reponse, et survivraient a un champ renomme. Une date
+ * ou une image qu'on ne trouve pas vaut « on ne sait pas », jamais une valeur
+ * inventee ; chaque lecture dit le CHEMIN ou elle a pris ce qu'elle retient,
+ * et la mesure V8 le recopie. Sans date de fin, une offre vit tant que la rubrique la porte --
  * la source fait autorite sur son magasin, et une offre qui en disparait est
  * terminee.
  *

@@ -208,6 +208,21 @@ test('le verdict dit ce que la source comprend de la rubrique', () => {
   assert.match(w.detail, /recopie purchase et media/);
 });
 
+test('sur la vraie reponse, le rapport dit « tout est lu », et d\'ou', () => {
+  const capture = JSON.parse(lire('test/fixtures/epic-mobile-discover-ios.json'));
+  const [f] = freeTopicDump(capture, Date.parse('2026-09-23T20:00:00Z'));
+  assert.equal(f.topicId, 'mobile-ios-free-game');
+  assert.equal(f.sampleTitle, 'Mindcop');
+  assert.deepEqual(f.read, [{
+    title: 'Mindcop',
+    end: '2026-09-24T15:00:00.000Z',
+    endPath: 'purchase[0].discount.discountEndDate',
+    image: 'https://cdn1.epicgames.com/spt-assets/984cdc148ea6423e866ca6e04a1b429f/mindcop-kplp1.jpg',
+    imagePath: 'media.card16x9.imageSrc',
+  }]);
+  assert.equal(mobileVerdict({ discover: [{ ok: true, status: 200, freeTopic: [f] }] }).level, 'ok');
+});
+
 /* ------------------------------------------------------------ la page de diagnostic */
 
 test('la mesure est branchee, lit sans cookies, et reste sur des hotes deja declares', () => {
