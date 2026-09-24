@@ -210,10 +210,13 @@
     "message": "sin umbral"
   },
   "includeDlcLabel": {
-    "message": "Incluir DLC y botín"
+    "message": "Incluir el botín del juego"
   },
   "includeDlcHint": {
-    "message": "Cuatro veces más numerosos que los juegos"
+    "message": "Skins, objetos y moneda de los agregadores. Los DLC que regalan Steam, Epic y GOG siempre se reclaman."
+  },
+  "tagDlc": {
+    "message": "DLC"
   },
   "filtersPreview": {
     "message": "De $1 ofertas abiertas: $2 reclamables sin ti, $3 para ti."
@@ -862,6 +865,27 @@
   },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: haz clic para abrir, arrastra para mover"
+  },
+  "launcherThisPage": {
+    "message": "En esta página"
+  },
+  "launcherFreeNow": {
+    "message": "Gratis ahora mismo"
+  },
+  "launcherSeeAll": {
+    "message": "Ver todo"
+  },
+  "launcherFreeLeft": {
+    "message": "Gratis en $1 · quedan $2"
+  },
+  "launcherFreeNoEnd": {
+    "message": "Gratis en $1 · fin desconocido"
+  },
+  "launcherCardLeft": {
+    "message": "Gratis · quedan $1"
+  },
+  "launcherCardNoEnd": {
+    "message": "Gratis · fin desconocido"
   },
   "overlayOwned": {
     "message": "Ya lo tienes en $1."

@@ -316,12 +316,26 @@ export function mapElements(elements, now) {
       // jamais pouvoir dire ce qu'ils valaient.
       worth: originalWorth(el),
       keepable: isFreeToKeep(el),
+      category: epicCategory(el),
       seenAt: now,
       updatedAt: now,
     }));
   }
 
   return { offers, dropped };
+}
+
+/**
+ * Jeu ou DLC, d'apres `offerType` (2.62.0) : ADD_ON est du contenu additionnel,
+ * BASE_GAME, EDITION et BUNDLE sont des jeux. Sans cette categorie, les
+ * filtres devinaient sur le TITRE -- et un jeu dont le nom contient « Pack »
+ * passait pour un DLC.
+ */
+export function epicCategory(el) {
+  const type = el && el.offerType;
+  if (type === 'ADD_ON') return 'DLC';
+  if (type === 'BASE_GAME' || type === 'EDITION' || type === 'BUNDLE') return 'Game';
+  return null;
 }
 
 /* --------------------------------------------------------------- decouverte */

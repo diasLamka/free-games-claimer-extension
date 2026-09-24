@@ -32,7 +32,7 @@
 import { runCycle } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
 import {
-  readState, readKeys, readSettings, write, KEYS,
+  readState, readKeys, readSettings, write, KEYS, DEFAULT_SETTINGS,
   rememberNotification, readNotification, readNotificationLink,
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
@@ -55,7 +55,7 @@ import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunn
 import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
-import { factLines, launcherLabels, lookup } from './watch/lookup.js';
+import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watch/lookup.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
@@ -981,12 +981,22 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   /* Le lanceur demande ce qu'on sait d'un titre. Lecture seule, et la
      reponse ne porte QUE des faits deja connus de l'utilisateur : rien n'est
      divulgue a la page, qui n'apprend rien qu'il ne sache deja lui-meme. */
+  /* Le bouton « tableau de bord » du panneau de la page (2.62.0). Une page
+     de magasin ne peut pas ouvrir une page d'extension elle-meme ; elle le
+     demande, et le worker ouvre la page d'options -- ou ramene l'onglet
+     deja ouvert. Rien d'autre : pas d'adresse dans le message. */
+  if (msg.type === 'fgc-open-dashboard') {
+    api.runtime.openOptionsPage().catch(() => {});
+    return;
+  }
+
   if (msg.type === 'fgc-lookup') {
     (async () => {
       await langue;
       const raw = await readKeys(api, [
-        KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_OUTCOMES,
+        KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_OUTCOMES, KEYS.SETTINGS, KEY_UI,
       ]);
+      const now = Date.now();
       const facts = lookup({
         title: msg.title,
         store: msg.store || null,
@@ -995,19 +1005,39 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
         outcomes: raw[KEY_OUTCOMES] || {},
         normalise: normaliseTitle,
-        now: Date.now(),
+        now,
       });
       /* Les phrases partent avec les faits, dans la langue du lecteur : la
          lanceur n'a pas de table de traduction (voir factLines). Ses
          libelles partent aussi, pour la meme raison ; hors d'une fiche, le
          titre est vide et seuls eux ont un sens. */
       const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+      const storeLabel = (s) => STORE_LABELS[s] || s;
+      /* Le panneau redessine (2.62.0) : le jeu de la page en carte, et ce
+         qui est gratuit en ce moment -- les memes offres que la liste du
+         popup. Les preferences d'affichage (refus, « masquer ce que je
+         possede ») sont LUES ici pour cela seulement : le worker n'agit
+         jamais d'apres elles. */
+      const catalog = raw[KEYS.OFFERS] || {};
+      const settings = raw[KEYS.SETTINGS] || {};
+      const ui = raw[KEY_UI] || {};
       sendResponse({
         facts,
-        lines: factLines(facts, { t, storeLabel: (s) => STORE_LABELS[s] || s, dateText }),
+        lines: factLines(facts, { t, storeLabel, dateText }),
         labels: launcherLabels(t),
         /* Les etats du moteur, en modeles : le lanceur les remplit (2.55.0). */
         engine: engineTemplates(t, keysWith('eng')),
+        game: pageGame(catalog, {
+          title: msg.title, store: msg.store || null, normalise: normaliseTitle, now, t, storeLabel,
+        }),
+        free: freeNowList(catalog, {
+          now,
+          t,
+          storeLabel,
+          watched: Array.isArray(settings.watchedStores) ? settings.watchedStores : DEFAULT_SETTINGS.watchedStores,
+          dismissed: Array.isArray(ui.dismissed) ? ui.dismissed : [],
+          hideOwned: ui.hideOwned === true,
+        }),
       });
     })().catch(() => sendResponse({ facts: [] }));
     return true;

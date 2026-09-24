@@ -203,3 +203,80 @@ test('les phrases de la surcouche viennent de la table, avec les noms de magasin
     'overlayMissed()',
   ], 'un fait inconnu ne produit pas de phrase vide');
 });
+
+/* ------------------------------------------------------------ le panneau de la page (2.62.0) */
+
+import { delayText, urgency, freeNowList, pageGame, launcherOffer } from '../watch/lookup.js';
+
+const tt = (k, ...a) => `${k}(${a.join(',')})`;
+const MAINTENANT = Date.parse('2026-09-24T08:00:00Z');
+const H = 3600000;
+const cat = {
+  'steam:4355480': { title: 'Dying Light: The Beast - Discharge Weapon Pack', store: 'steam', source: 'steam', category: 'DLC', state: 'discovered',
+    end: MAINTENANT + 6 * H, image: 'https://shared.akamai.steamstatic.com/h.jpg', url: 'https://store.steampowered.com/app/4355480/' },
+  'epic:mindcop': { title: 'Mindcop', store: 'epic', category: 'Game', state: 'confirmed', end: MAINTENANT + 7 * H, image: 'https://cdn1.epicgames.com/m.jpg', url: 'https://store.epicgames.com/p/mindcop' },
+  'epic-mobile:mindcop': { title: 'Mindcop', store: 'epic-mobile', category: 'game', state: 'discovered', end: MAINTENANT + 7 * H },
+  'gog:vieux': { title: 'Vieux', store: 'gog', state: 'expired', end: MAINTENANT - H },
+  'gog:fini': { title: 'Fini', store: 'gog', state: 'discovered', end: MAINTENANT - 1 },
+  'steam:pris': { title: 'Pris', store: 'steam', state: 'resolved', end: MAINTENANT + H },
+  'itchio:x': { title: 'Itch', store: 'itchio', state: 'discovered', end: null },
+  'epic:refuse': { title: 'Refuse', store: 'epic', state: 'discovered', end: MAINTENANT + 2 * H },
+  'epic:possede': { title: 'Possede', store: 'epic', state: 'discovered', end: null, alreadyOwned: true, url: 'javascript:alert(1)' },
+};
+
+test('le temps qui reste, dans les unites du popup ; l\'urgence, avec ses seuils', () => {
+  assert.equal(delayText(6 * H + 4 * 60000, tt), 'durationHoursMinutes(6,04)');
+  assert.equal(delayText(26 * H, tt), 'durationDaysHours(1,2)');
+  assert.equal(delayText(12 * 60000, tt), 'durationMinutes(12)');
+  assert.equal(delayText(-5, tt), 'durationMinutes(0)');
+  assert.equal(urgency(MAINTENANT + 6 * H, MAINTENANT), 'hot');
+  assert.equal(urgency(MAINTENANT + 50 * H, MAINTENANT), 'warm');
+  assert.equal(urgency(MAINTENANT + 100 * H, MAINTENANT), 'calm');
+  assert.equal(urgency(null, MAINTENANT), 'unknown');
+});
+
+test('gratuit en ce moment : les offres du popup, la fin la plus proche d\'abord', () => {
+  const l = freeNowList(cat, {
+    now: MAINTENANT, t: tt, storeLabel: (s) => s.toUpperCase(),
+    watched: ['epic', 'gog', 'steam', 'epic-mobile'], dismissed: ['epic:refuse'], hideOwned: true,
+  });
+  assert.equal(l.total, 3, 'ni terminees, ni prises, ni refusees, ni cachees, ni hors des magasins suivis');
+  assert.deepEqual(l.offers.map((o) => [o.title, o.store]), [
+    ['Dying Light: The Beast - Discharge Weapon Pack', 'steam'], ['Mindcop', 'epic'], ['Mindcop', 'epic-mobile'],
+  ]);
+  assert.equal(l.offers[0].dlc, true);
+  assert.equal(l.offers[0].left, 'durationHoursMinutes(6,00)');
+  assert.equal(l.offers[0].storeLabel, 'STEAM');
+  assert.equal(freeNowList(cat, { now: MAINTENANT, t: tt, limit: 1 }).offers.length, 1);
+  // Sans magasins suivis ni preferences : toutes les offres vivantes, une fin inconnue en dernier.
+  const tout = freeNowList(cat, { now: MAINTENANT, t: tt, limit: 20 });
+  assert.equal(tout.total, 6);
+  assert.equal(tout.offers.at(-1).end, null);
+});
+
+test('une offre du panneau : rien qu\'une adresse https ne sort, une fin inconnue le dit', () => {
+  const o = launcherOffer(cat['epic:possede'], { now: MAINTENANT, t: tt });
+  assert.equal(o.url, null);
+  assert.equal(o.left, 'noEndDate()');
+  assert.equal(o.urgency, 'unknown');
+});
+
+test('le jeu de la page : l\'offre au meme titre, celle du magasin de la page d\'abord', () => {
+  const opts = { normalise: normaliseTitle, now: MAINTENANT, t: tt, storeLabel: (s) => s };
+  assert.equal(pageGame(cat, { ...opts, title: 'Mindcop', store: 'epic-mobile' }).store, 'epic-mobile');
+  assert.equal(pageGame(cat, { ...opts, title: 'Mindcop', store: 'steam' }).store, 'epic', 'ailleurs : la premiere');
+  assert.equal(pageGame(cat, { ...opts, title: 'Fini', store: 'gog' }), null, 'une offre terminee ne fait pas de carte');
+  assert.equal(pageGame(cat, { ...opts, title: '', store: 'gog' }), null);
+});
+
+test('les modeles du lanceur gardent leurs trous : il les remplit lui-meme', async () => {
+  const { launcherLabels } = await import('../watch/lookup.js');
+  const { t, setLocale } = await import('../lib/i18n.js');
+  setLocale('fr');
+  try {
+    const l = launcherLabels(t);
+    assert.equal(l.freeLeft, 'Gratuit sur $1 · encore $2');
+    assert.equal(l.freeNoEnd, 'Gratuit sur $1 · fin inconnue');
+    assert.equal(l.seeAll, 'Tout voir');
+  } finally { setLocale(null); }
+});

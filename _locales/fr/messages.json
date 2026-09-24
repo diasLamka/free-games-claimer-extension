@@ -210,10 +210,13 @@
     "message": "aucun seuil"
   },
   "includeDlcLabel": {
-    "message": "Inclure les DLC et le butin"
+    "message": "Inclure le butin en jeu"
   },
   "includeDlcHint": {
-    "message": "Quatre fois plus nombreux que les jeux"
+    "message": "Skins, objets et monnaie des agrégateurs. Les DLC offerts par Steam, Epic et GOG sont toujours récupérés."
+  },
+  "tagDlc": {
+    "message": "DLC"
   },
   "filtersPreview": {
     "message": "Sur $1 offres en cours : $2 récupérables sans vous, $3 à voir vous-même."
@@ -862,6 +865,27 @@
   },
   "launcherButton": {
     "message": "Free Games Auto-Claimer : cliquer pour ouvrir, glisser pour déplacer"
+  },
+  "launcherThisPage": {
+    "message": "Sur cette page"
+  },
+  "launcherFreeNow": {
+    "message": "Gratuit en ce moment"
+  },
+  "launcherSeeAll": {
+    "message": "Tout voir"
+  },
+  "launcherFreeLeft": {
+    "message": "Gratuit sur $1 · encore $2"
+  },
+  "launcherFreeNoEnd": {
+    "message": "Gratuit sur $1 · fin inconnue"
+  },
+  "launcherCardLeft": {
+    "message": "Gratuit · encore $1"
+  },
+  "launcherCardNoEnd": {
+    "message": "Gratuit · fin inconnue"
   },
   "overlayOwned": {
     "message": "Vous le possédez déjà sur $1."

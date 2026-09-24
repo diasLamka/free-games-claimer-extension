@@ -19,7 +19,7 @@
 import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
 import { STORE_LABELS, STORES, normaliseTitle, displayTitle } from '../watch/offer.js';
 import {
-  preview, judge, REASONS, readWorth,
+  preview, judge, REASONS, readWorth, isExtraContent,
 } from '../watch/filters.js';
 import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
 import { money, worthLabel as worthLabelIn } from '../lib/money.js';
@@ -655,6 +655,9 @@ function gameCard({ key, offer }, ctx) {
 
   const meta = el('span', 'game-meta');
   meta.append(storeTag(offer.store));
+  /* Un DLC se dit (2.62.0) : sans l'etiquette, le pack d'armes de Dying Light
+     se lisait comme un jeu, et se cherchait comme tel. */
+  if (isExtraContent(offer)) meta.append(el('span', 'kind-tag', t('tagDlc')));
   /* Verifie ou jouable sur Steam Deck : ce qui aide a choisir. « Non pris en
      charge » ne s'affiche pas ici -- a 328 px, une mauvaise nouvelle n'a pas
      la place d'un fait utile, et la fiche Steam le dit mieux. */

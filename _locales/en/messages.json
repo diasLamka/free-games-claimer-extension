@@ -210,10 +210,13 @@
     "message": "no threshold"
   },
   "includeDlcLabel": {
-    "message": "Include DLC and loot"
+    "message": "Include in-game loot"
   },
   "includeDlcHint": {
-    "message": "Four times more numerous than games"
+    "message": "Skins, items and currency from aggregators. DLC offered by Steam, Epic and GOG is always claimed."
+  },
+  "tagDlc": {
+    "message": "DLC"
   },
   "filtersPreview": {
     "message": "Of $1 open offers: $2 claimable without you, $3 to handle yourself."
@@ -862,6 +865,27 @@
   },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: click to open, drag to move"
+  },
+  "launcherThisPage": {
+    "message": "On this page"
+  },
+  "launcherFreeNow": {
+    "message": "Free right now"
+  },
+  "launcherSeeAll": {
+    "message": "See all"
+  },
+  "launcherFreeLeft": {
+    "message": "Free on $1 · $2 left"
+  },
+  "launcherFreeNoEnd": {
+    "message": "Free on $1 · end unknown"
+  },
+  "launcherCardLeft": {
+    "message": "Free · $1 left"
+  },
+  "launcherCardNoEnd": {
+    "message": "Free · end unknown"
   },
   "overlayOwned": {
     "message": "You already own it on $1."

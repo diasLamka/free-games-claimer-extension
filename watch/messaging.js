@@ -98,6 +98,9 @@ export const CONTENT_MESSAGES = Object.freeze([
      cela qu'elle a le droit de venir d'un script de contenu, contrairement
      aux commandes. */
   'fgc-lookup',
+  /* Le bouton « tableau de bord » du panneau (2.62.0) : ouvre la page
+     d'options, sans adresse dans le message -- rien a detourner. */
+  'fgc-open-dashboard',
 ]);
 
 /**

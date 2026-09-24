@@ -50,6 +50,23 @@ export const ORIGIN = 'https://www.gog.com';
  * sait pas reclamer. `price=free` fait le tri cote serveur : demander tout le
  * catalogue pour filtrer ici couterait des centaines de kilo-octets par cycle.
  */
+/**
+ * Jeu ou DLC, d'apres `type` (2.62.0).
+ *
+ * Mesure du 2026-09-24 sur le catalogue reel : `type` 1 = un jeu (#DRIVE
+ * Rally), 3 = un DLC (« Offworld Trading Company - Market Corrections », un
+ * artbook), 2 = un pack de jeux. `isGame` vaut true pour TOUT, et `category`
+ * n'est que le GENRE (« Simulation »). Ce module recopiait ce genre dans
+ * `category`, que les filtres lisent comme « jeu ou contenu additionnel » :
+ * chaque jeu GOG offert passait pour du contenu additionnel, et la veille ne
+ * le reclamait pas tant que l'option des DLC restait coupee.
+ */
+export function gogCategory(raw) {
+  if (raw && raw.type === 3) return 'DLC';
+  if (raw && (raw.type === 1 || raw.type === 2)) return 'Game';
+  return null;
+}
+
 export const FILTERED_URL = `${ORIGIN}/games/ajax/filtered?mediaType=game&price=free&sort=popularity`;
 
 /* ------------------------------------------------------------------ prix */
@@ -157,7 +174,7 @@ export function mapProduct(raw, now) {
     worth,
     keepable,
     image: absolute(raw.boxImage || raw.image, ORIGIN),
-    category: raw.category || null,
+    category: gogCategory(raw),
     seenAt: now,
     updatedAt: now,
   });

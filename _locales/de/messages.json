@@ -210,10 +210,13 @@
     "message": "keine Schwelle"
   },
   "includeDlcLabel": {
-    "message": "DLC und Beute einschließen"
+    "message": "Beute im Spiel einschließen"
   },
   "includeDlcHint": {
-    "message": "Viermal zahlreicher als Spiele"
+    "message": "Skins, Gegenstände und Währung von Aggregatoren. DLCs, die Steam, Epic und GOG verschenken, werden immer abgeholt."
+  },
+  "tagDlc": {
+    "message": "DLC"
   },
   "filtersPreview": {
     "message": "Von $1 offenen Angeboten: $2 ohne dich abholbar, $3 für dich selbst."
@@ -862,6 +865,27 @@
   },
   "launcherButton": {
     "message": "Free Games Auto-Claimer: zum Öffnen klicken, zum Verschieben ziehen"
+  },
+  "launcherThisPage": {
+    "message": "Auf dieser Seite"
+  },
+  "launcherFreeNow": {
+    "message": "Gerade gratis"
+  },
+  "launcherSeeAll": {
+    "message": "Alle ansehen"
+  },
+  "launcherFreeLeft": {
+    "message": "Gratis auf $1 · noch $2"
+  },
+  "launcherFreeNoEnd": {
+    "message": "Gratis auf $1 · Ende unbekannt"
+  },
+  "launcherCardLeft": {
+    "message": "Gratis · noch $1"
+  },
+  "launcherCardNoEnd": {
+    "message": "Gratis · Ende unbekannt"
   },
   "overlayOwned": {
     "message": "Du besitzt es schon bei $1."

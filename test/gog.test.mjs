@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { NAME, ORIGIN, FILTERED_URL, readPrice, mapProduct, mapResponse, discover } from '../watch/sources/gog.js';
+import { NAME, ORIGIN, FILTERED_URL, readPrice, mapProduct, mapResponse, discover, gogCategory } from '../watch/sources/gog.js';
 import { STORES } from '../watch/offer.js';
 import { readWorth, readCurrency } from '../watch/filters.js';
 
@@ -237,4 +237,14 @@ test('le registre expose GOG avec une liste declaree INCOMPLETE', async () => {
   const { SOURCES } = await import('../watch/sources/index.js');
   assert.equal(SOURCES[NAME].completeList, false);
   assert.ok(SOURCES[NAME].minIntervalMs >= 10 * 60 * 1000, 'on reste poli avec un site marchand');
+});
+
+/* Jeu ou DLC (2.62.0). Mesure du 2026-09-24 sur le catalogue reel : `type`
+   1 = jeu, 3 = DLC ; `category` n'est que le genre. La capture de ce depot
+   portait `type: 3` sur des jeux -- elle a ete fabriquee, et corrigee. */
+test('GOG : le type dit jeu ou DLC, le genre ne dit rien', () => {
+  assert.equal(gogCategory({ type: 1, category: 'Simulation' }), 'Game');
+  assert.equal(gogCategory({ type: 3, category: 'Adventure' }), 'DLC');
+  assert.equal(gogCategory({ type: 2 }), 'Game', 'un pack de jeux');
+  assert.equal(gogCategory({ category: 'Racing' }), null, 'sans type, on ne devine pas');
 });

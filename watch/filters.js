@@ -45,7 +45,16 @@ export const DEFAULT_FILTERS = Object.freeze({
    * onglet et une requete sur un vrai compte.
    */
   claimOnlyKeepable: true,
-  /** Reclamer le contenu additionnel : DLC, butin, cosmetiques. */
+  /**
+   * Reclamer le BUTIN des agregateurs : objets en jeu, skins, monnaie.
+   *
+   * Depuis la 2.62.0, un DLC offert par le magasin LUI-MEME (Steam, Epic,
+   * GOG, lu par sa propre source) se reclame comme un jeu, sans ce reglage :
+   * c'est un vrai contenu, gratuit a garder, sur le compte ou il ira. Ce
+   * reglage ne garde la main que sur le reste, surtout ce que l'agregateur
+   * range en « loot » -- quatre fois plus nombreux, et souvent lie a un
+   * compte d'un autre jeu.
+   */
   claimExtraContent: false,
   /** Magasins autorises. null = tous ceux qu'on sait reclamer. */
   allowedStores: null,
@@ -215,6 +224,21 @@ export function isExtraContent(offer) {
   return EXTRA_CONTENT_WORDS.test(offer.title || '');
 }
 
+/** Les sources qui lisent le catalogue du magasin lui-meme, et ce magasin. */
+const STORE_OWN_SOURCES = Object.freeze({ steam: 'steam', 'epic-api': 'epic', gog: 'gog' });
+
+/**
+ * Un DLC offert par le magasin lui-meme (2.62.0) : la source du magasin l'a
+ * dit DLC -- type 4 chez Steam, ADD_ON chez Epic, type 3 chez GOG -- et
+ * l'offre porte bien ce magasin. Il se reclame comme un jeu : ce n'est pas du
+ * butin d'agregateur, c'est un contenu du magasin, gratuit a garder.
+ */
+export function isStoreDlc(offer) {
+  if (!offer || !offer.source) return false;
+  const magasin = STORE_OWN_SOURCES[offer.source];
+  return Boolean(magasin) && offer.store === magasin && /^(dlc|add-?on)$/i.test(String(offer.category || ''));
+}
+
 /* ------------------------------------------------------------- a garder ? */
 
 /**
@@ -278,7 +302,7 @@ export function judge(offer, filters = {}, { supportedStores = [], owned = null,
     return deny(REASONS.NOTHING_TO_KEEP);
   }
 
-  if (!f.claimExtraContent && isExtraContent(offer)) {
+  if (!f.claimExtraContent && isExtraContent(offer) && !isStoreDlc(offer)) {
     return deny(REASONS.EXTRA_CONTENT);
   }
 

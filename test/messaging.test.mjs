@@ -12,6 +12,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   senderKind, messageAllowed, isOurs, hostMatchers, relayRequest,
@@ -197,4 +198,13 @@ test('une entree de collection filtre son URL comme une offre', () => {
   assert.equal(storePageUrl('gog', { id: '1', url: 'javascript:alert(1)' }), null);
   assert.equal(storePageUrl('steam', { id: '440', url: 'javascript:alert(1)' }),
     'https://store.steampowered.com/app/440/', 'le repli construit par identifiant tient toujours');
+});
+
+test('le tableau de bord se demande depuis le panneau d\'une page, et de nulle part ailleurs (2.62.0)', () => {
+  assert.ok(CONTENT_MESSAGES.includes('fgc-open-dashboard'));
+  assert.equal(messageAllowed('fgc-open-dashboard', 'content'), true);
+  assert.equal(messageAllowed('fgc-open-dashboard', 'page'), false);
+  assert.equal(messageAllowed('fgc-open-dashboard', 'inconnu'), false);
+  const bg = readFileSync(new URL('../background.js', import.meta.url), 'utf8');
+  assert.match(bg, /msg\.type === 'fgc-open-dashboard'\) \{\s*api\.runtime\.openOptionsPage\(\)/, 'aucune adresse lue dans le message');
 });

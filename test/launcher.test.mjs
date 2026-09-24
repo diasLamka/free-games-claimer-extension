@@ -207,11 +207,17 @@ function charger({
   vm.runInNewContext(SRC, ctx);
 
   const hote = () => doc.body.childNodes.find((n) => n.shadow) || null;
+  /* Le panneau de la 2.62.0 : un en-tete (icone, nom, tableau de bord,
+     fermer), puis trois zones -- la page, le moteur, la liste. */
   const parts = () => {
     const [bouton, bulle, panneau] = hote().shadow.childNodes;
-    const [, statut, faits, actions] = panneau.childNodes;
+    const [tete, corps] = panneau.childNodes;
+    const [page, actions, liste] = corps.childNodes;
+    const [, carte, faits] = page.childNodes;
+    const [statut, reclamer, auto] = actions.childNodes;
     const [pastille, point] = bouton.childNodes.slice(1);
-    return { bouton, bulle, panneau, statut, faits, pastille, point, reclamer: actions.childNodes[0], auto: actions.childNodes[1] };
+    const [, , grand, fermer] = tete.childNodes;
+    return { bouton, bulle, panneau, page, carte, faits, statut, actions, reclamer, auto, liste, grand, fermer, pastille, point };
   };
   /** Les minuteries en attente d'un delai donne, jouees et oubliees. */
   const jouer = (ms) => {
@@ -286,7 +292,7 @@ test('une fiche qui a quelque chose a dire : un bouton, une pastille, une bulle 
   assert.equal(h.shadowMode, 'closed', 'racine fermee : la page ne lit rien');
   const { bouton, pastille, bulle, faits, reclamer } = p.parts();
   assert.equal(pastille.textContent, '2');
-  assert.equal(bulle.style.display, 'block');
+  assert.equal(bulle.style.display, 'flex');
   assert.equal(bulle.textContent, 'A vous sur GOG.');
   assert.equal(bouton.getAttribute('aria-label'), 'Ouvrir', 'les libelles du worker passent en premier');
   assert.equal(faits.childNodes.length, 2);
@@ -354,7 +360,7 @@ test('une fin s\'annonce dans la bulle ; un travail en cours, par le point seul'
 
   p.api.status('ok', 'Epic : Tyranny recupere');
   p.jouerJusqua(700);
-  assert.equal(p.parts().bulle.style.display, 'block');
+  assert.equal(p.parts().bulle.style.display, 'flex');
   assert.equal(p.parts().bulle.textContent, 'Epic : Tyranny recupere');
 
   // La bulle s'efface d'elle-meme.
@@ -591,6 +597,9 @@ test('les libelles du lanceur : memes cles des deux cotes, presentes dans chaque
   assert.deepEqual(launcherLabels((k) => `<${k}>`), {
     button: '<launcherButton>', close: '<sentinelClose>', claim: '<claimAll>',
     autoEpic: '<epicAutoLabel>', autoLuna: '<lunaAutoLabel>',
+    dashboard: '<dashboardOpen>', thisPage: '<launcherThisPage>', freeNow: '<launcherFreeNow>',
+    seeAll: '<launcherSeeAll>', dlc: '<tagDlc>', freeLeft: '<launcherFreeLeft>', freeNoEnd: '<launcherFreeNoEnd>',
+    cardLeft: '<launcherCardLeft>', cardNoEnd: '<launcherCardNoEnd>',
   });
 });
 
@@ -667,4 +676,95 @@ test('sans modele du worker, le navigateur ; une phrase d\'avant passe telle que
   assert.equal(p.parts().statut.textContent, 'nav:engCaptcha suite');
   p.api.status('error', 'Ancienne phrase');
   assert.equal(p.parts().statut.textContent, 'Ancienne phrase');
+});
+
+/* ------------------------------------------------------------ le panneau redessine (2.62.0) */
+
+const JEU = {
+  title: 'Dying Light: The Beast - Discharge Weapon Pack', store: 'steam', storeLabel: 'Steam', end: 1790258400000,
+  left: '6 h 04', urgency: 'hot', image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4355480/header.jpg',
+  url: 'https://store.steampowered.com/app/4355480/', dlc: true,
+};
+const LIBRE = {
+  total: 5,
+  offers: [
+    { ...JEU },
+    { title: 'Mindcop', store: 'epic', storeLabel: 'Epic Games Store', end: 1790262000000, left: '7 h 09', urgency: 'hot', image: 'https://cdn1.epicgames.com/m.jpg', url: 'https://store.epicgames.com/p/mindcop', dlc: false },
+    { title: 'Piege', store: 'gog', storeLabel: 'GOG', end: null, left: 'fin inconnue', urgency: 'unknown', image: 'javascript:alert(1)', url: 'http://www.gog.com/x', dlc: false },
+  ],
+};
+const FICHE_DLC = {
+  hostname: 'store.steampowered.com', pathname: '/app/4355480/', h1: JEU.title,
+  reponse: {
+    facts: [{ kind: 'freeNow', store: 'steam' }, { kind: 'freeNow', store: 'epic' }],
+    lines: ['Offert en ce moment sur Steam.', 'Offert en ce moment sur Epic.'],
+    labels: { freeLeft: 'Gratuit sur $1 · encore $2', cardLeft: 'Gratuit · encore $1', thisPage: 'Sur cette page', freeNow: 'Gratuit en ce moment', seeAll: 'Tout voir', dlc: 'DLC', dashboard: 'En grand' },
+    game: JEU,
+    free: LIBRE,
+  },
+};
+
+test('le jeu de la page en carte : vignette sans referent, magasin, DLC, temps qui reste', () => {
+  const p = charger(FICHE_DLC);
+  p.parts().bouton.fire('click');
+  const { carte, faits, page } = p.parts();
+  assert.equal(page.style.display, 'block');
+  assert.equal(carte.style.display, 'flex');
+  const texte = carte.textContent;
+  assert.match(texte, /Dying Light: The Beast - Discharge Weapon Pack/);
+  assert.match(texte, /Steam/);
+  assert.match(texte, /DLC/);
+  assert.match(texte, /Gratuit · encore 6 h 04/, 'la carte montre deja le magasin');
+  const img = carte.childNodes[0].childNodes.find((n) => n.tagName === 'IMG');
+  assert.equal(img.src, JEU.image);
+  assert.equal(img.referrerPolicy, 'no-referrer', 'le CDN n\'apprend pas quelle page on lisait');
+  // « offert sur Steam » est deja dans la carte ; « aussi sur Epic », non.
+  assert.equal(faits.childNodes.length, 1);
+  assert.match(faits.textContent, /Epic/);
+});
+
+test('gratuit en ce moment : des liens vers les fiches, sans le jeu de la page ni adresse douteuse', () => {
+  const p = charger(FICHE_DLC);
+  p.parts().bouton.fire('click');
+  const { liste } = p.parts();
+  assert.equal(liste.style.display, 'block');
+  const [titre, ...reste] = liste.childNodes;
+  assert.match(titre.textContent, /Gratuit en ce moment5/);
+  const rangees = reste.filter((n) => n.tagName !== 'BUTTON');
+  assert.equal(rangees.length, 2, 'le DLC de la page n\'est pas repete');
+  assert.equal(rangees[0].tagName, 'A');
+  assert.equal(rangees[0].href, 'https://store.epicgames.com/p/mindcop');
+  assert.equal(rangees[0].target, '_blank');
+  assert.equal(rangees[0].rel, 'noopener noreferrer');
+  assert.match(rangees[0].textContent, /Mindcop.*7 h 09/);
+  // http et javascript: ne passent pas : ni lien, ni image.
+  assert.equal(rangees[1].tagName, 'DIV');
+  assert.equal(rangees[1].childNodes[0].childNodes.some((n) => n.tagName === 'IMG'), false);
+});
+
+test('« Tout voir » et l\'icone en grand demandent le tableau de bord au worker, puis ferment', () => {
+  const p = charger(FICHE_DLC);
+  p.parts().bouton.fire('click');
+  const tout = p.parts().liste.childNodes.find((n) => n.tagName === 'BUTTON');
+  assert.equal(tout.textContent, 'Tout voir');
+  tout.fire('click');
+  assert.deepEqual(p.envoyes.filter((m) => m.type === 'fgc-open-dashboard'), [{ type: 'fgc-open-dashboard' }]);
+  assert.equal(p.parts().panneau.style.display, 'none');
+  assert.equal(p.parts().grand.getAttribute('aria-label'), 'En grand');
+});
+
+test('la bulle d\'un jeu offert : sa vignette, son titre, le temps qui reste', () => {
+  const p = charger(FICHE_DLC);
+  p.jouerJusqua(700);
+  const { bulle } = p.parts();
+  assert.equal(bulle.style.display, 'flex');
+  assert.match(bulle.textContent, /^D?Dying Light: The Beast - Discharge Weapon PackGratuit sur Steam · encore 6 h 04$/);
+  assert.ok(bulle.childNodes[0].childNodes.some((n) => n.tagName === 'IMG' && n.src === JEU.image));
+});
+
+test('ouvrir le panneau relit l\'extension : les comptes a rebours ne vieillissent pas', () => {
+  const p = charger(FICHE_DLC);
+  const avant = p.envoyes.filter((m) => m.type === 'fgc-lookup').length;
+  p.parts().bouton.fire('click');
+  assert.equal(p.envoyes.filter((m) => m.type === 'fgc-lookup').length, avant + 1);
 });

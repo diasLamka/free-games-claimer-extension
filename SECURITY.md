@@ -124,6 +124,15 @@ boutons y vivent aussi ; avant, ils s'ecrivaient dans la page avec une
 feuille de style injectee. Le moteur ne laisse plus rien dans le DOM de la
 page.
 
+Depuis la 2.62.0, le panneau montre aussi ce qui est gratuit en ce moment,
+avec les vignettes des offres. Ces images sont chargees PAR LA PAGE du
+magasin : son texte reste illisible pour elle, mais elle peut voir, dans ses
+propres mesures de chargement, quelles images ont ete demandees -- donc quels
+jeux gratuits la liste affiche. Ce sont les offres publiques du moment, les
+memes pour tout le monde, pas votre bibliotheque. Les images partent sans
+referent (`no-referrer`) : le CDN d'un magasin n'apprend pas quelle page vous
+lisiez. Et une adresse qui n'est pas https n'est ni affichee, ni suivie.
+
 ## Ce que l'extension ne fait pas
 
 - **Aucune telemetrie.** Pas d'identifiant d'installation, pas de rapport

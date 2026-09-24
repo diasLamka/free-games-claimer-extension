@@ -18,6 +18,7 @@ import {
   dominantCurrency,
   UNKNOWN_CURRENCY,
   isExtraContent,
+  isStoreDlc,
   isKeepable,
   judge,
   split,
@@ -150,14 +151,27 @@ test('une valeur inconnue ne se fait pas ecarter par le seuil', () => {
 
 /* ---------------------------------------------------- contenu additionnel */
 
-test('le contenu additionnel est ecarte par defaut', () => {
+test('le butin des agregateurs est ecarte par defaut', () => {
   // ?type=loot rend 82 offres de DLC contre 20 jeux : sans ce defaut, la
   // bibliotheque se remplit de cosmetiques.
-  assert.equal(judge(offer({ category: 'DLC' }), {}, opts).reason, REASONS.EXTRA_CONTENT);
-  assert.equal(
-    judge(offer({ category: 'DLC' }), { claimExtraContent: true }, opts).claimable,
-    true,
-  );
+  const butin = offer({ source: 'gamerpower', category: 'DLC' });
+  assert.equal(judge(butin, {}, opts).reason, REASONS.EXTRA_CONTENT);
+  assert.equal(judge(butin, { claimExtraContent: true }, opts).claimable, true);
+});
+
+test('un DLC offert par le magasin lui-meme se reclame comme un jeu (2.62.0)', () => {
+  // Le pack d'armes de Dying Light, type 4 chez Steam : un vrai contenu,
+  // gratuit a garder, sur le compte ou il ira.
+  const epic = offer({ source: 'epic-api', category: 'DLC' });
+  assert.equal(isStoreDlc(epic), true);
+  assert.equal(judge(epic, {}, opts).claimable, true);
+  const gog = offer({ source: 'gog', store: STORES.GOG, url: 'https://www.gog.com/fr/game/x', category: 'DLC' });
+  assert.equal(isStoreDlc(gog), true);
+  // La source d'un AUTRE magasin ne suffit pas : l'agregateur, ou une offre
+  // Epic que la source GOG aurait vue, reste du contenu additionnel.
+  assert.equal(isStoreDlc(offer({ source: 'gamerpower', category: 'DLC' })), false);
+  assert.equal(isStoreDlc(offer({ source: 'gog', category: 'DLC' })), false, 'source gog, magasin epic');
+  assert.equal(isStoreDlc(offer({ source: 'epic-api', category: 'Game' })), false);
 });
 
 /* ------------------------------------------------------------ liste noire */
@@ -218,7 +232,7 @@ test('l\'ordre des refus est stable : la destination avant le magasin, le magasi
   const mauvaisMagasin = offer({ store: STORES.ITCHIO, worth: '$0.01', category: 'DLC' });
   assert.equal(judge(mauvaisMagasin, { minWorth: 99 }, opts).reason, REASONS.STORE_UNSUPPORTED);
 
-  const dlc = offer({ category: 'DLC', worth: '$0.01' });
+  const dlc = offer({ source: 'gamerpower', category: 'DLC', worth: '$0.01' });
   assert.equal(judge(dlc, { minWorth: 99 }, opts).reason, REASONS.EXTRA_CONTENT);
 });
 
@@ -345,4 +359,14 @@ test('l\'apercu compte les deja-acquis comme un motif d\'ecart a part', () => {
 
   assert.equal(vu.claimableCount, 1);
   assert.equal(vu.byReason[REASONS.ALREADY_OWNED], 1);
+});
+
+test('Epic : offerType dit jeu ou DLC, et le titre ne decide plus (2.62.0)', async () => {
+  const { epicCategory } = await import('../watch/sources/epic.js');
+  assert.equal(epicCategory({ offerType: 'ADD_ON' }), 'DLC');
+  assert.equal(epicCategory({ offerType: 'BASE_GAME' }), 'Game');
+  assert.equal(epicCategory({ offerType: 'BUNDLE' }), 'Game');
+  assert.equal(epicCategory({}), null);
+  // Un jeu au nom trompeur : la categorie de la source l'emporte sur le titre.
+  assert.equal(isExtraContent(offer({ title: 'Star Pack Adventures', category: epicCategory({ offerType: 'BASE_GAME' }) })), false);
 });

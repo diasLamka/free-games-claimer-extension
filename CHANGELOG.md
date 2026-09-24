@@ -4,6 +4,60 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.62.0 -- 2026-09-24
+
+**Le panneau de la page redessine, et les DLC recuperes**
+
+*Le panneau sur la page d'un magasin* -- le bouton de l'extension -- ne
+montrait qu'un titre et des phrases. Il suit maintenant une grammaire de
+cartes, sur le modele des panneaux d'extension de bons plans :
+
+- **un en-tete** : l'icone, « Free Games », un bouton qui ouvre le tableau de
+  bord, et la fermeture ;
+- **« Sur cette page »** : le jeu de la fiche en carte -- sa vignette, son
+  magasin, « DLC » s'il en est un, et « Gratuit · encore 5 h 37 » colore
+  selon l'urgence --, puis ce que la carte ne dit pas deja (« a vous sur
+  GOG », « aussi gratuit sur Epic », « deja rate une fois ») avec un signe
+  par genre ;
+- **le moteur**, sur les pages ou il tourne : son etat, « Tout recuperer »,
+  la bascule automatique ;
+- **« Gratuit en ce moment »** : les memes offres que le popup, la fin la plus
+  proche d'abord, avec vignette, magasin et temps qui reste ; chaque ligne
+  ouvre la fiche dans un nouvel onglet, et « Tout voir » ouvre le tableau de
+  bord.
+
+La bulle devient une petite carte : la vignette du jeu, son titre, et
+« Gratuit sur Steam · encore 5 h 39 ». Ouvrir le panneau relit l'extension :
+les comptes a rebours ne vieillissent pas. Une image qui ne charge pas -- une
+page qui les interdit -- laisse sa premiere lettre.
+
+*Les DLC.* Le pack d'armes de Dying Light, offert sur Steam, n'etait ni
+recupere ni reconnaissable :
+
+- **un DLC offert par le magasin lui-meme se recupere comme un jeu.** Le
+  reglage « contenu en jeu » le bloquait avec le butin des agregateurs
+  (skins, monnaie, objets lies a un autre jeu). Il ne garde la main que sur
+  ce butin, et s'appelle desormais « Inclure le butin en jeu ». Sur Steam, la
+  recuperation automatique reste une option a activer -- le contrat de Steam
+  interdit l'automatisation, et ce choix reste le votre. La page du DLC a ete
+  verifiee a blanc : meme bloc d'achat que celle d'un jeu, licence gratuite,
+  « Add to Account » ; le module Steam la sait prendre ;
+- **une etiquette « DLC »** sur les cartes du popup et du panneau.
+
+*Un bug trouve en chemin, et plus grave* : **aucun jeu GOG offert n'etait
+recupere par la veille**, tant que l'option des DLC restait coupee. La source
+GOG recopiait le GENRE du jeu (« Simulation ») dans le champ que les filtres
+lisent comme « jeu ou contenu additionnel ». Mesure du 2026-09-24 sur le
+catalogue reel : c'est `type` qui le dit -- 1 un jeu, 3 un DLC. La source
+Epic, elle, ne disait rien, et un jeu dont le titre contient « Pack »
+passait pour un DLC ; elle lit desormais `offerType`.
+
+Verifie dans Chromium sur les vrais magasins : la carte du DLC Dying Light,
+la liste, « Tout voir », la bulle, sur la vraie page Steam ; le panneau du
+moteur sur une page Epic ; l'etiquette « DLC » dans le popup.
+
+1235 tests.
+
 ## 2.61.0 -- 2026-09-24
 
 **Filtrer les jeux par magasin, et les vignettes Steam**

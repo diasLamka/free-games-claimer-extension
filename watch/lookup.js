@@ -13,6 +13,7 @@
  * d'autre que ce qui sort d'ici.
  */
 import { OUTCOMES } from './outcomes.js';
+import { isExtraContent } from './filters.js';
 import { RECURRENT_AFTER, recurrenceFor, recurrenceIndex } from './recurrence.js';
 
 /** Les faits qu'une fiche peut porter, du plus utile au moins utile. */
@@ -179,10 +180,105 @@ export const LAUNCHER_LABELS = Object.freeze({
   claim: 'claimAll',
   autoEpic: 'epicAutoLabel',
   autoLuna: 'lunaAutoLabel',
+  /* Le panneau redessine (2.62.0). */
+  dashboard: 'dashboardOpen',
+  thisPage: 'launcherThisPage',
+  freeNow: 'launcherFreeNow',
+  seeAll: 'launcherSeeAll',
+  dlc: 'tagDlc',
+  freeLeft: 'launcherFreeLeft',
+  freeNoEnd: 'launcherFreeNoEnd',
+  cardLeft: 'launcherCardLeft',
+  cardNoEnd: 'launcherCardNoEnd',
 });
 
 export function launcherLabels(t) {
   const out = {};
-  for (const [nom, cle] of Object.entries(LAUNCHER_LABELS)) out[nom] = t(cle);
+  /* Les $1, $2 passent tels quels : « Gratuit sur $1 · encore $2 » est un
+     MODELE, que le lanceur remplit. Traduit sans eux, il perdait ses trous et
+     disait « Gratuit sur · encore ». */
+  for (const [nom, cle] of Object.entries(LAUNCHER_LABELS)) out[nom] = t(cle, '$1', '$2');
   return out;
+}
+
+/* ------------------------------------------------------------ le panneau (2.62.0) */
+
+const JOUR = 86400000;
+
+/** « 12 min », « 3 h 20 », « 2 j 4 h » : les unites du popup, par la table. */
+export function delayText(ms, t) {
+  const abs = Math.max(0, ms);
+  const d = Math.floor(abs / JOUR);
+  const h = Math.floor((abs % JOUR) / 3600000);
+  const m = Math.floor((abs % 3600000) / 60000);
+  if (d) return t('durationDaysHours', String(d), String(h));
+  if (h) return t('durationHoursMinutes', String(h), String(m).padStart(2, '0'));
+  return t('durationMinutes', String(m));
+}
+
+/** L'urgence d'une fin, avec les seuils des anneaux du popup. */
+export function urgency(end, now) {
+  if (typeof end !== 'number') return 'unknown';
+  const reste = end - now;
+  if (reste <= JOUR) return 'hot';
+  if (reste <= 3 * JOUR) return 'warm';
+  return 'calm';
+}
+
+const https = (u) => (typeof u === 'string' && /^https:\/\/[^\s"'<>]{1,2000}$/.test(u) ? u : null);
+
+/**
+ * Une offre du catalogue, telle que le panneau de la page l'affiche : rien que
+ * ce qu'il montre, deja traduit. Une adresse qui n'est pas https ne part pas.
+ */
+export function launcherOffer(o, { now, t, storeLabel = (s) => s }) {
+  const end = typeof o.end === 'number' ? o.end : null;
+  return {
+    title: String(o.title || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+    store: String(o.store || ''),
+    storeLabel: storeLabel(o.store),
+    end,
+    left: end === null ? t('noEndDate') : delayText(end - now, t),
+    urgency: urgency(end, now),
+    image: https(o.image),
+    url: https(o.url),
+    dlc: isExtraContent(o),
+  };
+}
+
+/**
+ * Ce qui est gratuit en ce moment, pour le panneau : les memes offres que la
+ * liste du popup -- magasins suivis, ni terminees, ni refusees, ni cachees
+ * parce que deja possedees --, la fin la plus proche d'abord, une fin
+ * inconnue en dernier.
+ */
+export function freeNowList(catalog, {
+  now, t, storeLabel, watched = null, dismissed = [], hideOwned = false, limit = 5,
+}) {
+  const lignes = Object.entries(catalog || {})
+    .filter(([, o]) => o && o.title && o.state !== 'expired' && o.state !== 'resolved')
+    .filter(([, o]) => typeof o.end !== 'number' || o.end > now)
+    .filter(([, o]) => !Array.isArray(watched) || watched.includes(o.store))
+    .filter(([cle]) => !dismissed.includes(cle))
+    .filter(([, o]) => !(hideOwned && o.alreadyOwned === true));
+  lignes.sort(([, a], [, b]) => (typeof a.end === 'number' ? a.end : Infinity) - (typeof b.end === 'number' ? b.end : Infinity));
+  return {
+    total: lignes.length,
+    offers: lignes.slice(0, limit).map(([, o]) => launcherOffer(o, { now, t, storeLabel })),
+  };
+}
+
+/**
+ * Le jeu de la page, s'il est offert en ce moment : l'offre du catalogue au
+ * meme titre, celle du magasin de la page d'abord. null sinon -- le panneau
+ * n'affiche alors que les faits.
+ */
+export function pageGame(catalog, { title, store = null, normalise, now, t, storeLabel }) {
+  const cle = normalise(title);
+  if (!cle) return null;
+  const vivantes = Object.values(catalog || {}).filter((o) => o && o.title && normalise(o.title) === cle
+    && o.state !== 'expired' && (typeof o.end !== 'number' || o.end > now));
+  if (!vivantes.length) return null;
+  const ici = vivantes.find((o) => o.store === store) || vivantes[0];
+  return launcherOffer(ici, { now, t, storeLabel });
 }

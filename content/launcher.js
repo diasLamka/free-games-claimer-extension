@@ -68,6 +68,10 @@
     fond: '#14101F', bord: '#2E2745', texte: '#EDE9F5', doux: '#9A90B8',
     ambre: '#FFB454', ambreClair: '#FFC47A', icone: '#FFA554', encre: '#181128',
     eteint: '#3A3350', idle: '#9A90B8', running: '#F5A623', ok: '#4CC38A', error: '#E5484D',
+    /* Le panneau redessine (2.62.0) : les cartes, et la couleur de chaque
+       magasin -- les memes que dans le popup. */
+    carte: '#1E1830', carteSurvol: '#262038', rose: '#FF6B81', jade: '#56D6A0',
+    epic: '#E4DDF5', 'epic-mobile': '#E4DDF5', gog: '#A567FF', steam: '#66C0F4', amazon: '#00C2FF',
   };
   var POLICE = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 
@@ -81,6 +85,15 @@
     claim: 'claimAll',
     autoEpic: 'epicAutoLabel',
     autoLuna: 'lunaAutoLabel',
+    dashboard: 'dashboardOpen',
+    thisPage: 'launcherThisPage',
+    freeNow: 'launcherFreeNow',
+    seeAll: 'launcherSeeAll',
+    dlc: 'tagDlc',
+    freeLeft: 'launcherFreeLeft',
+    freeNoEnd: 'launcherFreeNoEnd',
+    cardLeft: 'launcherCardLeft',
+    cardNoEnd: 'launcherCardNoEnd',
   };
 
   var etat = {
@@ -88,6 +101,13 @@
     statut: 'idle',
     message: '',
     lignes: [],
+    /* Le genre de chaque fait, dans l'ordre des lignes (owned, freeNow...). */
+    faits: [],
+    magasinsFaits: [],
+    /* Le jeu de la page s'il est offert, et ce qui est gratuit en ce moment
+       (2.62.0) : voir watch/lookup.js, pageGame et freeNowList. */
+    jeu: null,
+    libre: { total: 0, offers: [] },
     libelles: {},
     /* Les phrases du moteur, en modeles ($1..$4), envoyees par le worker. */
     modeles: {},
@@ -476,10 +496,12 @@
     point.setAttribute('aria-hidden', 'true');
     bouton.appendChild(point);
 
-    var bulle = el('div', 'position:absolute;top:50%;transform:translateY(-50%);'
-      + 'box-sizing:border-box;width:max-content;max-width:260px;padding:7px 10px;border-radius:10px;cursor:pointer;'
-      + 'background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';border-left:3px solid '
-      + C.ambre + ';font:12.5px/1.4 ' + POLICE + ';box-shadow:0 6px 20px rgba(0,0,0,.35);display:none');
+    /* La bulle (2.62.0) : une petite carte -- la vignette du jeu ou l'icone,
+       une ligne forte, une ligne douce --, plus un bandeau de texte. */
+    var bulle = el('div', 'position:absolute;top:50%;transform:translateY(-50%);box-sizing:border-box;'
+      + 'width:max-content;max-width:300px;padding:8px 12px 8px 8px;border-radius:12px;cursor:pointer;'
+      + 'background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';font:12.5px/1.35 ' + POLICE
+      + ';box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;align-items:center;gap:10px');
     bulle.setAttribute('role', 'status');
     bulle.addEventListener('click', function () { ouvrir(); });
 
@@ -506,51 +528,141 @@
     surveillerVoisins();
   }
 
+  /* ------------------------------------------------------------ briques */
+
+  /** La vignette d'un jeu, ou sa premiere lettre si l'image manque ou echoue.
+      `no-referrer` : le CDN d'un magasin n'apprend pas quelle page on lisait. */
+  function vignette(url, titre, l, h) {
+    var boite = el('span', 'flex:none;position:relative;display:block;width:' + l + 'px;height:' + h
+      + 'px;border-radius:7px;overflow:hidden;background:' + C.carteSurvol);
+    boite.appendChild(el('span', 'position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;'
+      + 'justify-content:center;color:' + C.doux + ';font:600 ' + Math.round(h * 0.42) + 'px/1 ' + POLICE,
+    String(titre || '?').trim().charAt(0).toUpperCase()));
+    if (url) {
+      var img = document.createElement('img');
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      img.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block';
+      img.addEventListener('error', function () { img.remove(); });
+      img.src = url;
+      boite.appendChild(img);
+    }
+    return boite;
+  }
+
+  /** Le magasin, en petites capitales de sa couleur. */
+  function etiquette(offre) {
+    return el('span', 'flex:none;font:600 9.5px/1.3 ' + POLICE + ';letter-spacing:.1em;text-transform:uppercase;color:'
+      + (C[offre.store] || C.doux), offre.storeLabel || offre.store);
+  }
+
+  /** « DLC », dans une pastille : un DLC se lit comme tel. */
+  function pastilleDlc() {
+    return el('span', 'flex:none;font:600 8.5px/1.3 ' + POLICE + ';letter-spacing:.08em;padding:1px 5px;border-radius:4px;'
+      + 'border:1px solid ' + C.bord + ';color:' + C.doux, libelle('dlc') || 'DLC');
+  }
+
+  /** Le temps qui reste, colore comme les anneaux du popup. */
+  function temps(texte, urgence) {
+    var teinte = urgence === 'hot' ? C.rose : urgence === 'warm' || urgence === 'unknown' ? C.ambre : C.doux;
+    return el('span', 'flex:none;font:600 11px/1.2 ' + POLICE + ';padding:3px 7px;border-radius:999px;white-space:nowrap;'
+      + 'color:' + teinte + ';background:' + teinte + '1f;border:1px ' + (urgence === 'unknown' ? 'dashed ' : 'solid ')
+      + teinte + '55', texte);
+  }
+
+  /** Un titre de section : petites capitales, et un compte a droite. */
+  function titreSection(texte, compte) {
+    var t = el('div', 'display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 8px;'
+      + 'font:600 10px/1.2 ' + POLICE + ';letter-spacing:.14em;text-transform:uppercase;color:' + C.doux);
+    t.appendChild(el('span', '', texte));
+    if (compte) t.appendChild(el('span', 'color:' + C.ambre + ';letter-spacing:0', String(compte)));
+    return t;
+  }
+
+  /** Un bouton rond a icone, pour l'en-tete. */
+  function boutonIcone(dessin, action) {
+    var b = el('button', 'all:initial;display:flex;align-items:center;justify-content:center;width:26px;height:26px;'
+      + 'border-radius:8px;cursor:pointer;color:' + C.doux);
+    b.type = 'button';
+    b.appendChild(dessin);
+    b.addEventListener('click', action);
+    survol(b, function () { b.style.color = C.texte; b.style.background = C.carte; },
+      function () { b.style.color = C.doux; b.style.background = ''; });
+    anneauFocus(b, C.ambre);
+    return b;
+  }
+
+  function trait(d) {
+    var s = svg('svg', { viewBox: '0 0 16 16', width: 15, height: 15, 'aria-hidden': 'true', focusable: 'false' });
+    s.appendChild(svg('path', { d: d, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    return s;
+  }
+
+  function miniIcone(taille) {
+    var s = icone();
+    s.setAttribute('width', String(taille));
+    s.setAttribute('height', String(taille));
+    return s;
+  }
+
+  /** Le tableau de bord : une page de magasin ne peut pas ouvrir une page
+      d'extension, le worker s'en charge (fgc-open-dashboard). */
+  function ouvrirTableau() {
+    try { api.runtime.sendMessage({ type: 'fgc-open-dashboard' }, function () { void api.runtime.lastError; }); } catch (e) {}
+    fermer();
+  }
+
   function construirePanneau() {
-    var boite = el('div', 'position:absolute;box-sizing:border-box;width:300px;'
-      + 'padding:12px;border-radius:12px;background:' + C.fond + ';color:' + C.texte + ';border:1px solid ' + C.bord
-      + ';font:13px/1.45 ' + POLICE + ';box-shadow:0 10px 30px rgba(0,0,0,.45);overflow-y:auto;color-scheme:dark;'
-      + 'text-align:left;display:none');
+    var boite = el('div', 'position:absolute;box-sizing:border-box;width:340px;border-radius:14px;background:' + C.fond
+      + ';color:' + C.texte + ';border:1px solid ' + C.bord + ';font:13px/1.45 ' + POLICE
+      + ';box-shadow:0 14px 40px rgba(0,0,0,.5);overflow-y:auto;overflow-x:hidden;color-scheme:dark;text-align:left;display:none');
     boite.setAttribute('role', 'dialog');
     boite.setAttribute('aria-label', 'Free Games Auto-Claimer');
 
-    var tete = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px');
-    tete.appendChild(el('div', 'font-weight:600;font-size:11px;letter-spacing:.02em;color:' + C.ambre,
-      'Free Games Auto-Claimer'));
-    var fermerBtn = el('button', 'all:initial;cursor:pointer;color:' + C.doux + ';font:18px/1 ' + POLICE
-      + ';padding:2px 5px;margin:-4px -6px 0 0;border-radius:6px', '×');
-    fermerBtn.type = 'button';
-    fermerBtn.addEventListener('click', function () { fermer(); ui.bouton.focus(); });
-    survol(fermerBtn, function () { fermerBtn.style.color = C.texte; }, function () { fermerBtn.style.color = C.doux; });
-    anneauFocus(fermerBtn, C.ambre);
+    /* L'en-tete : l'icone, le nom, le tableau de bord et la fermeture. */
+    var tete = el('div', 'position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:10px 10px 10px 12px;'
+      + 'background:' + C.fond + ';border-bottom:1px solid ' + C.bord);
+    tete.appendChild(miniIcone(22));
+    tete.appendChild(el('span', 'flex:1;min-width:0;font:700 12px/1 ' + POLICE + ';letter-spacing:.09em;text-transform:uppercase',
+      'Free Games'));
+    var grand = boutonIcone(trait('M9.5 2.5h4v4M13.5 2.5 8.5 7.5M6.5 13.5h-4v-4M2.5 13.5l5-5'), ouvrirTableau);
+    var fermerBtn = boutonIcone(trait('M4 4l8 8M12 4l-8 8'), function () { fermer(); ui.bouton.focus(); });
+    tete.appendChild(grand);
     tete.appendChild(fermerBtn);
     boite.appendChild(tete);
 
-    var section = 'margin-top:10px;padding-top:10px;border-top:1px solid ' + C.bord;
+    var corps = el('div', 'display:flex;flex-direction:column;gap:14px;padding:12px');
+    boite.appendChild(corps);
 
-    var statut = el('div', section + ';display:none;align-items:flex-start;gap:8px');
+    /* 1. Sur cette page : le jeu en carte, puis les autres faits. */
+    var page = el('div', 'display:none');
+    var pageTitre = el('div', '');
+    var carte = el('div', 'display:none;gap:10px;padding:10px;border-radius:11px;background:' + C.carte
+      + ';border:1px solid ' + C.bord + ';margin-bottom:8px');
+    var faits = el('div', 'display:none');
+    page.appendChild(pageTitre);
+    page.appendChild(carte);
+    page.appendChild(faits);
+    corps.appendChild(page);
+
+    /* 2. Le moteur : son etat, reclamer, la bascule automatique. */
+    var actions = el('div', 'display:none');
+    var statut = el('div', 'display:none;align-items:flex-start;gap:8px;margin-bottom:10px');
     var statutPoint = el('span', 'flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%');
     var statutTexte = el('span', 'min-width:0;overflow-wrap:anywhere');
     statut.appendChild(statutPoint);
     statut.appendChild(statutTexte);
-    boite.appendChild(statut);
-
-    var faits = el('div', section + ';display:none');
-    boite.appendChild(faits);
-
-    var actions = el('div', section + ';display:none');
-    var reclamer = el('button', 'all:initial;display:block;box-sizing:border-box;width:100%;padding:8px 10px;'
-      + 'border-radius:8px;background:' + C.ambre + ';color:' + C.encre + ';font:600 13px/1.2 ' + POLICE
+    var reclamer = el('button', 'all:initial;display:block;box-sizing:border-box;width:100%;padding:9px 12px;'
+      + 'border-radius:10px;background:' + C.ambre + ';color:' + C.encre + ';font:700 13px/1.2 ' + POLICE
       + ';text-align:center;cursor:pointer');
     reclamer.type = 'button';
     reclamer.addEventListener('click', function () {
       if (etat.moteur) etat.moteur.claim();
     });
     survol(reclamer, function () { reclamer.style.background = C.ambreClair; }, function () { reclamer.style.background = C.ambre; });
-    actions.appendChild(reclamer);
 
     var auto = el('button', 'all:initial;display:flex;align-items:center;justify-content:space-between;gap:10px;'
-      + 'box-sizing:border-box;width:100%;margin-top:8px;padding:4px 0;color:' + C.texte + ';font:13px/1.35 ' + POLICE
+      + 'box-sizing:border-box;width:100%;margin-top:10px;padding:2px 0;color:' + C.texte + ';font:13px/1.35 ' + POLICE
       + ';cursor:pointer');
     auto.type = 'button';
     auto.setAttribute('role', 'switch');
@@ -569,12 +681,19 @@
     });
     anneauFocus(auto, C.ambre);
     anneauFocus(reclamer, C.texte);
+    actions.appendChild(statut);
+    actions.appendChild(reclamer);
     actions.appendChild(auto);
-    boite.appendChild(actions);
+    corps.appendChild(actions);
+
+    /* 3. Gratuit en ce moment : les memes offres que le popup. */
+    var liste = el('div', 'display:none');
+    corps.appendChild(liste);
 
     return {
-      boite: boite, fermer: fermerBtn, statut: statut, statutPoint: statutPoint, statutTexte: statutTexte,
-      faits: faits, actions: actions, reclamer: reclamer, auto: auto, autoTexte: autoTexte, rail: rail, curseur: curseur,
+      boite: boite, fermer: fermerBtn, grand: grand, page: page, pageTitre: pageTitre, carte: carte, faits: faits,
+      statut: statut, statutPoint: statutPoint, statutTexte: statutTexte, actions: actions, reclamer: reclamer,
+      auto: auto, autoTexte: autoTexte, rail: rail, curseur: curseur, liste: liste,
     };
   }
 
@@ -629,23 +748,77 @@
       { duration: 1200, iterations: Infinity });
   }
 
+  /** « Gratuit sur Steam · encore 6 h 04 », ou sans fin connue -- pour la
+      bulle. Dans la carte, qui montre deja le magasin : « Gratuit · encore
+      6 h 04 ». */
+  function ligneGratuit(jeu, court) {
+    var modele = court ? libelle(jeu.end === null ? 'cardNoEnd' : 'cardLeft')
+      : libelle(jeu.end === null ? 'freeNoEnd' : 'freeLeft');
+    if (!modele) return jeu.left;
+    return court ? modele.replace('$1', jeu.left)
+      : modele.replace('$1', jeu.storeLabel || jeu.store).replace('$2', jeu.left);
+  }
+
+  var SIGNES = { owned: ['✓', 'jade'], claimed: ['✓', 'jade'], missed: ['!', 'rose'], recurring: ['↻', 'ambre'], freeNow: ['●', 'ambre'] };
+
+  function vider(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
   function remplirPanneau() {
     var p = ui.panneau;
     p.fermer.setAttribute('aria-label', libelle('close') || 'Close');
     p.fermer.title = libelle('close');
+    p.grand.setAttribute('aria-label', libelle('dashboard') || 'Dashboard');
+    p.grand.title = libelle('dashboard');
 
-    /* L'etat du moteur, sauf au repos : « pret » n'apprend rien. */
+    /* 1. Sur cette page. */
+    var jeu = etat.jeu;
+    vider(p.carte);
+    p.carte.style.display = jeu ? 'flex' : 'none';
+    if (jeu) {
+      p.carte.appendChild(vignette(jeu.image, jeu.title, 104, 58));
+      var info = el('div', 'min-width:0;flex:1;display:flex;flex-direction:column;gap:5px');
+      info.appendChild(el('div', 'font:700 13.5px/1.3 ' + POLICE + ';overflow:hidden;display:-webkit-box;'
+        + '-webkit-line-clamp:2;-webkit-box-orient:vertical', jeu.title));
+      var meta = el('div', 'display:flex;align-items:center;gap:6px;flex-wrap:wrap');
+      meta.appendChild(etiquette(jeu));
+      if (jeu.dlc) meta.appendChild(pastilleDlc());
+      info.appendChild(meta);
+      var statutJeu = el('div', 'display:flex');
+      var pilule = temps(ligneGratuit(jeu, true), jeu.urgency);
+      // Jamais hors de la carte : la pastille passe a la ligne plutot.
+      pilule.style.flex = '0 1 auto';
+      pilule.style.whiteSpace = 'normal';
+      pilule.style.borderRadius = '9px';
+      statutJeu.appendChild(pilule);
+      info.appendChild(statutJeu);
+      p.carte.appendChild(info);
+    }
+
+    /* Les autres faits : ce que la carte ne dit pas deja. */
+    vider(p.faits);
+    var montres = 0;
+    for (var i = 0; i < etat.lignes.length; i++) {
+      var genre = etat.faits[i] || '';
+      if (jeu && genre === 'freeNow' && etat.magasinsFaits[i] === jeu.store) continue;
+      var signe = SIGNES[genre] || ['•', 'doux'];
+      var ligne = el('div', 'display:flex;align-items:flex-start;gap:8px' + (montres ? ';margin-top:6px' : ''));
+      ligne.appendChild(el('span', 'flex:none;width:16px;height:16px;margin-top:1px;border-radius:50%;display:flex;'
+        + 'align-items:center;justify-content:center;font:700 10px/1 ' + POLICE + ';color:' + C[signe[1]] + ';background:'
+        + C[signe[1]] + '22', signe[0]));
+      ligne.appendChild(el('span', 'min-width:0;overflow-wrap:anywhere;font-size:12.5px', etat.lignes[i]));
+      p.faits.appendChild(ligne);
+      montres++;
+    }
+    p.faits.style.display = montres ? 'block' : 'none';
+    vider(p.pageTitre);
+    if (jeu || montres) p.pageTitre.appendChild(titreSection(libelle('thisPage') || ''));
+    p.page.style.display = jeu || montres ? 'block' : 'none';
+
+    /* 2. Le moteur, sauf au repos : « pret » n'apprend rien. */
     var dire = etat.moteur && etat.statut !== 'idle' && etat.message;
     p.statut.style.display = dire ? 'flex' : 'none';
     p.statutPoint.style.background = C[etat.statut] || C.idle;
     p.statutTexte.textContent = dire ? composer(etat.message) : '';
-
-    while (p.faits.firstChild) p.faits.removeChild(p.faits.firstChild);
-    for (var i = 0; i < etat.lignes.length; i++) {
-      p.faits.appendChild(el('div', i ? 'margin-top:4px' : '', etat.lignes[i]));
-    }
-    p.faits.style.display = etat.lignes.length ? 'block' : 'none';
-
     p.actions.style.display = etat.moteur ? 'block' : 'none';
     p.reclamer.textContent = libelle('claim') || 'Claim';
 
@@ -659,15 +832,49 @@
       p.curseur.style.transform = on ? 'translateX(14px)' : '';
     }
 
-    /* Aucune separation au-dessus de la premiere section visible. */
-    var premiere = true;
-    var zones = [p.statut, p.faits, p.actions];
-    for (var j = 0; j < zones.length; j++) {
-      if (zones[j].style.display === 'none') continue;
-      zones[j].style.borderTopWidth = premiere ? '0' : '1px';
-      zones[j].style.paddingTop = premiere ? '0' : '10px';
-      premiere = false;
+    /* 3. Gratuit en ce moment, sans le jeu de la page -- la carte le montre. */
+    vider(p.liste);
+    var offres = (etat.libre.offers || []).filter(function (o) {
+      return !(jeu && o.title === jeu.title && o.store === jeu.store);
+    });
+    p.liste.style.display = offres.length ? 'block' : 'none';
+    if (offres.length) {
+      p.liste.appendChild(titreSection(libelle('freeNow') || '', etat.libre.total));
+      for (var j = 0; j < offres.length; j++) p.liste.appendChild(rangee(offres[j]));
+      var tout = el('button', 'all:initial;display:block;box-sizing:border-box;width:100%;margin-top:8px;padding:7px 12px;'
+        + 'border-radius:999px;border:1px solid ' + C.bord + ';color:' + C.texte + ';font:600 12px/1.2 ' + POLICE
+        + ';text-align:center;cursor:pointer', libelle('seeAll') || 'See all');
+      tout.type = 'button';
+      tout.addEventListener('click', ouvrirTableau);
+      survol(tout, function () { tout.style.borderColor = C.ambre; tout.style.color = C.ambre; },
+        function () { tout.style.borderColor = C.bord; tout.style.color = C.texte; });
+      anneauFocus(tout, C.ambre);
+      p.liste.appendChild(tout);
     }
+  }
+
+  /** Une offre de la liste : un lien vers sa fiche, dans un nouvel onglet. */
+  function rangee(o) {
+    var r = el(o.url ? 'a' : 'div', 'all:initial;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;'
+      + 'padding:6px;margin:0 -6px;border-radius:9px;color:' + C.texte + ';font:13px/1.3 ' + POLICE + ';cursor:'
+      + (o.url ? 'pointer' : 'default') + ';text-decoration:none');
+    if (o.url) {
+      r.href = o.url;
+      r.target = '_blank';
+      r.rel = 'noopener noreferrer';
+      survol(r, function () { r.style.background = C.carte; }, function () { r.style.background = ''; });
+      anneauFocus(r, C.ambre);
+    }
+    r.appendChild(vignette(o.image, o.title, 64, 36));
+    var corps = el('span', 'min-width:0;flex:1;display:flex;flex-direction:column;gap:2px');
+    corps.appendChild(el('span', 'display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600', o.title));
+    var meta = el('span', 'display:flex;align-items:center;gap:6px');
+    meta.appendChild(etiquette(o));
+    if (o.dlc) meta.appendChild(pastilleDlc());
+    corps.appendChild(meta);
+    r.appendChild(corps);
+    r.appendChild(temps(o.left, o.urgency));
+    return r;
   }
 
   /* ------------------------------------------------------------ panneau */
@@ -704,6 +911,8 @@
     mettreAJour();
     document.addEventListener('pointerdown', clicDehors, true);
     document.addEventListener('keydown', echap, true);
+    // Les « encore 6 h 04 » ont vieilli depuis la derniere lecture.
+    ask();
   }
 
   function fermer() {
@@ -729,22 +938,35 @@
 
   /* ------------------------------------------------------------ bulle */
 
-  function montrerBulle(texte, ton) {
+  /**
+   * La bulle : `texte`, et au-dessus, en fort, `titre` s'il y en a un. A
+   * gauche, la vignette `jeu` s'il y en a une, sinon l'icone. `ton` colore la
+   * ligne douce : une reussite en vert, un echec en rouge.
+   */
+  function montrerBulle(texte, ton, titre, jeu) {
     if (!hote || etat.ouvert || !texte) return;
     /* Le bouton d'abord, la bulle ensuite : pas les deux dans le meme geste. */
     var reste = arriveeJusqua - Date.now();
-    if (reste > 0) { setTimeout(function () { arriveeJusqua = 0; montrerBulle(texte, ton); }, reste); return; }
+    if (reste > 0) { setTimeout(function () { arriveeJusqua = 0; montrerBulle(texte, ton, titre, jeu); }, reste); return; }
     var b = ui.bulle;
     generationBulle++;
     var gauche = versLaGauche();
     var dispo = gauche ? place.left - ECART - BORD : largeur() - place.left - TAILLE - ECART - BORD;
-    b.textContent = texte;
-    b.style.borderLeftColor = C[ton] || C.ambre;
+    vider(b);
+    b.appendChild(jeu ? vignette(jeu.image, jeu.title, 48, 27) : miniIcone(22));
+    var textes = el('span', 'min-width:0;display:flex;flex-direction:column;gap:1px');
+    if (titre) {
+      textes.appendChild(el('span', 'display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:700',
+        titre));
+    }
+    var couleur = ton === 'ok' ? C.jade : ton === 'error' ? C.rose : titre ? C.doux : C.texte;
+    textes.appendChild(el('span', 'display:block;color:' + couleur, texte));
+    b.appendChild(textes);
     b.style.left = gauche ? 'auto' : (TAILLE + ECART) + 'px';
     b.style.right = gauche ? (TAILLE + ECART) + 'px' : 'auto';
-    b.style.maxWidth = Math.max(140, Math.min(260, dispo)) + 'px';
-    var deja = b.style.display === 'block';
-    b.style.display = 'block';
+    b.style.maxWidth = Math.max(160, Math.min(300, dispo)) + 'px';
+    var deja = b.style.display === 'flex';
+    b.style.display = 'flex';
     if (!deja) {
       animer(b, [
         { opacity: 0, transform: 'translate(' + (gauche ? 8 : -8) + 'px,-50%)' },
@@ -876,6 +1098,26 @@
     return String(document.title || '').split(/\s+[|–—-]\s+/)[0].trim();
   }
 
+  function https(u) {
+    return typeof u === 'string' && /^https:\/\/[^\s"'<>]{1,2000}$/.test(u) ? u : null;
+  }
+
+  /** Une offre recue du worker, relue champ par champ. */
+  function offreSure(o) {
+    if (!o || typeof o.title !== 'string' || !o.title) return null;
+    return {
+      title: o.title.slice(0, 140),
+      store: typeof o.store === 'string' ? o.store.slice(0, 30) : '',
+      storeLabel: typeof o.storeLabel === 'string' ? o.storeLabel.slice(0, 60) : '',
+      left: typeof o.left === 'string' ? o.left.slice(0, 40) : '',
+      urgency: /^(hot|warm|calm|unknown)$/.test(o.urgency) ? o.urgency : 'unknown',
+      end: typeof o.end === 'number' ? o.end : null,
+      image: https(o.image),
+      url: https(o.url),
+      dlc: o.dlc === true,
+    };
+  }
+
   /**
    * Ce que l'extension sait de cette fiche, et les mots pour le dire.
    *
@@ -908,14 +1150,31 @@
 
           var facts = Array.isArray(reponse.facts) ? reponse.facts : [];
           var lignes = Array.isArray(reponse.lines) && reponse.lines.length === facts.length ? reponse.lines : [];
-          etat.lignes = lignes.filter(function (l) { return typeof l === 'string' && l; });
+          etat.lignes = [];
+          etat.faits = [];
+          etat.magasinsFaits = [];
+          for (var i = 0; i < lignes.length; i++) {
+            if (typeof lignes[i] !== 'string' || !lignes[i]) continue;
+            etat.lignes.push(lignes[i]);
+            etat.faits.push(facts[i] && typeof facts[i].kind === 'string' ? facts[i].kind : '');
+            etat.magasinsFaits.push(facts[i] && typeof facts[i].store === 'string' ? facts[i].store : '');
+          }
+          /* Le jeu de la page et la liste (2.62.0). Ce sont les donnees de
+             l'extension, mais elles traversent une page tierce : chaque champ
+             est relu, et une adresse qui n'est pas https ne sert pas. */
+          etat.jeu = offreSure(reponse.game);
+          var libre = reponse.free || {};
+          var offres = Array.isArray(libre.offers) ? libre.offers.map(offreSure).filter(Boolean).slice(0, 8) : [];
+          etat.libre = { total: typeof libre.total === 'number' ? libre.total : offres.length, offers: offres };
 
           mettreAJour();
           /* La premiere fois qu'une fiche a quelque chose a dire, on le dit
-             une fois, brievement ; ensuite la pastille suffit. */
+             une fois, brievement ; ensuite la pastille suffit. Un jeu offert
+             se dit avec sa vignette et le temps qui reste. */
           if (etat.lignes.length && !etat.bulleFaits) {
             etat.bulleFaits = true;
-            montrerBulle(etat.lignes[0], 'ambre');
+            if (etat.jeu) montrerBulle(ligneGratuit(etat.jeu), 'ambre', etat.jeu.title, etat.jeu);
+            else montrerBulle(etat.lignes[0], 'ambre');
           }
         },
       );
