@@ -50,6 +50,7 @@ import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
 import { composeShareList } from '../watch/share-list.js';
+import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
   EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
@@ -216,6 +217,7 @@ const KEYS_READ = [
   KEY_WEEKENDS,
   KEY_AUTO_BACKUP,
   KEY_RATINGS,
+  KEY_COVERS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -253,6 +255,8 @@ const DEFAULT_UI = {
   dismissed: [],
   onboarded: false,
   syncSettings: false,
+  /** « Deja recupere » deplie (2.81.0) : replie par defaut, et on s'en souvient. */
+  claimedOpen: false,
 };
 
 /* Behaviour the service worker reads too. Imported, never re-declared: a
@@ -1116,11 +1120,73 @@ function renderUpcoming(all) {
 
 /* -------------------------------------------------------------------- log */
 
+/* --------------------------------------------------- deja recupere (2.81.0) */
+
+/* Le magasin de chaque historique du moteur. */
+const HISTORY_STORES = { 'Epic Games': STORES.EPIC, GOG: STORES.GOG, 'Amazon Luna': STORES.AMAZON };
+
+/* Les icones de statut, dessinees au DOM -- jamais d'innerHTML, voir
+   SECURITY.md. 16 x 16, un trait : un cercle coche pour « recupere », une
+   double coche pour « deja a vous », un cercle barre pour « ignore », une
+   croix pour l'echec, une horloge pour ce qui attend. */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const CERCLE = ['circle', { cx: 8, cy: 8, r: 6.5 }];
+const STATUS_ICONS = {
+  ok: [CERCLE, ['path', { d: 'M5.2 8.3l1.9 1.9 3.7-4.1' }]],
+  own: [['path', { d: 'M1.6 8.7l2.5 2.5 5-5.6' }], ['path', { d: 'M7.7 10.9l.3.3 5-5.6' }]],
+  skip: [CERCLE, ['path', { d: 'M5.4 10.6l5.2-5.2' }]],
+  ko: [CERCLE, ['path', { d: 'M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2' }]],
+  wait: [CERCLE, ['path', { d: 'M8 4.9V8l2.1 1.4' }]],
+};
+
+function statusIcon(kind, label) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('class', `st-icon ${kind}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', label);
+  const titre = document.createElementNS(SVG_NS, 'title');
+  titre.textContent = label;
+  svg.append(titre);
+  for (const [tag, attrs] of STATUS_ICONS[kind] || STATUS_ICONS.wait) {
+    const n = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    svg.append(n);
+  }
+  return svg;
+}
+
+/** Recupere, deja a vous, ignore, echec, en attente : l'icone qui le dit. */
+function statusKind(row, css) {
+  if (row.reason === 'ALREADY_OWNED' || row.reason === 'ALREADY_CLAIMED') return 'own';
+  if (row.status === 'skipped') return 'skip';
+  return css === 'ok' || css === 'ko' ? css : 'wait';
+}
+
+/** La jaquette, ou l'initiale du jeu si elle manque ou ne se charge pas. */
+function coverTile(src, title) {
+  const art = el('span', 'soon-art');
+  const lettre = () => el('span', 'letter', String(title || '?').trim().charAt(0).toUpperCase() || '?');
+  if (!src) { art.append(lettre()); return art; }
+  const img = thumb(src);
+  img.addEventListener('error', () => { art.textContent = ''; art.append(lettre()); });
+  art.append(img);
+  return art;
+}
+
+/* Les titres deja demandes au worker pendant cette ouverture du popup : une
+   demande par titre, pas une par rendu. */
+const COVERS_ASKED = new Set();
+
 function renderLog(all) {
   const host = document.getElementById('log');
   host.textContent = '';
+  // L'etat du pli, lu une fois : ensuite c'est l'utilisateur qui l'ouvre ou le ferme.
+  const pli = document.getElementById('fold-claimed');
+  if (!pli.dataset.init) { pli.open = ui.claimedOpen === true; pli.dataset.init = '1'; }
   const catalog = get(all, KEY_CATALOG, {});
   const library = get(all, KEY_LIBRARY, {});
+  const covers = get(all, KEY_COVERS, {});
   const rows = [];
 
   for (const [label, key] of Object.entries(HISTORY_KEYS)) {
@@ -1161,6 +1227,9 @@ function renderLog(all) {
         reason: REASON_KEYS[e.reason] ? e.reason : (alreadyYours(e) ? 'ALREADY_CLAIMED' : e.reason),
         label: title ? displayTitle(title) : (opaque ? label : prettySlug(bare.replace(/^card:/, ''))),
         image: (known && known.image) || null,
+        store: HISTORY_STORES[label] || null,
+        // Un identifiant opaque n'a pas de titre a chercher chez Steam.
+        searchable: Boolean(title) || !opaque,
       });
     }
   }
@@ -1168,6 +1237,8 @@ function renderLog(all) {
   rows.sort((a, b) => b.ts - a.ts);
 
   document.getElementById('reset-log').hidden = !rows.length;
+  // Replie, le pli dit encore combien : « 24 ».
+  foldSay('fold-claimed', rows.length ? String(rows.length) : '');
 
   if (!rows.length) {
     const empty = el('li', 'empty', t('emptyLog'));
@@ -1178,24 +1249,44 @@ function renderLog(all) {
   /* Les dernieres seulement : toute la liste, filtrable, est dans la page
      Historique (le bouton du pied de page). Le « Tout voir » d'ici en etait
      une copie plus pauvre, et il est parti en 2.60.0. */
-  for (const row of rows.slice(0, EN_ONGLET ? 16 : 8)) {
+  const shown = rows.slice(0, EN_ONGLET ? 16 : 8);
+  const aDemander = [];
+  for (const row of shown) {
     // A known technical reason describes the outcome better than the generic
     // status: "already owned" beats "claimed" when the game already was.
     const [key, css] = REASON_KEYS[row.reason] || VERDICT_KEYS[row.status] || [null, ''];
     const li = el('li');
-    // La jaquette quand le catalogue ou le registre la connait : un titre se
-    // reconnait plus vite a son image qu'a son nom.
-    if (row.image) li.append(thumb(row.image));
+    /* La jaquette : celle du catalogue ou du registre, sinon celle que la
+       recherche Steam a trouvee (2.81.0), sinon l'initiale. Un titre se
+       reconnait plus vite a son image qu'a son nom. */
+    const image = row.image || (row.searchable ? coverFor(covers, row.label) : null);
+    if (!image && row.searchable && !COVERS_ASKED.has(row.label) && needsCover(covers, row.label, Date.now())) {
+      COVERS_ASKED.add(row.label);
+      aDemander.push(row.label);
+    }
+    li.append(coverTile(image, row.label));
     /* Pas de date (2.60.0). L'heure notee est celle ou le moteur a CONSTATE
        l'etat sur la page du magasin, pas celle ou le jeu a ete pris : deux
        jeux « deja possedes » vus a la meme visite affichaient la meme heure,
        sans rapport avec le jour ou ils sont entres dans la bibliotheque. Une
        date fausse est pire que pas de date. L'ordre, lui, reste le plus recent
        d'abord. */
-    li.append(el('span', 'what', row.label));
-    li.append(el('span', `st ${css}`, key ? t(key) : String(row.status || '')));
+    const body = el('span', 'soon-body');
+    const nom = el('span', 'what', row.label);
+    nom.title = row.label;
+    body.append(nom);
+    if (row.store) body.append(storeTag(row.store));
+    li.append(body);
+    // Le statut en icone ; ses mots restent dans l'infobulle et pour les lecteurs d'ecran.
+    const mots = key ? t(key) : String(row.status || '');
+    const st = el('span', 'st');
+    st.title = mots;
+    st.append(statusIcon(statusKind(row, css), mots));
+    li.append(st);
     host.append(li);
   }
+  // Le worker cherche, ecrit ; le changement de stockage redessine la liste.
+  if (aDemander.length) tell('fgc-covers', { titles: aDemander });
 }
 
 /* ------------------------------------------------------------------- codes */
@@ -3055,6 +3146,13 @@ document.getElementById('auto-backup-show').addEventListener('click', async (e) 
 
 /* « Copier la liste » (2.80.0) : voir watch/share-list.js. Le texte se
    compose au clic, avec ce qui est affiche a cet instant. */
+/* « Deja recupere » se souvient d'avoir ete ouvert (2.81.0). */
+document.getElementById('fold-claimed').addEventListener('toggle', (e) => {
+  if (ui.claimedOpen === e.target.open) return;
+  ui = { ...ui, claimedOpen: e.target.open };
+  setValue(KEY_UI, ui);
+});
+
 document.getElementById('share-list').addEventListener('click', async (e) => {
   const bouton = e.currentTarget;
   const all = await readAll();

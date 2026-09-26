@@ -4,6 +4,40 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.81.0 -- 2026-09-26
+
+**« Deja recupere » : des jaquettes, des icones, et un pli**
+
+Demande du 2026-09-26, capture a l'appui : deux jaquettes sur huit lignes,
+des statuts en toutes lettres (« recupere », « deja possede », « deja
+recupere », « ignore ») qui faisaient une colonne de texte, et une section
+toujours depliee sous la liste des jeux.
+
+- **Un pli**, ferme par defaut, comme ceux des Reglages : le titre garde le
+  nombre de jeux (« Deja recupere 9 »), et le popup se souvient si on l'a
+  laisse ouvert.
+- **Une jaquette par ligne.** Celle du catalogue ou du registre d'abord ;
+  sinon le service worker la cherche une fois pour toutes sur la recherche
+  du magasin Steam, au titre normalise IDENTIQUE (ni la bande-son, ni la
+  demo) ; sinon l'initiale du jeu, dans une tuile de meme taille. Mesure sur
+  la liste signalee : les huit jeux trouves -- The Da Vinci Cryptex, High on
+  Life, Hue, Mechabellum, Astrea, RiMS Racing, DOOM Eternal, Botany Manor.
+  Seuls les titres affiches sont demandes, seize au plus ; un introuvable se
+  redemande apres une semaine ; seules les images du CDN de Steam, en https,
+  s'affichent.
+- **Le statut en icone**, au bout de la ligne : cercle coche vert
+  (recupere), double coche (deja a vous : possede ou recupere avant),
+  cercle barre ambre (ignore), croix rouge (echec), horloge (en attente). Les
+  mots restent en infobulle et pour les lecteurs d'ecran. Dessinees au DOM,
+  jamais en innerHTML.
+- **Le magasin sous le titre**, comme dans « Bientot » : EPIC, GOG, LUNA.
+
+Verifie dans l'extension chargee dans Chromium, sur le vrai Steam, themes
+clair et sombre : les huit jaquettes, les icones, rien ne deborde a 328 px ;
+le pli ferme, puis rouvert apres rechargement.
+
+1392 tests.
+
 ## 2.80.1 -- 2026-09-26
 
 **Steam : un DLC gratuit demande son jeu de base -- et on le dit**

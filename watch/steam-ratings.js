@@ -105,13 +105,18 @@ export function reviewsUrl(appid) {
   return `https://store.steampowered.com/appreviews/${appid}?json=1&language=all&num_per_page=0`;
 }
 
-/** Le seul resultat de recherche qui porte EXACTEMENT ce titre, ou null. */
-export function matchSearch(data, title) {
+/** Le premier resultat de recherche qui porte EXACTEMENT ce titre, ou null. */
+export function findSearchItem(data, title) {
   const cible = normaliseTitle(title);
   if (!cible) return null;
   const items = (data && Array.isArray(data.items)) ? data.items : [];
-  const bons = items.filter((i) => i && (i.type === 'app' || !i.type) && /^\d+$/.test(String(i.id)) && normaliseTitle(i.name) === cible);
-  return bons.length ? String(bons[0].id) : null;
+  return items.find((i) => i && (i.type === 'app' || !i.type) && /^\d+$/.test(String(i.id)) && normaliseTitle(i.name) === cible) || null;
+}
+
+/** Son appid, ou null. */
+export function matchSearch(data, title) {
+  const item = findSearchItem(data, title);
+  return item ? String(item.id) : null;
 }
 
 /** Le resume des evaluations, ou null si la reponse n'en est pas un. */

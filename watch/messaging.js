@@ -92,6 +92,9 @@ export const UI_COMMANDS = Object.freeze([
   /* La sauvegarde automatique, tout de suite (2.77.0) : le clic qui l'active
      veut voir un premier fichier. Elle ecrit sur le disque : pages seulement. */
   'fgc-auto-backup',
+  /* Les jaquettes de « Deja recupere » (2.81.0) : le popup nomme les titres
+     affiches, le worker cherche et ecrit. Pages seulement. */
+  'fgc-covers',
 ]);
 
 /**

@@ -1,0 +1,23 @@
+{
+  "total": 3,
+  "items": [
+    {
+      "type": "app",
+      "name": "Botany Manor",
+      "id": 1425350,
+      "tiny_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1425350/capsule_231x87.jpg?t=1763652620"
+    },
+    {
+      "type": "app",
+      "name": "Botany Manor Soundtrack",
+      "id": 3015170,
+      "tiny_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3015170/capsule_231x87.jpg?t=1723733396"
+    },
+    {
+      "type": "app",
+      "name": "Botany Manor Demo",
+      "id": 2440460,
+      "tiny_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2440460/capsule_231x87.jpg?t=1707142691"
+    }
+  ]
+}

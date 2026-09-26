@@ -73,6 +73,7 @@ import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watc
 import { runAutoBackup } from './watch/auto-backup.js';
 import { KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, ratingFor, refreshRatings } from './watch/steam-ratings.js';
 import { openOffers } from './watch/catalog.js';
+import { KEY_COVERS, refreshCovers } from './watch/covers.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -585,6 +586,26 @@ async function maybeRatings(now = Date.now()) {
     record('warn', 'notes Steam impossibles', e);
     return null;
   }
+}
+
+/* ------------------------------------------------ jaquettes (2.81.0) */
+
+/* Une ecriture du registre a la fois, comme pour les notes : deux demandes
+   du popup rapprochees perdraient sinon une jaquette. */
+let coversChain = Promise.resolve();
+
+function ensureCovers(titles) {
+  const travail = async () => {
+    const { [KEY_COVERS]: avant, [KEY_COUNTRY]: pays } = await readKeys(api, [KEY_COVERS, KEY_COUNTRY]);
+    const r = await refreshCovers(avant || {}, (titles || []).slice(0, 40), {
+      fetch: (u, i) => fetch(u, i), now: Date.now(), country: normaliseCountry(pays),
+    });
+    if (r.got) await write(api, { [KEY_COVERS]: r.covers });
+    return { asked: r.asked, got: r.got };
+  };
+  const p = coversChain.then(travail, travail);
+  coversChain = p.catch(() => null);
+  return p;
 }
 
 /* ------------------------------------------------------ rappel des codes */
@@ -1580,6 +1601,14 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'restauration impossible', e);
         sendResponse({ ok: false, reason: String((e && e.message) || e) });
       });
+    return true;
+  }
+
+  if (msg.type === 'fgc-covers') {
+    const titres = Array.isArray(msg.titles) ? msg.titles.filter((x) => typeof x === 'string') : [];
+    ensureCovers(titres)
+      .then(sendResponse)
+      .catch((e) => { record('warn', 'jaquettes impossibles', e); sendResponse({ asked: 0, got: 0 }); });
     return true;
   }
 

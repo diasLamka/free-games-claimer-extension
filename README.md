@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
+| `covers.js` | les jaquettes de « Deja recupere » que ni le catalogue ni le registre ne connaissent : cherchees une fois sur Steam, au titre exact |
 | `share-list.js` | « Copier la liste » : les jeux affiches, leur magasin, leur valeur, jusqu'a quand et leur lien, en texte simple a coller sur Discord ou WhatsApp |
 | `context-wish.js` | le clic droit « Me prevenir quand ce jeu sera gratuit » : le titre lu sur la fiche Steam, Epic ou GOG (ou tire d'un lien), ajoute a la liste de souhaits |
 | `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
@@ -305,6 +306,14 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**« Deja recupere » se replie** (2.81.0) : ferme par defaut, le titre garde
+le nombre de jeux, et le popup se souvient si on l'a laisse ouvert. Chaque
+ligne a sa jaquette -- celle du catalogue ou du registre, sinon celle que la
+recherche Steam trouve au titre exact, sinon l'initiale --, son magasin, et
+son statut en icone : cercle coche (recupere), double coche (deja a vous),
+cercle barre (ignore), croix (echec), horloge (en attente). Les mots restent
+au survol.
 
 **Copier la liste** (2.80.0), sous « Gratuit maintenant » : un texte pret a
 coller sur Discord, WhatsApp ou un forum -- les jeux affiches (la recherche et
