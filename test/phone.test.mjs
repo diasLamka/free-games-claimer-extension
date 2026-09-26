@@ -254,6 +254,29 @@ test('un refus dit quoi corriger, selon le service -- et jamais l\'adresse, qui 
   assert.equal(ok.ok, true, 'Discord repond 204 sans corps');
 });
 
+test('Telegram : un 403 dit laquelle des pannes, d\'apres la raison que Telegram donne', async () => {
+  const cible = P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' });
+  const refus = (description) => async () => ({ ok: false, status: 403, json: async () => ({ ok: false, error_code: 403, description }) });
+  const cas = [
+    ['Forbidden: bot can\'t initiate conversation with a user', /Demarrer/],
+    ['Forbidden: bot was blocked by the user', /debloquez/],
+    ['Forbidden: bot can\'t send messages to bots', /@userinfobot/],
+    ['Forbidden: bot is not a member of the channel chat', /ajoutez-le/],
+    ['Forbidden: bot was kicked from the supergroup chat', /ajoutez-le/],
+    ['Forbidden: need administrator rights in the channel chat', /administrateur du canal/],
+    ['Forbidden: user is deactivated', /n'existe plus/],
+  ];
+  for (const [description, attendu] of cas) {
+    const r = await P.sendPhone({ fetch: refus(description), target: cible, msg: { title: 'x' } });
+    assert.equal(r.status, 403);
+    assert.match(r.note, attendu, description);
+  }
+  const inconnue = await P.sendPhone({ fetch: refus('Forbidden: quelque chose de neuf'), target: cible, msg: { title: 'x' } });
+  assert.equal(inconnue.note, 'HTTP 403 : le bot n\'a pas acces a cette discussion (Forbidden: quelque chose de neuf)', 'une raison inconnue est citee telle quelle');
+  const illisible = await P.sendPhone({ fetch: async () => ({ ok: false, status: 403, json: async () => { throw new SyntaxError('pas du JSON'); } }), target: cible, msg: { title: 'x' } });
+  assert.equal(illisible.note, 'HTTP 403 : le bot n\'a pas acces a cette discussion', 'sans corps lisible, la phrase d\'avant');
+});
+
 test('le popup propose les trois services, et chacun a son formulaire', () => {
   const html = readFileSync(new URL('../pages/popup.html', import.meta.url), 'utf8');
   for (const v of ['ntfy', 'discord', 'telegram']) assert.match(html, new RegExp(`<option value="${v}">`));

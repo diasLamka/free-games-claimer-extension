@@ -325,7 +325,8 @@ export async function sendPhone({ fetch: fetchImpl, target, msg, timeoutMs = TIM
   try {
     const r = await fetchImpl(url, { ...init, signal: stopwatch ? stopwatch.signal : undefined });
     if (r.ok) return { ok: true, status: r.status, note: null };
-    return { ok: false, status: r.status, note: describeStatus(r.status, target.service) };
+    const raison = target.service === SERVICES.TELEGRAM ? await telegramReason(r) : null;
+    return { ok: false, status: r.status, note: describeStatus(r.status, target.service, raison) };
   } catch (e) {
     const aborted = stopwatch && stopwatch.signal.aborted;
     return { ok: false, status: 0, note: aborted ? `delai depasse (${timeoutMs} ms)` : ((e && e.message) || String(e)) };
@@ -334,8 +335,36 @@ export async function sendPhone({ fetch: fetchImpl, target, msg, timeoutMs = TIM
   }
 }
 
+/**
+ * La raison que Telegram donne a un refus (le champ `description` de sa
+ * reponse), ou null. Jamais le jeton : il est dans l'adresse, pas dans le corps.
+ */
+async function telegramReason(r) {
+  try {
+    const corps = typeof r.json === 'function' ? await r.json() : null;
+    return corps && typeof corps.description === 'string' ? corps.description.slice(0, 200) : null;
+  } catch { return null; }
+}
+
+/**
+ * Un 403 de Telegram, dit selon sa raison (2.78.1). « Pas acces » couvre cinq
+ * pannes qui ne se corrigent pas pareil : le bot jamais demarre, bloque, un
+ * identifiant de bot au lieu du votre, un groupe ou un canal qui ne l'a pas,
+ * une discussion supprimee.
+ */
+function telegramForbidden(raison) {
+  const r = String(raison || '');
+  if (/can't initiate conversation/i.test(r)) return 'le bot ne peut pas ecrire le premier -- ouvrez-le dans Telegram et appuyez sur Demarrer';
+  if (/blocked by the user/i.test(r)) return 'vous avez bloque le bot -- debloquez-le dans Telegram, puis appuyez sur Demarrer';
+  if (/send messages to bots/i.test(r)) return 'cet identifiant est celui d\'un bot (le numero au debut du jeton est celui du bot) -- il faut le votre, que @userinfobot donne';
+  if (/administrator rights/i.test(r)) return 'le bot doit etre administrateur du canal';
+  if (/not a member|kicked/i.test(r)) return 'le bot n\'est pas membre de ce groupe ou canal -- ajoutez-le (administrateur, pour un canal)';
+  if (/deactivated|chat was deleted/i.test(r)) return 'cette discussion n\'existe plus';
+  return r ? `le bot n'a pas acces a cette discussion (${r})` : 'le bot n\'a pas acces a cette discussion';
+}
+
 /** Ce qu'un statut veut dire, pour qui doit corriger sa configuration. */
-export function describeStatus(status, service = SERVICES.NTFY) {
+export function describeStatus(status, service = SERVICES.NTFY, raison = null) {
   if (service === SERVICES.DISCORD) {
     if (status === 401 || status === 403 || status === 404) return `HTTP ${status} : webhook Discord supprime, ou adresse fausse`;
     if (status === 429) return 'HTTP 429 : Discord limite, trop de messages';
@@ -344,7 +373,7 @@ export function describeStatus(status, service = SERVICES.NTFY) {
   if (service === SERVICES.TELEGRAM) {
     if (status === 401 || status === 404) return `HTTP ${status} : jeton du bot refuse`;
     if (status === 400) return 'HTTP 400 : discussion introuvable -- ecrivez d\'abord au bot, ou verifiez le numero';
-    if (status === 403) return 'HTTP 403 : le bot n\'a pas acces a cette discussion';
+    if (status === 403) return `HTTP 403 : ${telegramForbidden(raison)}`;
     if (status === 429) return 'HTTP 429 : Telegram limite, trop de messages';
     return `HTTP ${status}`;
   }

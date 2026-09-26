@@ -4,6 +4,29 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.78.1 -- 2026-09-26
+
+**Telegram dit pourquoi il refuse**
+
+« HTTP 403 : le bot n'a pas acces a cette discussion » couvrait cinq pannes
+qui ne se corrigent pas pareil. Telegram donne la raison dans sa reponse
+(`description`) ; l'alerte ne la lisait pas. Elle la lit desormais, et le popup
+comme le journal disent quoi faire :
+
+- **bot jamais demarre** : l'ouvrir dans Telegram et appuyer sur Demarrer --
+  un bot ne peut pas ecrire le premier ;
+- **bot bloque** : le debloquer, puis Demarrer ;
+- **identifiant d'un bot** au lieu du votre -- le numero au debut du jeton est
+  celui du bot, le votre vient de @userinfobot ;
+- **groupe ou canal** qui n'a pas le bot, ou pas comme administrateur ;
+- **discussion supprimee**.
+
+Une raison inconnue est citee telle quelle, entre parentheses ; sans corps
+lisible, la phrase d'avant. Rien de plus ne quitte la machine : c'est la
+reponse de Telegram qu'on lit, pas une requete de plus.
+
+1357 tests.
+
 ## 2.78.0 -- 2026-09-26
 
 **La note Steam des jeux offerts**
