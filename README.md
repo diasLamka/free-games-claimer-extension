@@ -17,6 +17,11 @@ seul accent jaune cyber, traits epais et ombres dures, Archivo Black et Space
 Mono. Tout tient dans `pages/brut.css`, chargee apres le style de chaque page ;
 les polices sont dans `pages/fonts/`, avec leur licence.
 
+**Le relais** (2.87.0) fait se parler l'extension et l'appli : celui qui est
+allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
+bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
+qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
+
 ## Le moteur est genere
 
 `content/free-games-claimer.js` **ne s'edite pas a la main**. Il est produit a

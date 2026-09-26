@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -122,7 +123,7 @@ class ScreenshotTest {
         }
     }
 
-    private fun shoot(name: String, accent: Accent = Accent.JAUNE, dark: Boolean = true, tabs: Int? = null, content: @Composable () -> Unit) {
+    private fun shoot(name: String, accent: Accent = Accent.JAUNE, dark: Boolean = true, tabs: Int? = null, scrollTo: String? = null, content: @Composable () -> Unit) {
         compose.setContent {
             FreeGamesTheme(accent = accent, dark = dark) {
                 Column(Modifier.fillMaxSize().background(LocalBrut.current.base)) {
@@ -132,6 +133,11 @@ class ScreenshotTest {
             }
         }
         settle()
+        if (scrollTo != null) {
+            compose.onNode(androidx.compose.ui.test.hasScrollAction())
+                .performScrollToNode(androidx.compose.ui.test.hasText(scrollTo, substring = true, ignoreCase = true))
+            settle(1500)
+        }
         compose.onRoot().captureRoboImage("$dir/$name.png")
     }
 
@@ -167,6 +173,34 @@ class ScreenshotTest {
     @Config(qualifiers = "+h1500dp")
     fun settings() = shoot("A-reglages", Accent.JAUNE, dark = true, tabs = 3) {
         SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    /* 1.2.0 : la recuperation ecran eteint, le relais avec le PC, la confidentialite. */
+    private val paired: AppState by lazy {
+        live.copy(
+            settings = live.settings.copy(claimInBackground = true),
+            relay = io.github.diaslamka.freegames.model.RelayState(dev = "c0ffee01", pairedAt = now - 86_400_000, peerRole = "pc", peerAt = now - 1_800_000),
+        )
+    }
+
+    @Test
+    fun reglagesEcranEteint() = shoot("C-reglages-ecran-eteint", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "Steam") {
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    @Test
+    fun reglagesRelais() = shoot("C-reglages-relais", Accent.JAUNE, dark = false, tabs = 3, scrollTo = "Dissocier") {
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    @Test
+    fun reglagesRelaisLibre() = shoot("C-reglages-relais-libre", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "Scanner") {
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    @Test
+    fun reglagesConfidentialite() = shoot("C-reglages-confidentialite", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "désinstaller") {
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
     }
 
     @Test

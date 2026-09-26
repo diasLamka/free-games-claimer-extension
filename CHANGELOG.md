@@ -4,6 +4,38 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.87.0 -- 2026-09-26
+
+**Le relais avec le telephone, et l'anti-doublon au moment de payer**
+
+- **Relais PC <-> telephone.** L'extension et l'appli Android (1.2.0) se
+  disent ce qu'elles recuperent : celui qui est allume prend le jeu, l'autre
+  l'inscrit au registre et ne le retente pas ; un jeu en cours sur l'un est
+  laisse de cote par l'autre. Association par QR code (Reglages -> Relais avec
+  le telephone), dessine en SVG par le generateur de Nayuki (MIT), embarque.
+  Transport ntfy, **chiffre de bout en bout** (AES-256-GCM) ; le secret n'est
+  ni synchronise ni sauvegarde. Le popup confirme l'association des que le
+  telephone parle. Protocole : `docs/specs/2026-09-26-relais-design.md` ;
+  vecteur commun `test/fixtures/relais.json`, rejoue par l'extension, par
+  l'appli (Kotlin) et par OpenSSL.
+- **Anti-doublon au moment de payer.** Sur la fiche d'un jeu payant, un
+  bandeau jaune dit qu'il est deja a vous AILLEURS : recupere sur Epic le 12
+  mars 2024, pris par le telephone, ou dans votre bibliotheque GOG. Sur Epic,
+  GOG et Steam d'office ; sur Humble Bundle, Fanatical, Green Man Gaming,
+  Gamesplanet et IndieGala a la demande (Reglages -> Sur les pages que
+  j'ouvre), chacun avec sa permission facultative. Jamais sur la boutique ou
+  vous l'avez deja, jamais quand il y est gratuit.
+- L'alerte telephone coupee ne retire plus la permission de ntfy.sh si le
+  relais s'en sert.
+
+**L'appli Android 1.2.0** (dans `android/`) : connexion Epic guidee quand
+Google ou Facebook refusent (mot de passe Epic), recuperation ecran eteint en
+option, relais avec le PC, anti-doublon au partage d'une fiche, section
+Confidentialite, et `android/CONFORMITE.md` -- les regles d'Android et de
+Google Play, point par point.
+
+1442 tests pour l'extension ; 29 pour l'appli.
+
 ## 2.86.0 -- 2026-09-26
 
 **L'interface brute, jaune cyber**

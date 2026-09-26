@@ -12,8 +12,10 @@ web emballee.
 | **Veille de fond** | Toutes les 1, 3, 6 ou 12 heures, ecran eteint, et a l'heure exacte de la prochaine ouverture annoncee par Epic. |
 | **Notifications** | Un jeu par notification, avec sa jaquette et un bouton **Recuperer** ; le souhait qui passe gratuit passe devant ; un rappel le dernier jour. |
 | **Recuperation** | Epic, GOG, Amazon Luna : **le moteur de l'extension**, au caractere pres, joue dans une vraie page du magasin. Steam en option, comme dans l'extension. |
-| **Comptes** | Connexion une fois dans l'appli ; les sessions restent sur le telephone. |
-| **Souhaits** | A la main, ou en **partageant** une fiche de jeu depuis n'importe quelle appli (Reddit, Discord, navigateur) : l'appli dit aussitot si le jeu est gratuit, deja recupere ou deja attendu. |
+| **Ecran eteint** (1.2.0) | En option : pendant la veille de fond, la page du magasin s'ouvre sans s'afficher et le jeu est pris, sans ouvrir l'appli. Un captcha n'est jamais resolu : une notification t'appelle. |
+| **Relais avec le PC** (1.2.0) | Associe a l'extension par un QR code : celui qui est allume recupere, l'autre ne retente pas. Chiffre de bout en bout, par ntfy. |
+| **Comptes** | Connexion une fois dans l'appli ; les sessions restent sur le telephone. Google et Facebook refusent les connexions dans une appli : l'appli s'arrete avant et guide (mot de passe Epic). |
+| **Souhaits** | A la main, ou en **partageant** une fiche de jeu depuis n'importe quelle appli (Reddit, Discord, navigateur) : l'appli dit aussitot si le jeu est gratuit, deja attendu, ou deja a toi -- et sur quel magasin, y compris ce que le PC a pris. |
 | **Avec l'extension** | Import de sa sauvegarde (historique, souhaits, listes Steam/GOG) ; export d'un fichier que « Restaurer » de l'extension fusionne. |
 | **Langues** | Francais, anglais, allemand, espagnol -- celle du telephone. |
 
@@ -59,14 +61,16 @@ attentes.
 
 ## Ce qu'elle ne fait pas encore
 
-- **Recuperer ecran eteint.** La veille de fond detecte et previent ; la
-  recuperation a besoin d'une page affichee, donc de l'appli ouverte. Elle
-  demarre seule a l'ouverture (reglage « Recuperer a l'ouverture ») ou d'un
-  toucher sur la notification, et prend moins d'une minute par jeu.
-- **Se connecter avec Google chez Epic.** Google refuse les connexions dans les
-  applis : e-mail et mot de passe Epic.
+- **Se connecter avec Google ou Facebook dans l'appli.** C'est interdit par
+  Google et Facebook (connexion dans une page integree a une appli). Pour Epic :
+  poser un mot de passe sur le compte (bouton « Creer mon mot de passe Epic »),
+  la connexion Google restant active partout ailleurs.
 - **Echanger les codes GOG / Amazon.** Un code arrive dans le verdict, mais
   l'echange reste a faire dans l'extension.
+- **La recuperation ecran eteint n'a pas encore ete vue sur un vrai
+  telephone** : elle est construite et testee hors appareil ; la premiere nuit
+  dira si Epic se comporte dans une page non affichee comme dans un onglet
+  d'arriere-plan de Chrome.
 
 ## Construire
 
@@ -94,10 +98,26 @@ peut signer une « mise a jour » de l'appli.
 ## Installer
 
 1. Telecharger l'APK (release `app-v...` du depot, ou l'artefact du workflow).
+   Chrome previent qu'un APK « peut etre dangereux » : c'est vrai de tout APK,
+   il suffit de le conserver.
 2. L'ouvrir sur le telephone ; Android demande d'autoriser l'installation
-   depuis cette source, la premiere fois.
+   depuis cette source, la premiere fois. **Play Protect** peut dire qu'il ne
+   connait pas l'appli et proposer de l'analyser : accepter l'analyse, puis
+   installer. Ce n'est pas une detection, c'est l'absence d'historique -- voir
+   `CONFORMITE.md` pour le faire disparaitre (enregistrement gratuit aupres de
+   Google).
 3. Ouvrir l'appli, autoriser les notifications, puis **Reglages → Comptes des
    magasins** : se connecter a Epic, GOG, Amazon (et Steam si l'option est
    activee).
 4. Facultatif : **Reglages → Importer** la sauvegarde de l'extension, pour que
    le telephone connaisse ce que le PC a deja pris.
+5. Facultatif : **Reglages → Relais avec le PC → Scanner le QR code** que le
+   popup de l'extension affiche (Reglages → Relais avec le telephone).
+
+## Les regles
+
+L'appli suit les regles d'Android et de Google Play meme hors de Google Play :
+permissions au strict minimum, aucune fenetre par-dessus les autres applis,
+aucun service de premier plan, aucun captcha resolu, aucune connexion Google
+dans une page integree, aucun identifiant emprunte a une autre appli. Le detail,
+point par point : `CONFORMITE.md`.

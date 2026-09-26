@@ -26,7 +26,7 @@ liste des onglets pilotes.
 
 ## Ce qui peut quitter la machine
 
-**Trois choses, chacune coupee par defaut et par son propre interrupteur.**
+**Quatre choses, chacune coupee par defaut et par son propre interrupteur.**
 
 Le reglage `syncCodes` (Reglages -> Sauvegarde, `watch/storage.js`) recopie
 les codes en attente dans `chrome.storage.sync`, qui transite par votre compte
@@ -67,6 +67,22 @@ d'un code en attente, puis le dernier jour -- a l'ecran, et au telephone si
 l'alerte est active. Il nomme le jeu, le magasin et la date ; **jamais le
 code**, qui reste dans l'onglet Codes. Un test le verifie sur ce qui part
 vraiment.
+
+Le **relais avec le telephone** (2.87.0, `watch/relay.js`) fait se parler
+l'extension et l'appli Android, par ntfy -- `ntfy.sh` par defaut. Il part :
+un verrou avant chaque reclamation, « obtenu » apres chaque succes, un signe
+de vie par heure avec les quinze derniers jeux obtenus -- magasin,
+identifiant, titre, date, valeur, lien de la fiche. **Tout est chiffre de bout
+en bout** (AES-256-GCM, cle et sujet tires d'un secret de 32 octets partage
+par QR code, sujet en donnee associee) : ntfy voit un nom de sujet tire au
+hasard, l'heure et la taille des messages, les adresses IP, jamais leur
+contenu. **Jamais un cookie, un code de rachat ni un identifiant de compte.**
+Le secret vit sous `veille:relais`, jamais synchronise, **jamais dans une
+sauvegarde** (un test le verifie) ; sur le telephone, il est chiffre par une
+cle du Keystore Android. Les messages recus sont relus champ par champ ; un
+message de plus de sept jours, ou venant de soi-meme, est ignore ; un verrou ne
+dure pas plus de dix minutes. Le protocole est ecrit dans
+`docs/specs/2026-09-26-relais-design.md`.
 
 Rien d'autre ne part tout seul.
 
@@ -339,6 +355,27 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
   est prive et qu'une mise a jour doit porter la meme signature que la version
   installee. Si le depot devenait public, elle en sortirait (secret du
   workflow) : qui la detient peut signer une « mise a jour » de l'appli.
+
+- **Google et Facebook** interdisent leur connexion dans une page integree a
+  une appli : la page de connexion s'arrete avant de les charger
+  (`Accounts.refusedProvider`). Aucun identifiant d'une autre application
+  (les clients OAuth internes d'Epic, par exemple) n'est emprunte.
+- **La recuperation ecran eteint** (1.2.0, coupee par defaut) est une tache
+  de fond ordinaire, sans fenetre par-dessus les autres applis ni service de
+  premier plan ; un captcha n'y est jamais resolu, il part en notification.
+- Le detail des regles d'Android et de Google Play suivies :
+  `android/CONFORMITE.md`.
+
+## L'anti-doublon sur les fiches (2.87.0)
+
+`content/owned-guard.js` lit le titre de la fiche d'un jeu (Epic, GOG, Steam,
+et -- seulement si vous les cochez, chacune avec sa permission facultative --
+Humble Bundle, Fanatical, Green Man Gaming, Gamesplanet, IndieGala) et
+demande au worker si vous le possedez ailleurs. Il n'ecrit rien, ne clique
+rien, n'envoie rien au reseau ; son bandeau vit dans une racine fantome
+fermee, que la page ne peut ni lire ni restyler. Le message `fgc-owned-guard`
+n'est accepte que d'un script de contenu (`watch/messaging.js`), et le worker
+lit l'adresse de la page dans `sender.tab`, pas dans le message.
 
 ## Signaler un probleme
 
