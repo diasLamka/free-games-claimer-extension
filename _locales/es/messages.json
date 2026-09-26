@@ -2110,5 +2110,29 @@
   },
   "ctxWishFail": {
     "message": "No se pudo leer el nombre del juego en esta página. Añádelo desde el popup."
+  },
+  "shareButton": {
+    "message": "Copiar la lista"
+  },
+  "shareButtonTitle": {
+    "message": "Copiar los juegos mostrados, con sus enlaces, para pegarlos en Discord, WhatsApp o donde quieras"
+  },
+  "shareHeader": {
+    "message": "Juegos gratis para conseguir — $1"
+  },
+  "shareUntil": {
+    "message": "hasta el $1"
+  },
+  "shareNoEnd": {
+    "message": "sin fecha de fin"
+  },
+  "shareUpcoming": {
+    "message": "Próximamente:"
+  },
+  "shareFrom": {
+    "message": "a partir del $1"
+  },
+  "shareWeekends": {
+    "message": "Para probar gratis este fin de semana en Steam:"
   }
 }

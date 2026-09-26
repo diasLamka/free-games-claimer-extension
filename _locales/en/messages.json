@@ -2110,5 +2110,29 @@
   },
   "ctxWishFail": {
     "message": "The game’s name could not be read on this page. Add it from the popup."
+  },
+  "shareButton": {
+    "message": "Copy the list"
+  },
+  "shareButtonTitle": {
+    "message": "Copy the games shown, with their links, to paste on Discord, WhatsApp or anywhere"
+  },
+  "shareHeader": {
+    "message": "Free games to grab — $1"
+  },
+  "shareUntil": {
+    "message": "until $1"
+  },
+  "shareNoEnd": {
+    "message": "no end date"
+  },
+  "shareUpcoming": {
+    "message": "Coming soon:"
+  },
+  "shareFrom": {
+    "message": "from $1"
+  },
+  "shareWeekends": {
+    "message": "Free to try this weekend on Steam:"
   }
 }

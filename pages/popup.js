@@ -49,6 +49,7 @@ import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
+import { composeShareList } from '../watch/share-list.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
   EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
@@ -486,6 +487,10 @@ let searchQuery = '';
    recherche : voir lib/store-chips.js. */
 let storeFilter = ALL;
 
+/* Les offres affichees, dans l'ordre affiche : ce que « Copier la liste »
+   copie (2.80.0). La recherche et la puce de magasin comptent. */
+let shownOffers = [];
+
 function openOffers(catalog, behaviour, now) {
   const watched = behaviour.watchedStores || DEFAULT_WATCHED;
   return Object.entries(catalog)
@@ -900,6 +905,8 @@ function renderGames(all, behaviour) {
   storeFilter = puces.active;
   renderStoreChips(puces);
   const visible = sortOffers(byStore(rows.filter(({ offer }) => matchesQuery(offer)), puces.active), now);
+  shownOffers = visible.map(({ offer }) => offer);
+  document.getElementById('share-row').hidden = !visible.length;
 
   const ctx = {
     now,
@@ -3043,6 +3050,33 @@ document.getElementById('auto-backup-show').addEventListener('click', async (e) 
     if (d && d.exists !== false) api.downloads.show(id);
     else api.downloads.showDefaultFolder();
   } catch { /* la permission vient d'etre retiree */ }
+});
+
+/* « Copier la liste » (2.80.0) : voir watch/share-list.js. Le texte se
+   compose au clic, avec ce qui est affiche a cet instant. */
+document.getElementById('share-list').addEventListener('click', async (e) => {
+  const bouton = e.currentTarget;
+  const all = await readAll();
+  const now = Date.now();
+  const watched = behaviourCache.watchedStores || DEFAULT_WATCHED;
+  const loc = intlLocale();
+  const texte = composeShareList({
+    offers: shownOffers,
+    soon: upcomingWindows(get(all, KEY_SOURCES, {}), now),
+    weekends: behaviourCache.steamWeekends === false || !watched.includes(STORES.STEAM)
+      ? [] : openWeekends(get(all, KEY_WEEKENDS, null), now),
+    now,
+    t,
+    storeLabel: (s) => STORE_LABELS[s] || s,
+    dateText: (ms) => new Date(ms).toLocaleString(loc, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    dayText: (ms) => new Date(ms).toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }),
+    worthText: (o) => (o.worth ? worthLabel(o.worth, now).text : null),
+  });
+  // Refusee si le popup n'a pas le focus : pas de « copie » affiche a tort.
+  try { await navigator.clipboard.writeText(texte); } catch { return; }
+  bouton.textContent = t('copied');
+  bouton.classList.add('done');
+  setTimeout(() => { bouton.textContent = t('shareButton'); bouton.classList.remove('done'); }, 1400);
 });
 
 document.getElementById('codes-add').addEventListener('click', async () => {

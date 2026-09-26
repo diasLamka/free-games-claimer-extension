@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
+| `share-list.js` | « Copier la liste » : les jeux affiches, leur magasin, leur valeur, jusqu'a quand et leur lien, en texte simple a coller sur Discord ou WhatsApp |
 | `context-wish.js` | le clic droit « Me prevenir quand ce jeu sera gratuit » : le titre lu sur la fiche Steam, Epic ou GOG (ou tire d'un lien), ajoute a la liste de souhaits |
 | `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
 | `code-reminders.js` | un code bientot perime le dit : a sept jours, puis le dernier jour -- jamais le code lui-meme |
@@ -304,6 +305,13 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Copier la liste** (2.80.0), sous « Gratuit maintenant » : un texte pret a
+coller sur Discord, WhatsApp ou un forum -- les jeux affiches (la recherche et
+la puce de magasin comptent), leur magasin, leur valeur, jusqu'a quand, et
+le lien ; puis ce qu'Epic annonce et les week-ends gratuits de Steam, s'il y
+en a. Rien de personnel : ni ce que vous possedez, ni vos souhaits, ni vos
+codes.
 
 **Le clic droit « Me prevenir quand ce jeu sera gratuit »** (2.79.0), sur une
 fiche Steam, Epic ou GOG -- ou sur un lien vers l'une d'elles, depuis

@@ -4,6 +4,31 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.80.0 -- 2026-09-26
+
+**Copier la liste, pour les copains**
+
+La premiere chose qu'on fait d'un jeu gratuit, apres l'avoir pris, c'est le
+dire aux autres. Il fallait recopier titre par titre, lien par lien.
+
+- **« Copier la liste »**, sous « Gratuit maintenant », met dans le
+  presse-papiers un texte pret a coller : « Jeux gratuits a recuperer --
+  samedi 26 septembre », puis un jeu par ligne -- titre, magasin (et « DLC »),
+  valeur, jusqu'a quand -- avec son lien dessous.
+- **Ce qui est affiche** : la recherche et la puce de magasin comptent. Avec
+  la puce « Epic », seuls les jeux Epic partent.
+- **Puis, s'il y en a** : ce qu'Epic annonce (« Bientot ») et les week-ends
+  gratuits de Steam. Quinze jeux au plus ; les suivants sont comptes.
+- **Du texte simple** : Discord et WhatsApp le lisent pareil, et y font des
+  liens des apercus avec la jaquette. Les titres de GamerPower perdent leur
+  suffixe. Rien de personnel n'y entre -- ni ce que vous possedez, ni vos
+  souhaits, ni vos codes -- et un lien qui n'est pas en https est ecarte.
+
+Verifie dans l'extension chargee dans Chromium : le bouton dit « Copie »,
+et le texte colle porte les trois jeux, « Bientot » et le week-end Steam.
+
+1374 tests.
+
 ## 2.79.0 -- 2026-09-26
 
 **Clic droit : « Me prevenir quand ce jeu sera gratuit »**
