@@ -2089,5 +2089,26 @@
   },
   "ratingsHint": {
     "message": "L’avis des joueurs Steam à côté de chaque jeu offert, et dans sa notification. Lu sur store.steampowered.com, sans cookie."
+  },
+  "ctxWishMenu": {
+    "message": "Me prévenir quand ce jeu sera gratuit"
+  },
+  "ctxWishAdded": {
+    "message": "Ajouté à vos souhaits : $1"
+  },
+  "ctxWishAlready": {
+    "message": "Déjà dans vos souhaits : $1"
+  },
+  "ctxWishBody": {
+    "message": "Vous serez prévenu dès qu’il sera gratuit, sur n’importe quel magasin suivi."
+  },
+  "ctxWishFreeNow": {
+    "message": "Il est gratuit en ce moment sur $1 !"
+  },
+  "ctxWishFailTitle": {
+    "message": "Nom du jeu introuvable"
+  },
+  "ctxWishFail": {
+    "message": "Impossible de lire le nom du jeu sur cette page. Ajoutez-le depuis le popup."
   }
 }

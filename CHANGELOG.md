@@ -4,6 +4,43 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.79.0 -- 2026-09-26
+
+**Clic droit : « Me prevenir quand ce jeu sera gratuit »**
+
+La liste de souhaits existe depuis la 2.31.0, mais s'y ajouter voulait dire
+ouvrir le popup et taper le nom. C'est pourtant sur la fiche du jeu, en le
+regardant, qu'on se dit « celui-la, s'il passe gratuit... ».
+
+- **Sur une fiche Steam, Epic ou GOG**, le clic droit propose « Me prevenir
+  quand ce jeu sera gratuit ». Le titre est lu comme le panneau de la page le
+  lit deja (un selecteur par magasin), puis le titre du document, puis
+  l'adresse.
+- **Sur un lien vers une fiche**, depuis n'importe quelle page (Reddit, un
+  forum, un mail) : la page qui porte le lien n'est pas lue ; le nom vient de
+  l'adresse (`/app/1286880/Ship_Graveyard_Simulator/` -> « Ship Graveyard
+  Simulator »).
+- **Une notification confirme** : « Ajoute a vos souhaits : Squad ». Deja
+  attendu -- a la main, ou par la liste Steam ou GOG importee, reconnue par
+  l'appid meme sous un autre titre -- elle le dit sans rien ecrire deux fois.
+  Gratuit EN CE MOMENT sur un magasin suivi : elle dit lequel, et un clic y
+  mene.
+- **Le rapprochement se fait sur le titre normalise** : « Astrea: Six-Sided
+  Oracles » lu sur Steam reconnait « Astrea: Six Sided Oracles » offert sur
+  Epic.
+- **Mesure du 2026-09-26** : Squad et Ship Graveyard Simulator sur Steam, The
+  Witcher 3 sur GOG (son titre de document porte « 50% de reduction » en
+  promotion : retire). Epic, depuis un serveur, sert la page d'attente de
+  Cloudflare (« One more step ») : elle est refusee comme titre, et
+  l'adresse prend le relais.
+- Permission `contextMenus` : n'ouvre l'acces a rien, et Chrome ne l'annonce
+  pas. Le menu suit la langue choisie.
+
+Verifie dans l'extension chargee dans Chromium : les deux entrees se creent
+sans erreur, et le titre se lit sur les vraies fiches Steam et GOG.
+
+1368 tests.
+
 ## 2.78.2 -- 2026-09-26
 
 **L'identifiant d'un bot, reconnu dans ses deux formulations**

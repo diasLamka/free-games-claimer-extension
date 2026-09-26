@@ -114,6 +114,7 @@ est declare `"type": "module"`.
 | `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
+| `context-wish.js` | le clic droit « Me prevenir quand ce jeu sera gratuit » : le titre lu sur la fiche Steam, Epic ou GOG (ou tire d'un lien), ajoute a la liste de souhaits |
 | `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
 | `code-reminders.js` | un code bientot perime le dit : a sept jours, puis le dernier jour -- jamais le code lui-meme |
 | `recap.js` | le recap du jeudi soir : recupere, a prendre soi-meme, rate, annonce -- une fois par semaine, jamais vide |
@@ -303,6 +304,14 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Le clic droit « Me prevenir quand ce jeu sera gratuit »** (2.79.0), sur une
+fiche Steam, Epic ou GOG -- ou sur un lien vers l'une d'elles, depuis
+n'importe quelle page : le jeu rejoint la liste de souhaits, et une
+notification le confirme. Deja attendu (a la main, ou par la liste Steam ou
+GOG importee) ? Elle le dit. Gratuit en ce moment ? Elle dit ou, et un clic y
+mene. Le jeu est reconnu par son titre normalise : ajoute depuis Steam, il
+sera annonce en priorite le jour ou Epic l'offre.
 
 **La note Steam** (2.78.0) : « 84 % positif » au bout de chaque jeu gratuit,
 vert, orange ou rouge selon l'echelle de Steam -- « Tres positives · 84 % » en

@@ -60,6 +60,7 @@ import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
 import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, makeImportedWishlist } from './watch/wishlist.js';
+import { MENU_LINK, MENU_PAGE, menuItems, wishFromClick } from './watch/context-wish.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
 import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
@@ -799,7 +800,41 @@ api.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[KEY_UI]) return;
   const ui = changes[KEY_UI].newValue || {};
   setLocale(ui.language && ui.language !== 'auto' ? ui.language : null);
+  // Le menu du clic droit parle la langue choisie, lui aussi (2.79.0).
+  if (api.contextMenus) {
+    for (const id of [MENU_PAGE, MENU_LINK]) api.contextMenus.update(id, { title: t('ctxWishMenu') }, () => void api.runtime.lastError);
+  }
 });
+
+/* ------------------------------------------- souhait par clic droit (2.79.0) */
+
+/* Les entrees du menu survivent aux redemarrages : on les (re)cree a
+   l'installation et a la mise a jour, jamais a chaque reveil. Voir
+   watch/context-wish.js. */
+async function installerMenus() {
+  if (!api.contextMenus) return;
+  await langue;
+  await new Promise((fin) => api.contextMenus.removeAll(() => { void api.runtime.lastError; fin(); }));
+  for (const item of menuItems(t('ctxWishMenu'))) {
+    api.contextMenus.create(item, () => {
+      const err = api.runtime.lastError;
+      if (err) record('warn', `menu du clic droit : ${err.message || err}`);
+    });
+  }
+}
+
+api.runtime.onInstalled.addListener(() => {
+  installerMenus().catch((e) => record('warn', 'menu du clic droit impossible', e));
+});
+
+if (api.contextMenus && api.contextMenus.onClicked) {
+  api.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId !== MENU_PAGE && info.menuItemId !== MENU_LINK) return;
+    langue
+      .then(() => wishFromClick({ info, tab, chrome: api, t, notify: showNotice, record }))
+      .catch((e) => record('warn', 'souhait par clic droit impossible', e));
+  });
+}
 
 /* Le dossier de l'extension mis a jour (2.53.0) : voir watch/self-update.js.
  * L'alarme n'existe que pour une installation depuis un dossier ; une version

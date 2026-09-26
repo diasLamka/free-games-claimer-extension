@@ -2089,5 +2089,26 @@
   },
   "ratingsHint": {
     "message": "What Steam players think, next to each free game and in its notification. Read from store.steampowered.com, without cookies."
+  },
+  "ctxWishMenu": {
+    "message": "Notify me when this game is free"
+  },
+  "ctxWishAdded": {
+    "message": "Added to your wishlist: $1"
+  },
+  "ctxWishAlready": {
+    "message": "Already on your wishlist: $1"
+  },
+  "ctxWishBody": {
+    "message": "You will be notified as soon as it is free, on any store you follow."
+  },
+  "ctxWishFreeNow": {
+    "message": "It is free right now on $1!"
+  },
+  "ctxWishFailTitle": {
+    "message": "Game name not found"
+  },
+  "ctxWishFail": {
+    "message": "The game’s name could not be read on this page. Add it from the popup."
   }
 }
