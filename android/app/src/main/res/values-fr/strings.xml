@@ -3,6 +3,8 @@
 <resources>
     <string name="share_target">Vérifier ou souhaiter ce jeu</string>
     <string name="tab_games">Jeux gratuits</string>
+    <string name="tab_games_short">Jeux</string>
+    <string name="claim_count">Récupération %1$d/%2$d</string>
     <string name="tab_claimed">Récupérés</string>
     <string name="tab_wishlist">Souhaits</string>
     <string name="tab_settings">Réglages</string>

@@ -32,7 +32,15 @@ import io.github.diaslamka.freegames.ui.ClaimedScreen
 import io.github.diaslamka.freegames.ui.GamesScreen
 import io.github.diaslamka.freegames.ui.SettingsScreen
 import io.github.diaslamka.freegames.ui.WishlistScreen
+import io.github.diaslamka.freegames.claim.ClaimSession
+import io.github.diaslamka.freegames.ui.BrutTabs
+import io.github.diaslamka.freegames.ui.ClaimPanelContent
+import io.github.diaslamka.freegames.ui.Cover
+import io.github.diaslamka.freegames.ui.theme.Accent
 import io.github.diaslamka.freegames.ui.theme.FreeGamesTheme
+import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -114,31 +122,64 @@ class ScreenshotTest {
         }
     }
 
-    private fun shoot(name: String, content: @Composable () -> Unit) {
+    private fun shoot(name: String, accent: Accent = Accent.JAUNE, dark: Boolean = true, tabs: Int? = null, content: @Composable () -> Unit) {
         compose.setContent {
-            FreeGamesTheme {
-                Surface(color = MaterialTheme.colorScheme.background) { Box(Modifier.fillMaxSize()) { content() } }
+            FreeGamesTheme(accent = accent, dark = dark) {
+                Column(Modifier.fillMaxSize().background(LocalBrut.current.base)) {
+                    Box(Modifier.weight(1f)) { content() }
+                    if (tabs != null) BrutTabs(tabs) {}
+                }
             }
         }
         settle()
         compose.onRoot().captureRoboImage("$dir/$name.png")
     }
 
-    @Test
-    @Config(qualifiers = "+h3000dp")
-    fun games() = shoot("1-jeux") {
+    private val games: @Composable () -> Unit = {
         GamesScreen(live, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
     }
 
     @Test
-    fun claimed() = shoot("2-recuperes") { ClaimedScreen(live, onOpen = {}) }
+    fun jeuxJauneNuit() = shoot("A-jeux-jaune-nuit", Accent.JAUNE, dark = true, tabs = 0, content = games)
 
     @Test
-    fun wishlist() = shoot("3-souhaits") { WishlistScreen(live, now, onAdd = {}, onRemove = {}) }
+    fun jeuxVertPapier() = shoot("B-jeux-vert-papier", Accent.VERT, dark = false, tabs = 0, content = games)
 
     @Test
-    fun settings() = shoot("4-reglages") {
+    fun jeuxFuchsiaPapier() = shoot("C-jeux-fuchsia-papier", Accent.FUCHSIA_, dark = false, tabs = 0, content = games)
+
+    @Test
+    @Config(qualifiers = "+h2600dp")
+    fun jeuxLong() = shoot("A-jeux-long", Accent.JAUNE, dark = true, content = games)
+
+    @Test
+    fun claimed() = shoot("A-recuperes", Accent.JAUNE, dark = true, tabs = 1) { ClaimedScreen(live, onOpen = {}) }
+
+    @Test
+    fun wishlist() = shoot("A-souhaits", Accent.JAUNE, dark = true, tabs = 2) { WishlistScreen(live, now, onAdd = {}, onRemove = {}) }
+
+    @Test
+    @Config(qualifiers = "+h1500dp")
+    fun settings() = shoot("A-reglages", Accent.JAUNE, dark = true, tabs = 3) {
         SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    @Test
+    fun claimPanel() = shoot("A-recuperation", Accent.JAUNE, dark = true) {
+        val first = live.offers.values.first { it.store == Stores.EPIC }
+        Column {
+            ClaimPanelContent(
+                ClaimSession.Ui(
+                    running = true, title = first.shownTitle, store = Stores.EPIC, index = 2, total = 3, step = ClaimSession.STEP_CLAIM, visible = true,
+                    outcomes = listOf(ClaimSession.Outcome("x", "Hades", Stores.EPIC, "claimed", null)),
+                ),
+                onToggle = null, onStop = {}, onDismiss = {}, onUser = {},
+            ) { m -> Cover(first.image, first.shownTitle, first.store, m) }
+            ClaimPanelContent(
+                ClaimSession.Ui(running = true, title = "Tyrian 2000", store = Stores.GOG, index = 3, total = 3, needsUser = true, visible = true),
+                onToggle = null, onStop = {}, onDismiss = {}, onUser = {},
+            ) { m -> Box(m.background(androidx.compose.ui.graphics.Color(0xFFEDEDED))) }
+        }
     }
 
 }

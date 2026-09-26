@@ -14,34 +14,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,8 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -74,9 +59,14 @@ import io.github.diaslamka.freegames.model.Upcoming
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.EpicMobileSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
-import io.github.diaslamka.freegames.ui.theme.LocalPalette
+import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 private val FILTERS = listOf(null, Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
+private val PC = setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +81,7 @@ fun GamesScreen(
     onShare: (List<Offer>) -> Unit,
     onAccounts: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val b = LocalBrut.current
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -102,78 +92,57 @@ fun GamesScreen(
     val q = Titles.normalise(query)
     fun keep(o: Offer) = (filter == null || o.store == filter) && (q.isEmpty() || o.normalisedTitle.contains(q))
     val open = state.offers.values.filter { it.isOpen(now) && it.keepable != false }
-    val pc = open.filter { it.store in setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON) && !(it.source == GamerPowerSource.NAME && it.isExtra) }
+    val pc = open.filter { it.store in PC && !(it.source == GamerPowerSource.NAME && it.isExtra) }
         .filter(::keep)
         .sortedWith(compareByDescending<Offer> { Rules.wished(it, state) }.thenBy { it.end ?: Long.MAX_VALUE })
     val mobile = if (state.settings.showMobile) open.filter { it.source == EpicMobileSource.NAME }.filter(::keep) else emptyList()
-    val others = if (state.settings.showOthers) open.filter { it.source == GamerPowerSource.NAME && it.store !in setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON) }
+    val others = if (state.settings.showOthers) open.filter { it.source == GamerPowerSource.NAME && it.store !in PC }
         .filter { filter == null && (q.isEmpty() || it.normalisedTitle.contains(q)) } else emptyList()
     val soon = state.upcoming.filter { it.start > now && (filter == null || filter == Stores.EPIC) && (q.isEmpty() || Titles.normalise(it.title).contains(q)) }
     val pending = Rules.pending(state, now)
     val needLogin = pending.map { it.store }.distinct().filter { state.accounts[it]?.status == Accounts.LOGGED_OUT }
 
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                if (searching) {
-                    OutlinedTextField(
-                        value = query, onValueChange = { query = it }, singleLine = true,
-                        placeholder = { Text(stringResource(R.string.search_hint)) },
-                        modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
-                        shape = RoundedCornerShape(50),
-                    )
-                } else Text(stringResource(R.string.tab_games))
-            },
-            actions = {
-                IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
-                    Icon(if (searching) Icons.Rounded.Close else Icons.Rounded.Search, stringResource(R.string.search))
-                }
-                if (!searching) {
-                    IconButton(onClick = { onShare(pc) }, enabled = pc.isNotEmpty()) { Icon(Icons.Rounded.Share, stringResource(R.string.share_list)) }
-                    IconButton(onClick = onRefresh, enabled = !refreshing) { Icon(Icons.Rounded.Refresh, stringResource(R.string.refresh)) }
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-        )
+    Column(Modifier.fillMaxSize().background(b.base)) {
+        TopBlock(stringResource(R.string.tab_games)) {
+            SquareButton(if (searching) Icons.Rounded.Close else Icons.Rounded.Search, stringResource(R.string.search), { searching = !searching; if (!searching) query = "" })
+            SquareButton(Icons.Rounded.Share, stringResource(R.string.share_list), { onShare(pc) }, enabled = pc.isNotEmpty())
+            SquareButton(Icons.Rounded.Refresh, stringResource(R.string.refresh), onRefresh, enabled = !refreshing)
+        }
+        if (searching) BrutField(query, { query = it }, stringResource(R.string.search_hint), Modifier.padding(horizontal = 14.dp).padding(bottom = 8.dp))
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
                 item("hero") {
-                    val total = Money.total(state.library.values.map { it.worth }, Countries.of(state.settings.country).currency)
-                    Hero(
-                        value = Money.format(total?.first ?: 0.0, total?.second ?: Countries.of(state.settings.country).currency),
-                        count = state.library.size,
-                        caption = stringResource(R.string.hero_caption),
-                    )
+                    val cur = Countries.of(state.settings.country).currency
+                    val total = Money.total(state.library.values.map { it.worth }, cur)
+                    Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
                 }
                 if (pending.isNotEmpty() && !claiming) item("claim") {
-                    Notice(
-                        text = pluralStringResource(R.plurals.pending_claims, pending.size, pending.size),
-                        color = LocalPalette.current.amber,
-                    ) {
-                        Button(onClick = { onClaim(emptySet()) }) {
-                            Icon(Icons.Rounded.Download, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.claim_all))
-                        }
+                    Notice(pluralStringResource(R.plurals.pending_claims, pending.size, pending.size), b.accent, Modifier.padding(start = 22.dp)) {
+                        BrutButton(stringResource(R.string.claim_all) + " →", { onClaim(emptySet()) }, primary = false, icon = Icons.Rounded.Download)
                     }
                 }
                 if (needLogin.isNotEmpty()) item("login") {
                     Notice(
-                        text = stringResource(R.string.need_login, needLogin.joinToString(", ") { Stores.label(it) }),
-                        color = LocalPalette.current.rose,
-                    ) { OutlinedButton(onClick = onAccounts) { Text(stringResource(R.string.accounts)) } }
+                        stringResource(R.string.need_login, needLogin.joinToString(", ") { Stores.label(it) }),
+                        b.ink, Modifier.padding(end = 22.dp), inverted = true,
+                    ) { BrutButton(stringResource(R.string.accounts), onAccounts) }
                 }
                 item("filters") {
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FILTERS.forEach { f ->
-                            FilterChip(
-                                selected = filter == f,
-                                onClick = { filter = f },
-                                label = { Text(if (f == null) stringResource(R.string.filter_all) else shortStore(f)) },
+                            val on = filter == f
+                            Text(
+                                if (f == null) stringResource(R.string.filter_all).uppercase() else shortStore(f),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (on && !b.dark) b.accent else Color.Black,
+                                modifier = Modifier.padding(end = 3.dp, bottom = 3.dp)
+                                    .brut(if (on) (if (b.dark) b.accent else Color.Black) else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp)
+                                    .clickableNoRipple { filter = f }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                             )
                         }
                     }
@@ -182,25 +151,27 @@ fun GamesScreen(
                 if (pc.isEmpty()) item("free-empty") {
                     Text(
                         stringResource(if (state.lastCheck == null) R.string.first_check else R.string.nothing_free),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp),
+                        style = MaterialTheme.typography.bodyMedium, color = b.ink,
                     )
                 }
-                items(pc, key = { "o:" + it.key }) { o ->
-                    OfferCard(o, state, now, claiming, onClaim = { onClaim(setOf(o.key)) }, onOpen = onOpen)
+                itemsIndexed(pc, key = { _, o -> "o:" + o.key }) { i, o ->
+                    // L'asymetrie voulue : une carte sur deux decalee de l'autre cote.
+                    OfferCard(
+                        o, state, now, claiming, onClaim = { onClaim(setOf(o.key)) }, onOpen = onOpen,
+                        modifier = if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
+                    )
                 }
                 if (soon.isNotEmpty()) {
                     item("soon-h") { SectionHeader(stringResource(R.string.section_soon), soon.size, openUpcoming, { openUpcoming = !openUpcoming }) }
-                    if (openUpcoming) items(soon, key = { "u:" + it.title + it.start }) { w -> UpcomingRow(w, onOpen) }
+                    if (openUpcoming) itemsIndexed(soon, key = { _, w -> "u:" + w.title + w.start }) { i, w -> UpcomingRow(w, onOpen, Modifier.padding(start = if (i % 2 == 0) 0.dp else 26.dp)) }
                 }
                 if (mobile.isNotEmpty()) {
                     item("mob-h") { SectionHeader(stringResource(R.string.section_mobile), mobile.size, openMobile, { openMobile = !openMobile }) }
-                    if (openMobile) items(mobile, key = { "m:" + it.key }) { o -> CompactRow(o, now, stringResource(R.string.mobile_hint), onOpen) }
+                    if (openMobile) itemsIndexed(mobile, key = { _, o -> "m:" + o.key }) { _, o -> CompactRow(o, now, stringResource(R.string.mobile_hint), onOpen) }
                 }
                 if (others.isNotEmpty()) {
                     item("oth-h") { SectionHeader(stringResource(R.string.section_others), others.size, openOthers, { openOthers = !openOthers }) }
-                    if (openOthers) items(others, key = { "g:" + it.key }) { o -> CompactRow(o, now, Stores.LABELS[o.store] ?: o.platforms.orEmpty(), onOpen) }
+                    if (openOthers) itemsIndexed(others, key = { _, o -> "g:" + o.key }) { _, o -> CompactRow(o, now, Stores.LABELS[o.store] ?: o.platforms.orEmpty(), onOpen) }
                 }
                 item("status") { SourcesLine(state, now) }
             }
@@ -208,34 +179,24 @@ fun GamesScreen(
     }
 }
 
-fun shortStore(store: String?): String = when (store) {
-    Stores.EPIC -> "Epic"
-    Stores.EPIC_MOBILE -> "Epic mobile"
-    Stores.GOG -> "GOG"
-    Stores.STEAM -> "Steam"
-    Stores.AMAZON -> "Amazon"
-    null, Stores.UNKNOWN -> "?"
-    else -> Stores.label(store)
-}
-
 @Composable
 private fun SourcesLine(state: AppState, now: Long) {
     val context = LocalContext.current
+    val b = LocalBrut.current
     val last = state.lastCheck ?: return
-    val names = mapOf("epic-api" to "Epic", "gog" to "GOG", "steam" to "Steam", "gamerpower" to "GamerPower", "epic-mobile" to "Epic mobile")
-    val parts = names.mapNotNull { (k, label) -> state.sources[k]?.let { "$label ${if (it.ok) "✓" else "✗"}" } }
+    val names = mapOf("epic-api" to "EPIC", "gog" to "GOG", "steam" to "STEAM", "gamerpower" to "GAMERPOWER", "epic-mobile" to "MOBILE")
+    val parts = names.mapNotNull { (k, label) -> state.sources[k]?.let { "$label[${if (it.ok) "OK" else "KO"}]" } }
     Text(
-        stringResource(R.string.checked_ago, Fmt.ago(context, last, now)) + " · " + parts.joinToString("  "),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+        "> " + stringResource(R.string.checked_ago, Fmt.ago(context, last, now)).uppercase() + "\n> " + parts.joinToString(" "),
+        style = MaterialTheme.typography.bodySmall, color = b.mute,
+        modifier = Modifier.padding(top = 8.dp),
     )
 }
 
 @Composable
-fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: () -> Unit, onOpen: (String) -> Unit) {
+fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: () -> Unit, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val p = LocalPalette.current
+    val b = LocalBrut.current
     val claimed = Rules.claimedEntry(o, state.library)
     val owned = Rules.ownedOnSteam(o, state)
     val wished = Rules.wished(o, state)
@@ -244,86 +205,58 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
     val claimable = Rules.claimable(o, state.settings) && claimed == null && !owned
     val urgent = o.end != null && o.end - now < 24 * 3_600_000L
 
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(1.dp, if (wished) p.amber.copy(alpha = 0.6f) else p.line, RoundedCornerShape(22.dp)),
-    ) {
+    Column(modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-            Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 48)
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0x9914101F)),
-                ),
-            )
-            Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StoreChip(o.store, onImage = true)
-                if (o.isExtra) Pill("DLC", Color.White, onImage = true)
-                if (wished) Pill("★ " + stringResource(R.string.wished), p.amber, onImage = true)
+            Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 64)
+            Row(Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                StoreChip(o.store)
+                if (o.isExtra) Tag("DLC", Color.White, Color.Black)
+                if (wished) Tag("★ " + stringResource(R.string.wished).uppercase(), b.accent, b.onAccent)
             }
             if (rating?.percent != null) {
-                val tone = when (Ratings.tone(rating)) { "good" -> p.jade; "mixed" -> p.amber; else -> p.rose }
-                Pill(
-                    stringResource(R.string.rating_short, rating.percent),
-                    tone, onImage = true,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
+                Text(
+                    stringResource(R.string.rating_short, rating.percent).uppercase(),
+                    style = MaterialTheme.typography.labelLarge, color = Color.Black,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 10.dp).rotate(4f)
+                        .brut(if (Ratings.tone(rating) == "good") b.accent else Color.White, shadow = Color.Black, offset = 3.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
             if (claimed != null || owned) {
-                Row(
-                    Modifier.align(Alignment.BottomStart).padding(10.dp).clip(RoundedCornerShape(50))
-                        .background(p.jade).padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Rounded.CheckCircle, null, tint = Color(0xFF00301F), modifier = Modifier.size(14.dp))
-                    Text(
-                        stringResource(if (owned && claimed == null) R.string.status_owned else R.string.status_claimed),
-                        style = MaterialTheme.typography.labelSmall, color = Color(0xFF00301F),
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
-                }
+                Text(
+                    "✓ " + stringResource(if (owned && claimed == null) R.string.status_owned else R.string.status_claimed).uppercase(),
+                    style = MaterialTheme.typography.labelLarge, color = b.accent,
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color.Black).padding(horizontal = 12.dp, vertical = 6.dp),
+                )
             }
         }
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(o.shownTitle, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Box(Modifier.fillMaxWidth().height(3.dp).background(Color.Black))
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleLarge, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                o.worth?.let {
-                    Text(it, style = MaterialTheme.typography.bodyMedium, textDecoration = TextDecoration.LineThrough, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text(stringResource(R.string.free), style = MaterialTheme.typography.bodyMedium, color = p.amber)
+                o.worth?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.Black, textDecoration = TextDecoration.LineThrough) }
+                Tag(stringResource(R.string.free).uppercase(), b.accent, b.onAccent, bordered = true)
                 Spacer(Modifier.weight(1f))
-                Icon(Icons.Rounded.Schedule, null, Modifier.size(15.dp), tint = if (urgent) p.rose else MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    if (o.end != null) Fmt.left(context, o.end, now) else "∞",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (urgent) p.rose else MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (o.end != null) Fmt.left(context, o.end, now).uppercase() else "∞",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (urgent) b.accent else Color.White,
+                    modifier = Modifier.background(Color.Black).padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
             if (o.end != null) {
-                Text(stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("> " + stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             }
             if (claimed?.ts != null) {
-                Text(stringResource(R.string.claimed_on, Fmt.date(claimed.ts)), style = MaterialTheme.typography.bodySmall, color = p.jade)
+                Text("> " + stringResource(R.string.claimed_on, Fmt.date(claimed.ts)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             } else if (attempt?.verdict != null && attempt.verdict !in Verdicts.ACQUIRED) {
-                Text(verdictText(attempt.verdict, attempt.details), style = MaterialTheme.typography.bodySmall, color = p.rose, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("! " + verdictText(attempt.verdict, attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             } else if (!Rules.claimable(o, state.settings) && o.store == Stores.STEAM && claimed == null && !owned) {
-                Text(stringResource(R.string.steam_manual), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("> " + stringResource(R.string.steam_manual), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                if (claimable) {
-                    Button(onClick = onClaim, enabled = !claiming, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
-                        Icon(Icons.Rounded.Download, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.action_claim))
-                    }
-                }
-                (o.url ?: o.resolveUrl)?.let { u ->
-                    OutlinedButton(onClick = { onOpen(u) }, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
-                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.action_open))
-                    }
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
+                if (claimable) BrutButton(stringResource(R.string.action_claim), onClaim, enabled = !claiming, icon = Icons.Rounded.Download)
+                (o.url ?: o.resolveUrl)?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false, icon = Icons.AutoMirrored.Rounded.OpenInNew) }
             }
         }
     }
@@ -345,38 +278,47 @@ fun verdictText(verdict: String, details: String?): String {
     return if (!details.isNullOrBlank() && verdict != Verdicts.NEEDS_BASE && verdict != Verdicts.OUT_OF_SCOPE) "$base — $details" else base
 }
 
+/** Une ouverture annoncee : la date en gros bloc d'accent, a gauche. */
 @Composable
-private fun UpcomingRow(w: Upcoming, onOpen: (String) -> Unit) {
+private fun UpcomingRow(w: Upcoming, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
+    val b = LocalBrut.current
+    val at = Instant.ofEpochMilli(w.start).atZone(ZoneId.systemDefault())
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .then(if (w.url != null) Modifier.clickableNoRipple { onOpen(w.url) } else Modifier).padding(10.dp),
+        modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp)
+            .then(if (w.url != null) Modifier.clickableNoRipple { onOpen(w.url) } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Cover(w.image, w.title, Stores.EPIC, Modifier.width(96.dp).height(54.dp), radius = 10.dp, letterSize = 20)
-        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Text(w.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(R.string.from_date, Fmt.dateTime(w.start)), style = MaterialTheme.typography.bodySmall, color = LocalPalette.current.amber)
+        Column(
+            Modifier.width(78.dp).background(b.accent).padding(vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(DateTimeFormatter.ofPattern("dd.MM").format(at), style = MaterialTheme.typography.titleLarge, color = b.onAccent)
+            Text(DateTimeFormatter.ofPattern("HH:mm").format(at), style = MaterialTheme.typography.labelMedium, color = b.onAccent)
         }
-        StoreChip(Stores.EPIC)
+        Box(Modifier.width(3.dp).height(64.dp).background(Color.Black))
+        Cover(w.image, w.title, Stores.EPIC, Modifier.padding(start = 10.dp).width(78.dp).height(44.dp), letterSize = 18)
+        Text(
+            w.title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black,
+            maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
+        )
     }
 }
 
 @Composable
 private fun CompactRow(o: Offer, now: Long, hint: String, onOpen: (String) -> Unit) {
     val context = LocalContext.current
+    val b = LocalBrut.current
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(10.dp),
+        Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(8.dp)
+            .then((o.url ?: o.resolveUrl)?.let { u -> Modifier.clickableNoRipple { onOpen(u) } } ?: Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Cover(o.image, o.shownTitle, o.store, Modifier.width(96.dp).height(54.dp), radius = 10.dp, letterSize = 20)
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(o.shownTitle, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val extra = listOfNotNull(o.worth, o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" · ")
-            Text(extra, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Cover(o.image, o.shownTitle, o.store, Modifier.width(92.dp).height(52.dp), letterSize = 20)
+        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val extra = listOfNotNull(o.worth, o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" / ")
+            Text(extra, style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        (o.url ?: o.resolveUrl)?.let { u ->
-            IconButton(onClick = { onOpen(u) }) { Icon(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.action_open)) }
-        }
+        Text("↗", style = MaterialTheme.typography.titleLarge, color = Color.Black)
     }
 }

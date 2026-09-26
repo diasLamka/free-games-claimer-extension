@@ -5,27 +5,14 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,7 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,7 +30,7 @@ import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.Stores
-import io.github.diaslamka.freegames.ui.theme.LocalPalette
+import io.github.diaslamka.freegames.ui.theme.LocalBrut
 
 /**
  * La recuperation en cours, au-dessus de tous les onglets : la page du
@@ -54,25 +41,41 @@ import io.github.diaslamka.freegames.ui.theme.LocalPalette
 fun ClaimPanel(session: ClaimSession) {
     val ui by session.ui.collectAsState()
     if (!ui.visible) return
-    val p = LocalPalette.current
+    ClaimPanelContent(ui, onToggle = null, onStop = { session.stop() }, onDismiss = { session.dismiss() }, onUser = { session.userFinished(it) }) {
+        AndroidView(
+            factory = { session.webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
+            modifier = it,
+        )
+    }
+}
+
+/** Le panneau lui-meme, sans la page : ce que les maquettes rendent aussi. */
+@Composable
+fun ClaimPanelContent(
+    ui: ClaimSession.Ui,
+    onToggle: (() -> Unit)?,
+    onStop: () -> Unit,
+    onDismiss: () -> Unit,
+    onUser: (Boolean) -> Unit,
+    page: @Composable (Modifier) -> Unit,
+) {
+    val b = LocalBrut.current
     var expanded by remember { mutableStateOf(false) }
     val big = expanded || ui.needsUser
-
     Column(
-        Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .border(1.dp, if (ui.needsUser) p.rose else p.amber.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
-            .animateContentSize(),
+        Modifier.padding(start = 10.dp, end = 16.dp, top = 6.dp, bottom = 8.dp).fillMaxWidth()
+            .brut(Color.White, shadow = b.shadow, offset = 6.dp).animateContentSize(),
     ) {
-        Row(Modifier.padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (ui.running) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.5.dp)
-            else Icon(Icons.Rounded.CheckCircle, null, tint = p.jade)
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+        Row(Modifier.fillMaxWidth().background(if (ui.needsUser) Color.Black else b.accent), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)) {
                 Text(
-                    if (ui.running) stringResource(R.string.claim_progress, ui.index, ui.total, ui.title.orEmpty())
-                    else stringResource(R.string.claim_done),
-                    style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    if (ui.running) stringResource(R.string.claim_count, ui.index, ui.total).uppercase()
+                    else stringResource(R.string.claim_done).uppercase(),
+                    style = MaterialTheme.typography.labelLarge, color = if (ui.needsUser) b.accent else b.onAccent,
+                )
+                if (ui.running && ui.title != null) Text(
+                    ui.title.uppercase(), style = MaterialTheme.typography.titleMedium,
+                    color = if (ui.needsUser) Color.White else Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 val step = when (ui.step) {
                     ClaimSession.STEP_OPEN -> stringResource(R.string.step_open, Stores.label(ui.store))
@@ -80,43 +83,54 @@ fun ClaimPanel(session: ClaimSession) {
                     ClaimSession.STEP_CLAIM -> stringResource(R.string.step_claim)
                     else -> null
                 }
-                if (step != null) Text(step, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (step != null) Text("> $step", style = MaterialTheme.typography.bodySmall, color = if (ui.needsUser) Color.White else b.onAccent)
             }
             if (ui.running) {
-                IconButton(onClick = { expanded = !expanded }) { Icon(if (big) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(R.string.show_page)) }
-                IconButton(onClick = { session.stop() }) { Icon(Icons.Rounded.Stop, stringResource(R.string.stop)) }
+                Text(
+                    if (big) "[–]" else "[+]", style = MaterialTheme.typography.labelLarge, color = Color.Black,
+                    modifier = Modifier.background(Color.White).border(2.dp, Color.Black).clickableNoRipple { expanded = !expanded; onToggle?.invoke() }.padding(8.dp),
+                )
+                Text(
+                    "■ " + stringResource(R.string.stop).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White,
+                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).clickableNoRipple(onStop).padding(8.dp),
+                )
             } else {
-                IconButton(onClick = { session.dismiss() }) { Icon(Icons.Rounded.Close, stringResource(R.string.close)) }
+                Text(
+                    "✕", style = MaterialTheme.typography.titleMedium, color = Color.White,
+                    modifier = Modifier.background(Color.Black).clickableNoRipple(onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
+                )
             }
         }
+        Box(Modifier.fillMaxWidth().height(3.dp).background(Color.Black))
         if (ui.needsUser) {
             Text(
-                stringResource(R.string.challenge_help, Stores.label(ui.store)),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                stringResource(R.string.challenge_help, Stores.label(ui.store)).uppercase(),
+                style = MaterialTheme.typography.labelMedium, color = Color.Black,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             )
-            Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { session.userFinished(true) }) { Text(stringResource(R.string.challenge_continue)) }
-                TextButton(onClick = { session.userFinished(false) }) { Text(stringResource(R.string.challenge_skip)) }
+            Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                BrutButton(stringResource(R.string.challenge_continue), { onUser(true) })
+                BrutButton(stringResource(R.string.challenge_skip), { onUser(false) }, primary = false)
             }
         }
         if (ui.running) {
-            AndroidView(
-                factory = { session.webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
-                modifier = Modifier.fillMaxWidth().height(if (big) 480.dp else 170.dp).padding(8.dp).clip(RoundedCornerShape(14.dp)),
-            )
+            page(Modifier.fillMaxWidth().height(if (big) 480.dp else 170.dp).padding(8.dp).border(3.dp, Color.Black).padding(3.dp))
         }
         ui.outcomes.takeLast(6).forEach { o ->
             val ok = o.verdict in Verdicts.ACQUIRED
-            Row(Modifier.padding(horizontal = 14.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (ok) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline, null, Modifier.size(16.dp), tint = if (ok) p.jade else p.rose)
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    o.title + " — " + (if (ok) stringResource(R.string.status_claimed) else verdictText(o.verdict, o.details)),
-                    style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    if (ok) "OK" else "!!", style = MaterialTheme.typography.labelMedium,
+                    color = if (ok) b.onAccent else Color.White,
+                    modifier = Modifier.background(if (ok) b.accent else Color.Black).padding(horizontal = 5.dp, vertical = 2.dp),
+                )
+                Text(
+                    o.title.uppercase() + " — " + (if (ok) stringResource(R.string.status_claimed) else verdictText(o.verdict, o.details)),
+                    style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
         }
-        if (ui.outcomes.isNotEmpty()) androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
+        if (ui.outcomes.isNotEmpty()) Box(Modifier.height(8.dp))
     }
 }

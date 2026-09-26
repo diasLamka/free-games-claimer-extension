@@ -6,89 +6,110 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.R
 
-/** Les couleurs du popup de l'extension (pages/popup.html), sombre et clair. */
+/**
+ * La charte brute : un fond uni (blanc pur ou noir profond), UNE couleur
+ * criarde, des bordures noires epaisses, des ombres pleines et decalees, des
+ * angles droits. Pas de degrade, pas de flou, pas de pastel.
+ */
 @Immutable
-data class Palette(
-    val amber: Color,
-    val jade: Color,
-    val rose: Color,
+data class Brut(
+    val name: String,
+    /** Le fond de l'ecran. */
+    val base: Color,
+    /** Le texte pose sur le fond. */
+    val ink: Color,
+    /** Les blocs (cartes) : toujours clairs, toujours cernes de noir. */
+    val block: Color,
+    val onBlock: Color,
+    /** La seule couleur d'accent. */
+    val accent: Color,
+    val onAccent: Color,
+    /** L'ombre dure : noire sur fond blanc, accent sur fond noir. */
+    val shadow: Color,
     val mute: Color,
-    val line: Color,
-    val epic: Color,
-    val gog: Color,
-    val steam: Color,
-    val amazon: Color,
+    val dark: Boolean,
 ) {
-    fun store(store: String?): Color = when (store) {
-        Stores.EPIC, Stores.EPIC_MOBILE -> epic
-        Stores.GOG -> gog
-        Stores.STEAM -> steam
-        Stores.AMAZON -> amazon
-        else -> mute
-    }
+    val line: Color get() = Color.Black
+    val border = 3.dp
+    val offset = 5.dp
 }
 
-private val DarkPalette = Palette(
-    amber = Color(0xFFFFB454), jade = Color(0xFF56D6A0), rose = Color(0xFFFF6B81), mute = Color(0xFF9A90B8),
-    line = Color(0xFF2E2745), epic = Color(0xFFE4DDF5), gog = Color(0xFFA567FF), steam = Color(0xFF66C0F4), amazon = Color(0xFF00C2FF),
-)
-private val LightPalette = Palette(
-    amber = Color(0xFFB96A00), jade = Color(0xFF12805B), rose = Color(0xFFD62B47), mute = Color(0xFF6E6488),
-    line = Color(0xFFDCD5EC), epic = Color(0xFF3D3459), gog = Color(0xFF7A32E0), steam = Color(0xFF1B7FB8), amazon = Color(0xFF0079A8),
+val JAUNE_CYBER = Color(0xFFE8FF00)
+val VERT_FLUO = Color(0xFF39FF14)
+val FUCHSIA = Color(0xFFFF1FCE)
+
+fun brut(accent: Color, dark: Boolean, name: String) = if (dark) Brut(
+    name = name, base = Color.Black, ink = Color.White, block = Color.White, onBlock = Color.Black,
+    accent = accent, onAccent = Color.Black, shadow = accent, mute = Color(0xFF9A9A9A), dark = true,
+) else Brut(
+    name = name, base = Color.White, ink = Color.Black, block = Color.White, onBlock = Color.Black,
+    accent = accent, onAccent = Color.Black, shadow = Color.Black, mute = Color(0xFF5C5C5C), dark = false,
 )
 
-val LocalPalette = staticCompositionLocalOf { DarkPalette }
+/** Les trois accents proposes. Le fond suit le telephone (clair ou sombre). */
+enum class Accent(val color: Color, val label: String) {
+    JAUNE(JAUNE_CYBER, "JAUNE CYBER"),
+    VERT(VERT_FLUO, "VERT FLUO"),
+    FUCHSIA_(FUCHSIA, "FUCHSIA"),
+}
 
-private val Dark = darkColorScheme(
-    primary = Color(0xFFFFB454), onPrimary = Color(0xFF241400),
-    primaryContainer = Color(0xFF4A3212), onPrimaryContainer = Color(0xFFFFDDB3),
-    secondary = Color(0xFF56D6A0), onSecondary = Color(0xFF00301F),
-    secondaryContainer = Color(0xFF123B2C), onSecondaryContainer = Color(0xFFB6F2D6),
-    tertiary = Color(0xFF66C0F4),
-    background = Color(0xFF14101F), onBackground = Color(0xFFEDE9F5),
-    surface = Color(0xFF14101F), onSurface = Color(0xFFEDE9F5),
-    surfaceVariant = Color(0xFF262038), onSurfaceVariant = Color(0xFFB9B0D4),
-    surfaceContainerLowest = Color(0xFF0E0A18), surfaceContainerLow = Color(0xFF1A1528),
-    surfaceContainer = Color(0xFF1E1830), surfaceContainerHigh = Color(0xFF262038), surfaceContainerHighest = Color(0xFF2E2745),
-    outline = Color(0xFF4A4166), outlineVariant = Color(0xFF2E2745),
-    error = Color(0xFFFF6B81), onError = Color(0xFF3A0010),
-)
-private val Light = lightColorScheme(
-    primary = Color(0xFFB96A00), onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFE2BF), onPrimaryContainer = Color(0xFF3A2100),
-    secondary = Color(0xFF12805B), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFCDEFE0), onSecondaryContainer = Color(0xFF00301F),
-    tertiary = Color(0xFF1B7FB8),
-    background = Color(0xFFFBFAFE), onBackground = Color(0xFF1B1528),
-    surface = Color(0xFFFBFAFE), onSurface = Color(0xFF1B1528),
-    surfaceVariant = Color(0xFFE9E4F3), onSurfaceVariant = Color(0xFF4D4466),
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF6F3FB),
-    surfaceContainer = Color(0xFFF1EDF8), surfaceContainerHigh = Color(0xFFEBE6F4), surfaceContainerHighest = Color(0xFFE2DCEF),
-    outline = Color(0xFF8C82A8), outlineVariant = Color(0xFFDCD5EC),
-    error = Color(0xFFD62B47), onError = Color.White,
-)
+val LocalBrut = staticCompositionLocalOf { brut(JAUNE_CYBER, true, "JAUNE CYBER") }
 
-private val base = Typography()
-private val AppTypography = base.copy(
-    headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-    headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-    titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-    titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-    labelSmall = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp),
+val Mono = FontFamily(
+    Font(R.font.space_mono_regular, FontWeight.Normal),
+    Font(R.font.space_mono_bold, FontWeight.Bold),
+)
+val Display = FontFamily(Font(R.font.archivo_black, FontWeight.Black))
+
+private fun mono(size: Int, weight: FontWeight = FontWeight.Normal, spacing: Double = 0.0) =
+    TextStyle(fontFamily = Mono, fontSize = size.sp, fontWeight = weight, letterSpacing = spacing.sp, lineHeight = (size * 1.35).sp)
+
+private fun display(size: Int) =
+    TextStyle(fontFamily = Display, fontSize = size.sp, fontWeight = FontWeight.Black, lineHeight = (size * 0.98).sp, letterSpacing = (-0.5).sp)
+
+private val BrutTypography = Typography(
+    displayLarge = display(64),
+    displayMedium = display(48),
+    displaySmall = display(38),
+    headlineLarge = display(34),
+    headlineMedium = display(28),
+    headlineSmall = display(24),
+    titleLarge = display(22),
+    titleMedium = display(19),
+    titleSmall = mono(15, FontWeight.Bold),
+    bodyLarge = mono(16),
+    bodyMedium = mono(14),
+    bodySmall = mono(12),
+    labelLarge = mono(14, FontWeight.Bold, 0.5),
+    labelMedium = mono(12, FontWeight.Bold, 0.8),
+    labelSmall = mono(11, FontWeight.Bold, 1.0),
 )
 
 @Composable
-fun FreeGamesTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    androidx.compose.runtime.CompositionLocalProvider(LocalPalette provides if (dark) DarkPalette else LightPalette) {
-        MaterialTheme(colorScheme = if (dark) Dark else Light, typography = AppTypography, content = content)
+fun FreeGamesTheme(accent: Accent = Accent.JAUNE, dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val b = brut(accent.color, dark, accent.label)
+    val scheme = if (dark) darkColorScheme(
+        primary = b.accent, onPrimary = b.onAccent, background = b.base, onBackground = b.ink,
+        surface = b.base, onSurface = b.ink, surfaceVariant = Color(0xFF1A1A1A), onSurfaceVariant = b.mute,
+        outline = Color.White, secondary = b.accent, onSecondary = b.onAccent,
+    ) else lightColorScheme(
+        primary = Color.Black, onPrimary = Color.White, background = b.base, onBackground = b.ink,
+        surface = b.base, onSurface = b.ink, surfaceVariant = Color(0xFFF0F0F0), onSurfaceVariant = b.mute,
+        outline = Color.Black, secondary = b.accent, onSecondary = b.onAccent,
+    )
+    CompositionLocalProvider(LocalBrut provides b) {
+        MaterialTheme(colorScheme = scheme, typography = BrutTypography, content = content)
     }
 }

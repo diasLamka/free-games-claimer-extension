@@ -4,6 +4,8 @@
     <string name="app_name" translatable="false">Free Games Claimer</string>
     <string name="share_target">Check or wish for this game</string>
     <string name="tab_games">Free games</string>
+    <string name="tab_games_short">Games</string>
+    <string name="claim_count">Claiming %1$d/%2$d</string>
     <string name="tab_claimed">Claimed</string>
     <string name="tab_wishlist">Wishlist</string>
     <string name="tab_settings">Settings</string>

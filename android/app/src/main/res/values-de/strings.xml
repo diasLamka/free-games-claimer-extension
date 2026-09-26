@@ -3,6 +3,8 @@
 <resources>
     <string name="share_target">Spiel prüfen oder wünschen</string>
     <string name="tab_games">Gratisspiele</string>
+    <string name="tab_games_short">Spiele</string>
+    <string name="claim_count">Hole %1$d/%2$d</string>
     <string name="tab_claimed">Geholt</string>
     <string name="tab_wishlist">Wunschliste</string>
     <string name="tab_settings">Einstellungen</string>

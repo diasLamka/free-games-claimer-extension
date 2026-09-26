@@ -10,6 +10,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Settings
@@ -17,8 +23,6 @@ import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -188,21 +192,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     }
 
     Scaffold(
-        bottomBar = {
-            NavigationBar {
-                listOf(
-                    Triple(Icons.Rounded.SportsEsports, R.string.tab_games, 0),
-                    Triple(Icons.Rounded.Inventory2, R.string.tab_claimed, 1),
-                    Triple(Icons.Rounded.Star, R.string.tab_wishlist, 2),
-                    Triple(Icons.Rounded.Settings, R.string.tab_settings, 3),
-                ).forEach { (icon, label, i) ->
-                    NavigationBarItem(
-                        selected = tab == i, onClick = { tab = i },
-                        icon = { Icon(icon, null) }, label = { Text(stringResource(label)) },
-                    )
-                }
-            }
-        },
+        bottomBar = { BrutTabs(tab) { tab = it } },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -254,5 +244,45 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             },
             onDismiss = { shared = null },
         )
+    }
+}
+
+/**
+ * Les onglets du bas : quatre cases cernees de noir, l'active en aplat
+ * d'accent et decalee vers le haut. Pas de pastille Material.
+ */
+@Composable
+fun BrutTabs(selected: Int, onSelect: (Int) -> Unit) {
+    val b = io.github.diaslamka.freegames.ui.theme.LocalBrut.current
+    val tabs = listOf(
+        Triple(Icons.Rounded.SportsEsports, R.string.tab_games_short, 0),
+        Triple(Icons.Rounded.Inventory2, R.string.tab_claimed, 1),
+        Triple(Icons.Rounded.Star, R.string.tab_wishlist, 2),
+        Triple(Icons.Rounded.Settings, R.string.tab_settings, 3),
+    )
+    androidx.compose.foundation.layout.Row(
+        Modifier.background(b.base).navigationBarsPadding()
+            .drawBehind { drawRect(androidx.compose.ui.graphics.Color.Black, size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx())) }
+            .padding(start = 8.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+    ) {
+        tabs.forEach { (icon, label, i) ->
+            val on = selected == i
+            androidx.compose.foundation.layout.Column(
+                Modifier.weight(1f).offset(y = if (on) (-4).dp else 0.dp)
+                    .padding(end = 4.dp, bottom = 4.dp)
+                    .brut(if (on) b.accent else androidx.compose.ui.graphics.Color.White, shadow = if (on) (if (b.dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black) else null, offset = 4.dp)
+                    .clickableNoRipple { onSelect(i) }
+                    .padding(vertical = 7.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) {
+                Icon(icon, null, tint = androidx.compose.ui.graphics.Color.Black, modifier = Modifier.size(20.dp))
+                Text(
+                    stringResource(label).uppercase(), style = MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.Black, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }

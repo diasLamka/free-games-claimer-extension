@@ -21,6 +21,9 @@ object Fmt {
     fun date(ms: Long): String =
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()).format(Instant.ofEpochMilli(ms).atZone(zone))
 
+    /** « 26.09.26 » : court, et sans langue. */
+    fun short(ms: Long): String = DateTimeFormatter.ofPattern("dd.MM.yy").format(Instant.ofEpochMilli(ms).atZone(zone))
+
     fun month(ms: Long): String =
         DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()).format(Instant.ofEpochMilli(ms).atZone(zone))
             .replaceFirstChar { it.titlecase(Locale.getDefault()) }

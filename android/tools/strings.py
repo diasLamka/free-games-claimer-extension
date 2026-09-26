@@ -6,6 +6,8 @@ S = {
  'app_name': ('Free Games Claimer', 'Free Games Claimer', 'Free Games Claimer', 'Free Games Claimer'),
  'share_target': ('Check or wish for this game', 'Vérifier ou souhaiter ce jeu', 'Spiel prüfen oder wünschen', 'Comprobar o desear este juego'),
  'tab_games': ('Free games', 'Jeux gratuits', 'Gratisspiele', 'Juegos gratis'),
+ 'tab_games_short': ('Games', 'Jeux', 'Spiele', 'Juegos'),
+ 'claim_count': ('Claiming %1$d/%2$d', 'Récupération %1$d/%2$d', 'Hole %1$d/%2$d', 'Consiguiendo %1$d/%2$d'),
  'tab_claimed': ('Claimed', 'Récupérés', 'Geholt', 'Conseguidos'),
  'tab_wishlist': ('Wishlist', 'Souhaits', 'Wunschliste', 'Deseados'),
  'tab_settings': ('Settings', 'Réglages', 'Einstellungen', 'Ajustes'),

@@ -16,14 +16,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +38,9 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.sources.Countries
-import io.github.diaslamka.freegames.ui.theme.LocalPalette
+import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.height
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,24 +57,22 @@ fun SettingsScreen(
     val s = state.settings
     var steamWarning by remember { mutableStateOf(false) }
     var clearConfirm by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(stringResource(R.string.tab_settings)) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-        )
+    val b = LocalBrut.current
+    Column(Modifier.fillMaxSize().background(b.base)) {
+        TopBlock(stringResource(R.string.tab_settings))
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item { SectionHeader(stringResource(R.string.accounts), null) }
+            item { SectionHeader(stringResource(R.string.accounts), Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }) }
             item {
                 Group {
                     Accounts.STORES.forEach { store -> AccountRow(store, state, now, onLogin) }
                     Text(
-                        stringResource(R.string.login_tip),
+                        "> " + stringResource(R.string.login_tip),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color(0xFF4A4A4A),
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -112,31 +107,33 @@ fun SettingsScreen(
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
-                    OutlinedButton(onClick = onCheckNow, modifier = Modifier.padding(top = 6.dp)) { Text(stringResource(R.string.check_now)) }
+                    Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
                 }
             }
             item { SectionHeader(stringResource(R.string.section_data), null) }
             item {
                 Group {
-                    Text(stringResource(R.string.data_tip), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                        FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.import_backup)) }
-                        OutlinedButton(onClick = onExport) { Text(stringResource(R.string.export_backup)) }
+                    Text(stringResource(R.string.data_tip), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 8.dp)) {
+                        BrutButton(stringResource(R.string.import_backup), onImport)
+                        BrutButton(stringResource(R.string.export_backup), onExport, primary = false)
                     }
                     state.importedAt?.let {
-                        Text(stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                        Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
                     }
-                    TextButton(onClick = { clearConfirm = true }, modifier = Modifier.padding(top = 4.dp)) {
-                        Text(stringResource(R.string.clear_sessions), color = LocalPalette.current.rose)
-                    }
+                    Text(
+                        "✕ " + stringResource(R.string.clear_sessions).uppercase(),
+                        style = MaterialTheme.typography.labelLarge, color = Color.White,
+                        modifier = Modifier.padding(top = 10.dp).background(Color.Black).clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
+                    )
                 }
             }
             item {
                 Text(
-                    stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
+                    "> " + stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(4.dp),
+                    color = b.mute,
+                    modifier = Modifier.padding(start = 24.dp, top = 4.dp),
                 )
             }
         }
@@ -166,42 +163,50 @@ fun SettingsScreen(
 
 @Composable
 private fun Group(content: @Composable () -> Unit) {
+    val b = LocalBrut.current
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        Modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) { content() }
 }
 
 @Composable
 private fun AccountRow(store: String, state: AppState, now: Long, onLogin: (String) -> Unit) {
-    val p = LocalPalette.current
+    val b = LocalBrut.current
     val a = state.accounts[store]
-    val (text, color) = when (a?.status) {
-        Accounts.OK -> (a.name?.let { stringResource(R.string.account_ok_named, it) } ?: stringResource(R.string.account_ok)) to p.jade
-        Accounts.PRESENT -> stringResource(R.string.account_present) to p.jade
-        Accounts.LOGGED_OUT -> stringResource(R.string.account_logged_out) to p.rose
-        else -> stringResource(R.string.account_unknown) to MaterialTheme.colorScheme.onSurfaceVariant
+    val (text, ok) = when (a?.status) {
+        Accounts.OK -> (a.name?.let { stringResource(R.string.account_ok_named, it) } ?: stringResource(R.string.account_ok)) to true
+        Accounts.PRESENT -> stringResource(R.string.account_present) to true
+        Accounts.LOGGED_OUT -> stringResource(R.string.account_logged_out) to false
+        else -> stringResource(R.string.account_unknown) to null
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(p.store(store)))
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store), style = MaterialTheme.typography.titleSmall)
-            Text(text, style = MaterialTheme.typography.bodySmall, color = color)
+        Column(Modifier.weight(1f).padding(end = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                (if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)).uppercase(),
+                style = MaterialTheme.typography.titleSmall, color = Color.Black,
+            )
+            Tag(
+                text.uppercase(),
+                when (ok) { true -> b.accent; false -> Color.Black; null -> Color.White },
+                if (ok == false) Color.White else Color.Black,
+                bordered = ok == null,
+                maxLines = 3,
+            )
         }
-        val connected = a?.status == Accounts.OK || a?.status == Accounts.PRESENT
-        if (connected) OutlinedButton(onClick = { onLogin(store) }) { Text(stringResource(R.string.open_store)) }
-        else FilledTonalButton(onClick = { onLogin(store) }) { Text(stringResource(R.string.login)) }
+        BrutButton(stringResource(if (ok == true) R.string.open_store else R.string.login), { onLogin(store) }, primary = ok != true)
     }
+    Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
 }
 
 @Composable
 private fun Toggle(title: String, hint: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickableNoRipple { onChange(!checked) }.padding(vertical = 4.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black)
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        BrutToggle(checked, onChange)
     }
 }
 
@@ -209,9 +214,9 @@ private fun Toggle(title: String, hint: String?, checked: Boolean, onChange: (Bo
 private fun <T> Choice(title: String, options: List<Pair<T, String>>, selected: T, onPick: (T) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, modifier = Modifier.weight(1f))
         Box {
-            OutlinedButton(onClick = { open = true }) { Text(options.firstOrNull { it.first == selected }?.second ?: "—") }
+            BrutButton((options.firstOrNull { it.first == selected }?.second ?: "—") + " ▾", { open = true }, primary = false)
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 options.forEach { (v, label) ->
                     DropdownMenuItem(text = { Text(label) }, onClick = { open = false; onPick(v) })

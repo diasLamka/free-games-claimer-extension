@@ -20,7 +20,8 @@ import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
-import io.github.diaslamka.freegames.ui.theme.LocalPalette
+import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.ui.graphics.Color
 
 /**
  * Une fiche de jeu partagee depuis une autre appli : ce que l'appli en sait
@@ -34,7 +35,7 @@ fun ShareDialog(initial: String, state: AppState, now: Long, onAdd: (String) -> 
     val free = state.offers.values.firstOrNull { it.isOpen(now) && it.normalisedTitle == key }
     val claimed = state.library.values.firstOrNull { Titles.normalise(it.title) == key }
     val wished = state.wishlist.any { Titles.normalise(it) == key }
-    val p = LocalPalette.current
+    val b = LocalBrut.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.share_dialog_title)) },
@@ -42,10 +43,10 @@ fun ShareDialog(initial: String, state: AppState, now: Long, onAdd: (String) -> 
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true, label = { Text(stringResource(R.string.share_dialog_game)) })
                 val facts = buildList {
-                    if (free != null) add(stringResource(R.string.fact_free, Stores.label(free.store)) to p.amber)
-                    if (claimed != null) add(stringResource(R.string.fact_claimed, claimed.ts?.let { Fmt.date(it) } ?: "—") to p.jade)
-                    if (wished) add(stringResource(R.string.fact_wished) to p.mute)
-                    if (isEmpty() && key.isNotEmpty()) add(stringResource(R.string.fact_unknown) to p.mute)
+                    if (free != null) add(stringResource(R.string.fact_free, Stores.label(free.store)) to Color.Black)
+                    if (claimed != null) add(stringResource(R.string.fact_claimed, claimed.ts?.let { Fmt.date(it) } ?: "—") to Color.Black)
+                    if (wished) add(stringResource(R.string.fact_wished) to Color(0xFF4A4A4A))
+                    if (isEmpty() && key.isNotEmpty()) add(stringResource(R.string.fact_unknown) to Color(0xFF4A4A4A))
                 }
                 facts.forEach { (t, c) -> Text(t, color = c, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp)) }
             }
