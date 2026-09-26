@@ -2278,5 +2278,14 @@
   },
   "guardOn": {
     "message": "$1: las fichas ya avisan de los duplicados."
+  },
+  "timecodeLabel": {
+    "message": "Próximo fin"
+  },
+  "timecodeDays": {
+    "message": "$1D"
+  },
+  "stampClaimed": {
+    "message": "Conseguido"
   }
 }

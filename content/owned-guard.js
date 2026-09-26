@@ -74,7 +74,9 @@
       + 'box-shadow:6px 6px 0 #000;padding:12px 44px 12px 14px;position:relative;'
       + 'font:13px/1.45 ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;');
     boite.setAttribute('role', 'alert');
-    boite.appendChild(el('div', 'font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px;', r.heading));
+    // Le titre en tampon, de travers : la signature de l'extension (2.88.0).
+    boite.appendChild(el('div', 'display:inline-block;font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;'
+      + 'margin:2px 0 8px;padding:1px 8px;border:3px double #000;transform:rotate(-3deg);', r.heading));
     if (r.title) boite.appendChild(el('div', 'font-weight:700;margin:0 0 6px;', r.title));
     for (var i = 0; i < r.lines.length; i++) {
       var ligne = el('div', 'margin:2px 0;padding-left:14px;text-indent:-14px;', '> ' + r.lines[i]);

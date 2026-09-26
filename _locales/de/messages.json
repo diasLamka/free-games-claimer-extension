@@ -2278,5 +2278,14 @@
   },
   "guardOn": {
     "message": "$1: Spielseiten warnen jetzt vor Duplikaten."
+  },
+  "timecodeLabel": {
+    "message": "Nächstes Ende"
+  },
+  "timecodeDays": {
+    "message": "$1T"
+  },
+  "stampClaimed": {
+    "message": "Geholt"
   }
 }

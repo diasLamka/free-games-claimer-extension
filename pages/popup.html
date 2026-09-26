@@ -1354,6 +1354,14 @@
          a qu'une boutique. -->
     <div class="chips" id="store-chips" role="group" data-i18n-attr="aria-label:chipsLabel" hidden></div>
 
+    <!-- Le timecode (2.88.0) : la prochaine fin d'offre, en chiffres qui
+         defilent -- visible meme quand tout est replie. -->
+    <div class="timecode" id="timecode" hidden>
+      <span class="tc-label" data-i18n="timecodeLabel"></span>
+      <span class="tc-digits" id="timecode-digits"></span>
+      <span class="tc-title" id="timecode-title"></span>
+    </div>
+
     <!-- Chaque section de l'onglet se replie (2.81.1) ; son compte reste dans
          le titre, et le popup se souvient de ce qu'on a replie. Depuis la
          2.88.0, le popup les ouvre fermees : tout tient sur un ecran. -->

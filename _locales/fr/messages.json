@@ -2278,5 +2278,14 @@
   },
   "guardOn": {
     "message": "$1 : les fiches préviennent désormais des doublons."
+  },
+  "timecodeLabel": {
+    "message": "Prochaine fin"
+  },
+  "timecodeDays": {
+    "message": "$1J"
+  },
+  "stampClaimed": {
+    "message": "Récupéré"
   }
 }

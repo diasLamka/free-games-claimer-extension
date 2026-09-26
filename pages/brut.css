@@ -497,3 +497,72 @@ button:hover:not(:disabled), .chip:hover, .btn-sm:hover:not(:disabled) { color: 
 .tab:hover:not([aria-selected="true"]) { background: transparent; color: var(--txt); box-shadow: inset 0 -3px 0 var(--accent); }
 .game a:hover, .ticket a:hover, .badge a:hover, .g-info a.title:hover { color: #000; text-decoration: underline; text-decoration-thickness: 2px; }
 a.link:hover { background: var(--accent); color: #000; }
+
+/* -------------------------------------------------------- la signature
+   Trois gestes qui n'appartiennent qu'a ce projet (2.88.0), les memes dans
+   l'appli Android :
+     - le TICKET : la carte d'un jeu offert est un billet, poinconne en haut
+       et en bas, perfore entre la jaquette et le reste -- comme l'icone ;
+     - le TAMPON : ce qui est recupere est tamponne, de travers ;
+     - le TIMECODE : la prochaine fin d'offre, en chiffres qui defilent. */
+.game { position: relative; --perf: 75px; }
+:root[data-vue="onglet"] .game { --perf: 99px; }
+.game .notch {
+  position: absolute;
+  left: calc(var(--perf) - 8px);
+  /* 16 px, bordure comprise (box-sizing: border-box) : un poincon de 10 px de vide. */
+  width: 16px;
+  height: 16px;
+  border-radius: 50% !important;
+  background: var(--base);
+  border: 3px solid #000;
+  pointer-events: none;
+}
+/* Le centre du poincon sur le bord exterieur ; seule sa moitie interieure
+   est dessinee : elle coupe la bordure, et son arc la prolonge. */
+.game .notch.top { top: -11px; clip-path: inset(50% 0 0 0); }
+.game .notch.bottom { bottom: -11px; clip-path: inset(0 0 50% 0); }
+.game .perf {
+  position: absolute;
+  left: calc(var(--perf) - 1px);
+  top: 7px;
+  bottom: 7px;
+  border-left: 2px dashed #000;
+  pointer-events: none;
+}
+
+.stamp {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--display);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--txt);
+  border: 3px double var(--txt);
+  padding: 1px 6px;
+  transform: rotate(-8deg);
+  line-height: 1.3;
+}
+
+.timecode {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px calc(var(--pad) + 4px) 8px var(--pad);
+  padding: 7px 10px;
+  background: #000000;
+  color: #FFFFFF;
+  border: 3px solid var(--txt);
+  box-shadow: 4px 4px 0 var(--accent);
+  min-width: 0;
+}
+.timecode[hidden] { display: none; }
+.tc-label { font-family: var(--mono); font-weight: 700; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; flex: none; }
+.tc-digits { font-family: var(--display); font-size: 20px; color: var(--accent); letter-spacing: .02em; font-variant-numeric: tabular-nums; flex: none; }
+.timecode.hot .tc-digits { animation: tc-blink 1s steps(2, start) infinite; }
+.tc-title { font-family: var(--mono); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes tc-blink { 50% { color: #FFFFFF; } }
+@media (prefers-reduced-motion: reduce) { .timecode.hot .tc-digits { animation: none; } }
+:root[data-vue="onglet"] .timecode { margin-top: 14px; }
+:root[data-vue="onglet"] .tc-digits { font-size: 28px; }

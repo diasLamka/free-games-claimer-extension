@@ -716,6 +716,13 @@ function gameCard({ key, offer }, ctx) {
 
   const card = el(link ? 'button' : 'div', 'game');
   if (fresh.has(key)) card.classList.add('fresh');
+  /* Le ticket (2.88.0) : deux encoches et une perforation entre la jaquette
+     et le reste -- la carte d'un jeu offert est un billet, comme l'icone. */
+  for (const c of ['notch top', 'notch bottom', 'perf']) {
+    const n = el('span', c);
+    n.setAttribute('aria-hidden', 'true');
+    card.append(n);
+  }
   if (link) {
     card.title = t('openOfferTitle');
     card.addEventListener('click', (e) => {
@@ -940,6 +947,45 @@ function gameCard({ key, offer }, ctx) {
   return card;
 }
 
+/* ---------------------------------------------------------------- timecode */
+
+/* La prochaine fin d'offre, en chiffres qui defilent (2.88.0). Une seule
+   horloge pour tout le popup ; elle ne touche qu'a trois noeuds de texte. */
+let timecodeEnd = null;
+let timecodeTimer = null;
+
+function timecodeText(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const hms = [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60]
+    .map((v) => String(v).padStart(2, '0')).join(':');
+  return d ? `${t('timecodeDays', String(d))} ${hms}` : hms;
+}
+
+function tickTimecode() {
+  const n = document.getElementById('timecode-digits');
+  if (!n || timecodeEnd === null) return;
+  const reste = timecodeEnd - Date.now();
+  if (reste <= 0) { document.getElementById('timecode').hidden = true; return; }
+  n.textContent = timecodeText(reste);
+}
+
+function renderTimecode(offers, now) {
+  const box = document.getElementById('timecode');
+  if (!box) return;
+  const prochaine = offers.filter((o) => typeof o.end === 'number' && o.end > now && o.end - now < 8 * DAY_MS)
+    .sort((a, b) => a.end - b.end)[0];
+  box.hidden = !prochaine;
+  if (!prochaine) { timecodeEnd = null; return; }
+  timecodeEnd = prochaine.end;
+  const titre = displayTitle(prochaine.title);
+  document.getElementById('timecode-title').textContent = titre;
+  box.title = titre;
+  box.classList.toggle('hot', prochaine.end - now < DAY_MS);
+  tickTimecode();
+  if (!timecodeTimer) timecodeTimer = setInterval(tickTimecode, 1000);
+}
+
 /* ------------------------------------------------------------------ liste */
 
 function renderGames(all, behaviour) {
@@ -956,6 +1002,7 @@ function renderGames(all, behaviour) {
   shownOffers = visible.map(({ offer }) => offer);
   document.getElementById('free-count').textContent = visible.length ? String(visible.length) : '';
   document.getElementById('share-row').hidden = !visible.length;
+  renderTimecode(visible.map(({ offer }) => offer), now);
 
   const ctx = {
     now,
@@ -1293,10 +1340,18 @@ function renderLog(all) {
     li.append(body);
     // Le statut en icone ; ses mots restent dans l'infobulle et pour les lecteurs d'ecran.
     const mots = key ? t(key) : String(row.status || '');
-    const st = el('span', 'st');
-    st.title = mots;
-    st.append(statusIcon(statusKind(row, css), mots));
-    li.append(st);
+    /* Le tampon (2.88.0) : ce qui est vraiment recupere est tamponne, de
+       travers, comme un billet composte. Le reste garde son icone. */
+    if (statusKind(row, css) === 'ok') {
+      const tampon = el('span', 'stamp', t('stampClaimed'));
+      tampon.title = mots;
+      li.append(tampon);
+    } else {
+      const st = el('span', 'st');
+      st.title = mots;
+      st.append(statusIcon(statusKind(row, css), mots));
+      li.append(st);
+    }
     host.append(li);
   }
   // Le worker cherche, ecrit ; le changement de stockage redessine la liste.
