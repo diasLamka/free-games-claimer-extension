@@ -140,13 +140,18 @@ class ScreenshotTest {
     }
 
     @Test
-    fun jeuxJauneNuit() = shoot("A-jeux-jaune-nuit", Accent.JAUNE, dark = true, tabs = 0, content = games)
+    fun jeuxJauneNuit() = shoot("A-jeux-sombre", Accent.JAUNE, dark = true, tabs = 0, content = games)
 
     @Test
-    fun jeuxVertPapier() = shoot("B-jeux-vert-papier", Accent.VERT, dark = false, tabs = 0, content = games)
+    fun jeuxJaunePapier() = shoot("B-jeux-clair", Accent.JAUNE, dark = false, tabs = 0, content = games)
 
     @Test
-    fun jeuxFuchsiaPapier() = shoot("C-jeux-fuchsia-papier", Accent.FUCHSIA_, dark = false, tabs = 0, content = games)
+    fun reglagesJaunePapier() = shoot("B-reglages-clair", Accent.JAUNE, dark = false, tabs = 3) {
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+
+
 
     @Test
     @Config(qualifiers = "+h2600dp")

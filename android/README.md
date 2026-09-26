@@ -17,6 +17,27 @@ web emballee.
 | **Avec l'extension** | Import de sa sauvegarde (historique, souhaits, listes Steam/GOG) ; export d'un fichier que « Restaurer » de l'extension fusionne. |
 | **Langues** | Francais, anglais, allemand, espagnol -- celle du telephone. |
 
+## L'interface
+
+Une charte brute, depuis la 1.1.0 : fond blanc ou noir selon le telephone,
+une seule couleur d'accent -- **jaune cyber** `#E8FF00` --, bordures noires
+de 3 dp, ombres pleines et decalees (noires sur fond blanc, jaunes sur fond
+noir), angles droits, aucun degrade. Titres en Archivo Black, tout le reste
+en Space Mono, embarquees dans l'APK (licence OFL, `assets/licences/`). La
+mise en page est asymetrique a dessein : une carte sur deux decalee, le
+compte des jeux en etiquette de travers, la note Steam en autocollant.
+
+Les composants de la charte sont dans `ui/Components.kt` (`brut`, `Tag`,
+`BrutButton`, `BrutToggle`, `BrutField`, `SectionHeader`) et la palette dans
+`ui/theme/Theme.kt`. Les ecrans se regardent sans telephone :
+
+```
+./gradlew testDebugUnitTest -Pscreens=true --tests '*ScreenshotTest*'
+```
+
+rend chaque ecran, clair et sombre, sur les offres du moment, dans
+`app/build/screenshots/`.
+
 ## Le moteur est celui de l'extension
 
 `content/free-games-claimer.js` et `watch/steam-claim.js` sont **recopies a

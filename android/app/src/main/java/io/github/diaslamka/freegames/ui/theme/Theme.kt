@@ -46,9 +46,8 @@ data class Brut(
     val offset = 5.dp
 }
 
+/** L'accent retenu (2026-09-26), en clair comme en sombre. */
 val JAUNE_CYBER = Color(0xFFE8FF00)
-val VERT_FLUO = Color(0xFF39FF14)
-val FUCHSIA = Color(0xFFFF1FCE)
 
 fun brut(accent: Color, dark: Boolean, name: String) = if (dark) Brut(
     name = name, base = Color.Black, ink = Color.White, block = Color.White, onBlock = Color.Black,
@@ -58,11 +57,13 @@ fun brut(accent: Color, dark: Boolean, name: String) = if (dark) Brut(
     accent = accent, onAccent = Color.Black, shadow = Color.Black, mute = Color(0xFF5C5C5C), dark = false,
 )
 
-/** Les trois accents proposes. Le fond suit le telephone (clair ou sombre). */
+/**
+ * L'accent. Trois autres ont ete essayes en maquette -- vert fluo, fuchsia,
+ * orange securite -- ; le jaune cyber l'a emporte, sur fond noir comme sur
+ * fond blanc. Le fond, lui, suit le telephone.
+ */
 enum class Accent(val color: Color, val label: String) {
     JAUNE(JAUNE_CYBER, "JAUNE CYBER"),
-    VERT(VERT_FLUO, "VERT FLUO"),
-    FUCHSIA_(FUCHSIA, "FUCHSIA"),
 }
 
 val LocalBrut = staticCompositionLocalOf { brut(JAUNE_CYBER, true, "JAUNE CYBER") }
