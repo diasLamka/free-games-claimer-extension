@@ -66,6 +66,7 @@ import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
 import { badgeState, inQuietHours } from './watch/notify-policy.js';
 import { runRecap } from './watch/recap.js';
+import { runCodeReminders } from './watch/code-reminders.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -174,6 +175,7 @@ async function ensureSchedule(now = Date.now()) {
   /* Le recap du jeudi part aussi d'ici : un ordinateur qui se reveille le
      vendredi matin n'attend pas le prochain cycle pour le recevoir. */
   await maybeRecap(now);
+  await maybeCodeReminders(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -402,6 +404,7 @@ async function startCycle(origine, options = {}) {
         await armMain(result.nextWake, Date.now());
         // Apres le cycle : les jeux du jeudi viennent d'etre vus et pris.
         await maybeRecap(Date.now());
+        await maybeCodeReminders(Date.now());
       }
       return result;
     } catch (e) {
@@ -452,6 +455,41 @@ function maybeRecap(now = Date.now()) {
     .catch((e) => record('warn', 'recap du jeudi impossible', e))
     .finally(() => { recapRunning = null; });
   return recapRunning;
+}
+
+/* ------------------------------------------------------ rappel des codes */
+
+let codeRemindersRunning = null;
+
+/**
+ * Le rappel avant qu'un code expire (2.73.0). Voir watch/code-reminders.js.
+ * Il suit le canal des ALERTES, pas celui des offres : un code qui va se
+ * perdre demande une personne, comme une session perdue.
+ */
+function maybeCodeReminders(now = Date.now()) {
+  if (codeRemindersRunning) return codeRemindersRunning;
+  codeRemindersRunning = (async () => {
+    await langue;
+    const settings = await readSettings(api);
+    const { [KEY_PHONE]: phoneRaw } = await readKeys(api, KEY_PHONE);
+    const tel = phoneTarget(phoneRaw);
+    return runCodeReminders({
+      chrome: api,
+      now,
+      t,
+      storeLabel: (s) => STORE_LABELS[s] || s,
+      quietNow: inQuietHours(settings.quiet, now),
+      computer: settings.alertMode !== 'off',
+      notify: ({ id, title, message, url }) => showNotice({ id, title, message, url: url || api.runtime.getURL(DASHBOARD_PAGE) }),
+      phone: tel
+        ? (msg) => pushToPhone({ chrome: api, fetch: (u, i) => fetch(u, i), target: tel, msg, now, record, why: 'rappel de code' })
+        : null,
+      record,
+    });
+  })()
+    .catch((e) => record('warn', 'rappel des codes impossible', e))
+    .finally(() => { codeRemindersRunning = null; });
+  return codeRemindersRunning;
 }
 
 /* --------------------------------------------------------------- collection */

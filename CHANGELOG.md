@@ -4,6 +4,34 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.73.0 -- 2026-09-26
+
+**Un code ne se perd plus au fond de l'onglet Codes**
+
+Luna donne certains jeux sous forme de code a echanger chez GOG ou Microsoft,
+avec une date limite. L'onglet Codes l'affichait en rouge a sept jours --
+encore fallait-il l'ouvrir. Un code oublie, c'est un jeu perdu sans bruit.
+
+- **Une notification a sept jours de la date limite, puis le dernier jour**
+  (la veille ou le jour meme) : « Un code GOG.com a utiliser d'ici demain --
+  Right and Down : a echanger sur GOG.com avant le 27 septembre 2026 ». Un
+  clic ouvre la page d'echange du magasin quand on la connait. Plusieurs codes
+  dans la meme fenetre font une seule notification.
+- **Chaque rappel ne part qu'une fois**, et le registre est ecrit avant de
+  prevenir. Un code echange, refuse ou retire en sort.
+- **Jamais le code lui-meme** -- ni a l'ecran, qu'un voisin peut lire, ni au
+  telephone. Le jeu, le magasin, la date ; le code reste dans l'onglet Codes.
+- Il suit le canal des **alertes**, pas celui des offres : couper les annonces
+  de jeux ne coupe pas ce rappel. Les heures calmes le retiennent jusqu'au
+  matin, et il part aussi sur le telephone, Discord ou Telegram si l'alerte
+  est active.
+
+Verifie dans l'extension chargee dans Chromium : deux codes, l'un pour le
+lendemain, l'autre dans cinq jours, font une notification a deux lignes sans
+aucun code ; un second cycle n'en refait pas.
+
+1311 tests.
+
 ## 2.72.0 -- 2026-09-24
 
 **Le graphique du Bilan, mois par mois**

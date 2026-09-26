@@ -17,7 +17,7 @@ lire.
 
 | Espace | Cles | Contenu |
 |---|---|---|
-| Veille | `veille:*` (31 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, listes de souhaits Steam et GOG importees (identifiants et noms, 2000 au plus chacune), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin, dernier essai a blanc (ce que chaque page a montre), date du dernier recap du jeudi |
+| Veille | `veille:*` (32 cles, `watch/storage.js`) | Catalogue d'offres, sante des sources, histogrammes de prediction, reglages, filtres, journal de 500 entrees, bibliotheque reclamee, collection importee, taux de change, issues des offres terminees (1000 au plus), incidents ouverts, liste de souhaits saisie, listes de souhaits Steam et GOG importees (identifiants et noms, 2000 au plus chacune), backlog, alerte telephone (adresse du sujet, jeton eventuel, dernier envoi), position du bouton sur les pages de magasin, dernier essai a blanc (ce que chaque page a montre), date du dernier recap du jeudi, codes deja rappeles avant leur date limite (le code et le niveau du rappel, rien d'autre) |
 | Moteur | `FGC_*` (`content/gm-shim.js`, `src/core/`) | **Codes de rachat en attente**, historiques par plateforme, arret d'urgence, bascules, pays et langue, libelles de boutons appris et refuses |
 
 Trois cles vivent dans `chrome.storage.session` et disparaissent a la
@@ -61,6 +61,12 @@ demande qu'une fois la configuration complete. Le texte part en JSON, sans
 mention possible cote Discord (`allowed_mentions` vide) et sans mise en forme
 interpretee cote Telegram : un titre de jeu ne peut ni appeler tout un salon
 ni casser un balisage.
+
+Le **rappel des codes** (2.73.0) previent sept jours avant la date limite
+d'un code en attente, puis le dernier jour -- a l'ecran, et au telephone si
+l'alerte est active. Il nomme le jeu, le magasin et la date ; **jamais le
+code**, qui reste dans l'onglet Codes. Un test le verifie sur ce qui part
+vraiment.
 
 Rien d'autre ne part tout seul.
 

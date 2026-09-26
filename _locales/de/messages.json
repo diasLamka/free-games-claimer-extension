@@ -1957,5 +1957,29 @@
   },
   "chartValue": {
     "message": "Wert"
+  },
+  "codeRemindTitleOne": {
+    "message": "Ein $1-Code, einzulösen $2"
+  },
+  "codeRemindTitleMany": {
+    "message": "$1 Codes bald einzulösen"
+  },
+  "codeRemindToday": {
+    "message": "heute"
+  },
+  "codeRemindTomorrow": {
+    "message": "bis morgen"
+  },
+  "codeRemindDays": {
+    "message": "innerhalb von $1 Tagen"
+  },
+  "codeRemindLine": {
+    "message": "$1: auf $2 einlösen vor dem $3"
+  },
+  "codeRemindWhere": {
+    "message": "Der Code steht im Tab Codes."
+  },
+  "codeRemindWhereMany": {
+    "message": "Die Codes stehen im Tab Codes."
   }
 }

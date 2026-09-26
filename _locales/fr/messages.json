@@ -1957,5 +1957,29 @@
   },
   "chartValue": {
     "message": "Valeur"
+  },
+  "codeRemindTitleOne": {
+    "message": "Un code $1 à utiliser $2"
+  },
+  "codeRemindTitleMany": {
+    "message": "$1 codes à utiliser bientôt"
+  },
+  "codeRemindToday": {
+    "message": "aujourd'hui"
+  },
+  "codeRemindTomorrow": {
+    "message": "d'ici demain"
+  },
+  "codeRemindDays": {
+    "message": "dans les $1 jours"
+  },
+  "codeRemindLine": {
+    "message": "$1 : à échanger sur $2 avant le $3"
+  },
+  "codeRemindWhere": {
+    "message": "Le code est dans l'onglet Codes."
+  },
+  "codeRemindWhereMany": {
+    "message": "Les codes sont dans l'onglet Codes."
   }
 }

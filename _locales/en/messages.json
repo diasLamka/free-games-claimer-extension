@@ -1957,5 +1957,29 @@
   },
   "chartValue": {
     "message": "Value"
+  },
+  "codeRemindTitleOne": {
+    "message": "A $1 code to use $2"
+  },
+  "codeRemindTitleMany": {
+    "message": "$1 codes to use soon"
+  },
+  "codeRemindToday": {
+    "message": "today"
+  },
+  "codeRemindTomorrow": {
+    "message": "by tomorrow"
+  },
+  "codeRemindDays": {
+    "message": "within $1 days"
+  },
+  "codeRemindLine": {
+    "message": "$1: redeem on $2 before $3"
+  },
+  "codeRemindWhere": {
+    "message": "The code is in the Codes tab."
+  },
+  "codeRemindWhereMany": {
+    "message": "The codes are in the Codes tab."
   }
 }
