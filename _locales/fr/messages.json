@@ -2005,5 +2005,20 @@
   },
   "weekendsToggleHint": {
     "message": "Des jeux à essayer quelques jours sans payer. Rien à garder : l'extension les montre, elle ne les récupère pas."
+  },
+  "heroLabel": {
+    "message": "Économisé depuis le début"
+  },
+  "heroGamesOne": {
+    "message": "1 jeu récupéré"
+  },
+  "heroGamesMany": {
+    "message": "$1 jeux récupérés"
+  },
+  "heroGamesPriced": {
+    "message": "$1 jeux récupérés, dont $2 à prix connu"
+  },
+  "heroThisMonth": {
+    "message": "+$1 ce mois-ci"
   }
 }

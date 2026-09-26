@@ -2005,5 +2005,20 @@
   },
   "weekendsToggleHint": {
     "message": "Spiele, die du ein paar Tage gratis spielen kannst. Nichts zu behalten: Die Erweiterung zeigt sie, sie holt sie nicht ab."
+  },
+  "heroLabel": {
+    "message": "Seit Beginn gespart"
+  },
+  "heroGamesOne": {
+    "message": "1 Spiel abgeholt"
+  },
+  "heroGamesMany": {
+    "message": "$1 Spiele abgeholt"
+  },
+  "heroGamesPriced": {
+    "message": "$1 Spiele abgeholt, $2 mit bekanntem Preis"
+  },
+  "heroThisMonth": {
+    "message": "+$1 diesen Monat"
   }
 }

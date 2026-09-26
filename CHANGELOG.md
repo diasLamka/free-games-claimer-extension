@@ -4,6 +4,29 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.76.0 -- 2026-09-26
+
+**Le grand chiffre du tableau de bord**
+
+Le Bilan disait deja « 24 jeux recuperes, dont 24 a prix connu : 364,76 EUR »,
+une ligne parmi d'autres au fond des Reglages. C'est pourtant LA raison
+d'avoir l'extension.
+
+- **En tete du tableau de bord**, sous l'en-tete et avant les volets : « Economise
+  depuis le debut », la somme en grand (52 px), puis le nombre de jeux et
+  « +24,98 EUR ce mois-ci ». La somme est celle du Bilan, convertie de la meme
+  facon ; le mois est compte en UTC, comme le graphique et « meilleur mois ».
+- **Ce qui etait deja a vous ne compte pas** : un jeu trouve dans la
+  bibliotheque n'a rien rapporte. Si certains jeux n'ont pas de prix connu,
+  la ligne le dit (« 24 jeux recuperes, dont 20 a prix connu »).
+- **Pas dans le petit popup**, ou la place va aux jeux ; et rien tant
+  qu'aucun jeu n'a de valeur connue.
+
+Verifie dans l'extension chargee dans Chromium, themes clair et sombre, avec
+un historique de 24 jeux : le chiffre au tableau de bord, rien au popup.
+
+1330 tests.
+
 ## 2.75.0 -- 2026-09-26
 
 **Les week-ends gratuits de Steam**

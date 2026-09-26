@@ -302,6 +302,12 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
+**Le grand chiffre du tableau de bord** (2.76.0) : en tete, ce que les jeux
+recuperes par l'extension auraient coute -- la meme somme que le Bilan,
+convertie de la meme facon --, le nombre de jeux, et ce que le mois en cours
+y a ajoute. Seulement dans le tableau de bord : le popup garde sa place pour
+les jeux.
+
 **Les week-ends gratuits de Steam** (2.75.0) : une section « A essayer ce
 week-end » dans l'onglet Jeux -- des jeux payants ouverts a tous quelques
 jours, le temps qui reste, et le prix s'il est en promotion pour qui veut le

@@ -2005,5 +2005,20 @@
   },
   "weekendsToggleHint": {
     "message": "Juegos para probar gratis unos días. Nada que conservar: la extensión los muestra, no los obtiene."
+  },
+  "heroLabel": {
+    "message": "Ahorrado desde el principio"
+  },
+  "heroGamesOne": {
+    "message": "1 juego obtenido"
+  },
+  "heroGamesMany": {
+    "message": "$1 juegos obtenidos"
+  },
+  "heroGamesPriced": {
+    "message": "$1 juegos obtenidos, $2 con precio conocido"
+  },
+  "heroThisMonth": {
+    "message": "+$1 este mes"
   }
 }

@@ -2005,5 +2005,20 @@
   },
   "weekendsToggleHint": {
     "message": "Games to play free for a few days. Nothing to keep: the extension shows them, it does not claim them."
+  },
+  "heroLabel": {
+    "message": "Saved since the start"
+  },
+  "heroGamesOne": {
+    "message": "1 game claimed"
+  },
+  "heroGamesMany": {
+    "message": "$1 games claimed"
+  },
+  "heroGamesPriced": {
+    "message": "$1 games claimed, $2 with a known price"
+  },
+  "heroThisMonth": {
+    "message": "+$1 this month"
   }
 }

@@ -1881,6 +1881,26 @@ function renderMonthChart(rows) {
   }
 }
 
+/* Le chiffre du tableau de bord (2.76.0). Ce que les jeux pris par
+   l'extension auraient coute -- converti comme partout ailleurs, « ≈ » quand
+   une devise a du l'etre --, combien de jeux, combien a prix connu, et ce que
+   le mois en cours a ajoute. Rien tant qu'aucun prix n'est connu : « 0 € »
+   en grand dirait une panne, pas un fait. */
+function renderHero(rows, b) {
+  const hero = document.getElementById('hero');
+  if (!hero) return;
+  hero.hidden = !EN_ONGLET || !b.priced;
+  if (hero.hidden) return;
+  document.getElementById('hero-value').textContent = moneyTotals(b.totals);
+  document.getElementById('hero-games').textContent = b.priced < b.count
+    ? t('heroGamesPriced', String(b.count), String(b.priced))
+    : t(b.count === 1 ? 'heroGamesOne' : 'heroGamesMany', String(b.count));
+  // Le mois en cours, en UTC comme le graphique et « meilleur mois ».
+  const mois = new Date().toISOString().slice(0, 7);
+  const ceMois = tally(rows.filter((r) => new Date(r.ts).toISOString().slice(0, 7) === mois));
+  document.getElementById('hero-delta').textContent = ceMois.priced ? t('heroThisMonth', moneyTotals(ceMois.totals)) : '';
+}
+
 function renderTally(all) {
   const histories = Object.fromEntries(
     Object.entries(HISTORY_KEYS).map(([label, key]) => [label, get(all, key, {})]),
@@ -1890,6 +1910,7 @@ function renderTally(all) {
   const zone = document.getElementById('tally');
   zone.textContent = '';
   renderMonthChart(rows);
+  renderHero(rows, b);
 
   foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))
     : b.already ? t('foldTallyAlready', String(b.already)) : '');
