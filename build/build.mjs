@@ -403,7 +403,9 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   /* Le recap du jeudi (2.65.0) compose sa notification lui-meme. */
   'watch/recap.js',
   /* Le rappel des codes (2.73.0) aussi. */
-  'watch/code-reminders.js']);
+  'watch/code-reminders.js',
+  /* La note Steam (2.78.0) : son echelle et sa ligne de notification. */
+  'watch/steam-ratings.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -438,7 +440,9 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   /* Le recap du jeudi (2.65.0) compose sa notification lui-meme. */
   'watch/recap.js',
   /* Le rappel des codes (2.73.0) aussi. */
-  'watch/code-reminders.js'].map((f) => {
+  'watch/code-reminders.js',
+  /* La note Steam (2.78.0) : son echelle et sa ligne de notification. */
+  'watch/steam-ratings.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

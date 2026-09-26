@@ -40,6 +40,7 @@ import {
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../lib/i18n.js';
+import { ratingLine } from './steam-ratings.js';
 import { delayText } from './lookup.js';
 import {
   claimOffer,
@@ -127,7 +128,7 @@ export function toNotify(catalog, now) {
  * Compose le message. Une notification par offre au-dela de trois, c'est un
  * harcelement : au-dela on resume.
  */
-export function composeAnnouncement(offers, storeLabel, now = null) {
+export function composeAnnouncement(offers, storeLabel, now = null, rating = null) {
   if (offers.length === 1) {
     const o = offers[0];
     // Le libelle du magasin, pas son identifiant : « Epic Games Store » plutot
@@ -136,9 +137,12 @@ export function composeAnnouncement(offers, storeLabel, now = null) {
     /* Le temps qui reste (2.63.0) : « Gratuit sur Epic Games Store · encore
        7 h ». C'est ce qui decide s'il faut s'en occuper maintenant. */
     const reste = typeof now === 'number' && typeof o.end === 'number' && o.end > now ? o.end - now : null;
+    const texte = reste === null ? t('notifyOneStore', store) : t('notifyOneStoreLeft', store, readableHours(reste));
+    /* La note Steam (2.78.0), sur sa propre ligne : « Steam : Tres positives
+       (84 %) ». C'est ce qui dit s'il vaut ses 20 Go. */
     return {
       title: t('notifyOneTitle', o.title),
-      text: reste === null ? t('notifyOneStore', store) : t('notifyOneStoreLeft', store, readableHours(reste)),
+      text: rating ? `${texte}\n${ratingLine(rating)}` : texte,
     };
   }
   const titles = offers.slice(0, 3).map((o) => o.title).join(', ');
@@ -196,6 +200,11 @@ export async function runCycle({
    * est active (claimableStoresFor).
    */
   claimableStores = [],
+  /**
+   * La note Steam d'une offre, ou null (2.78.0). Demandee pour une annonce a
+   * un seul jeu, juste avant de la faire ; le worker borne l'attente.
+   */
+  rateOffer = null,
   /** Faux en test, ou quand l'utilisateur coupe la reclamation autonome. */
   autonomousClaim = true,
   maxReclamations = MAX_CLAIMS_PER_CYCLE,
@@ -507,9 +516,13 @@ export async function runCycle({
 
     if (decision.notify) {
       const first = watched[0];
+      let note = null;
+      if (!decision.digest && watched.length === 1 && typeof rateOffer === 'function') {
+        try { note = await rateOffer(first); } catch { note = null; }
+      }
       const { title, text } = decision.digest
         ? { title: t('notifyDigestTitle', String(watched.length)), text: watched.map((o) => o.title).join(', ') }
-        : composeAnnouncement(watched, null, now);
+        : composeAnnouncement(watched, null, now, note);
       // Le lien de la premiere offre annoncee : cliquer la notification doit
       // mener a l'offre, pas a une page d'accueil.
       await notify({

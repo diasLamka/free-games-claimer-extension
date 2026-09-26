@@ -48,6 +48,7 @@ import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/m
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
+import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
   EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
@@ -212,6 +213,7 @@ const KEYS_READ = [
   KEY_DRY_RUN,
   KEY_WEEKENDS,
   KEY_AUTO_BACKUP,
+  KEY_RATINGS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -641,6 +643,20 @@ function markFresh(rows) {
 
 /* ------------------------------------------------------------------ cards */
 
+/* La note Steam (2.78.0) : courte a 328 px, entiere quand la page est large ;
+   l'infobulle dit toujours tout. La couleur dit le sens, le chiffre combien. */
+function ratingTag(r) {
+  const pct = String(percent(r));
+  const tag = el('span', `rating ${tone(r)}`, LARGE.matches ? t('ratingLong', scoreLabel(r), pct) : t('ratingShort', pct));
+  tag.title = t('ratingTitle', scoreLabel(r), pct, r.total.toLocaleString(intlLocale()));
+  return tag;
+}
+
+/** La note d'une offre, si le reglage le veut et que Steam l'a donnee. */
+function ratingOf(ctx, offer) {
+  return ctx.ratingsOn ? ratingFor(ctx.ratings, offer) : null;
+}
+
 function gameCard({ key, offer }, ctx) {
   const { now, alsoOn, owned, fresh, filters, behaviour } = ctx;
   const link = offer.url || offer.resolveUrl;
@@ -840,6 +856,11 @@ function gameCard({ key, offer }, ctx) {
   });
   actions.append(drop);
 
+  /* Au bout de la rangee des gestes : elle a de la place, la ligne du dessus
+     n'en a plus a 328 px. */
+  const note = ratingOf(ctx, offer);
+  if (note) actions.append(ratingTag(note));
+
   body.append(meta);
   body.append(actions);
 
@@ -897,6 +918,8 @@ function renderGames(all, behaviour) {
     wishlist: get(all, KEY_WISHLIST, []),
     steamWishlist: get(all, KEY_STEAM_WISHLIST, null),
     gogWishlist: get(all, KEY_GOG_WISHLIST, null),
+    ratings: get(all, KEY_RATINGS, {}),
+    ratingsOn: behaviour.steamRatings !== false,
   };
 
   document.getElementById('n-games').textContent = rows.length || '';
@@ -1007,6 +1030,7 @@ function renderWeekends(all, behaviour) {
     ? [] : openWeekends(get(all, KEY_WEEKENDS, null), Date.now());
   section.hidden = !liste.length;
   document.getElementById('weekends-count').textContent = liste.length ? String(liste.length) : '';
+  const notes = { ratings: get(all, KEY_RATINGS, {}), ratingsOn: (behaviour || {}).steamRatings !== false };
   for (const w of liste) {
     const row = el('button', 'row go');
     row.title = t('weekendsOpen', w.title);
@@ -1020,8 +1044,16 @@ function renderWeekends(all, behaviour) {
     const prix = w.price
       ? (w.discount ? t('weekendsPriceDiscount', String(w.discount), w.price) : t('weekendsPrice', w.price))
       : null;
-    if (prix) body.append(el('span', 'soon-price', prix));
-    else body.append(storeTag(STORES.STEAM));
+    const note = ratingOf(notes, w);
+    if (prix) {
+      const ligne = el('span', 'soon-price', prix);
+      // Sur la ligne du prix : essayer, puis garder -- les deux questions vont ensemble.
+      if (note) { ligne.append(' · '); ligne.append(ratingTag(note)); }
+      body.append(ligne);
+    } else {
+      body.append(storeTag(STORES.STEAM));
+      if (note) body.append(ratingTag(note));
+    }
     row.append(body);
     // Le temps qui reste, comme sur les cartes : la date exacte est dans l'infobulle.
     const reste = el('span', 'aside hi', readableDelay(w.end - Date.now()));
@@ -2145,6 +2177,8 @@ function renderNotifications(behaviour) {
   document.getElementById('reminder-value').textContent = hours > 0 ? String(hours) : t('reminderOff');
   // Les week-ends gratuits de Steam (2.75.0) : actifs sauf refus explicite.
   document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
+  // La note Steam (2.78.0) : active sauf refus explicite.
+  document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
   document.getElementById('weekly-recap').checked = behaviour.weeklyRecap !== false;
 }
@@ -2511,6 +2545,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
+document.getElementById('steam-ratings').addEventListener('change', (e) => writeBehaviour({ steamRatings: e.target.checked }));
 
 /* The slider writes the floor; the daily cap follows from it on the scheduler
    side, and is never entered separately. */

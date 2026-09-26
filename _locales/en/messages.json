@@ -2044,5 +2044,50 @@
   },
   "autoBackupShow": {
     "message": "Show file"
+  },
+  "steamScore1": {
+    "message": "Overwhelmingly Negative"
+  },
+  "steamScore2": {
+    "message": "Very Negative"
+  },
+  "steamScore3": {
+    "message": "Negative"
+  },
+  "steamScore4": {
+    "message": "Mostly Negative"
+  },
+  "steamScore5": {
+    "message": "Mixed"
+  },
+  "steamScore6": {
+    "message": "Mostly Positive"
+  },
+  "steamScore7": {
+    "message": "Positive"
+  },
+  "steamScore8": {
+    "message": "Very Positive"
+  },
+  "steamScore9": {
+    "message": "Overwhelmingly Positive"
+  },
+  "ratingShort": {
+    "message": "$1% positive"
+  },
+  "ratingLong": {
+    "message": "$1 · $2%"
+  },
+  "ratingTitle": {
+    "message": "Steam reviews, all languages: $1 — $2% of $3 reviews are positive"
+  },
+  "ratingLine": {
+    "message": "Steam: $1 ($2%)"
+  },
+  "ratingsLabel": {
+    "message": "Steam ratings"
+  },
+  "ratingsHint": {
+    "message": "What Steam players think, next to each free game and in its notification. Read from store.steampowered.com, without cookies."
   }
 }

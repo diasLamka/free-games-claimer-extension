@@ -254,6 +254,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * Sans effet tant que Steam n'est pas suivi. Voir watch/steam-weekends.js.
    */
   steamWeekends: true,
+  /**
+   * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
+   * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
+   * cookie. Voir watch/steam-ratings.js.
+   */
+  steamRatings: true,
   /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
   watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
 

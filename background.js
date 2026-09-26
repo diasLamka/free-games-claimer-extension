@@ -70,6 +70,8 @@ import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { runAutoBackup } from './watch/auto-backup.js';
+import { KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, ratingFor, refreshRatings } from './watch/steam-ratings.js';
+import { openOffers } from './watch/catalog.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -181,6 +183,7 @@ async function ensureSchedule(now = Date.now()) {
   await maybeCodeReminders(now);
   await maybeWeekends(now);
   await maybeAutoBackup(now);
+  await maybeRatings(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -382,6 +385,8 @@ async function startCycle(origine, options = {}) {
         now,
         sources: SOURCES,
         fetch: (url, init) => fetch(url, init),
+        // La note Steam d'un jeu annonce seul (2.78.0), cinq secondes au plus.
+        rateOffer: (offer) => rateOne(offer),
         notify: async ({ title, text, id, url, kind, catalogKey, image }) => {
           await showNotice({ id, title, message: text, url, kind, catalogKey, image });
         },
@@ -412,6 +417,7 @@ async function startCycle(origine, options = {}) {
         await maybeCodeReminders(Date.now());
         await maybeWeekends(Date.now());
         await maybeAutoBackup(Date.now());
+        await maybeRatings(Date.now());
       }
       return result;
     } catch (e) {
@@ -515,6 +521,69 @@ function maybeAutoBackup(now = Date.now(), { force = false } = {}) {
     .catch((e) => { record('warn', 'sauvegarde automatique impossible', e); return { done: false, why: 'failed' }; })
     .finally(() => { autoBackupRunning = null; });
   return autoBackupRunning;
+}
+
+/* ------------------------------------------------------ la note Steam */
+
+/* Une seule ecriture du registre a la fois : la notification et le passage
+   d'apres cycle y ecrivent tous deux, et deux get -> set entrelaces perdent
+   une note. */
+let ratingsChain = Promise.resolve();
+
+function ensureRatings(offers, { limit = RATINGS_PER_RUN, timeoutMs } = {}) {
+  const travail = async () => {
+    const settings = await readSettings(api);
+    if (settings.steamRatings === false) return null;
+    const { [KEY_RATINGS]: avant, [KEY_COUNTRY]: pays } = await readKeys(api, [KEY_RATINGS, KEY_COUNTRY]);
+    const r = await refreshRatings(avant || {}, offers, {
+      fetch: (u, i) => fetch(u, i), now: Date.now(), country: normaliseCountry(pays), limit, timeoutMs,
+    });
+    if (r.got) await write(api, { [KEY_RATINGS]: r.ratings });
+    return r;
+  };
+  const p = ratingsChain.then(travail, travail);
+  ratingsChain = p.catch(() => null);
+  return p;
+}
+
+/** La note d'une offre pour sa notification : relue, ou cherchee tout de suite. */
+async function rateOne(offer) {
+  try {
+    const settings = await readSettings(api);
+    if (settings.steamRatings === false) return null;
+    /* Six secondes au plus, file d'attente comprise : une notification ne
+       patiente pas derriere le passage de huit notes d'un autre reveil. */
+    await Promise.race([
+      ensureRatings([offer], { limit: 1, timeoutMs: 5000 }),
+      new Promise((fin) => setTimeout(fin, 6000)),
+    ]);
+    const { [KEY_RATINGS]: notes } = await readKeys(api, KEY_RATINGS);
+    return ratingFor(notes, offer);
+  } catch { return null; }
+}
+
+/**
+ * Les notes des jeux gratuits en ce moment et des week-ends Steam (2.78.0),
+ * apres chaque cycle : huit au plus par passage, chacune relue une fois par
+ * semaine. Voir watch/steam-ratings.js.
+ */
+async function maybeRatings(now = Date.now()) {
+  try {
+    const settings = await readSettings(api);
+    if (settings.steamRatings === false) return null;
+    const { [KEYS.OFFERS]: catalog, [KEY_WEEKENDS]: weekends } = await readKeys(api, [KEYS.OFFERS, KEY_WEEKENDS]);
+    const suivis = settings.watchedStores || [];
+    const offres = [
+      ...openOffers(catalog || {}, now).filter((o) => suivis.includes(o.store)),
+      ...((weekends && Array.isArray(weekends.items)) ? weekends.items : []),
+    ];
+    const r = await ensureRatings(offres);
+    if (r && r.asked) record('info', `notes Steam : ${r.got}/${r.asked} relue(s)`);
+    return r;
+  } catch (e) {
+    record('warn', 'notes Steam impossibles', e);
+    return null;
+  }
 }
 
 /* ------------------------------------------------------ rappel des codes */

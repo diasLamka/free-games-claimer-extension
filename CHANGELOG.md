@@ -4,6 +4,44 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.78.0 -- 2026-09-26
+
+**La note Steam des jeux offerts**
+
+« Gratuit » ne dit pas « bon ». Merite-t-il les 20 Go de l'installer ? La
+reponse que tout le monde va chercher, ce sont les evaluations Steam.
+
+- **« 84 % positif » au bout de chaque jeu gratuit**, dans la rangee des
+  gestes (la ligne du dessus n'a plus de place a 328 px) : vert de « Plutot
+  positives » a « Extremement positives », orange pour « Moyennes », rouge
+  en dessous. En entier quand la page est large (« Tres positives · 84 % »),
+  et au survol : l'echelle, le pourcentage et le nombre d'avis.
+- **Les week-ends gratuits** la portent aussi, sur la ligne du prix : essayer,
+  puis garder, les deux questions vont ensemble.
+- **La notification d'un jeu annonce seul** a une seconde ligne : « Steam :
+  Tres positives (84 %) ». Le worker va la chercher juste avant, six
+  secondes au plus ; sans reponse, la notification part sans.
+- **Mesure du 2026-09-26** sur Astrea et Mechabellum, gratuits sur Epic ce
+  jour-la : `api/storesearch` trouve l'application, et on ne garde que le
+  resultat au titre normalise IDENTIQUE -- ni la bande-son, ni la demo, ni un
+  pack de skins. `appreviews/<appid>` rend l'echelle de Steam (1 a 9, traduite
+  par son chiffre) et les nombres d'avis. Les titres de GamerPower sont
+  cherches sans leur suffixe (« Dwarven Realms », pas « ... (Steam) Key
+  Giveaway »).
+- **Toutes langues**, et c'est dit dans l'infobulle : la fiche Steam montre le
+  score de la langue du visiteur quand il y en a assez (Squad : 84 % sur les
+  avis anglais, 82,5 % toutes langues).
+- **Poli envers Steam** : huit jeux au plus apres chaque cycle, chacun relu
+  une fois par semaine ; un jeu que Steam ne connait pas, tous les trois
+  jours. Ni les jeux mobiles, ni les DLC. Sans cookie, et sans permission
+  nouvelle. Reglages -> Magasins -> « Notes Steam » la coupe.
+
+Verifie dans l'extension chargee dans Chromium, sur le vrai Steam : Astrea
+92 %, Mechabellum 84 %, Dwarven Realms 81 %, Squad (week-end) 83 %, un titre
+invente reste sans note ; rien ne deborde a 328 px, themes clair et sombre.
+
+1356 tests.
+
 ## 2.77.0 -- 2026-09-26
 
 **La sauvegarde se fait toute seule**

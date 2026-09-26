@@ -113,6 +113,7 @@ est declare `"type": "module"`.
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
 | `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
+| `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
 | `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
 | `code-reminders.js` | un code bientot perime le dit : a sept jours, puis le dernier jour -- jamais le code lui-meme |
 | `recap.js` | le recap du jeudi soir : recupere, a prendre soi-meme, rate, annonce -- une fois par semaine, jamais vide |
@@ -302,6 +303,14 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**La note Steam** (2.78.0) : « 84 % positif » au bout de chaque jeu gratuit,
+vert, orange ou rouge selon l'echelle de Steam -- « Tres positives · 84 % » en
+entier quand la page est large, et le detail au survol. Aussi pour les
+week-ends gratuits, et sur une seconde ligne de la notification d'un jeu
+annonce seul. Toutes langues confondues : la fiche Steam montre parfois le
+score de votre langue, a un ou deux points pres. Ni les jeux mobiles ni les
+DLC ne sont cherches. Reglages -> Magasins -> « Notes Steam » la coupe.
 
 **La sauvegarde automatique** (2.77.0, Reglages -> Sauvegarde) : une fois par
 semaine, le fichier de la sauvegarde complete se depose tout seul dans

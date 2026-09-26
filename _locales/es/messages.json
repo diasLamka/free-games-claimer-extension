@@ -2044,5 +2044,50 @@
   },
   "autoBackupShow": {
     "message": "Mostrar archivo"
+  },
+  "steamScore1": {
+    "message": "Extremadamente negativas"
+  },
+  "steamScore2": {
+    "message": "Muy negativas"
+  },
+  "steamScore3": {
+    "message": "Negativas"
+  },
+  "steamScore4": {
+    "message": "Mayormente negativas"
+  },
+  "steamScore5": {
+    "message": "Variadas"
+  },
+  "steamScore6": {
+    "message": "Mayormente positivas"
+  },
+  "steamScore7": {
+    "message": "Positivas"
+  },
+  "steamScore8": {
+    "message": "Muy positivas"
+  },
+  "steamScore9": {
+    "message": "Extremadamente positivas"
+  },
+  "ratingShort": {
+    "message": "$1 % positivas"
+  },
+  "ratingLong": {
+    "message": "$1 · $2 %"
+  },
+  "ratingTitle": {
+    "message": "Reseñas de Steam, todos los idiomas: $1 — el $2 % de $3 reseñas son positivas"
+  },
+  "ratingLine": {
+    "message": "Steam: $1 ($2 %)"
+  },
+  "ratingsLabel": {
+    "message": "Valoraciones de Steam"
+  },
+  "ratingsHint": {
+    "message": "Lo que opinan los jugadores de Steam, junto a cada juego gratis y en su notificación. Leído de store.steampowered.com, sin cookies."
   }
 }

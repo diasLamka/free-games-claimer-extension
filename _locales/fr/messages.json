@@ -2044,5 +2044,50 @@
   },
   "autoBackupShow": {
     "message": "Montrer le fichier"
+  },
+  "steamScore1": {
+    "message": "Extrêmement négatives"
+  },
+  "steamScore2": {
+    "message": "Très négatives"
+  },
+  "steamScore3": {
+    "message": "Négatives"
+  },
+  "steamScore4": {
+    "message": "Plutôt négatives"
+  },
+  "steamScore5": {
+    "message": "Moyennes"
+  },
+  "steamScore6": {
+    "message": "Plutôt positives"
+  },
+  "steamScore7": {
+    "message": "Positives"
+  },
+  "steamScore8": {
+    "message": "Très positives"
+  },
+  "steamScore9": {
+    "message": "Extrêmement positives"
+  },
+  "ratingShort": {
+    "message": "$1 % positif"
+  },
+  "ratingLong": {
+    "message": "$1 · $2 %"
+  },
+  "ratingTitle": {
+    "message": "Évaluations Steam, toutes langues : $1 — $2 % des $3 avis sont positifs"
+  },
+  "ratingLine": {
+    "message": "Steam : $1 ($2 %)"
+  },
+  "ratingsLabel": {
+    "message": "Notes Steam"
+  },
+  "ratingsHint": {
+    "message": "L’avis des joueurs Steam à côté de chaque jeu offert, et dans sa notification. Lu sur store.steampowered.com, sans cookie."
   }
 }

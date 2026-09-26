@@ -580,6 +580,13 @@
 
   .worth { font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; flex: none; }
 
+  /* La note Steam (2.78.0) : la couleur dit le sens, le chiffre dit combien. */
+  .rating { font-size: 10.5px; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  .rating.good  { color: var(--jade); }
+  .rating.mixed { color: var(--amber); }
+  .rating.bad   { color: var(--rose); }
+  .game-actions .rating { margin-left: auto; padding-right: 2px; }
+
   /* The countdown reads as a chip, and its colour is the whole message.
      Digits, not words: "3 h 40" is checkable, "soon" is not. */
   .left {
@@ -1452,6 +1459,11 @@
           <input type="checkbox" id="steam-weekends">
           <span class="switch"></span>
           <span class="toggle-label"><span data-i18n="weekendsLabel"></span><small data-i18n="weekendsToggleHint"></small></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="steam-ratings">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="ratingsLabel"></span><small data-i18n="ratingsHint"></small></span>
         </label>
         <details id="more-stores">
           <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
