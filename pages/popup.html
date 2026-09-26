@@ -1355,16 +1355,17 @@
     <div class="chips" id="store-chips" role="group" data-i18n-attr="aria-label:chipsLabel" hidden></div>
 
     <!-- Chaque section de l'onglet se replie (2.81.1) ; son compte reste dans
-         le titre, et le popup se souvient de ce qu'on a replie. -->
+         le titre, et le popup se souvient de ce qu'on a replie. Depuis la
+         2.88.0, le popup les ouvre fermees : tout tient sur un ecran. -->
     <section id="waiting-section" hidden>
-      <details class="fold" id="fold-waiting" open>
+      <details class="fold" id="fold-waiting">
       <summary><h2><span data-i18n="waitingOnYou"></span><span class="count" id="waiting-count"></span></h2></summary>
       <div id="waiting"></div>
       </details>
     </section>
 
     <section>
-      <details class="fold" id="fold-free" open>
+      <details class="fold" id="fold-free">
       <summary><h2><span data-i18n="freeNow"></span><span class="count" id="free-count"></span></h2></summary>
       <p class="changed" id="changed" hidden></p>
       <div id="games"></div>
@@ -1380,14 +1381,14 @@
 
     <!-- Les week-ends gratuits de Steam (2.75.0) : a essayer, rien a garder. -->
     <section id="weekends-section" hidden>
-      <details class="fold" id="fold-weekends" open>
+      <details class="fold" id="fold-weekends">
       <summary><h2><span data-i18n="weekendsTitle"></span><span class="count" id="weekends-count"></span></h2></summary>
       <div id="weekends"></div>
       </details>
     </section>
 
     <section id="upcoming-section">
-      <details class="fold" id="fold-upcoming" open>
+      <details class="fold" id="fold-upcoming">
       <summary><h2><span data-i18n="comingUp"></span><span class="count" id="upcoming-count"></span></h2></summary>
       <div id="upcoming"></div>
       </details>
@@ -1407,7 +1408,7 @@
   <div class="pane" id="pane-codes" role="tabpanel" aria-labelledby="tab-codes" hidden>
     <h2 class="pane-title" data-i18n="tabCodes"></h2>
     <section>
-      <details class="fold" id="fold-codes" open>
+      <details class="fold" id="fold-codes">
       <summary><h2><span data-i18n="codesToRedeem"></span><span class="count" id="codes-count"></span></h2></summary>
       <div id="codes"></div>
       </details>

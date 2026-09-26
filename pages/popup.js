@@ -265,7 +265,8 @@ const DEFAULT_UI = {
   onboarded: false,
   syncSettings: false,
   /** Les plis de Jeux et de Codes qu'on a ouverts ou refermes (2.81.1) : { id: ouvert }. */
-  folds: {},
+  foldsPopup: {},
+  foldsTab: {},
 };
 
 /* Behaviour the service worker reads too. Imported, never re-declared: a
@@ -430,22 +431,24 @@ function foldSay(id, texte) {
 
 /* Les plis de Jeux et de Codes (2.81.1) : tous repliables, et retenus.
  *
- * L'attribut `open` du HTML est l'etat par defaut -- ouvert partout, sauf
- * « Deja recupere ». Ce qu'on en fait ensuite est garde dans `ui.folds` et
- * relu UNE fois, a la premiere lecture des preferences : un rendu suivant ne
- * rouvre pas sous les doigts ce qu'on vient de fermer. Le compte de chaque
- * section reste dans son titre : replie, rien n'est cache. */
+ * Depuis la 2.88.0, le POPUP les ouvre tous fermes -- les titres et leurs
+ * comptes tiennent sur un ecran, on deplie ce qu'on veut voir -- et le
+ * TABLEAU DE BORD tous ouverts, sauf « Deja recupere » : il a la place.
+ * Chaque vue retient ses plis a part (`ui.foldsPopup`, `ui.foldsTab`) ; le
+ * souvenir d'avant (`ui.folds`, commun aux deux) est laisse de cote, pour
+ * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
+ * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
+ * de fermer. Le compte de chaque section reste dans son titre. */
 const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
+  const memo = (ui && ui[FOLDS_KEY]) || {};
   for (const id of REMEMBERED_FOLDS) {
     const pli = document.getElementById(id);
     if (!pli || pli.dataset.init) continue;
     pli.dataset.init = '1';
-    const garde = ui.folds && typeof ui.folds[id] === 'boolean' ? ui.folds[id]
-      // Le reglage de la 2.81.0, repris tel quel.
-      : id === 'fold-claimed' && typeof ui.claimedOpen === 'boolean' ? ui.claimedOpen : null;
-    if (garde !== null) pli.open = garde;
+    pli.open = typeof memo[id] === 'boolean' ? memo[id] : EN_ONGLET && id !== 'fold-claimed';
   }
 }
 
@@ -3385,10 +3388,10 @@ for (const id of REMEMBERED_FOLDS) {
   const pli = document.getElementById(id);
   if (!pli) continue;
   pli.addEventListener('toggle', () => {
-    const folds = { ...(ui.folds || {}) };
+    const folds = { ...(ui[FOLDS_KEY] || {}) };
     if (folds[id] === pli.open) return;
     folds[id] = pli.open;
-    ui = { ...ui, folds };
+    ui = { ...ui, [FOLDS_KEY]: folds };
     setValue(KEY_UI, ui);
   });
 }

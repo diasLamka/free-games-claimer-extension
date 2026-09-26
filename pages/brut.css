@@ -485,3 +485,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   margin-bottom: 8px;
 }
 #relay-pairing .actions { margin-bottom: 10px; }
+
+/* ------------------------------------------------------------- survol
+   Les pages d'origine eclaircissaient le texte au survol (--paper, --amber) :
+   c'etait fait pour un bouton sombre. Sur les blocs blancs de la charte, le
+   texte blanc ou jaune disparaissait (mesure : contraste 1 a 1,12). Au
+   survol, un bloc blanc garde son texte NOIR ; un bloc jaune reste jaune. */
+button:hover:not(:disabled), .chip:hover, .btn-sm:hover:not(:disabled) { color: #000; border-color: #000; }
+.btn-sm.danger:hover:not(:disabled), button.danger:hover:not(:disabled) { background: #000; color: var(--accent); border-color: #000; }
+.chip[aria-pressed="true"]:hover, .tab[aria-selected="true"]:hover { background: var(--accent); color: var(--on-accent); }
+.tab:hover:not([aria-selected="true"]) { background: transparent; color: var(--txt); box-shadow: inset 0 -3px 0 var(--accent); }
+.game a:hover, .ticket a:hover, .badge a:hover, .g-info a.title:hover { color: #000; text-decoration: underline; text-decoration-thickness: 2px; }
+a.link:hover { background: var(--accent); color: #000; }
