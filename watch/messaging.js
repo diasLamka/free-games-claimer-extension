@@ -89,6 +89,9 @@ export const UI_COMMANDS = Object.freeze([
      historiques du moteur et les listes : reservee aux pages, et c'est le
      worker qui fusionne. */
   'fgc-restore',
+  /* La sauvegarde automatique, tout de suite (2.77.0) : le clic qui l'active
+     veut voir un premier fichier. Elle ecrit sur le disque : pages seulement. */
+  'fgc-auto-backup',
 ]);
 
 /**

@@ -113,6 +113,7 @@ est declare `"type": "module"`.
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
 | `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
+| `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
 | `code-reminders.js` | un code bientot perime le dit : a sept jours, puis le dernier jour -- jamais le code lui-meme |
 | `recap.js` | le recap du jeudi soir : recupere, a prendre soi-meme, rate, annonce -- une fois par semaine, jamais vide |
 | `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
@@ -301,6 +302,14 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**La sauvegarde automatique** (2.77.0, Reglages -> Sauvegarde) : une fois par
+semaine, le fichier de la sauvegarde complete se depose tout seul dans
+Telechargements/free-games-claimer -- les quatre derniers restent, le plus
+ancien s'efface. Rien de neuf depuis la derniere ? Pas de nouveau fichier.
+L'interrupteur demande a Chrome l'acces aux telechargements (et le rend quand
+on le coupe) ; le premier fichier part tout de suite, et « Montrer le fichier »
+ouvre son dossier. Elle attend la fin des heures calmes.
 
 **Le grand chiffre du tableau de bord** (2.76.0) : en tete, ce que les jeux
 recuperes par l'extension auraient coute -- la meme somme que le Bilan,

@@ -4,6 +4,42 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.77.0 -- 2026-09-26
+
+**La sauvegarde se fait toute seule**
+
+La 2.74.0 a donne une sauvegarde qui ramene tout -- encore fallait-il penser a
+la faire. Une extension chargee depuis un dossier perd tout son stockage le
+jour ou on la retire de chrome://extensions, et personne n'exporte « au cas
+ou ».
+
+- **Une fois par semaine**, le fichier se depose dans
+  `Telechargements/free-games-claimer/`. Les quatre derniers restent, le plus
+  ancien est efface -- du disque et de la liste des telechargements. Si rien
+  n'a change depuis le dernier, aucun nouveau fichier.
+- **Le fichier est celui de la restauration** : le bloc `backup` de la 2.74.0
+  et le bilan, sans le catalogue ni l'etat des sources, qui se reconstruisent
+  en un cycle. Toujours sans l'alerte du telephone.
+- **La permission `downloads` est l'interrupteur** (Reglages -> Sauvegarde) :
+  optionnelle, demandee au clic, rendue au clic. Le premier fichier part tout
+  de suite ; la ligne dessous dit quand est partie la derniere et combien sont
+  gardees, et « Montrer le fichier » ouvre son dossier. Absente du manifeste
+  Firefox. SECURITY.md dit ce qu'elle permettrait en plus -- lire la liste des
+  telechargements -- et que l'extension n'y cherche que ses propres fichiers.
+- Elle attend la fin des heures calmes, et un echec retente six heures plus
+  tard sans oublier les fichiers deja deposes.
+- **L'export a la main et la sauvegarde de la semaine sortent de la meme
+  fonction** (`exportFromStorage`) : un seul format, ou qu'il soit produit.
+- Corrige : le texte « La sauvegarde garde tout... » s'affichait deux fois
+  dans le volet depuis la 2.74.0.
+
+Verifie dans l'extension chargee dans Chromium : fichier depose depuis le
+service worker en 0,2 s, relu et restaurable, sans le secret du telephone ;
+3,3 Mo (12 000 jeux de collection) en moins d'une seconde ; l'export a la
+main inchange.
+
+1343 tests.
+
 ## 2.76.0 -- 2026-09-26
 
 **Le grand chiffre du tableau de bord**

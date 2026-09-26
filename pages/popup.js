@@ -24,7 +24,7 @@ import {
 import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
 import { money, worthLabel as worthLabelIn } from '../lib/money.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from '../watch/locale.js';
-import { claimsMade, tally, mainStore, buildExport, exportFileName, alreadyYours } from '../watch/tally.js';
+import { claimsMade, tally, mainStore, exportFileName, alreadyYours } from '../watch/tally.js';
 import { band24h, isTrustworthy } from '../watch/schedule/prediction.js';
 import { claimableStoresFor } from '../watch/sources/index.js';
 import { DEFAULT_SETTINGS } from '../watch/storage.js';
@@ -48,9 +48,10 @@ import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/m
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
+import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
-  BACKUP_KEYS, HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES, snapshot,
-} from '../watch/full-backup.js';
+  EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
+} from '../watch/auto-backup.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -210,6 +211,7 @@ const KEYS_READ = [
   KEY_COLLECTION,
   KEY_DRY_RUN,
   KEY_WEEKENDS,
+  KEY_AUTO_BACKUP,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -1670,6 +1672,30 @@ async function renderBackground() {
   document.getElementById('watch-note').textContent = t(vue.note);
 }
 
+/* La sauvegarde automatique (2.77.0). Comme la permission de fond : c'est
+   la permission `downloads` qui fait l'interrupteur, et l'etat dit ce qui a
+   VRAIMENT ete depose -- relu dans le registre du worker. */
+async function renderAutoBackup(all) {
+  const supported = Boolean(api.permissions)
+    && declaresOptional(api.runtime.getManifest(), AUTO_BACKUP_PERMISSION);
+  const zone = document.getElementById('auto-backup-state');
+  const montrer = document.getElementById('auto-backup-show');
+  document.getElementById('auto-backup-row').hidden = !supported;
+  let granted = false;
+  if (supported) {
+    try { granted = await api.permissions.contains({ permissions: [AUTO_BACKUP_PERMISSION] }); } catch { granted = false; }
+  }
+  document.getElementById('auto-backup').checked = granted;
+  const vue = describeAutoBackup(get(all, KEY_AUTO_BACKUP, null));
+  zone.hidden = !granted;
+  montrer.hidden = !granted || !vue.last || !api.downloads;
+  if (!granted) return;
+  montrer.dataset.id = vue.last ? String(vue.last.id) : '';
+  zone.textContent = vue.kind === 'failed' ? t('autoBackupFailed', vue.error || '?')
+    : vue.kind === 'ok' ? t('autoBackupState', since(vue.last.at), String(vue.count))
+      : t('autoBackupNone');
+}
+
 function renderHealth(all) {
   const host = document.getElementById('health-banner');
   host.textContent = '';
@@ -2225,6 +2251,7 @@ async function render() {
   renderNotifications(behaviourCache);
   renderSyncCodes(behaviourCache);
   renderSyncLibrary(behaviourCache);
+  renderAutoBackup(all);
   renderPhone(all);
   renderShortcuts();
 
@@ -2786,19 +2813,9 @@ document.getElementById('update-now').addEventListener('click', async () => {
 /* --- backup */
 
 document.getElementById('export-json').addEventListener('click', async () => {
-  const all = await readAll();
-  const payload = buildExport({
-    codes: get(all, KEY_CODES, []),
-    histories: Object.fromEntries(Object.entries(HISTORY_KEYS).map(([l, k]) => [l, get(all, k, {})])),
-    catalog: get(all, KEY_CATALOG, {}),
-    library: get(all, KEY_LIBRARY, {}),
-    sources: get(all, KEY_SOURCES, {}),
-    settings: get(all, KEY_SETTINGS, {}),
-    filters: get(all, KEY_FILTERS, {}),
-    version: api.runtime.getManifest().version,
-    // Tout ce que la restauration sait remettre (2.74.0), lu tel quel.
-    backup: snapshot(await api.storage.local.get(BACKUP_KEYS)),
-    now: Date.now(),
+  // Le meme fichier que la sauvegarde automatique, catalogue en plus (2.77.0).
+  const payload = exportFromStorage(await api.storage.local.get(EXPORT_KEYS), {
+    version: api.runtime.getManifest().version, now: Date.now(),
   });
   download(exportFileName(Date.now()), 'application/json', JSON.stringify(payload, null, 2));
   say(t('exported', String(payload.pendingCodes.length), String(payload.tally.count)));
@@ -2964,6 +2981,33 @@ document.getElementById('background-permission').addEventListener('change', asyn
     else await api.permissions.remove({ permissions: [OPTIONAL.BACKGROUND] });
   } catch { /* refus ou plateforme muette : l'etat reel est relu juste apres */ }
   await renderBackground();
+});
+
+/* Meme regle : la demande part du clic, et l'etat reel est relu apres. Le
+   premier fichier part tout de suite -- on veut le voir pour y croire. */
+document.getElementById('auto-backup').addEventListener('change', async (e) => {
+  const veut = e.target.checked;
+  let accorde = false;
+  try {
+    if (veut) accorde = await api.permissions.request({ permissions: [AUTO_BACKUP_PERMISSION] });
+    else await api.permissions.remove({ permissions: [AUTO_BACKUP_PERMISSION] });
+  } catch { accorde = false; }
+  if (accorde) {
+    say(t('autoBackupRunning'));
+    const r = await tell('fgc-auto-backup');
+    say(r && r.done ? t('autoBackupDone', r.name) : t('autoBackupFailed', (r && (r.error || r.why)) || '?'));
+  }
+  renderAutoBackup(await readAll());
+});
+
+document.getElementById('auto-backup-show').addEventListener('click', async (e) => {
+  const id = Number(e.currentTarget.dataset.id);
+  try {
+    // Deplace ou efface a la main : on ouvre au moins le dossier.
+    const [d] = Number.isInteger(id) ? await api.downloads.search({ id }) : [];
+    if (d && d.exists !== false) api.downloads.show(id);
+    else api.downloads.showDefaultFolder();
+  } catch { /* la permission vient d'etre retiree */ }
 });
 
 document.getElementById('codes-add').addEventListener('click', async () => {
@@ -3138,9 +3182,8 @@ if (EN_ONGLET) {
 /* --- boot */
 
 showTab('games');
-/* Apres le premier rendu, pas avant : c'est lui qui applique la langue choisie
-   dans les reglages. Pose plus tot, l'invite restait dans celle du navigateur.
-   Elle dit pourquoi sauvegarder : le catalogue se refait en un cycle, les codes
-   jamais. */
+/* Pourquoi sauvegarder est ecrit dans le volet (data-i18n="backupHint",
+   2.74.0) : la ligne d'etat reste vide jusqu'au premier geste. Y reposer la
+   meme phrase au demarrage l'affichait deux fois (corrige en 2.77.0). */
 fillCountries();
-load().then(() => say(t('backupHint')));
+load();

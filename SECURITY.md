@@ -225,6 +225,12 @@ worker relit chaque cle avec sa forme, fusionne sans rien ecraser, refait
 passer chaque libelle appris par la garde des montants, et ne rallume jamais
 la recuperation Steam.
 
+La **sauvegarde automatique** (2.77.0, coupee par defaut) depose ce meme bloc
+chaque semaine dans `Telechargements/free-games-claimer/` et garde les quatre
+derniers fichiers : quatre carnets de codes au lieu d'un, sur le disque, en
+clair. C'est le prix d'une sauvegarde qu'on n'oublie pas de faire ; le
+telephone n'y est pas non plus.
+
 Depuis la 2.24.0 ils ne sont plus recopies dans `FGC_history_*`, un historique
 que rien ne purge et que l'export emporte : l'historique garde le fait, plus
 le secret.
@@ -252,11 +258,15 @@ vous qui decidez.
 | `steamcommunity.com` (hote) | **Optionnel** (`optional_host_permissions`). Lire VOTRE temps de jeu Steam, sur un clic, par l adresse /my/ qui se resout cote serveur -- aucun identifiant de profil n est demande ni stocke. Demande au moment du geste, retirable ensuite. De la 2.39.0 a la 2.46.0 il n etait declare nulle part, et Chrome refusait la demande : le temps de jeu ne s est jamais lu |
 | `https://*/*` (hote) | **Optionnel, jamais accorde a l installation.** Seulement pour l alerte telephone : l extension demande l hote du service choisi, et lui seul -- VOTRE serveur ntfy (`https://ntfy.sh/*` par defaut), `https://discord.com/*` ou `https://api.telegram.org/*` --, au moment ou vous activez l alerte. Le joker existe parce que le serveur est le votre ; il ne donne rien que vous n ayez accorde hote par hote |
 | `nativeMessaging` | **Optionnelle, coupee par defaut, Chrome seulement.** Ouvrir un canal vers un programme LOCAL que vous avez installe vous-meme, pour lui deposer un instantane de votre ludotheque ; et, depuis la 2.54.0, pour demander au relais de mise a jour (`tools/maj-auto.ps1`) de faire le `git pull` du dossier. Rien n ecoute sur un port, rien ne quitte la machine, et **les codes de rachat n y sont pas**. Voir host/README.md |
+| `downloads` | **Optionnelle, coupee par defaut, Chrome seulement** (2.77.0). Deposer la sauvegarde de la semaine dans Telechargements et effacer la plus ancienne des cinq. Chrome l annonce comme « Gerer vos telechargements » : elle permettrait aussi de LIRE la liste de vos telechargements. L extension n y cherche que ses propres fichiers, par le numero que Chrome lui a rendu en les creant (`watch/auto-backup.js`), et n efface que ceux-la. Demandee sur un geste, retiree du meme geste -- et c est elle, pas un reglage, qui allume la sauvegarde automatique |
 | `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |
 
 **Ce qui est absent, et c'est le point** : pas de `tabs`, pas de `cookies`,
-pas de `webRequest`, pas de `downloads`, pas de `identity`, pas de `history`,
-pas de `<all_urls>`. L'extension ne peut pas lire l'URL de vos onglets.
+pas de `webRequest`, pas de `identity`, pas de `history`, pas de
+`<all_urls>`. L'extension ne peut pas lire l'URL de vos onglets. `downloads`
+n'est plus dans cette liste depuis la 2.77.0, mais seulement en optionnelle :
+tant que vous n'activez pas la sauvegarde automatique, l'extension ne voit
+pas vos telechargements.
 
 Les 26 `host_permissions` couvrent Epic, GOG, les 15 domaines Luna, GamerPower,
 Steam et l'API de taux de change. Deux sont plus larges que le strict besoin,

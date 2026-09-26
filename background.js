@@ -69,6 +69,7 @@ import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
+import { runAutoBackup } from './watch/auto-backup.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -179,6 +180,7 @@ async function ensureSchedule(now = Date.now()) {
   await maybeRecap(now);
   await maybeCodeReminders(now);
   await maybeWeekends(now);
+  await maybeAutoBackup(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -409,6 +411,7 @@ async function startCycle(origine, options = {}) {
         await maybeRecap(Date.now());
         await maybeCodeReminders(Date.now());
         await maybeWeekends(Date.now());
+        await maybeAutoBackup(Date.now());
       }
       return result;
     } catch (e) {
@@ -486,6 +489,32 @@ function maybeWeekends(now = Date.now()) {
     .catch((e) => record('warn', 'week-ends Steam impossibles', e))
     .finally(() => { weekendsRunning = null; });
   return weekendsRunning;
+}
+
+/* ------------------------------------------------- sauvegarde automatique */
+
+let autoBackupRunning = null;
+
+/**
+ * La sauvegarde de la semaine (2.77.0), si la permission `downloads` est
+ * accordee. Voir watch/auto-backup.js. `force` : le clic qui l'active.
+ */
+function maybeAutoBackup(now = Date.now(), { force = false } = {}) {
+  if (autoBackupRunning) return autoBackupRunning;
+  autoBackupRunning = (async () => {
+    const settings = await readSettings(api);
+    return runAutoBackup({
+      chrome: api,
+      now,
+      force,
+      version: api.runtime.getManifest().version,
+      quietNow: inQuietHours(settings.quiet, now),
+      record,
+    });
+  })()
+    .catch((e) => { record('warn', 'sauvegarde automatique impossible', e); return { done: false, why: 'failed' }; })
+    .finally(() => { autoBackupRunning = null; });
+  return autoBackupRunning;
 }
 
 /* ------------------------------------------------------ rappel des codes */
@@ -1447,6 +1476,11 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'restauration impossible', e);
         sendResponse({ ok: false, reason: String((e && e.message) || e) });
       });
+    return true;
+  }
+
+  if (msg.type === 'fgc-auto-backup') {
+    maybeAutoBackup(Date.now(), { force: true }).then(sendResponse);
     return true;
   }
 

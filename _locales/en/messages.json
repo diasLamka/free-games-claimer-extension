@@ -2020,5 +2020,29 @@
   },
   "heroThisMonth": {
     "message": "+$1 this month"
+  },
+  "autoBackupLabel": {
+    "message": "Automatic weekly backup"
+  },
+  "autoBackupHint": {
+    "message": "Saved to Downloads/free-games-claimer, the last 4 kept. Asks Chrome for access to downloads."
+  },
+  "autoBackupState": {
+    "message": "Last backup: $1 · files kept: $2"
+  },
+  "autoBackupNone": {
+    "message": "No backup yet."
+  },
+  "autoBackupFailed": {
+    "message": "Last attempt failed: $1. Retrying in a few hours."
+  },
+  "autoBackupDone": {
+    "message": "Backup saved: $1"
+  },
+  "autoBackupRunning": {
+    "message": "First backup…"
+  },
+  "autoBackupShow": {
+    "message": "Show file"
   }
 }

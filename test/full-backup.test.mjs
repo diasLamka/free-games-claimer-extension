@@ -141,7 +141,8 @@ test('la restauration passe par le worker, et seulement depuis une page', () => 
   assert.match(lire('background.js'), /restoreBackup\(api, msg\.data, \{ now: Date\.now\(\) \}\)/);
   const js = lire('pages/popup.js');
   assert.match(js, /const r = await tell\('fgc-restore', \{ data \}\);/);
-  assert.match(js, /backup: snapshot\(await api\.storage\.local\.get\(BACKUP_KEYS\)\),/);
+  // Depuis la 2.77.0, l'export passe par watch/auto-backup.js, qui lit tout BACKUP_KEYS.
+  assert.match(js, /exportFromStorage\(await api\.storage\.local\.get\(EXPORT_KEYS\)/);
   assert.doesNotMatch(js, /setValue\(KEY_CODES, JSON\.stringify\(\[\.\.\.existing/, 'le popup n\'ecrit plus lui-meme');
   const html = lire('pages/popup.html');
   assert.match(html, /data-i18n="backupHint"/);

@@ -2020,5 +2020,29 @@
   },
   "heroThisMonth": {
     "message": "+$1 diesen Monat"
+  },
+  "autoBackupLabel": {
+    "message": "Automatische Sicherung jede Woche"
+  },
+  "autoBackupHint": {
+    "message": "Abgelegt unter Downloads/free-games-claimer, die letzten 4 bleiben. Fragt Chrome nach Zugriff auf Downloads."
+  },
+  "autoBackupState": {
+    "message": "Letzte Sicherung: $1 · aufbewahrte Dateien: $2"
+  },
+  "autoBackupNone": {
+    "message": "Noch keine Sicherung."
+  },
+  "autoBackupFailed": {
+    "message": "Letzter Versuch fehlgeschlagen: $1. Neuer Versuch in einigen Stunden."
+  },
+  "autoBackupDone": {
+    "message": "Sicherung abgelegt: $1"
+  },
+  "autoBackupRunning": {
+    "message": "Erste Sicherung…"
+  },
+  "autoBackupShow": {
+    "message": "Datei zeigen"
   }
 }
