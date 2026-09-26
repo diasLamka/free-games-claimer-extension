@@ -64,6 +64,7 @@ import {
   KEY_RELAY, DEFAULT_SERVER as RELAY_SERVER, readRelay, newSecret, newDeviceId, pairingCode, relayContext, maybeAlive, syncRelay,
 } from '../watch/relay.js';
 import qrcodegen from './vendor/qrcodegen.js';
+import { GUARD_SITES, guardScriptId } from '../watch/owned-guard.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
 import {
@@ -2414,6 +2415,7 @@ async function render() {
   renderAutoBackup(all);
   renderPhone(all);
   renderRelay(all);
+  if (!guardDrawn) { guardDrawn = true; renderGuard(); }
   renderShortcuts();
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
@@ -2830,6 +2832,9 @@ function renderPhone(all) {
 /* Le QR code reste affiche tant qu'on ne dit pas « C'est fait » : un rendu
    declenche par le worker ne doit pas le retirer sous l'appareil photo. */
 let relayShowing = false;
+/* Les cases de l'anti-doublon se dessinent une fois : le rendu suivant ne
+   doit pas les recreer sous le doigt pendant une demande de permission. */
+let guardDrawn = false;
 let relayUnpairArmed = null;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -2969,6 +2974,59 @@ document.getElementById('relay-unpair').addEventListener('click', async (e) => {
   relaySay(t('relayUnpaired'));
   renderRelay(await readAll());
 });
+
+/* ---------------------------------------------------------- l'anti-doublon */
+
+/* Une case par boutique ou l'on paie. Cochee, elle demande l'acces a la
+   boutique -- dans le geste, sans rien attendre avant -- puis y enregistre
+   le script qui lit la fiche. Decochee, elle retire les deux. */
+async function renderGuard() {
+  const box = document.getElementById('guard-list');
+  if (!box || !api.scripting || !api.scripting.getRegisteredContentScripts) return;
+  let inscrits = [];
+  try { inscrits = (await api.scripting.getRegisteredContentScripts()).map((x) => x.id); } catch { inscrits = []; }
+  const lignes = [];
+  for (const site of GUARD_SITES) {
+    let permis = false;
+    try { permis = await api.permissions.contains({ origins: site.origins }); } catch { permis = false; }
+    const label = document.createElement('label');
+    label.className = 'toggle';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = permis && inscrits.includes(guardScriptId(site.id));
+    const sw = document.createElement('span');
+    sw.className = 'switch';
+    const nom = document.createElement('span');
+    nom.className = 'toggle-label';
+    nom.textContent = site.label;
+    label.append(input, sw, nom);
+    input.addEventListener('change', () => toggleGuard(site, input.checked, input));
+    lignes.push(label);
+  }
+  box.replaceChildren(...lignes);
+}
+
+async function toggleGuard(site, on, input) {
+  const note = document.getElementById('guard-note');
+  if (on) {
+    let accorde = false;
+    if (site.origins.every((o) => declaresOptionalOrigin(api.runtime.getManifest(), o))) {
+      try { accorde = await api.permissions.request({ origins: site.origins }); } catch { accorde = false; }
+    }
+    if (!accorde) { input.checked = false; note.textContent = t('guardDenied'); return; }
+    try {
+      await api.scripting.registerContentScripts([{
+        id: guardScriptId(site.id), matches: site.origins, js: ['content/owned-guard.js'],
+        runAt: 'document_idle', persistAcrossSessions: true,
+      }]);
+    } catch { /* deja inscrit */ }
+    note.textContent = t('guardOn', site.label);
+  } else {
+    try { await api.scripting.unregisterContentScripts({ ids: [guardScriptId(site.id)] }); } catch { /* deja retire */ }
+    try { await api.permissions.remove({ origins: site.origins }); } catch { /* deja retiree */ }
+    note.textContent = '';
+  }
+}
 
 function phoneSay(message) {
   document.getElementById('phone-state').textContent = message;

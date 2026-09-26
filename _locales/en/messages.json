@@ -2248,5 +2248,35 @@
   },
   "relayConfirmed": {
     "message": "Phone paired: they now talk to each other."
+  },
+  "guardHeading": {
+    "message": "Already yours"
+  },
+  "guardIntro": {
+    "message": "Buying it here would make a duplicate. The extension only knows what it claimed, what the phone claimed, and what My collection imported."
+  },
+  "guardClaimedOn": {
+    "message": "on $1 — claimed on $2"
+  },
+  "guardClaimedByPhone": {
+    "message": "on $1 — claimed by the phone on $2"
+  },
+  "guardOwnedSince": {
+    "message": "on $1 — in your library since $2"
+  },
+  "guardOwned": {
+    "message": "on $1 — in your library"
+  },
+  "guardSitesTitle": {
+    "message": "Duplicate check."
+  },
+  "guardSitesHint": {
+    "message": "On Epic, GOG and Steam game pages, a banner says when a paid game is already yours elsewhere. Also on these shops:"
+  },
+  "guardDenied": {
+    "message": "Without access to this shop, the check cannot read its pages."
+  },
+  "guardOn": {
+    "message": "$1: game pages now warn about duplicates."
   }
 }

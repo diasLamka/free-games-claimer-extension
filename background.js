@@ -56,6 +56,7 @@ import { importStore, probeSession } from './watch/collection-import.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
 import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watch/lookup.js';
+import { ownedElsewhere, guardLines, guardStoreOf, isProductPage } from './watch/owned-guard.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
@@ -1421,6 +1422,40 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg.type === 'fgc-open-dashboard') {
     api.runtime.openOptionsPage().catch(() => {});
     return;
+  }
+
+  /* L'anti-doublon (2.87.0) : deja a vous ailleurs ? La decision est dans
+     watch/owned-guard.js ; ici, la lecture du stockage et les mots. */
+  if (msg.type === 'fgc-owned-guard') {
+    (async () => {
+      await langue;
+      const url = String((sender && sender.tab && sender.tab.url) || msg.url || '');
+      if (!isProductPage(url)) { sendResponse({ show: false }); return; }
+      const raw = await readKeys(api, [KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP]);
+      const candidats = (Array.isArray(msg.candidates) ? msg.candidates : [])
+        .filter((c) => typeof c === 'string').map((c) => c.slice(0, 200)).slice(0, 5);
+      const r = ownedElsewhere({
+        candidates: candidats,
+        pageStore: guardStoreOf(url),
+        library: raw[KEY_LIBRARY] || {},
+        collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
+        catalog: raw[KEYS.OFFERS] || {},
+        normalise: normaliseTitle,
+        now: Date.now(),
+      });
+      if (!r) { sendResponse({ show: false }); return; }
+      const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+      const storeLabel = (s) => STORE_LABELS[s] || s;
+      sendResponse({
+        show: true,
+        title: r.title,
+        heading: t('guardHeading'),
+        intro: t('guardIntro'),
+        close: t('sentinelClose'),
+        lines: guardLines(r, { t, storeLabel, dateText }),
+      });
+    })().catch(() => sendResponse({ show: false }));
+    return true;
   }
 
   if (msg.type === 'fgc-lookup') {

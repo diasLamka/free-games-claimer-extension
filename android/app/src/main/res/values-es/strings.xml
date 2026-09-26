@@ -130,6 +130,8 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="privacy_3">El relé con el PC, una vez vinculado, pasa por ntfy, cifrado de extremo a extremo: ntfy ve cuándo y cuánto, nunca qué. Su secreto lo guarda el Keystore de Android.</string>
     <string name="privacy_4">La exportación nunca contiene cookies, códigos ni el secreto del relé, y la copia automática de Android está desactivada para esta app.</string>
     <string name="privacy_5">«Cerrar sesión en todas las tiendas» borra lo que las tiendas dejaron en la app (cookies y almacenamiento de las páginas); desinstalar borra todo lo demás.</string>
+    <string name="fact_owned_on">Ya es tuyo en %1$s — desde el %2$s</string>
+    <string name="fact_owned_by_pc">Ya es tuyo en %1$s — conseguido por el PC el %2$s</string>
     <string name="login_set_password">Crear mi contraseña de Epic</string>
     <string name="login_back">Volver al inicio de sesión</string>
     <string name="login_refused_title">%1$s rechaza el inicio de sesión en apps</string>
@@ -152,7 +154,6 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="share_dialog_title">Juego compartido</string>
     <string name="share_dialog_game">Juego</string>
     <string name="fact_free">Gratis ahora mismo en %1$s</string>
-    <string name="fact_claimed">Ya conseguido (%1$s)</string>
     <string name="fact_wished">Ya está en tus deseos</string>
     <string name="fact_unknown">No está gratis ahora. Añádelo: te avisaremos el día que lo esté.</string>
     <string name="import_done">Importado: %1$d juegos conseguidos, %2$d deseos</string>

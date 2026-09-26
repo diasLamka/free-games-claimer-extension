@@ -2248,5 +2248,35 @@
   },
   "relayConfirmed": {
     "message": "Téléphone associé : ils se parlent désormais."
+  },
+  "guardHeading": {
+    "message": "Déjà à vous"
+  },
+  "guardIntro": {
+    "message": "L'acheter ici ferait un doublon. L'extension sait ce qu'elle a récupéré, ce que le téléphone a récupéré, et ce que Ma collection a importé."
+  },
+  "guardClaimedOn": {
+    "message": "sur $1 — récupéré le $2"
+  },
+  "guardClaimedByPhone": {
+    "message": "sur $1 — récupéré par le téléphone le $2"
+  },
+  "guardOwnedSince": {
+    "message": "sur $1 — dans votre bibliothèque depuis le $2"
+  },
+  "guardOwned": {
+    "message": "sur $1 — dans votre bibliothèque"
+  },
+  "guardSitesTitle": {
+    "message": "Anti-doublon."
+  },
+  "guardSitesHint": {
+    "message": "Sur les fiches Epic, GOG et Steam, un bandeau prévient quand un jeu payant est déjà à vous ailleurs. Aussi sur ces boutiques :"
+  },
+  "guardDenied": {
+    "message": "Sans l'accès à cette boutique, l'anti-doublon ne peut pas lire ses fiches."
+  },
+  "guardOn": {
+    "message": "$1 : les fiches préviennent désormais des doublons."
   }
 }

@@ -131,6 +131,8 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="privacy_3">The PC relay, once paired, goes through ntfy, end-to-end encrypted: ntfy sees when and how big, never what. Its secret is locked by the Android Keystore.</string>
     <string name="privacy_4">The export never holds a cookie, a code or the relay secret, and Android’s automatic backup is off for this app.</string>
     <string name="privacy_5">“Sign out of all stores” erases what the stores left in the app (cookies and site storage); uninstalling erases everything else.</string>
+    <string name="fact_owned_on">Already yours on %1$s — since %2$s</string>
+    <string name="fact_owned_by_pc">Already yours on %1$s — claimed by the PC on %2$s</string>
     <string name="login_set_password">Create my Epic password</string>
     <string name="login_back">Back to sign-in</string>
     <string name="login_refused_title">%1$s refuses sign-in inside apps</string>
@@ -153,7 +155,6 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="share_dialog_title">Shared game</string>
     <string name="share_dialog_game">Game</string>
     <string name="fact_free">Free right now on %1$s</string>
-    <string name="fact_claimed">Already claimed (%1$s)</string>
     <string name="fact_wished">Already in your wishlist</string>
     <string name="fact_unknown">Not free right now. Add it: you will be told the day it is.</string>
     <string name="import_done">Imported: %1$d claimed games, %2$d wishes</string>

@@ -2248,5 +2248,35 @@
   },
   "relayConfirmed": {
     "message": "Teléfono vinculado: ya se hablan."
+  },
+  "guardHeading": {
+    "message": "Ya es tuyo"
+  },
+  "guardIntro": {
+    "message": "Comprarlo aquí sería un duplicado. La extensión sabe lo que consiguió, lo que consiguió el teléfono y lo que importó Mi colección."
+  },
+  "guardClaimedOn": {
+    "message": "en $1 — conseguido el $2"
+  },
+  "guardClaimedByPhone": {
+    "message": "en $1 — conseguido por el teléfono el $2"
+  },
+  "guardOwnedSince": {
+    "message": "en $1 — en tu biblioteca desde el $2"
+  },
+  "guardOwned": {
+    "message": "en $1 — en tu biblioteca"
+  },
+  "guardSitesTitle": {
+    "message": "Antiduplicados."
+  },
+  "guardSitesHint": {
+    "message": "En las fichas de Epic, GOG y Steam, un aviso te dice cuando un juego de pago ya es tuyo en otra tienda. También en estas tiendas:"
+  },
+  "guardDenied": {
+    "message": "Sin acceso a esta tienda, el antiduplicados no puede leer sus fichas."
+  },
+  "guardOn": {
+    "message": "$1: las fichas ya avisan de los duplicados."
   }
 }

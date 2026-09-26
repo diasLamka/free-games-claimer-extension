@@ -130,6 +130,8 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="privacy_3">Le relais avec le PC, une fois associé, passe par ntfy, chiffré de bout en bout : ntfy voit quand et combien, jamais quoi. Son secret est verrouillé par le Keystore Android.</string>
     <string name="privacy_4">L\'export ne contient jamais de cookie, de code ni le secret du relais, et la sauvegarde automatique d\'Android est coupée pour cette appli.</string>
     <string name="privacy_5">« Se déconnecter de tous les magasins » efface ce que les magasins ont laissé dans l\'appli (cookies et stockage des pages) ; désinstaller efface tout le reste.</string>
+    <string name="fact_owned_on">Déjà à toi sur %1$s — depuis le %2$s</string>
+    <string name="fact_owned_by_pc">Déjà à toi sur %1$s — récupéré par le PC le %2$s</string>
     <string name="login_set_password">Créer mon mot de passe Epic</string>
     <string name="login_back">Revenir à la connexion</string>
     <string name="login_refused_title">%1$s refuse les connexions dans une appli</string>
@@ -152,7 +154,6 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="share_dialog_title">Jeu partagé</string>
     <string name="share_dialog_game">Jeu</string>
     <string name="fact_free">Gratuit en ce moment sur %1$s</string>
-    <string name="fact_claimed">Déjà récupéré (%1$s)</string>
     <string name="fact_wished">Déjà dans tes souhaits</string>
     <string name="fact_unknown">Pas gratuit en ce moment. Ajoute-le : tu seras prévenu le jour où il le sera.</string>
     <string name="import_done">Importé : %1$d jeux récupérés, %2$d souhaits</string>

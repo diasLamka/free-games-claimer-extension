@@ -130,6 +130,8 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="privacy_3">Das PC-Relais läuft nach dem Koppeln über ntfy, Ende-zu-Ende-verschlüsselt: ntfy sieht wann und wie viel, nie was. Sein Geheimnis sperrt der Android-Keystore.</string>
     <string name="privacy_4">Der Export enthält nie ein Cookie, einen Code oder das Relais-Geheimnis, und die automatische Android-Sicherung ist für diese App aus.</string>
     <string name="privacy_5">„Von allen Shops abmelden“ löscht, was die Shops in der App hinterlassen haben (Cookies und Seitenspeicher); Deinstallieren löscht alles Übrige.</string>
+    <string name="fact_owned_on">Gehört dir schon bei %1$s — seit %2$s</string>
+    <string name="fact_owned_by_pc">Gehört dir schon bei %1$s — vom PC geholt am %2$s</string>
     <string name="login_set_password">Mein Epic-Passwort erstellen</string>
     <string name="login_back">Zurück zur Anmeldung</string>
     <string name="login_refused_title">%1$s verweigert Anmeldungen in Apps</string>
@@ -152,7 +154,6 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="share_dialog_title">Geteiltes Spiel</string>
     <string name="share_dialog_game">Spiel</string>
     <string name="fact_free">Gerade gratis bei %1$s</string>
-    <string name="fact_claimed">Schon geholt (%1$s)</string>
     <string name="fact_wished">Schon auf deiner Wunschliste</string>
     <string name="fact_unknown">Gerade nicht gratis. Füge es hinzu: Du wirst benachrichtigt, sobald es das ist.</string>
     <string name="import_done">Importiert: %1$d geholte Spiele, %2$d Wünsche</string>

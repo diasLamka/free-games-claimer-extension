@@ -2248,5 +2248,35 @@
   },
   "relayConfirmed": {
     "message": "Handy gekoppelt: Sie sprechen jetzt miteinander."
+  },
+  "guardHeading": {
+    "message": "Gehört dir schon"
+  },
+  "guardIntro": {
+    "message": "Hier zu kaufen wäre ein Duplikat. Die Erweiterung weiß, was sie geholt hat, was das Handy geholt hat und was Meine Sammlung importiert hat."
+  },
+  "guardClaimedOn": {
+    "message": "bei $1 — geholt am $2"
+  },
+  "guardClaimedByPhone": {
+    "message": "bei $1 — vom Handy geholt am $2"
+  },
+  "guardOwnedSince": {
+    "message": "bei $1 — in deiner Bibliothek seit $2"
+  },
+  "guardOwned": {
+    "message": "bei $1 — in deiner Bibliothek"
+  },
+  "guardSitesTitle": {
+    "message": "Duplikat-Prüfung."
+  },
+  "guardSitesHint": {
+    "message": "Auf Spielseiten von Epic, GOG und Steam warnt ein Banner, wenn ein Kaufspiel dir woanders schon gehört. Auch in diesen Shops:"
+  },
+  "guardDenied": {
+    "message": "Ohne Zugriff auf diesen Shop kann die Prüfung seine Seiten nicht lesen."
+  },
+  "guardOn": {
+    "message": "$1: Spielseiten warnen jetzt vor Duplikaten."
   }
 }

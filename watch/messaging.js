@@ -120,6 +120,9 @@ export const CONTENT_MESSAGES = Object.freeze([
   /* La reponse du moteur a l'essai a blanc (2.64.0) : ce qu'il a vu sur la
      page, jamais un clic. Meme chemin que `fgc-verdict`. */
   'fgc-inspection',
+  /* L'anti-doublon (2.87.0) : la fiche d'un jeu demande si on le possede
+     deja ailleurs. Elle LIT, comme le lanceur : aucune ecriture. */
+  'fgc-owned-guard',
 ]);
 
 /**

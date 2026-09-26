@@ -413,7 +413,9 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   /* Le retour de vacances (2.84.0) compose son message. */
   'watch/vacation.js',
   /* La barre d'adresse (2.85.0) compose ses suggestions. */
-  'watch/omnibox.js']);
+  'watch/omnibox.js',
+  /* L'anti-doublon (2.87.0) compose les lignes de son bandeau. */
+  'watch/owned-guard.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -458,7 +460,9 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   /* Le retour de vacances (2.84.0) compose son message. */
   'watch/vacation.js',
   /* La barre d'adresse (2.85.0) compose ses suggestions. */
-  'watch/omnibox.js'].map((f) => {
+  'watch/omnibox.js',
+  /* L'anti-doublon (2.87.0) compose les lignes de son bandeau. */
+  'watch/owned-guard.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

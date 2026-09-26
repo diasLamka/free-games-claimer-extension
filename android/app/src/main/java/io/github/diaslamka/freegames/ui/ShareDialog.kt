@@ -33,7 +33,9 @@ fun ShareDialog(initial: String, state: AppState, now: Long, onAdd: (String) -> 
     var title by remember { mutableStateOf(initial) }
     val key = Titles.normalise(title)
     val free = state.offers.values.firstOrNull { it.isOpen(now) && it.normalisedTitle == key }
-    val claimed = state.library.values.firstOrNull { Titles.normalise(it.title) == key }
+    // Tous les magasins ou on l'a deja -- y compris ce que le PC a pris (relais) : l'anti-doublon de l'appli.
+    val owned = state.library.values.filter { Titles.normalise(it.title) == key && it.status in setOf("claimed", "redeemed") }
+        .distinctBy { it.store }.sortedBy { it.ts ?: Long.MAX_VALUE }
     val wished = state.wishlist.any { Titles.normalise(it) == key }
     val b = LocalBrut.current
     AlertDialog(
@@ -44,7 +46,10 @@ fun ShareDialog(initial: String, state: AppState, now: Long, onAdd: (String) -> 
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true, label = { Text(stringResource(R.string.share_dialog_game)) })
                 val facts = buildList {
                     if (free != null) add(stringResource(R.string.fact_free, Stores.label(free.store)) to Color.Black)
-                    if (claimed != null) add(stringResource(R.string.fact_claimed, claimed.ts?.let { Fmt.date(it) } ?: "—") to Color.Black)
+                    owned.forEach { e ->
+                        val date = e.ts?.let { Fmt.date(it) } ?: "—"
+                        add(stringResource(if (e.via == "pc") R.string.fact_owned_by_pc else R.string.fact_owned_on, Stores.label(e.store), date) to Color.Black)
+                    }
                     if (wished) add(stringResource(R.string.fact_wished) to Color(0xFF4A4A4A))
                     if (isEmpty() && key.isNotEmpty()) add(stringResource(R.string.fact_unknown) to Color(0xFF4A4A4A))
                 }

@@ -114,6 +114,18 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://store.steampowered.com/*",
+        "https://store.epicgames.com/*",
+        "https://www.gog.com/*",
+        "https://gog.com/*"
+      ],
+      "js": [
+        "content/owned-guard.js"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "action": {
