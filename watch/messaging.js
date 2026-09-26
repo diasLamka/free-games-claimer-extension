@@ -85,6 +85,10 @@ export const UI_COMMANDS = Object.freeze([
      de l'utilisateur, sans rien y cliquer : reserve aux pages, comme la
      sonde de session. */
   'fgc-dry-run',
+  /* La restauration d'une sauvegarde (2.74.0). Elle ecrit le registre, les
+     historiques du moteur et les listes : reservee aux pages, et c'est le
+     worker qui fusionne. */
+  'fgc-restore',
 ]);
 
 /**

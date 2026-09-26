@@ -183,7 +183,9 @@ export function mainStore(summary) {
 
 /* --------------------------------------------------------------- export */
 
-export const EXPORT_FORMAT = 1;
+/* 2 (2.74.0) : le bloc `backup`, cle de stockage par cle de stockage, que la
+   restauration relit. Le reste du fichier ne change pas. */
+export const EXPORT_FORMAT = 2;
 
 /**
  * Tout ce qui merite de survivre a une desinstallation.
@@ -200,6 +202,7 @@ export function buildExport({
   settings = {},
   filters = {},
   version = null,
+  backup = null,
   now,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('exporter : "maintenant" est obligatoire');
@@ -224,6 +227,9 @@ export function buildExport({
     // pour le diagnostic, pas pour la restauration.
     catalog,
     sources,
+
+    // Ce que la restauration relit (2.74.0) : voir watch/full-backup.js.
+    ...(backup ? { backup } : {}),
   };
 }
 

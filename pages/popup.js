@@ -47,6 +47,9 @@ import { ALL, byStore, storeChips } from '../lib/store-chips.js';
 import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/month-chart.js';
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
+import {
+  BACKUP_KEYS, HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES, snapshot,
+} from '../watch/full-backup.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
@@ -2287,8 +2290,6 @@ function say(message) {
   document.getElementById('backup-state').textContent = message;
 }
 
-const isPlainObject = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
-
 /* ------------------------------------------------------------------ wiring */
 
 document.getElementById('search').addEventListener('input', async (e) => {
@@ -2730,6 +2731,8 @@ document.getElementById('export-json').addEventListener('click', async () => {
     settings: get(all, KEY_SETTINGS, {}),
     filters: get(all, KEY_FILTERS, {}),
     version: api.runtime.getManifest().version,
+    // Tout ce que la restauration sait remettre (2.74.0), lu tel quel.
+    backup: snapshot(await api.storage.local.get(BACKUP_KEYS)),
     now: Date.now(),
   });
   download(exportFileName(Date.now()), 'application/json', JSON.stringify(payload, null, 2));
@@ -2812,6 +2815,7 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
   if (!file) return;
 
   try {
+    if (file.size > MAX_BACKUP_BYTES) { say(t('importNotOurs')); return; }
     const data = JSON.parse(await file.text());
     // `formatExport` is what versions up to 2.10 wrote. A backup is worthless
     // if the version that can read it is the one you no longer run.
@@ -2820,27 +2824,24 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
       return;
     }
 
-    // Only what cannot be rebuilt is restored. The catalogue and the sources'
-    // state come back in one cycle; the codes, never.
-    const all = await readAll();
-    const existing = get(all, KEY_CODES, []);
-    const known = new Set(existing.map((c) => c.code));
-    const added = (Array.isArray(data.pendingCodes) ? data.pendingCodes : [])
-      .filter((c) => c && typeof c.code === 'string' && c.code && !known.has(c.code));
-
-    if (added.length) await setValue(KEY_CODES, JSON.stringify([...existing, ...added]));
-    // Un fichier choisi a la main reste une entree non fiable : un tableau ou
-    // une chaine a la place d'un objet corromprait les reglages du worker.
-    if (isPlainObject(data.filters)) await setValue(KEY_FILTERS, data.filters);
-    /* Sauf la recuperation Steam : elle ne s'active qu'apres l'avertissement
-       qui cite le contrat Steam, et un fichier n'a pas le droit de sauter
-       cette etape a la place de l'utilisateur. Le reglage en place est garde. */
-    if (isPlainObject(data.settings)) {
-      await setValue(KEY_SETTINGS, { ...data.settings, steamAutoClaim: behaviourCache.steamAutoClaim === true });
-    }
-
-    say(added.length ? t('importRestored', String(added.length)) : t('importNoNew'));
+    /* La restauration FUSIONNE, dans le worker (2.74.0) : il est le seul
+       ecrivain du registre et des listes, et il relit le stockage juste avant
+       d'ecrire. Un fichier choisi a la main reste une entree non fiable :
+       chaque cle y est relue avec sa forme, et la recuperation Steam ne s'y
+       rallume jamais. Voir watch/full-backup.js. */
+    const r = await tell('fgc-restore', { data });
+    if (!r || !r.ok) { say(r && r.reason === 'not-ours' ? t('importNotOurs') : t('importFailed', (r && r.reason) || '?')); return; }
+    const a = r.added || {};
+    /* Le registre et les historiques du moteur decrivent les MEMES jeux :
+       on compte l'un ou l'autre, jamais la somme. */
+    const jeux = Math.max(a['veille:bibliotheque'] || 0, HISTORY_BACKUP_KEYS.reduce((n, k) => n + (a[k] || 0), 0));
+    const codes = a[KEY_CODES] || 0;
+    const souhaits = (a['veille:souhaits'] || 0) + (a['veille:souhaits-steam'] || 0) + (a['veille:souhaits-gog'] || 0);
+    // Apres le rendu : la langue restauree s'applique aussi a ce message.
     await load();
+    say(jeux || codes || souhaits || a['veille:issues'] || a['veille:collection']
+      ? t('importRestoredAll', String(jeux), String(codes), String(souhaits))
+      : t('importNoNew'));
   } catch (err) {
     say(t('importFailed', (err && err.message) || String(err)));
   } finally {

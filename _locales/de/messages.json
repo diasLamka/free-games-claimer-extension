@@ -947,9 +947,6 @@
   "importNotOurs": {
     "message": "Diese Datei ist kein Export dieser Erweiterung."
   },
-  "importRestored": {
-    "message": "$1 Code(s) wiederhergestellt, Einstellungen übernommen."
-  },
   "importNoNew": {
     "message": "Kein neuer Code; Einstellungen übernommen."
   },
@@ -957,7 +954,7 @@
     "message": "Import fehlgeschlagen: $1"
   },
   "backupHint": {
-    "message": "Ausstehende Codes lassen sich nicht wiederherstellen: ein verlorener Code ist ein verlorenes Spiel."
+    "message": "Die Sicherung enthält alles, was sich nicht von selbst wiederherstellt: abgeholte Spiele, ihren Verlauf, Codes, Wunschlisten, Sammlung, gelernte Beschriftungen, Einstellungen. Die Wiederherstellung führt zusammen: nichts Vorhandenes geht verloren. Die Handy-Benachrichtigung ist nicht dabei, ihre Adresse ist ein Geheimnis."
   },
   "shortcutsTitle": {
     "message": "Tastenkürzel"
@@ -1981,5 +1978,11 @@
   },
   "codeRemindWhereMany": {
     "message": "Die Codes stehen im Tab Codes."
+  },
+  "shortcutsInPopup": {
+    "message": "Im Popup:"
+  },
+  "importRestoredAll": {
+    "message": "Wiederhergestellt: $1 abgeholte(s) Spiel(e), $2 Code(s), $3 Wunsch/Wünsche hinzugefügt. Der Rest war schon da."
   }
 }

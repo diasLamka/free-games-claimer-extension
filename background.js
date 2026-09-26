@@ -67,6 +67,7 @@ import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } 
 import { badgeState, inQuietHours } from './watch/notify-policy.js';
 import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
+import { restoreBackup } from './watch/full-backup.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -1400,6 +1401,22 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         sendResponse({ ok: false, error: String((e && e.message) || e) });
       })
       .finally(() => { dryRunning = null; });
+    return true;
+  }
+
+  /* Restaurer une sauvegarde (2.74.0). Le fichier a ete lu par la page ; le
+     worker relit le stockage, fusionne et ecrit en une fois -- il est le seul
+     ecrivain du registre et des listes. Voir watch/full-backup.js. */
+  if (msg.type === 'fgc-restore') {
+    restoreBackup(api, msg.data, { now: Date.now() })
+      .then((r) => {
+        if (r.ok) record('info', `sauvegarde restauree : ${Object.values(r.added).reduce((n, x) => n + x, 0)} element(s) ajoute(s)`);
+        sendResponse(r);
+      })
+      .catch((e) => {
+        record('warn', 'restauration impossible', e);
+        sendResponse({ ok: false, reason: String((e && e.message) || e) });
+      });
     return true;
   }
 

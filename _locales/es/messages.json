@@ -947,9 +947,6 @@
   "importNotOurs": {
     "message": "Ese archivo no es una exportación de esta extensión."
   },
-  "importRestored": {
-    "message": "$1 código(s) restaurado(s), ajustes aplicados."
-  },
   "importNoNew": {
     "message": "Ningún código nuevo; ajustes aplicados."
   },
@@ -957,7 +954,7 @@
     "message": "Error al importar: $1"
   },
   "backupHint": {
-    "message": "Los códigos pendientes no se pueden reconstruir: un código perdido es un juego perdido."
+    "message": "La copia guarda todo lo que no se reconstruye solo: juegos obtenidos, su historial, códigos, listas de deseos, colección, etiquetas aprendidas, ajustes. Restaurar fusiona: no se pierde nada de lo que ya está. La alerta del móvil no se incluye, su dirección es un secreto."
   },
   "shortcutsTitle": {
     "message": "Atajos de teclado"
@@ -1981,5 +1978,11 @@
   },
   "codeRemindWhereMany": {
     "message": "Los códigos están en la pestaña Códigos."
+  },
+  "shortcutsInPopup": {
+    "message": "En la ventana:"
+  },
+  "importRestoredAll": {
+    "message": "Restaurado: $1 juego(s) obtenido(s), $2 código(s), $3 deseo(s) añadidos. El resto ya estaba."
   }
 }

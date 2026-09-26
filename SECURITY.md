@@ -215,6 +215,16 @@ Un code de rachat est un **porteur** : qui l'a, l'utilise. Ils vivent dans
 - inclus **en clair dans l'export JSON**, qui atterrit dans votre dossier de
   telechargements.
 
+Depuis la 2.74.0, ce meme fichier est une **sauvegarde complete** : registre
+des jeux recuperes, historiques du moteur, issues, listes de souhaits,
+collection importee, libelles appris, preferences. Il se garde donc comme un
+carnet de codes. Il n'emporte PAS l'alerte du telephone -- adresse ntfy,
+webhook Discord, jeton Telegram --, qui suffit a ecrire a votre place. A la
+restauration, le fichier est traite comme une entree non fiable : le service
+worker relit chaque cle avec sa forme, fusionne sans rien ecraser, refait
+passer chaque libelle appris par la garde des montants, et ne rallume jamais
+la recuperation Steam.
+
 Depuis la 2.24.0 ils ne sont plus recopies dans `FGC_history_*`, un historique
 que rien ne purge et que l'export emporte : l'historique garde le fait, plus
 le secret.

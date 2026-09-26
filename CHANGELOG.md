@@ -4,6 +4,46 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.74.0 -- 2026-09-26
+
+**Une sauvegarde qui ramene tout**
+
+« Exporter en JSON » ne restaurait que les codes, les filtres et les
+reglages. Or une extension chargee depuis un dossier perd tout son stockage
+des que Chrome la voit sous un autre identifiant -- un autre dossier, un autre
+ordinateur, une reinstallation. Les jeux recuperes, leur historique, le
+graphique du Bilan, les listes de souhaits s'en allaient avec.
+
+- **Le fichier emporte tout ce qui ne se reconstruit pas seul** : le registre
+  des jeux recuperes, les historiques du moteur, les issues des offres (page
+  Historique, graphique), les codes, les listes de souhaits (saisie, Steam,
+  GOG), la collection importee, les libelles appris, les reglages, le pays,
+  les interrupteurs du moteur et les preferences d'affichage. Le catalogue et
+  l'etat des sources restent pour le diagnostic : ils se refont en un cycle.
+- **« Importer » fusionne, il n'ecrase pas.** Ce qui est deja la reste ; le
+  fichier complete. Le registre garde la premiere date d'un jeu, un
+  historique n'est jamais remplace par une entree plus ancienne du fichier, et
+  les listes importees ou la collection ne reviennent que si rien ne les
+  remplace encore. Restaurer deux fois n'ajoute rien.
+- **C'est le service worker qui restaure**, lui seul ecrit ces donnees. Le
+  fichier est une entree non fiable : chaque cle est relue avec sa forme, un
+  libelle appris repasse par la garde qui refuse ce qui parle d'argent, et la
+  recuperation Steam ne se rallume jamais depuis un fichier.
+- **Pas de secret dedans** : l'alerte du telephone (adresse ntfy, webhook
+  Discord, jeton Telegram) n'est pas sauvegardee.
+- Une sauvegarde d'avant la 2.74.0 se restaure toujours (codes, filtres,
+  reglages).
+- L'aide des touches du popup (1, 2, 3, /, Echap) quitte le pli Sauvegarde,
+  ou elle etait perdue, pour rejoindre « Raccourcis clavier » -- et son
+  ancien titre, que la 2.69.0 avait ecrase, ne fait plus doublon.
+
+Verifie dans Chromium sur deux profils : un export depuis le premier, un
+import dans le second, vierge -- codes, historique, registre, souhaits, theme
+et reglages reviennent, l'adresse du telephone ni ne part ni ne revient, et le
+message dit « 2 jeux, 1 code, 1 souhait ajoutes ».
+
+1320 tests.
+
 ## 2.73.0 -- 2026-09-26
 
 **Un code ne se perd plus au fond de l'onglet Codes**

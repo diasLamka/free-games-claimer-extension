@@ -947,9 +947,6 @@
   "importNotOurs": {
     "message": "That file is not an export of this extension."
   },
-  "importRestored": {
-    "message": "$1 code(s) restored, settings applied."
-  },
   "importNoNew": {
     "message": "No new code; settings applied."
   },
@@ -957,7 +954,7 @@
     "message": "Import failed: $1"
   },
   "backupHint": {
-    "message": "Pending codes cannot be rebuilt: a lost code is a lost game."
+    "message": "The backup holds everything that does not rebuild itself: claimed games, their history, codes, wishlists, collection, taught labels, settings. Restoring merges: nothing already here is lost. The phone alert is not saved, since its address is a secret."
   },
   "shortcutsTitle": {
     "message": "Keyboard shortcuts"
@@ -1981,5 +1978,11 @@
   },
   "codeRemindWhereMany": {
     "message": "The codes are in the Codes tab."
+  },
+  "shortcutsInPopup": {
+    "message": "In the popup:"
+  },
+  "importRestoredAll": {
+    "message": "Restored: $1 claimed game(s), $2 code(s), $3 wish(es) added. The rest was already here."
   }
 }

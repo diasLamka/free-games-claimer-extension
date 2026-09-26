@@ -947,9 +947,6 @@
   "importNotOurs": {
     "message": "Ce fichier n’est pas un export de l’extension."
   },
-  "importRestored": {
-    "message": "$1 code(s) restauré(s), réglages repris."
-  },
   "importNoNew": {
     "message": "Aucun code nouveau ; réglages repris."
   },
@@ -957,7 +954,7 @@
     "message": "Import impossible : $1"
   },
   "backupHint": {
-    "message": "Les codes en attente ne se reconstruisent pas : un code perdu est un jeu perdu."
+    "message": "La sauvegarde garde tout ce qui ne se reconstruit pas seul : jeux récupérés, leur historique, codes, listes de souhaits, collection, libellés appris, réglages. La restauration fusionne : rien de ce qui est déjà là n'est perdu. L'alerte du téléphone n'y est pas, son adresse est un secret."
   },
   "shortcutsTitle": {
     "message": "Raccourcis clavier"
@@ -1981,5 +1978,11 @@
   },
   "codeRemindWhereMany": {
     "message": "Les codes sont dans l'onglet Codes."
+  },
+  "shortcutsInPopup": {
+    "message": "Dans le popup :"
+  },
+  "importRestoredAll": {
+    "message": "Restauré : $1 jeu(x) récupéré(s), $2 code(s), $3 souhait(s) ajoutés. Le reste était déjà là."
   }
 }
