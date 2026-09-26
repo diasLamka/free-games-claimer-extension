@@ -2134,5 +2134,8 @@
   },
   "shareWeekends": {
     "message": "À essayer gratuitement ce week-end sur Steam :"
+  },
+  "verdictNeedsBase": {
+    "message": "jeu de base requis"
   }
 }

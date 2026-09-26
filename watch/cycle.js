@@ -50,6 +50,8 @@ import {
   FINAL_VERDICTS,
   HUMAN_VERDICTS,
   MANUAL_VERDICTS,
+  WAITING_VERDICTS,
+  WAITING_RECHECK_MS,
   MAX_ATTEMPTS,
   nextAttemptAt,
   BUDGET_MS,
@@ -756,7 +758,11 @@ export function claimCandidates(catalog, filters, { claimableStores, watchedStor
        laisse un onglet ouvert dans la fenetre de l'utilisateur, et un par
        cycle les empilait. */
     const humain = HUMAN_VERDICTS.includes(o.verdict);
-    if (!humain && (o.attempts || 0) >= MAX_ATTEMPTS) return false;
+    /* « Jeu de base requis » (2.80.1) n'est pas abandonne non plus : acheter
+       le jeu de base se fait hors de l'extension, et elle doit le voir. Mais
+       il recule, lui : douze heures entre deux lectures de la bibliotheque. */
+    const attend = WAITING_VERDICTS.includes(o.verdict);
+    if (!humain && !attend && (o.attempts || 0) >= MAX_ATTEMPTS) return false;
     const recule = !humain || MANUAL_VERDICTS.includes(o.verdict);
     if (recule && typeof o.nextAttemptAt === 'number' && o.nextAttemptAt > now) return false;
     return true;
@@ -897,13 +903,19 @@ export async function claimWhatCanBe({
       fetch: fetchImpl,
     });
 
-    timestamps = recordClaim(timestamps, Date.now());
+    /* Rien n'a ete envoye au magasin -- un DLC dont le jeu de base manque,
+       lu dans la bibliotheque (2.80.1) : ni le plafond horaire ni le rythme de
+       Steam n'en paient le prix, et l'offre Steam suivante garde son tour. */
+    const touche = r.touched !== false;
+    if (!touche && offer.store === STORES.STEAM) steamThisRun = Math.max(0, steamThisRun - 1);
+    if (touche) timestamps = recordClaim(timestamps, Date.now());
     claims.push({ title: offer.title, catalogKey: offer.catalogKey, verdict: r.verdict, details: r.details });
 
     const attempts = (next[offer.catalogKey].attempts || 0) + 1;
     const definitif = FINAL_VERDICTS.includes(r.verdict);
     const humain = HUMAN_VERDICTS.includes(r.verdict);
     const ongletLaisse = MANUAL_VERDICTS.includes(r.verdict);
+    const attente = WAITING_VERDICTS.includes(r.verdict);
 
     next[offer.catalogKey] = {
       ...next[offer.catalogKey],
@@ -920,13 +932,15 @@ export async function claimWhatCanBe({
          ouvert, en rouvrir un a chaque cycle les empilait. Jamais abandonne --
          « Reessayer maintenant » efface le recul. */
       nextAttemptAt: definitif || (humain && !ongletLaisse) ? null
-        : nextAttemptAt(ongletLaisse ? Math.min(attempts, MAX_ATTEMPTS - 1) : attempts, Date.now()),
+        : attente ? Date.now() + WAITING_RECHECK_MS
+          : nextAttemptAt(ongletLaisse ? Math.min(attempts, MAX_ATTEMPTS - 1) : attempts, Date.now()),
       // Le motif technique est garde : c'est lui qui dit a l'utilisateur ce
       // qu'il doit faire, quand l'extension ne peut plus rien.
       details: r.details || null,
       attemptStartedAt: null,
       // Garde, lui : c'est sur cette date que se regle le rythme de Steam.
-      lastAttemptAt: commence,
+      // Une simple lecture de bibliotheque ne la deplace pas.
+      lastAttemptAt: touche ? commence : (next[offer.catalogKey].lastAttemptAt ?? null),
       updatedAt: Date.now(),
     };
 

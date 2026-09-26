@@ -207,3 +207,9 @@ test('un etat relu illisible ne fait pas tomber le popup', () => {
 test('la cle vit dans l\'espace de la veille, jamais dans celui du moteur', () => {
   assert.ok(KEY_CANARY.startsWith('veille:'));
 });
+
+test('jeu de base requis ne parle pas de la page du magasin (2.80.1)', () => {
+  // Le canari criait « le magasin a probablement change sa page » pour un DLC
+  // dont le compte n'avait pas le jeu de base : la page, elle, n'avait rien.
+  assert.equal(classify('needs_base_game', 'DLC : il faut d\'abord posseder le jeu de base'), KINDS.OTHER);
+});

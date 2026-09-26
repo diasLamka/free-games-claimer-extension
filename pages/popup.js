@@ -143,6 +143,7 @@ const VERDICT_KEYS = {
   upcoming: ['verdictUpcoming', 'wait'],
   undetermined: ['verdictUndetermined', 'wait'],
   quota: ['verdictQuota', 'wait'],
+  needs_base_game: ['verdictNeedsBase', 'wait'],
 };
 
 const REASON_KEYS = {
@@ -614,7 +615,7 @@ function horizonOf(offer, now) {
 /* ------------------------------------------------------- what needs you */
 
 /** Verdicts that stopped on something only a person can resolve. */
-const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'quota', 'failed']);
+const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'quota', 'failed', 'needs_base_game']);
 
 /**
  * Offers whose last autonomous attempt stopped on a human.

@@ -4,6 +4,44 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.80.1 -- 2026-09-26
+
+**Steam : un DLC gratuit demande son jeu de base -- et on le dit**
+
+Signale le 2026-09-26 : « formulaire envoye, mais la page propose toujours
+« Add to Account » -- arrive sur : Erreur du site -
+https://store.steampowered.com/freelicense/addfreelicense/ », et le canari
+concluait « ce magasin a probablement change sa page ».
+
+La page n'avait pas change. L'offre Steam du jour etait un DLC, « Explosive
+Odds - Supporter Pack » (-100 %), et Steam n'ajoute un DLC gratuit qu'a un
+compte qui possede deja le jeu de base -- ici Explosive Odds, 1,99 EUR. Le
+script de Steam le dit dans sa variante AJAX (`purchaseresultdetail == 24` :
+« you must own the base product ») ; l'envoi du formulaire, lui, n'affiche que
+« Erreur du site ». Mesure du meme jour : le formulaire, le bouton et
+`addToCart()` sont inchanges, et c'est bien un envoi de formulaire classique
+que Steam fait lui-meme.
+
+- **La source Steam retient le jeu de base** de chaque DLC
+  (`related_items.parent_appid` de GetItems).
+- **Avant d'ouvrir quoi que ce soit**, la bibliotheque est lue : si le jeu de
+  base n'y est pas, RIEN n'est envoye -- chaque refus comptait dans le quota
+  d'activations de Steam, et le recul le retentait. Nouveau verdict « jeu de
+  base requis », dans « Vous attendent », avec au survol ce qu'il faudrait
+  acheter : « Explosive Odds (1,99 EUR) ».
+- **Relu toutes les douze heures, jamais abandonne** : si vous achetez le jeu
+  de base pendant l'offre, la verification suivante le voit (ou « Reessayer »
+  tout de suite). Cette lecture ne coute ni le rythme de Steam (20 min entre
+  deux recuperations), ni le plafond horaire, et l'offre Steam suivante garde
+  son tour dans le meme cycle.
+- **Le canari ne s'en mele plus** : « jeu de base requis » ne dit rien de la
+  page du magasin.
+- **Si un envoi echoue quand meme**, le journal cite ce que Steam ecrit sous
+  « Erreur du site », au lieu du seul titre. Et si la bibliotheque, muette
+  avant l'envoi, repond apres sans le jeu de base, le refus lui est impute.
+
+1383 tests.
+
 ## 2.80.0 -- 2026-09-26
 
 **Copier la liste, pour les copains**

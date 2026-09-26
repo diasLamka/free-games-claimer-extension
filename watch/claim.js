@@ -19,7 +19,7 @@ import { readSettings } from './storage.js';
 import { readOwnership } from './sources/steam.js';
 import {
   steamAppUrl, steamPageStep, describeStep, ownedFromStep,
-  isSteamLoginUrl, isSteamAgeCheckUrl,
+  isSteamLoginUrl, isSteamAgeCheckUrl, missingBaseGame, baseGameLabel, steamErrorText,
 } from './steam-claim.js';
 
 export const BUDGET_MS = 5 * 60 * 1000;
@@ -55,7 +55,21 @@ export const VERDICTS = Object.freeze({
   UNDETERMINED: 'undetermined',
   /** Le magasin ou notre propre plafond dit non pour l'instant. */
   QUOTA: 'quota',
+  /**
+   * Un DLC Steam dont le jeu de base manque a la bibliotheque (2.80.1). Steam
+   * refuserait la licence gratuite ; rien n'est envoye. Le jour ou le jeu de
+   * base y est, la prochaine verification le voit.
+   */
+  NEEDS_BASE: 'needs_base_game',
 });
+
+/**
+ * Verdicts qui attendent un geste HORS de l'extension (acheter le jeu de base)
+ * : jamais abandonnes, relus de loin en loin -- toutes les douze heures --,
+ * et sans rien envoyer au magasin pour le savoir.
+ */
+export const WAITING_VERDICTS = Object.freeze([VERDICTS.NEEDS_BASE]);
+export const WAITING_RECHECK_MS = 12 * 3600 * 1000;
 
 /**
  * Verdicts apres lesquels il ne sert a rien de reessayer, jamais.
@@ -655,6 +669,19 @@ export async function claimSteamOffer(offer, {
   if (avant.status === 'ok' && (avant.packages.has(packageId) || avant.apps.has(appid))) {
     return { verdict: VERDICTS.CLAIMED, details: 'deja dans la bibliotheque Steam', store };
   }
+  /* Un DLC sans son jeu de base : Steam refuserait, et le refus compterait
+     dans son quota d'activations. On le dit, sans rien ouvrir ni envoyer. */
+  const manque = missingBaseGame(offer, avant);
+  if (manque) {
+    const nom = await baseGameLabel(manque, { fetch: fetchImpl });
+    return {
+      verdict: VERDICTS.NEEDS_BASE,
+      details: `DLC : il faut d'abord posseder le jeu de base sur Steam -- ${nom || `appid ${manque}`}`,
+      store,
+      // Rien n'a ete envoye a Steam : ni le rythme ni le plafond n'en paient le prix.
+      touched: false,
+    };
+  }
   if (avant.status !== 'ok') {
     /* On continue, et le journal dit pourquoi. C'est le correctif de la 2.22.2 :
        une bibliotheque muette n'est pas une preuve d'absence de session. */
@@ -722,16 +749,27 @@ export async function claimSteamOffer(offer, {
        renvoie l'onglet sur la fiche : c'est cette page-la qui porte le motif
        d'un refus, et elle ne sera plus affichee ensuite. */
     const atterrissage = await tabWhere(chrome, tabId);
+    /* « Erreur du site » ne dit rien : le paragraphe dessous dit pourquoi
+       (2.80.1). Lu seulement hors de la fiche, sur la page de la licence. */
+    let motif = '';
+    if (/\/freelicense\//.test(String(after || ''))) {
+      try {
+        const [lu] = await chrome.scripting.executeScript({ target: { tabId }, func: steamErrorText });
+        motif = (lu && typeof lu.result === 'string') ? lu.result : '';
+      } catch { motif = ''; }
+    }
 
     /* La preuve, d'abord dans la bibliotheque. On retient si elle a seulement
        SU repondre : une bibliotheque muette ne prouve pas l'echec, et c'est
        toute la difference entre « rate » et « on ne sait pas ». */
     let readable = false;
+    let derniere = null;
     for (let i = 0; i < t.confirmTries; i++) {
       if (i) await sleep(t.confirmDelayMs);
       const check = await readOwnership({ fetch: fetchImpl, now: Date.now() });
       if (check.status !== 'ok') continue;
       readable = true;
+      derniere = check;
       if (check.packages.has(packageId)) return { verdict: VERDICTS.CLAIMED, details: null, store };
     }
 
@@ -745,7 +783,19 @@ export async function claimSteamOffer(offer, {
       return { verdict: VERDICTS.CLAIMED, details: 'confirme par la page', store };
     }
 
-    const ou = atterrissage ? ` -- arrive sur : ${atterrissage}` : '';
+    const ou = (atterrissage ? ` -- arrive sur : ${atterrissage}` : '') + (motif ? ` (« ${motif} »)` : '');
+
+    /* La bibliotheque etait illisible avant l'envoi, lisible apres : si le jeu
+       de base n'y est pas, c'est lui qui a fait refuser -- pas la page. */
+    const manqueApres = missingBaseGame(offer, derniere);
+    if (manqueApres) {
+      const nom = await baseGameLabel(manqueApres, { fetch: fetchImpl });
+      return {
+        verdict: VERDICTS.NEEDS_BASE,
+        details: `DLC : Steam a refuse, le jeu de base manque -- ${nom || `appid ${manqueApres}`}${ou}`,
+        store,
+      };
+    }
     if (second && second.ok) {
       return {
         verdict: VERDICTS.FAILURE,

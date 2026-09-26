@@ -26,8 +26,11 @@ import {
   describeStep,
   STEAM_SPACING_MS,
   STEAM_MAX_PER_DAY,
+  missingBaseGame,
+  baseGameLabel,
+  steamErrorText,
 } from '../watch/steam-claim.js';
-import { claimOffer, VERDICTS } from '../watch/claim.js';
+import { claimOffer, VERDICTS, WAITING_RECHECK_MS } from '../watch/claim.js';
 import { claimWhatCanBe, runCycle } from '../watch/cycle.js';
 import { CLAIMABLE_STORES, claimableStoresFor, activeSourcesFor } from '../watch/sources/index.js';
 import { mapItem, readOwnership, OWNED_URL } from '../watch/sources/steam.js';
@@ -352,12 +355,16 @@ async function fauxSteam({
   atterrissage = null,
   apresClic = 'https://store.steampowered.com/freelicense/addfreelicense/',
   fenetres = false,
+  /** Ce que la page d'arrivee ecrit sous « Erreur du site » (2.80.1). */
+  motifPage = '',
+  /** La reponse de GetItems pour le nom du jeu de base, ou null. */
+  jeuDeBase = null,
 } = {}) {
   const faux = fakeChrome({ now: T });
   await faux.chrome.storage.local.set({ [KEYS.SETTINGS]: { ...DEFAULT_SETTINGS, steamAutoClaim: option } });
 
   const onglets = new Map();
-  const traces = { ouverts: [], fermes: [], fenetresFermees: [], injections: [], retours: [], lectures: 0 };
+  const traces = { ouverts: [], fermes: [], fenetresFermees: [], injections: [], retours: [], lectures: 0, lecturesPage: 0, getItems: 0 };
   let prochain = 500;
 
   faux.chrome.tabs = {
@@ -396,6 +403,9 @@ async function fauxSteam({
   }
   faux.chrome.scripting = {
     async executeScript({ target, func, args }) {
+      /* Lire le message d'erreur de la page d'arrivee ne clique rien : compte a
+         part, pour que « un seul clic » garde son sens. */
+      if (func !== steamPageStep) { traces.lecturesPage++; return [{ result: motifPage }]; }
       traces.injections.push({ tabId: target.tabId, func, args });
       // args[1] est `dryRun` : la seconde lecture, celle d'apres le clic.
       if (args[1] === true) return [{ result: etapeApres }];
@@ -407,7 +417,11 @@ async function fauxSteam({
     },
   };
 
-  const fetch = async () => {
+  const fetch = async (url) => {
+    if (String(url).includes('IStoreBrowseService/GetItems')) {
+      traces.getItems++;
+      return reponseJson(jeuDeBase || { response: {} });
+    }
     const body = bibliotheques[Math.min(traces.lectures, bibliotheques.length - 1)];
     traces.lectures++;
     return reponseJson(body);
@@ -724,4 +738,121 @@ test('une entree Steam sans paquet n\'est pas candidate, et ne prend pas le cren
   });
   assert.deepEqual(r.claims.map((c) => c.catalogKey), [vraie.catalogKey]);
   assert.equal(r.claims[0].verdict, VERDICTS.CLAIMED);
+});
+
+/* ------------------------------------------- un DLC demande son jeu de base */
+
+/* Mesure du 2026-09-26 : « Explosive Odds - Supporter Pack » (appid 4059370,
+   paquet 1843288), DLC d'Explosive Odds (appid 3674980, 1,99 EUR). Sans le jeu
+   de base, l'envoi du formulaire aboutit sur « Erreur du site ». */
+const DLC = { storeId: '4059370', packageId: '1843288', parentAppid: '3674980', title: 'Explosive Odds - Supporter Pack', category: 'DLC' };
+const JEU_DE_BASE = { response: { store_items: [{ appid: 3674980, name: 'Explosive Odds', best_purchase_option: { formatted_final_price: '1,99€' } }] } };
+
+test('GetItems porte le jeu de base d\'un DLC, et lui seul', () => {
+  const item = (type, extra = {}) => ({
+    appid: 4059370, name: 'X', type, best_purchase_option: { is_free_to_keep: true, packageid: 1843288, free_to_keep_ends: 1790000000 }, ...extra,
+  });
+  assert.equal(mapItem(item(4, { related_items: { parent_appid: 3674980 } }), T).parentAppid, '3674980');
+  assert.equal(mapItem(item(0, { related_items: { demo_appid: [1] } }), T).parentAppid, null, 'un jeu n\'a pas de parent');
+  assert.equal(mapItem(item(4), T).parentAppid, null);
+  // Une fusion avec une source qui ne le connait pas ne l'efface pas.
+  const a = makeOffer({ source: 'steam', store: STORES.STEAM, title: 'X', parentAppid: '3674980' });
+  const b = makeOffer({ source: 'gamerpower', store: STORES.STEAM, title: 'X' });
+  assert.equal(merge(a, b).parentAppid, '3674980');
+});
+
+test('le jeu de base manque-t-il ? Seulement si la bibliotheque a repondu', () => {
+  const lue = (apps) => ({ status: 'ok', apps: new Set(apps), packages: new Set() });
+  assert.equal(missingBaseGame(DLC, lue(['10'])), '3674980');
+  assert.equal(missingBaseGame(DLC, lue(['3674980'])), null);
+  assert.equal(missingBaseGame(DLC, { status: 'logged_out', apps: new Set(), packages: new Set() }), null, 'une mesure absente ne prouve rien');
+  assert.equal(missingBaseGame({ storeId: '1' }, lue([])), null, 'pas un DLC');
+  assert.equal(missingBaseGame(DLC, null), null);
+});
+
+test('DLC sans son jeu de base : rien n\'est ouvert ni envoye, et on dit quoi acheter', async () => {
+  const ctx = await fauxSteam({ bibliotheques: [{ rgOwnedApps: [10], rgOwnedPackages: [1] }], jeuDeBase: JEU_DE_BASE });
+  const r = await reclamer(ctx, offreSteam(DLC));
+  assert.equal(r.verdict, VERDICTS.NEEDS_BASE);
+  assert.equal(r.touched, false);
+  assert.match(r.details, /jeu de base sur Steam -- Explosive Odds \(1,99€\)$/);
+  assert.equal(ctx.traces.ouverts.length, 0, 'aucune page');
+  assert.equal(ctx.traces.injections.length, 0, 'aucun formulaire');
+  // Sans reponse de GetItems, l'appid dit de quel jeu il s'agit.
+  const muet = await fauxSteam({ bibliotheques: [{ rgOwnedApps: [10], rgOwnedPackages: [1] }] });
+  assert.match((await reclamer(muet, offreSteam(DLC))).details, /appid 3674980$/);
+});
+
+test('DLC dont le jeu de base est la : la recuperation se fait comme avant', async () => {
+  const ctx = await fauxSteam({
+    bibliotheques: [{ rgOwnedApps: [3674980], rgOwnedPackages: [1] }, { rgOwnedApps: [3674980], rgOwnedPackages: [1, 1843288] }],
+  });
+  const r = await reclamer(ctx, offreSteam(DLC));
+  assert.equal(r.verdict, VERDICTS.CLAIMED, JSON.stringify(r));
+  assert.equal(ctx.traces.injections.length, 1);
+});
+
+test('bibliotheque muette avant, lisible apres : le refus est mis sur le jeu de base, message de Steam cite', async () => {
+  const ctx = await fauxSteam({
+    bibliotheques: [{ rgOwnedApps: [], rgOwnedPackages: [] }, { rgOwnedApps: [10], rgOwnedPackages: [1] }],
+    etapeApres: { ok: true, dryRun: true, via: 'formulaire' },
+    motifPage: 'Before you can add this product to your Steam account, you must own the base product.',
+    jeuDeBase: JEU_DE_BASE,
+  });
+  const r = await reclamer(ctx, offreSteam(DLC));
+  assert.equal(r.verdict, VERDICTS.NEEDS_BASE, JSON.stringify(r));
+  assert.match(r.details, /Steam a refuse, le jeu de base manque -- Explosive Odds \(1,99€\)/);
+  assert.match(r.details, /« Before you can add this product/);
+  assert.equal(ctx.traces.lecturesPage, 1, 'la page d\'arrivee est lue, une fois');
+});
+
+test('un echec ordinaire cite ce que la page d\'arrivee dit, au lieu du seul titre', async () => {
+  const ctx = await fauxSteam({
+    bibliotheques: [{ rgOwnedApps: [10], rgOwnedPackages: [1] }],
+    etapeApres: { ok: true, dryRun: true, via: 'formulaire' },
+    motifPage: 'Une erreur est survenue lors du traitement de votre demande.',
+  });
+  const r = await reclamer(ctx);
+  assert.equal(r.verdict, VERDICTS.FAILURE);
+  assert.match(r.details, /page propose toujours « Add to Account » -- arrive sur : .* \(« Une erreur est survenue lors du traitement de votre demande\. »\)$/);
+});
+
+test('le message sous « Erreur du site » se lit, et seulement lui', () => {
+  const doc = (sel, texte) => ({ querySelector: (q) => (q.split(',').map((x) => x.trim()).includes(sel) ? { textContent: texte } : null) });
+  assert.equal(steamErrorText(doc('#error_box', '  Before you can add\n this product...  ')), 'Before you can add this product...');
+  assert.equal(steamErrorText(doc('#responsive_page_template_content', 'x'.repeat(500))).length, 200);
+  assert.equal(steamErrorText({ querySelector: () => null }), '');
+  assert.doesNotMatch(steamErrorText.toString(), /\b(import|require|chrome)\b/, 'autonome : elle est injectee');
+});
+
+test('le cycle : jeu de base requis ne coute ni le rythme Steam, ni le plafond, ni l\'abandon', async () => {
+  const ctx = await fauxSteam();
+  const dlc = { ...offreSteam(DLC), catalogKey: 'steam:4059370', attempts: 9, verdict: VERDICTS.NEEDS_BASE, lastAttemptAt: T - 3 * 3600000 };
+  const jeu = offreSteam();
+  const vus = [];
+  const r = await claimWhatCanBe({
+    chrome: ctx.chrome,
+    now: T,
+    catalog: { [dlc.catalogKey]: dlc, [jeu.catalogKey]: jeu },
+    filters: { claimExtraContent: true },
+    claimableStores: claimableStoresFor({ steamAutoClaim: true }),
+    watchedStores: ['steam'],
+    cadence: [],
+    maxReclamations: 3,
+    fetch: ctx.fetch,
+    claim: async (offre) => {
+      vus.push(offre.catalogKey);
+      return offre.catalogKey === dlc.catalogKey
+        ? { verdict: VERDICTS.NEEDS_BASE, details: 'jeu de base', store: STORES.STEAM, touched: false }
+        : { verdict: VERDICTS.CLAIMED, details: null, store: STORES.STEAM };
+    },
+  });
+  assert.ok(vus.includes(dlc.catalogKey), 'neuf essais, jamais abandonne');
+  assert.ok(vus.includes(jeu.catalogKey), 'l\'autre offre Steam garde son tour dans le meme cycle');
+  const apres = r.catalog[dlc.catalogKey];
+  assert.equal(apres.verdict, VERDICTS.NEEDS_BASE);
+  assert.equal(apres.state, STATES.QUEUED, 'toujours affichee, pas resolue');
+  assert.ok(Math.abs(apres.nextAttemptAt - (Date.now() + WAITING_RECHECK_MS)) < 5000, 'relue dans douze heures');
+  assert.equal(apres.lastAttemptAt, T - 3 * 3600000, 'une lecture de bibliotheque ne deplace pas le rythme Steam');
+  assert.equal(r.cadence.length, 1, 'seule la vraie recuperation compte au plafond horaire');
 });

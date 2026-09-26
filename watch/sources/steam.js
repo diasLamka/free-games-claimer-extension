@@ -146,6 +146,13 @@ export function mapItem(item, now, owned) {
        le numero du bloc d'achat de la page, et celui que `rgOwnedPackages`
        contient une fois la licence ajoutee. Sans lui, pas de recuperation. */
     packageId: purchase.packageid ? String(purchase.packageid) : null,
+    /* Le jeu de base d'un DLC (2.80.1). Mesure du 2026-09-26 : « Explosive
+       Odds - Supporter Pack », offert ce jour-la, rend `type: 4` et
+       `related_items.parent_appid: 3674980` -- Explosive Odds, 1,99 EUR. Sans
+       ce jeu dans la bibliotheque, Steam refuse la licence gratuite, et la
+       page d'arrivee ne dit que « Erreur du site ». */
+    parentAppid: item.type === 4 && item.related_items && /^\d+$/.test(String(item.related_items.parent_appid || ''))
+      ? String(item.related_items.parent_appid) : null,
     /* La source ne rend QUE des offres dont best_purchase_option dit
        is_free_to_keep. Le dire explicitement evite que le filtre retombe sur la
        valeur : un jeu offert dont Steam ne publie pas le prix d'origine serait

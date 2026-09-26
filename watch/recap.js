@@ -44,7 +44,7 @@ const DAY_MS = 24 * 3600 * 1000;
 export const RECAP_GRACE_MS = 3 * DAY_MS;
 
 /** Les verdicts qui attendent une personne. Les memes que « Ce qui vous attend » du popup. */
-const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'quota', 'failed']);
+const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'quota', 'failed', 'needs_base_game']);
 
 /** Les historiques du moteur : les cles que `claimsMade` sait lire. */
 export const HISTORY_KEYS = Object.freeze({

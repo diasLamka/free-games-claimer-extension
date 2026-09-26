@@ -323,6 +323,9 @@ export function makeOffer(raw = {}) {
        que la recuperation Steam cherche sur la page, puis dans la
        bibliotheque. null partout ailleurs. */
     packageId: raw.packageId ? String(raw.packageId) : null,
+    /* Le jeu de base d'un DLC Steam (2.80.1) : Steam n'ajoute un DLC gratuit
+       qu'a un compte qui possede ce jeu-la. null partout ailleurs. */
+    parentAppid: /^\d+$/.test(String(raw.parentAppid || '')) ? String(raw.parentAppid) : null,
     /* Steam Deck : 'verified' | 'playable' | 'unsupported' | null (source
        Steam seulement, voir watch/deck.js). null veut dire « on ne sait pas ». */
     deck: readDeck(raw.deck),
@@ -483,6 +486,7 @@ export function merge(existing, incoming) {
     category: keep(existing.category, incoming.category),
     // Une seule source le fournit : l'agregateur ne doit pas l'effacer.
     packageId: keep(existing.packageId, incoming.packageId),
+    parentAppid: keep(existing.parentAppid, incoming.parentAppid),
     // Meme regle pour le Deck : seul Steam le dit, un null ne l'efface pas.
     deck: keep(existing.deck, incoming.deck),
     updatedAt: incoming.updatedAt ?? existing.updatedAt,

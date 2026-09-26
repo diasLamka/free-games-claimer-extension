@@ -25,9 +25,21 @@
  * sur la page : il se lit dans `dynamicstore/userdata`, ou le paquet doit
  * apparaitre dans `rgOwnedPackages`.
  *
- * Module pur, sauf `steamPageStep`, qui est INJECTEE dans la page et doit donc
- * se suffire a elle-meme : aucune reference a ce module une fois serialisee.
+ * UN DLC DEMANDE SON JEU DE BASE (2.80.1). Mesure du 2026-09-26, « Explosive
+ * Odds - Supporter Pack », offert ce jour-la : le formulaire est le meme, le
+ * bouton aussi, et l'envoi aboutit sur « Erreur du site » a
+ * /freelicense/addfreelicense/ si le compte ne possede pas Explosive Odds
+ * (1,99 EUR). Le script de Steam le dit lui-meme dans sa variante AJAX :
+ * `purchaseresultdetail == 24`, « Before you can add this product to your
+ * Steam account, you must own the base product. » Chaque refus compte dans le
+ * quota d'activations de Steam : on verifie donc AVANT, dans la bibliotheque,
+ * et on n'envoie rien.
+ *
+ * Module pur, sauf `steamPageStep` et `steamErrorText`, INJECTEES dans la page
+ * et donc autonomes -- aucune reference a ce module une fois serialisees --,
+ * et `baseGameLabel`, qui recoit son `fetch`.
  */
+import { itemsUrl } from './sources/steam.js';
 
 /** La fiche d'une application, forcee en anglais : c'est la langue mesuree. */
 export function steamAppUrl(appid) {
@@ -229,4 +241,51 @@ export function steamGate(catalog, now, { claimedThisRun = 0 } = {}) {
     return { allowed: false, reason: `${recent.length} recuperations Steam en 24 h` };
   }
   return { allowed: true, reason: null };
+}
+
+/* ------------------------------------------------------- le jeu de base */
+
+/**
+ * Le jeu de base qui manque a la bibliotheque pour ce DLC, ou null : pas un
+ * DLC, bibliotheque illisible (on ne conclut rien d'une mesure absente), ou
+ * jeu deja possede.
+ */
+export function missingBaseGame(offer, ownership) {
+  const base = offer && /^\d+$/.test(String(offer.parentAppid || '')) ? String(offer.parentAppid) : null;
+  if (!base || !ownership || ownership.status !== 'ok') return null;
+  return ownership.apps.has(base) ? null : base;
+}
+
+/**
+ * « Explosive Odds (1,99 EUR) » : ce qu'il faudrait acheter, lu dans GetItems.
+ * Ne jette jamais -- sans reponse, l'appid seul dira de quel jeu il s'agit.
+ */
+export async function baseGameLabel(appid, { fetch: fetchImpl = fetch } = {}) {
+  try {
+    const r = await fetchImpl(itemsUrl([appid]), { credentials: 'omit', headers: { Accept: 'application/json' } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const items = data && data.response && Array.isArray(data.response.store_items) ? data.response.store_items : [];
+    const it = items[0];
+    if (!it || typeof it.name !== 'string' || !it.name.trim()) return null;
+    const nom = it.name.trim().slice(0, 80);
+    const prix = it.best_purchase_option && typeof it.best_purchase_option.formatted_final_price === 'string'
+      ? it.best_purchase_option.formatted_final_price.trim().slice(0, 20) : '';
+    return prix ? `${nom} (${prix})` : nom;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * INJECTEE dans la page d'arrivee, apres l'envoi : ce que Steam y ecrit.
+ * « Erreur du site » ne dit rien ; le paragraphe dessous dit pourquoi.
+ * Autonome, comme steamPageStep. `doc` n'existe que pour les tests.
+ */
+export function steamErrorText(doc) {
+  const d = doc || document;
+  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const n = d.querySelector('#error_box, .error_ctn, #error_description, .error')
+    || d.querySelector('#responsive_page_template_content, .page_content_ctn');
+  return clean(n && n.textContent).slice(0, 200);
 }

@@ -106,7 +106,7 @@ est declare `"type": "module"`.
 | `sentinel.js` | quand proposer le repli, et comment il rend la main tout seul |
 | `collection.js` | Ma collection : regrouper ce que chaque magasin dit que vous possedez |
 | `collection-import.js` | lire les bibliotheques Steam, GOG et Epic, en lecture seule et a la demande |
-| `steam-claim.js` | Steam en option : l'etape jouee dans la page, et le rythme lent |
+| `steam-claim.js` | Steam en option : l'etape jouee dans la page, le rythme lent, et le jeu de base d'un DLC verifie avant tout envoi |
 | `outcomes.js` | ce qui est passe, pris ou rate : l'issue figee a la fin de l'offre |
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
