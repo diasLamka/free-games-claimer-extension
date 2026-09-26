@@ -124,6 +124,20 @@ function absolute(url, base) {
 }
 
 /**
+ * L'image, avec son extension.
+ *
+ * Mesure du 2026-09-26 : GOG publie `//images-3.gog-statics.com/<empreinte>`
+ * SANS extension, et cette adresse nue repond 404. La meme suivie de `.jpg`
+ * repond 200 en image/jpeg. Sans ce suffixe, les cartes GOG restaient sur
+ * leur initiale, et la notification partait sans jaquette.
+ */
+export function gogImage(url) {
+  const u = absolute(url, ORIGIN);
+  if (!u) return null;
+  return /\.(jpe?g|png|webp)(\?.*)?$/i.test(u) ? u : `${u}.jpg`;
+}
+
+/**
  * Un produit brut devient une Offre, ou est ecarte avec un motif.
  *
  * Ecarte, jamais perdu en silence : une entree qu'on ne sait pas lire est un
@@ -173,7 +187,7 @@ export function mapProduct(raw, now) {
     end,
     worth,
     keepable,
-    image: absolute(raw.boxImage || raw.image, ORIGIN),
+    image: gogImage(raw.boxImage || raw.image),
     category: gogCategory(raw),
     seenAt: now,
     updatedAt: now,

@@ -1,0 +1,74 @@
+# L'appli Android : ses tests, et son APK.
+#
+# A chaque push qui la touche -- ou qui touche le moteur qu'elle embarque,
+# content/free-games-claimer.js et watch/steam-claim.js, recopies a chaque
+# build --, l'APK est reconstruit et depose comme artefact du workflow.
+#
+# Un tag `app-vX.Y.Z` publie une release avec l'APK signe :
+#
+#   git tag app-v1.0.0 && git push origin app-v1.0.0
+#
+# Le tag doit dire la meme version que `versionName` (android/app/build.gradle.kts),
+# pour la meme raison que release.yml : Android refuse d'installer par-dessus
+# une version qui se dit plus recente.
+name: android
+
+on:
+  push:
+    branches: ['**']
+    tags: ['app-v*']
+    paths:
+      - 'android/**'
+      - 'content/free-games-claimer.js'
+      - 'watch/steam-claim.js'
+      - 'test/fixtures/**'
+      - 'package.json'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Le tag et versionName doivent dire la meme version
+        if: startsWith(github.ref, 'refs/tags/app-v')
+        run: |
+          tag="${GITHUB_REF_NAME#app-v}"
+          appli="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts)"
+          echo "tag : $tag / versionName : $appli"
+          if [ "$tag" != "$appli" ]; then echo "::error::le tag dit $tag, l'appli dit $appli"; exit 1; fi
+
+      - name: Tests et APK
+        working-directory: android
+        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+
+      - name: Renommer l'APK
+        run: |
+          v="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts)"
+          cp android/app/build/outputs/apk/release/app-release.apk "free-games-claimer-android-$v.apk"
+          sha256sum free-games-claimer-android-*.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: free-games-claimer-android-*.apk
+
+      - name: Deposer la release
+        if: startsWith(github.ref, 'refs/tags/app-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Appli Android $GITHUB_REF_NAME" \
+            --notes "L'appli Android : voir android/README.md. A installer sur le telephone (autoriser l'installation depuis cette source la premiere fois)." \
+            free-games-claimer-android-*.apk

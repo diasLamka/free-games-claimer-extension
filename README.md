@@ -8,6 +8,10 @@ moteur tourne desormais dans l'extension, par `content/gm-shim.js`.
 
 Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
 
+**L'appli Android** vit dans `android/` : une vraie appli (Kotlin, Jetpack
+Compose), qui embarque le moteur de recuperation de l'extension au caractere
+pres. Voir `android/README.md`.
+
 ## Le moteur est genere
 
 `content/free-games-claimer.js` **ne s'edite pas a la main**. Il est produit a

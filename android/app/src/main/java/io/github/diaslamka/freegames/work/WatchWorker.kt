@@ -1,0 +1,65 @@
+package io.github.diaslamka.freegames.work
+
+import android.content.Context
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import io.github.diaslamka.freegames.data.Watcher
+import java.util.concurrent.TimeUnit
+
+/** La veille de fond : un passage, ecran eteint ou non. */
+class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result = try {
+        Watcher.check(applicationContext, "fond")
+        Result.success()
+    } catch (_: Exception) {
+        if (runAttemptCount < 3) Result.retry() else Result.failure()
+    }
+}
+
+object Scheduler {
+    private const val PERIODIC = "veille"
+    private const val OPENING = "ouverture-epic"
+
+    /** Sans planificateur (environnement de test), l'appli s'ouvre quand meme : la veille manque, pas l'ecran. */
+    private fun manager(context: Context): WorkManager? = try {
+        WorkManager.getInstance(context)
+    } catch (e: IllegalStateException) {
+        android.util.Log.w("FGC", "planificateur indisponible : ${e.message}")
+        null
+    }
+
+    private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+
+    /** Toutes les `hours` heures, tant qu'il y a du reseau. */
+    fun periodic(context: Context, hours: Int, replace: Boolean = false) {
+        val req = PeriodicWorkRequestBuilder<WatchWorker>(hours.coerceIn(1, 24).toLong(), TimeUnit.HOURS)
+            .setConstraints(network)
+            .build()
+        manager(context)?.enqueueUniquePeriodicWork(
+            PERIODIC,
+            if (replace) ExistingPeriodicWorkPolicy.UPDATE else ExistingPeriodicWorkPolicy.KEEP,
+            req,
+        )
+    }
+
+    /**
+     * Epic annonce l'heure de sa prochaine ouverture : on la lit, au lieu de
+     * sonder a l'aveugle -- comme l'ordonnanceur de l'extension.
+     */
+    fun checkAt(context: Context, whenMs: Long) {
+        val delay = whenMs - System.currentTimeMillis()
+        if (delay <= 0 || delay > 8L * 24 * 3_600_000) return
+        val req = OneTimeWorkRequestBuilder<WatchWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setConstraints(network)
+            .build()
+        manager(context)?.enqueueUniqueWork(OPENING, ExistingWorkPolicy.REPLACE, req)
+    }
+}

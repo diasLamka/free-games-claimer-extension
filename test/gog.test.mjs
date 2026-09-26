@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { NAME, ORIGIN, FILTERED_URL, readPrice, mapProduct, mapResponse, discover, gogCategory } from '../watch/sources/gog.js';
+import { NAME, ORIGIN, FILTERED_URL, readPrice, mapProduct, mapResponse, discover, gogCategory, gogImage } from '../watch/sources/gog.js';
 import { STORES } from '../watch/offer.js';
 import { readWorth, readCurrency } from '../watch/filters.js';
 
@@ -84,6 +84,17 @@ test('les URL sans protocole sont completees', () => {
   const { offer } = mapProduct(CAPTURE.products[0], T);
   assert.match(offer.image, /^https:\/\/images-3\.gog-statics\.com\//);
   assert.match(offer.url, /^https:\/\/www\.gog\.com\//);
+});
+
+test('l\'image GOG recoit son extension : nue, elle repond 404', () => {
+  // Mesure du 2026-09-26 : `//images-3.gog-statics.com/<empreinte>` -> 404,
+  // la meme avec `.jpg` -> 200 image/jpeg.
+  const { offer } = mapProduct(CAPTURE.products[0], T);
+  assert.match(offer.image, /^https:\/\/images-3\.gog-statics\.com\/[0-9a-f]+\.jpg$/);
+  assert.equal(gogImage('https://images.gog-statics.com/abc.png'), 'https://images.gog-statics.com/abc.png');
+  assert.equal(gogImage('//images.gog-statics.com/abc_product_tile_256.jpg?x=1'), 'https://images.gog-statics.com/abc_product_tile_256.jpg?x=1');
+  assert.equal(gogImage(''), null);
+  assert.equal(gogImage(null), null);
 });
 
 test('la fin de promotion est lue en SECONDES', () => {

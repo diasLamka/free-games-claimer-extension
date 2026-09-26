@@ -4,6 +4,39 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.85.1 -- 2026-09-26
+
+**L'appli Android, et les jaquettes GOG**
+
+- **Une vraie appli Android** (`android/`, version 1.0.0) : ecrans natifs en
+  Kotlin et Jetpack Compose, pas une page web emballee. Jeux gratuits du
+  moment (Epic, GOG, Steam, Amazon, autres magasins, jeux mobiles d'Epic, ce
+  qu'Epic annonce), jaquettes, valeur, temps restant, note Steam ; veille de
+  fond toutes les 1 a 12 heures et a l'heure exacte de la prochaine
+  ouverture d'Epic ; une notification par jeu, avec sa jaquette et un bouton
+  **Recuperer** ; rappel le dernier jour ; souhaits, y compris en
+  **partageant** une fiche de jeu depuis n'importe quelle appli ; ecran des
+  jeux recuperes ; francais, anglais, allemand, espagnol.
+- **Le moteur de l'appli est celui de l'extension**, recopie a chaque build :
+  il joue dans une vraie page du magasin, dans toutes ses frames, et parle a
+  l'appli avec le protocole de `watch/claim.js` (pilote, pret, ordre,
+  verdict). Epic, GOG et Amazon Luna ; Steam en option, avec `steamPageStep`
+  et le meme rythme lent. Verifie dans Chromium sur une fausse fiche Epic :
+  le moteur, habille par la passerelle de l'appli, va jusqu'au verdict
+  « claimed » et ecrit son historique.
+- **Aller-retour avec l'extension** par fichier : l'appli importe la
+  sauvegarde de l'extension (historique, souhaits, listes Steam et GOG) et
+  ecrit un fichier que « Restaurer » fusionne. Jamais un cookie, jamais un
+  code.
+- **Les jaquettes GOG s'affichent enfin.** GOG publie ses images sans
+  extension, et cette adresse nue repond 404 (mesure du jour) : les cartes et
+  les notifications GOG restaient sur leur initiale. `gogImage` ajoute `.jpg`.
+- `build/package.mjs` range `android/` parmi les dossiers d'atelier : l'appli
+  embarque le moteur, elle ne fait pas partie de l'archive de l'extension.
+
+1418 tests pour l'extension ; 17 pour l'appli, dont 8 sur les memes captures
+que l'extension.
+
 ## 2.85.0 -- 2026-09-26
 
 **« fg » dans la barre d'adresse**

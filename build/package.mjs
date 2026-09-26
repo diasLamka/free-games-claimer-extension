@@ -182,6 +182,10 @@ const ATELIER = Object.freeze([
   /* Le programme de la passerelle tourne HORS du navigateur : il s'installe
      a la main et n'a rien a faire dans l'archive de l'extension. */
   'host',
+  /* L'appli Android a son propre build (android/README.md) : elle EMBARQUE le
+     moteur, elle n'en fait pas partie. Ses .js sont la passerelle de la
+     WebView et les copies faites par Gradle. */
+  'android',
 ]);
 
 /**

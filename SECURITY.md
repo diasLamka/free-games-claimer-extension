@@ -310,6 +310,33 @@ seize commandes du worker ne regardaient pas qui les demandait, et les URL de
 collection echappaient au filtre. Voir `watch/messaging.js` et
 `test/messaging.test.mjs`.
 
+## L'appli Android (`android/`)
+
+L'appli suit les memes regles, avec une difference de taille : sur le
+telephone, c'est **l'appli** qui garde les sessions des magasins.
+
+- **Les sessions** (cookies d'Epic, GOG, Amazon, Steam) vivent dans le
+  stockage de la WebView de l'appli, sur le telephone, apres une connexion
+  faite A LA MAIN dans une page de l'appli. Elles ne servent qu'a recuperer, et
+  a deux lectures de compte : `dynamicstore/userdata` chez Steam (ce qui est
+  possede) et `userData.json` chez GOG (connecte ou non). Aucune source de
+  decouverte ne les envoie. « Se deconnecter de tous les magasins » les efface.
+- **Aucune sauvegarde du telephone ne les emporte** : `allowBackup` est a
+  false et les regles d'extraction excluent tout (`AndroidManifest.xml`,
+  `res/xml/data_extraction_rules.xml`).
+- **Le moteur n'est injecte que sur les magasins** qu'il connait -- les memes
+  origines que les scripts de contenu du manifeste --, et seulement dans la
+  page de recuperation, jamais dans les pages de connexion. Il ne peut
+  demander au reseau que des API publiques de magasins (`fetchFor`,
+  `claim/ClaimSession.kt`).
+- **L'export pour l'extension** contient le registre des jeux recuperes, les
+  souhaits, le pays et l'historique du moteur. Jamais un cookie, jamais un
+  code de rachat : les codes restent dans l'extension.
+- **La cle qui signe l'APK** est dans `android/keystore/`, parce que le depot
+  est prive et qu'une mise a jour doit porter la meme signature que la version
+  installee. Si le depot devenait public, elle en sortirait (secret du
+  workflow) : qui la detient peut signer une « mise a jour » de l'appli.
+
 ## Signaler un probleme
 
 Ouvrez une issue sur le depot. Si le sujet est sensible, dites-le sans detail

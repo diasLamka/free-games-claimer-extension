@@ -1,0 +1,489 @@
+package io.github.diaslamka.freegames.claim
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
+import android.util.Log
+import android.webkit.ConsoleMessage
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebMessageCompat
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.Rules
+import io.github.diaslamka.freegames.data.Verdicts
+import io.github.diaslamka.freegames.model.AccountState
+import io.github.diaslamka.freegames.model.LibraryEntry
+import io.github.diaslamka.freegames.model.Offer
+import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.Titles
+import io.github.diaslamka.freegames.notify.Notifier
+import io.github.diaslamka.freegames.sources.Countries
+import io.github.diaslamka.freegames.sources.JSON
+import io.github.diaslamka.freegames.sources.SteamSource
+import io.github.diaslamka.freegames.sources.arr
+import io.github.diaslamka.freegames.sources.bool
+import io.github.diaslamka.freegames.sources.get
+import io.github.diaslamka.freegames.sources.obj
+import io.github.diaslamka.freegames.sources.parseJson
+import io.github.diaslamka.freegames.sources.str
+import io.github.diaslamka.freegames.sources.text
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlin.coroutines.resume
+
+/**
+ * La recuperation, dans une vraie page de magasin.
+ *
+ * LE MOTEUR EST CELUI DE L'EXTENSION. content/free-games-claimer.js est
+ * recopie dans l'appli a chaque build, et injecte dans la page -- dans toutes
+ * ses frames, iframe de paiement d'Epic comprise -- comme le fait le script
+ * de contenu de l'extension. Il parle a l'appli par le canal `fgcNative` (voir
+ * assets/engine/android-shim.js) avec le protocole de watch/claim.js : suis-je
+ * pilote, pret, ordre de reclamer, verdict.
+ *
+ * Steam n'a pas de moteur injecte, comme dans l'extension : son etape est
+ * `steamPageStep`, de watch/steam-claim.js, jouee dans la page, et la preuve
+ * est la bibliotheque (dynamicstore/userdata) -- jamais la page seule.
+ */
+class ClaimSession(private val context: Context, private val scope: CoroutineScope) {
+
+    data class Outcome(val key: String, val title: String, val store: String, val verdict: String, val details: String?)
+
+    data class Ui(
+        val running: Boolean = false,
+        val title: String? = null,
+        val store: String? = null,
+        val index: Int = 0,
+        val total: Int = 0,
+        val step: String? = null,
+        val needsUser: Boolean = false,
+        val outcomes: List<Outcome> = emptyList(),
+        val visible: Boolean = false,
+    )
+
+    private val _ui = MutableStateFlow(Ui())
+    val ui: StateFlow<Ui> = _ui
+
+    private var job: Job? = null
+    private var piloting = false
+    private var ready: CompletableDeferred<String>? = null
+    private var verdict: CompletableDeferred<JsonElement>? = null
+    private var pageLoad: CompletableDeferred<String>? = null
+    private var userDone: CompletableDeferred<Boolean>? = null
+    private var mainProxy: JavaScriptReplyProxy? = null
+    @Volatile private var currentUrl: String? = null
+
+    val engineInjected: Boolean
+        get() = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
+            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
+
+    private var created = false
+    val webView: WebView by lazy { created = true; build() }
+
+    private fun log(msg: String) = Log.i("FGC", msg)
+
+    /* --------------------------------------------------------- la page */
+
+    private fun engineScript(): String {
+        val shim = context.assets.open("engine/android-shim.js").bufferedReader().readText()
+        val engine = context.assets.open("engine/free-games-claimer.js").bufferedReader().readText()
+        return "(function(){\n" +
+            "if (window.__fgcAndroid) return; window.__fgcAndroid = true;\n" +
+            "function fgcGo(){\n" + shim + "\n" + engine + "\n}\n" +
+            "if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fgcGo, { once: true }); else fgcGo();\n" +
+            "})();"
+    }
+
+    /** L'etape Steam de l'extension, sans ses `import`/`export` : une fonction a appeler. */
+    private val steamModule: String by lazy {
+        context.assets.open("engine/steam-claim.js").bufferedReader().readText()
+            .replace(Regex("(?m)^import[^\\n]*\\n"), "")
+            .replace(Regex("(?m)^export\\s+"), "")
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun build(): WebView = WebView(context).apply {
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.userAgentString = Graph.userAgent()
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = true
+        settings.setSupportZoom(true)
+        settings.builtInZoomControls = true
+        settings.displayZoomControls = false
+        settings.mediaPlaybackRequiresUserGesture = true
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+        webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                // Les liens vers les lanceurs (com.epicgames.launcher://, steam://) ne s'ouvrent pas ici.
+                val scheme = request.url.scheme?.lowercase()
+                return scheme != "http" && scheme != "https"
+            }
+
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                currentUrl = url
+            }
+
+            override fun onPageFinished(view: WebView, url: String) {
+                currentUrl = url
+                if (!engineInjected && piloting && Titles.storeFromUrl(url) in Stores.ENGINE) {
+                    view.evaluateJavascript(engineScript(), null)
+                }
+                pageLoad?.complete(url)
+            }
+        }
+        webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(m: ConsoleMessage): Boolean {
+                if (m.message().contains("[FGC]")) log(m.message().take(300))
+                return true
+            }
+        }
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            WebViewCompat.addWebMessageListener(this, "fgcNative", ORIGINS) { _, message, _, isMainFrame, proxy ->
+                onMessage(message, isMainFrame, proxy)
+            }
+        }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(this, engineScript(), ORIGINS)
+        }
+    }
+
+    /* ------------------------------------------------------ le canal */
+
+    private fun onMessage(message: WebMessageCompat, isMainFrame: Boolean, proxy: JavaScriptReplyProxy) {
+        val data = parseJson(message.data) ?: return
+        val id = data["id"].text?.toLongOrNull()
+        val msg = data["msg"]
+        fun reply(payload: JsonElement) {
+            if (id == null) return
+            val text = buildJsonObject { put("replyTo", id); put("payload", payload) }.toString()
+            scope.launch(Dispatchers.Main) { runCatching { proxy.postMessage(text) } }
+        }
+        when (msg["type"].str) {
+            "fgc-suis-je-pilote" -> reply(buildJsonObject { put("piloted", isMainFrame && piloting) })
+            "fgc-storage-get" -> reply(storageGet(msg["keys"]))
+            "fgc-storage-set" -> msg["items"].obj?.let { items -> scope.launch { Graph.store.update { it.copy(engine = it.engine + items) } } }
+            "fgc-storage-remove" -> {
+                val keys = msg["keys"].arr?.mapNotNull { it.str }.orEmpty()
+                scope.launch { Graph.store.update { it.copy(engine = it.engine - keys.toSet()) } }
+            }
+            "fgc-pret" -> if (isMainFrame && piloting) {
+                mainProxy = proxy
+                ready?.complete(msg["url"].str.orEmpty())
+            }
+            "fgc-verdict" -> if (isMainFrame && piloting) verdict?.complete(msg ?: JsonNull)
+            "fgc-fetch" -> scope.launch { reply(fetchFor(msg["url"].str)) }
+            else -> log("moteur : ${msg["type"].str} ${msg["title"].str.orEmpty()} ${msg["text"].str.orEmpty()}".take(200))
+        }
+    }
+
+    /** Ce que le moteur lit de son stockage, avec le pays choisi dans l'appli. */
+    private fun storageGet(keys: JsonElement?): JsonObject {
+        val s = Graph.store.value
+        val country = Countries.of(s.settings.country)
+        val all = s.engine + mapOf(
+            "FGC_epic_country" to JsonPrimitive(country.code),
+            "FGC_epic_lang" to JsonPrimitive(country.lang),
+        )
+        val wanted: Set<String>? = when (keys) {
+            null, is JsonNull -> null
+            is JsonPrimitive -> setOf(keys.content)
+            else -> keys.arr?.mapNotNull { it.str }?.toSet()
+        }
+        return JsonObject(if (wanted == null) all else all.filterKeys { it in wanted })
+    }
+
+    /** Le moteur ne lit que des API publiques de magasins : rien d'autre ne passe. */
+    private suspend fun fetchFor(url: String?): JsonElement {
+        val host = Titles.hostOf(url)
+        val allowed = host != null && url!!.startsWith("https://") &&
+            ALLOWED_FETCH.any { host == it || host.endsWith(".$it") }
+        if (!allowed) return buildJsonObject { put("error", "hote refuse") }
+        return try {
+            val r = Graph.http.get(url!!)
+            buildJsonObject { put("status", r.code); put("body", r.body) }
+        } catch (e: Exception) {
+            buildJsonObject { put("error", e.message ?: "reseau") }
+        }
+    }
+
+    /* ---------------------------------------------------- la session */
+
+    fun show(visible: Boolean) {
+        _ui.value = _ui.value.copy(visible = visible)
+    }
+
+    fun dismiss() {
+        if (!_ui.value.running) _ui.value = Ui()
+    }
+
+    fun stop() {
+        job?.cancel()
+        piloting = false
+        userDone?.complete(false)
+        _ui.value = _ui.value.copy(running = false, step = null, needsUser = false)
+        scope.launch(Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
+    }
+
+    /** Apres un defi resolu a la main : on reprend le jeu en cours. */
+    fun userFinished(retry: Boolean) {
+        userDone?.complete(retry)
+    }
+
+    /**
+     * Tout ce qui reste a prendre -- ou seulement `keys`, qui passent alors
+     * outre le recul (le bouton « Recuperer » d'une carte).
+     */
+    fun start(keys: Set<String> = emptySet()) {
+        if (_ui.value.running) return
+        val now = System.currentTimeMillis()
+        val s = Graph.store.value
+        val todo = Rules.pending(s, now, force = keys).let { list -> if (keys.isEmpty()) list else list.filter { it.key in keys } }
+        if (todo.isEmpty()) {
+            _ui.value = Ui(outcomes = emptyList(), visible = false)
+            return
+        }
+        _ui.value = Ui(running = true, total = todo.size, visible = true)
+        job = scope.launch {
+            val blocked = mutableSetOf<String>()
+            var steamDone = 0
+            val won = mutableListOf<String>()
+            todo.forEachIndexed { i, offer ->
+                if (offer.store in blocked) {
+                    record(offer, Verdicts.LOGIN, "session a reprendre", count = false)
+                    return@forEachIndexed
+                }
+                _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
+                var result = runOne(offer, steamDone)
+                if (result.first == Verdicts.CHALLENGE) {
+                    _ui.value = _ui.value.copy(needsUser = true, visible = true)
+                    userDone = CompletableDeferred()
+                    val retry = userDone!!.await()
+                    _ui.value = _ui.value.copy(needsUser = false)
+                    if (retry) result = runOne(offer, steamDone)
+                }
+                if (offer.store == Stores.STEAM && result.first != "steam-gate") steamDone++
+                if (result.first == "steam-gate") return@forEachIndexed
+                record(offer, result.first, result.second)
+                if (result.first == Verdicts.LOGIN) {
+                    blocked += offer.store
+                    Notifier.login(context, offer.store)
+                }
+                if (result.first in Verdicts.ACQUIRED) won += offer.shownTitle
+            }
+            piloting = false
+            withContext(Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
+            _ui.value = _ui.value.copy(running = false, step = null, title = null)
+            Notifier.claimed(context, won)
+        }
+    }
+
+    private suspend fun record(o: Offer, verdictName: String, details: String?, count: Boolean = true) {
+        val now = System.currentTimeMillis()
+        _ui.value = _ui.value.copy(outcomes = _ui.value.outcomes + Outcome(o.key, o.shownTitle, o.store, verdictName, details))
+        Graph.store.update { s ->
+            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now) else s.attempts[o.key]
+            var lib = s.library
+            var accounts = s.accounts
+            if (verdictName in Verdicts.ACQUIRED) {
+                val entry = LibraryEntry(
+                    store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
+                    url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
+                )
+                lib = lib + (Rules.libraryKeyOf(o) to entry)
+                accounts = accounts + (o.store to AccountState(Accounts.OK, now))
+            }
+            if (verdictName == Verdicts.LOGIN) accounts = accounts + (o.store to AccountState(Accounts.LOGGED_OUT, now))
+            s.copy(attempts = if (att != null) s.attempts + (o.key to att) else s.attempts, library = lib, accounts = accounts)
+        }
+    }
+
+    private suspend fun runOne(o: Offer, steamDone: Int): Pair<String, String?> = try {
+        if (o.store == Stores.STEAM) claimSteam(o, steamDone) else claimWithEngine(o)
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Verdicts.FAILURE to (e.message ?: e.toString())
+    }
+
+    private suspend fun load(url: String, timeoutMs: Long = LOAD_WAIT_MS): String? {
+        val d = CompletableDeferred<String>()
+        pageLoad = d
+        withContext(Dispatchers.Main) { webView.loadUrl(url) }
+        return withTimeoutOrNull(timeoutMs) { d.await() }
+    }
+
+    private suspend fun nextLoad(timeoutMs: Long): String? {
+        val d = CompletableDeferred<String>()
+        pageLoad = d
+        return withTimeoutOrNull(timeoutMs) { d.await() }
+    }
+
+    private suspend fun eval(js: String): String? = withContext(Dispatchers.Main) {
+        suspendCancellableCoroutine { c -> webView.evaluateJavascript(js) { if (c.isActive) c.resume(it) } }
+    }
+
+    /* ---------------------------------------- Epic, GOG, Amazon : le moteur */
+
+    private suspend fun claimWithEngine(o: Offer): Pair<String, String?> {
+        val target = o.url ?: o.resolveUrl ?: return Verdicts.BAD_URL to "aucune page a ouvrir"
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            return Verdicts.FAILURE to "WebView trop ancienne : mettez a jour « Android System WebView »"
+        }
+        piloting = true
+        ready = CompletableDeferred()
+        verdict = CompletableDeferred()
+        _ui.value = _ui.value.copy(step = STEP_OPEN)
+        load(target)
+        _ui.value = _ui.value.copy(step = STEP_WAIT)
+        val pret = withTimeoutOrNull(READY_WAIT_MS) { ready!!.await() }
+        if (pret == null) {
+            val landed = currentUrl
+            val store = Titles.storeFromUrl(landed)
+            if (o.url == null && (store == null || store !in Stores.ENGINE)) return Verdicts.OUT_OF_SCOPE to (landed ?: "?")
+            return Verdicts.FAILURE to "le moteur ne s'est pas annonce"
+        }
+        _ui.value = _ui.value.copy(step = STEP_CLAIM)
+        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", BUDGET_MS) }) }.toString()
+        withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
+        val v = withTimeoutOrNull(BUDGET_MS + 10_000) { verdict!!.await() }
+            ?: return Verdicts.FAILURE to "aucun verdict en ${BUDGET_MS / 1000} s"
+        val name = v["verdict"].str ?: Verdicts.UNDETERMINED
+        return name to v["reasonText"].str
+    }
+
+    /* ------------------------------------------------------ Steam */
+
+    private suspend fun ownership(now: Long): Pair<String, Pair<Set<String>, Set<String>>?> = try {
+        val r = Graph.http.get("${SteamSource.OWNED_URL}?t=$now", withCookies = true)
+        val owned = if (r.ok) SteamSource.parseOwned(r.body) else null
+        when {
+            owned == null -> "error" to null
+            owned.first.isEmpty() && owned.second.isEmpty() -> "logged_out" to null
+            else -> "ok" to owned
+        }
+    } catch (_: Exception) {
+        "error" to null
+    }
+
+    /**
+     * Lent a dessein, comme watch/steam-claim.js (steamGate) : une par
+     * passage, vingt minutes d'ecart, six par jour au plus.
+     */
+    private fun steamGate(now: Long, doneThisRun: Int): String? {
+        if (doneThisRun >= 1) return "une recuperation Steam par passage"
+        val recent = Graph.store.value.let { s ->
+            s.attempts.filterKeys { k -> s.offers[k]?.store == Stores.STEAM }.values.map { it.lastAt }.filter { now - it < 24 * 3_600_000L }
+        }
+        val last = recent.maxOrNull()
+        if (last != null && now - last < 20 * 60_000L) return "derniere recuperation Steam il y a ${(now - last) / 60_000} min"
+        if (recent.size >= 6) return "${recent.size} recuperations Steam en 24 h"
+        return null
+    }
+
+    private suspend fun claimSteam(o: Offer, doneThisRun: Int): Pair<String, String?> {
+        val now = System.currentTimeMillis()
+        val pkg = o.packageId ?: return Verdicts.FAILURE to "paquet Steam inconnu"
+        val appid = o.storeId ?: return Verdicts.FAILURE to "application Steam inconnue"
+        steamGate(now, doneThisRun)?.let { return "steam-gate" to it }
+
+        val (status, owned) = ownership(now)
+        if (status == "logged_out") return Verdicts.LOGIN to "Steam demande la connexion"
+        if (owned != null && (pkg in owned.second || appid in owned.first)) return Verdicts.CLAIMED to "deja dans la bibliotheque Steam"
+        val base = o.parentAppid
+        if (base != null && owned != null && base !in owned.first) return Verdicts.NEEDS_BASE to base
+
+        piloting = false
+        _ui.value = _ui.value.copy(step = STEP_OPEN)
+        val landed = load("https://store.steampowered.com/app/$appid/?l=english")
+            ?: return Verdicts.FAILURE to "la page Steam n'a pas fini de charger"
+        if (Regex("^https://store\\.steampowered\\.com/agecheck/", RegexOption.IGNORE_CASE).containsMatchIn(landed)) {
+            return Verdicts.FAILURE to "controle d'age Steam : a passer une fois a la main"
+        }
+        if (Regex("^https://(store\\.steampowered\\.com|steamcommunity\\.com)/login\\b", RegexOption.IGNORE_CASE).containsMatchIn(landed)) {
+            return Verdicts.LOGIN to "Steam demande la connexion"
+        }
+        _ui.value = _ui.value.copy(step = STEP_CLAIM)
+        val raw = eval("(function(){\n$steamModule\nreturn steamPageStep(${JSON.encodeToString(JsonPrimitive.serializer(), JsonPrimitive(pkg))}, false);\n})()")
+        val step = parseJson(raw)
+        if (step["ok"].bool != true) {
+            return when (step["reason"].str) {
+                "deja-possede" -> Verdicts.CLAIMED to "Steam dit : deja dans la bibliotheque"
+                "non-connecte" -> Verdicts.LOGIN to "la page Steam n'est pas connectee"
+                else -> Verdicts.FAILURE to "page Steam : ${step["reason"].str ?: raw?.take(120)}"
+            }
+        }
+        nextLoad(25_000)
+        repeat(3) { i ->
+            delay(2_000L * (i + 1))
+            val (_, after) = ownership(System.currentTimeMillis())
+            if (after != null && pkg in after.second) return Verdicts.CLAIMED to null
+        }
+        val motif = eval("(function(){\n$steamModule\nreturn steamErrorText();\n})()")?.let { parseJson(it).str }.orEmpty()
+        if (Regex("base (product|game)", RegexOption.IGNORE_CASE).containsMatchIn(motif)) return Verdicts.NEEDS_BASE to motif
+        return Verdicts.FAILURE to (if (motif.isNotEmpty()) "Steam : $motif" else "la bibliotheque ne montre pas le paquet")
+    }
+
+    fun release() {
+        if (created) runCatching { webView.destroy() }
+    }
+
+    companion object {
+        const val STEP_OPEN = "open"
+        const val STEP_WAIT = "wait"
+        const val STEP_CLAIM = "claim"
+
+        const val LOAD_WAIT_MS = 45_000L
+        const val READY_WAIT_MS = 60_000L
+        const val BUDGET_MS = 5 * 60_000L
+
+        /** Les pages ou le moteur est injecte : celles de l'extension (manifest.json). */
+        val ORIGINS = setOf(
+            "https://*.epicgames.com",
+            "https://www.gog.com",
+            "https://gog.com",
+            "https://gaming.amazon.com",
+            "https://luna.amazon.com", "https://luna.amazon.fr", "https://luna.amazon.de", "https://luna.amazon.co.uk",
+            "https://luna.amazon.it", "https://luna.amazon.es", "https://luna.amazon.ca", "https://luna.amazon.com.au",
+            "https://luna.amazon.co.jp", "https://luna.amazon.in", "https://luna.amazon.com.mx", "https://luna.amazon.com.br",
+            "https://luna.amazon.nl", "https://luna.amazon.se", "https://luna.amazon.pl", "https://luna.amazon.com.tr",
+        )
+
+        private val ALLOWED_FETCH = listOf("epicgames.com", "gog.com", "gamerpower.com", "steampowered.com")
+
+        fun openExternally(context: Context, url: String) {
+            runCatching {
+                context.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }
+        }
+    }
+}
