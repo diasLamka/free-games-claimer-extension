@@ -71,7 +71,10 @@ import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { runAutoBackup } from './watch/auto-backup.js';
-import { KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, ratingFor, refreshRatings } from './watch/steam-ratings.js';
+import {
+  KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, ratingLine, refreshRatings,
+  tone as ratingTone,
+} from './watch/steam-ratings.js';
 import { openOffers } from './watch/catalog.js';
 import { KEY_COVERS, refreshCovers } from './watch/covers.js';
 import { money } from './lib/money.js';
@@ -1349,7 +1352,26 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       const catalog = raw[KEYS.OFFERS] || {};
       const settings = raw[KEYS.SETTINGS] || {};
       const ui = raw[KEY_UI] || {};
+      /* La note Steam du jeu de la fiche (2.82.0), sur Epic et GOG -- la fiche
+         Steam la montre deja. A part des faits : elle ne compte pas dans la
+         pastille et ne fait pas parler la bulle, puisque presque chaque fiche
+         en a une. Cherchee si besoin, trois secondes et demie au plus. */
+      let rating = null;
+      const offre = { title: String(msg.title || ''), store: msg.store || null };
+      if (offre.title && offre.store !== 'steam' && settings.steamRatings !== false && ratingEligible(offre)) {
+        let notes = (await readKeys(api, KEY_RATINGS))[KEY_RATINGS] || {};
+        if (needsRating(notes, offre, now)) {
+          await Promise.race([
+            ensureRatings([offre], { limit: 1, timeoutMs: 3000 }),
+            new Promise((fin) => setTimeout(fin, 3500)),
+          ]).catch(() => null);
+          notes = (await readKeys(api, KEY_RATINGS))[KEY_RATINGS] || {};
+        }
+        const r = ratingFor(notes, offre);
+        if (r) rating = { text: ratingLine(r), tone: ratingTone(r) };
+      }
       sendResponse({
+        rating,
         facts,
         lines: factLines(facts, { t, storeLabel, dateText }),
         labels: launcherLabels(t),

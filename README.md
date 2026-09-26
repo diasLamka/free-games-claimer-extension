@@ -307,6 +307,13 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
+**La note Steam sur les fiches Epic et GOG** (2.82.0) : le panneau de la page
+l'affiche en tete de « Sur cette page » -- « Steam : Tres positives (92 %) »,
+etoile verte, orange ou rouge. Elle ne compte pas dans la pastille et ne fait
+pas parler la bulle : presque chaque fiche en a une. Rien sur la fiche Steam,
+qui montre deja la sienne ; « Notes Steam » dans Reglages -> Magasins la
+coupe ici aussi.
+
 **Les sections de Jeux et de Codes se replient** (2.81.0, puis 2.81.1 pour
 toutes) : Vous attendent, Gratuit maintenant, A essayer ce week-end, Bientot,
 Deja recupere (ferme par defaut) et Codes a echanger. Chaque titre garde son

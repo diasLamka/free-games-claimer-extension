@@ -4,6 +4,31 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.82.0 -- 2026-09-26
+
+**La note Steam sur les fiches Epic et GOG**
+
+La 2.78.0 a mis la note Steam dans le popup. Mais c'est sur la fiche du jeu,
+en se demandant s'il vaut la peine, qu'on la cherche -- et Epic ni GOG ne la
+montrent.
+
+- **Le panneau de la page l'affiche** en tete de « Sur cette page » : une
+  etoile verte, orange ou rouge selon l'echelle de Steam, et « Steam : Tres
+  positives (92 %) ». Le titre est celui que le panneau lit deja sur la fiche.
+- **Elle ne compte pas parmi les faits** : ni dans la pastille du bouton, ni
+  pour la bulle qui se montre la premiere fois qu'une fiche « a quelque chose
+  a dire » -- presque chaque fiche a une note, et le bouton aurait parle
+  partout.
+- **Cherchee si besoin**, au titre exact, trois secondes et demie au plus,
+  puis gardee une semaine comme les autres notes. Rien sur la fiche Steam, qui
+  montre deja la sienne ; ni jeu mobile ni DLC ; « Notes Steam » dans
+  Reglages -> Magasins la coupe ici aussi.
+
+Verifie dans l'extension chargee dans Chromium, sur une fiche Epic factice
+et le vrai Steam : « Steam : Tres positives (92 %) » pour Astrea.
+
+1396 tests.
+
 ## 2.81.1 -- 2026-09-26
 
 **Toutes les sections se replient**

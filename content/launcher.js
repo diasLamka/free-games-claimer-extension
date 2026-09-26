@@ -146,6 +146,8 @@
     /* Le jeu de la page s'il est offert, et ce qui est gratuit en ce moment
        (2.62.0) : voir watch/lookup.js, pageGame et freeNowList. */
     jeu: null,
+    /* La note Steam du jeu de la fiche (2.82.0) : { text, tone }, ou null. */
+    note: null,
     libre: { total: 0, offers: [] },
     libelles: {},
     /* Les phrases du moteur, en modeles ($1..$4), envoyees par le worker. */
@@ -823,6 +825,8 @@
   }
 
   var SIGNES = { owned: ['✓', 'jade'], claimed: ['✓', 'jade'], missed: ['!', 'rose'], recurring: ['↻', 'ambre'], freeNow: ['●', 'ambre'] };
+  /* La couleur de la note Steam, selon son echelle (2.82.0). */
+  var NOTE_TEINTES = { good: 'jade', mixed: 'ambre', bad: 'rose' };
 
   function vider(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
@@ -860,11 +864,23 @@
     /* Les autres faits : ce que la carte ne dit pas deja. */
     vider(p.faits);
     var montres = 0;
+    /* La note Steam d'abord (2.82.0) : ce qu'en pensent les joueurs. Elle ne
+       compte pas parmi les faits -- presque chaque fiche en a une. */
+    if (etat.note) {
+      var teinte = NOTE_TEINTES[etat.note.tone] || 'doux';
+      var ligneNote = el('div', 'display:flex;align-items:flex-start;gap:8px');
+      ligneNote.appendChild(el('span', 'flex:none;width:16px;height:16px;margin-top:1px;border-radius:50%;display:flex;'
+        + 'align-items:center;justify-content:center;font:700 10px/1 ' + POLICE + ';color:' + C[teinte] + ';background:'
+        + C[teinte] + '22', '★'));
+      ligneNote.appendChild(el('span', 'min-width:0;overflow-wrap:anywhere;font-size:12.5px', etat.note.text));
+      p.faits.appendChild(ligneNote);
+    }
+    var avecNote = etat.note ? 1 : 0;
     for (var i = 0; i < etat.lignes.length; i++) {
       var genre = etat.faits[i] || '';
       if (jeu && genre === 'freeNow' && etat.magasinsFaits[i] === jeu.store) continue;
       var signe = SIGNES[genre] || ['•', 'doux'];
-      var ligne = el('div', 'display:flex;align-items:flex-start;gap:8px' + (montres ? ';margin-top:6px' : ''));
+      var ligne = el('div', 'display:flex;align-items:flex-start;gap:8px' + (montres || avecNote ? ';margin-top:6px' : ''));
       ligne.appendChild(el('span', 'flex:none;width:16px;height:16px;margin-top:1px;border-radius:50%;display:flex;'
         + 'align-items:center;justify-content:center;font:700 10px/1 ' + POLICE + ';color:' + C[signe[1]] + ';background:'
         + C[signe[1]] + '22', signe[0]));
@@ -872,10 +888,10 @@
       p.faits.appendChild(ligne);
       montres++;
     }
-    p.faits.style.display = montres ? 'block' : 'none';
+    p.faits.style.display = montres || avecNote ? 'block' : 'none';
     vider(p.pageTitre);
-    if (jeu || montres) p.pageTitre.appendChild(titreSection(libelle('thisPage') || ''));
-    p.page.style.display = jeu || montres ? 'block' : 'none';
+    if (jeu || montres || avecNote) p.pageTitre.appendChild(titreSection(libelle('thisPage') || ''));
+    p.page.style.display = jeu || montres || avecNote ? 'block' : 'none';
 
     /* 2. Le moteur, sauf au repos : « pret » n'apprend rien. */
     var dire = etat.moteur && etat.statut !== 'idle' && etat.message;
@@ -1235,6 +1251,10 @@
              l'extension, mais elles traversent une page tierce : chaque champ
              est relu, et une adresse qui n'est pas https ne sert pas. */
           etat.jeu = offreSure(reponse.game);
+          /* La note Steam de la fiche (2.82.0) : une phrase et un ton, relus. */
+          var note = reponse.rating || null;
+          etat.note = note && typeof note.text === 'string' && note.text && /^(good|mixed|bad)$/.test(note.tone)
+            ? { text: note.text.slice(0, 80), tone: note.tone } : null;
           var libre = reponse.free || {};
           var offres = Array.isArray(libre.offers) ? libre.offers.map(offreSure).filter(Boolean).slice(0, 8) : [];
           etat.libre = { total: typeof libre.total === 'number' ? libre.total : offres.length, offers: offres };
