@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.78.2 -- 2026-09-26
+
+**L'identifiant d'un bot, reconnu dans ses deux formulations**
+
+Telegram ne dit pas toujours « bot can't send messages to bots » : il dit
+aussi « the bot can't send messages to the bot » (mesure du 2026-09-26, un
+identifiant de discussion egal au numero du bot). La 2.78.1 ne reconnaissait
+que la premiere et citait la seconde telle quelle. Les deux menent desormais
+a la consigne : il faut VOTRE identifiant, que @userinfobot donne, pas le
+numero au debut du jeton.
+
+1357 tests.
+
 ## 2.78.1 -- 2026-09-26
 
 **Telegram dit pourquoi il refuse**

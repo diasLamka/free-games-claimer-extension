@@ -261,6 +261,7 @@ test('Telegram : un 403 dit laquelle des pannes, d\'apres la raison que Telegram
     ['Forbidden: bot can\'t initiate conversation with a user', /Demarrer/],
     ['Forbidden: bot was blocked by the user', /debloquez/],
     ['Forbidden: bot can\'t send messages to bots', /@userinfobot/],
+    ['Forbidden: the bot can\'t send messages to the bot', /@userinfobot/],
     ['Forbidden: bot is not a member of the channel chat', /ajoutez-le/],
     ['Forbidden: bot was kicked from the supergroup chat', /ajoutez-le/],
     ['Forbidden: need administrator rights in the channel chat', /administrateur du canal/],

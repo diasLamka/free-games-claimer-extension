@@ -356,7 +356,8 @@ function telegramForbidden(raison) {
   const r = String(raison || '');
   if (/can't initiate conversation/i.test(r)) return 'le bot ne peut pas ecrire le premier -- ouvrez-le dans Telegram et appuyez sur Demarrer';
   if (/blocked by the user/i.test(r)) return 'vous avez bloque le bot -- debloquez-le dans Telegram, puis appuyez sur Demarrer';
-  if (/send messages to bots/i.test(r)) return 'cet identifiant est celui d\'un bot (le numero au debut du jeton est celui du bot) -- il faut le votre, que @userinfobot donne';
+  // « bot can't send messages to bots », ou « the bot can't send messages to the bot » (mesure du 2026-09-26).
+  if (/send messages to (?:the )?bots?\b/i.test(r)) return 'cet identifiant est celui d\'un bot (le numero au debut du jeton est celui du bot) -- il faut le votre, que @userinfobot donne';
   if (/administrator rights/i.test(r)) return 'le bot doit etre administrateur du canal';
   if (/not a member|kicked/i.test(r)) return 'le bot n\'est pas membre de ce groupe ou canal -- ajoutez-le (administrateur, pour un canal)';
   if (/deactivated|chat was deleted/i.test(r)) return 'cette discussion n\'existe plus';
