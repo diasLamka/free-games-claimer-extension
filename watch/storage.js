@@ -248,6 +248,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * recoit pas sur l'ordinateur. Voir watch/recap.js.
    */
   weeklyRecap: true,
+  /**
+   * Les week-ends gratuits de Steam (2.75.0) : des jeux a essayer quelques
+   * jours, rien a garder. Affiches a part dans le popup, jamais reclames.
+   * Sans effet tant que Steam n'est pas suivi. Voir watch/steam-weekends.js.
+   */
+  steamWeekends: true,
   /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
   watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
 

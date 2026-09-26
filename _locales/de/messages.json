@@ -1984,5 +1984,26 @@
   },
   "importRestoredAll": {
     "message": "Wiederhergestellt: $1 abgeholte(s) Spiel(e), $2 Code(s), $3 Wunsch/Wünsche hinzugefügt. Der Rest war schon da."
+  },
+  "weekendsTitle": {
+    "message": "Dieses Wochenende gratis spielen"
+  },
+  "weekendsOpen": {
+    "message": "$1 auf Steam öffnen"
+  },
+  "weekendsPrice": {
+    "message": "danach $1"
+  },
+  "weekendsPriceDiscount": {
+    "message": "-$1 % · $2"
+  },
+  "weekendsUntil": {
+    "message": "bis $1"
+  },
+  "weekendsLabel": {
+    "message": "Steam-Gratiswochenenden"
+  },
+  "weekendsToggleHint": {
+    "message": "Spiele, die du ein paar Tage gratis spielen kannst. Nichts zu behalten: Die Erweiterung zeigt sie, sie holt sie nicht ab."
   }
 }

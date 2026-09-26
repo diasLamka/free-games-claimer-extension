@@ -68,6 +68,7 @@ import { badgeState, inQuietHours } from './watch/notify-policy.js';
 import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
+import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { money } from './lib/money.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
@@ -177,6 +178,7 @@ async function ensureSchedule(now = Date.now()) {
      vendredi matin n'attend pas le prochain cycle pour le recevoir. */
   await maybeRecap(now);
   await maybeCodeReminders(now);
+  await maybeWeekends(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -406,6 +408,7 @@ async function startCycle(origine, options = {}) {
         // Apres le cycle : les jeux du jeudi viennent d'etre vus et pris.
         await maybeRecap(Date.now());
         await maybeCodeReminders(Date.now());
+        await maybeWeekends(Date.now());
       }
       return result;
     } catch (e) {
@@ -456,6 +459,33 @@ function maybeRecap(now = Date.now()) {
     .catch((e) => record('warn', 'recap du jeudi impossible', e))
     .finally(() => { recapRunning = null; });
   return recapRunning;
+}
+
+/* ------------------------------------------- week-ends gratuits de Steam */
+
+let weekendsRunning = null;
+
+/**
+ * Les week-ends gratuits de Steam (2.75.0), relus au plus toutes les six
+ * heures, et seulement si Steam est suivi. Voir watch/steam-weekends.js.
+ */
+function maybeWeekends(now = Date.now()) {
+  if (weekendsRunning) return weekendsRunning;
+  weekendsRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.steamWeekends === false || !(settings.watchedStores || []).includes('steam')) return null;
+    const { [KEY_WEEKENDS]: avant } = await readKeys(api, KEY_WEEKENDS);
+    if (!weekendsDue(avant, now)) return null;
+    const r = await refreshWeekends({ fetch: (u, i) => fetch(u, i), now });
+    await write(api, { [KEY_WEEKENDS]: nextWeekends(avant, r) });
+    record(r.failed ? 'warn' : 'info', r.failed
+      ? `week-ends Steam : lecture impossible (${r.errors.join(' ; ')})`
+      : `week-ends Steam : ${r.items.length} jeu(x) a essayer`);
+    return r;
+  })()
+    .catch((e) => record('warn', 'week-ends Steam impossibles', e))
+    .finally(() => { weekendsRunning = null; });
+  return weekendsRunning;
 }
 
 /* ------------------------------------------------------ rappel des codes */

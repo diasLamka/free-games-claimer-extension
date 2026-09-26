@@ -4,6 +4,40 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.75.0 -- 2026-09-26
+
+**Les week-ends gratuits de Steam**
+
+Steam ouvre regulierement un jeu payant a tous, quelques jours : « Free
+Weekend », « Play for free until Sep 28 ». Rien a garder, donc rien que
+l'extension doive reclamer -- et c'est pour cela que la source Steam les
+ignorait. C'est pourtant ce qu'on aime savoir le vendredi soir.
+
+- **Une section « A essayer ce week-end »** dans l'onglet Jeux (et en grille
+  dans le tableau de bord) : la jaquette, le titre, le temps qui reste
+  (« 2 j 7 h », la date exacte au survol), et le prix si on veut le garder --
+  souvent en promotion ce week-end-la (« -93 % · 1,03 EUR »). Un clic ouvre la
+  fiche Steam. Rien n'est jamais reclame.
+- **Mesure du 2026-09-26**, avec deux week-ends en cours, Squad et Ship
+  Graveyard Simulator : la page d'accueil du magasin declare ses jeux dans
+  `GStoreItemData.AddStoreItemDataSet` et y marque ces deux-la
+  `free_weekend: true` ; la recherche ne les marque pas, et
+  `api/featuredcategories` ne montre que celui mis en avant.
+  `IStoreBrowseService/GetItems`, deja lu par l'extension, rend pour eux
+  `free_weekend: { start_time, end_time }` -- et rien pour un free-to-play.
+  La page d'accueil designe donc les candidats, GetItems confirme et date.
+- **Lu au plus toutes les six heures**, sans cookie, et seulement si Steam est
+  suivi : la page d'accueil pese pres d'1 Mo. Un echec garde la liste connue
+  et retente dans une heure.
+- Reglages -> Magasins -> « Week-ends gratuits Steam », actif par defaut, les
+  coupe.
+
+Verifie dans l'extension chargee dans Chromium, sur le vrai Steam : apres un
+cycle, Squad (-50 %) et Ship Graveyard Simulator (-93 %), jusqu'au 28
+septembre 17:00 UTC, dans la section, sans debordement a 328 px.
+
+1325 tests.
+
 ## 2.74.0 -- 2026-09-26
 
 **Une sauvegarde qui ramene tout**

@@ -1,0 +1,287 @@
+{
+ "response": {
+  "store_items": [
+   {
+    "item_type": 0,
+    "id": 393380,
+    "success": 1,
+    "visible": true,
+    "name": "Squad",
+    "store_url_path": "app/393380/Squad",
+    "store_url_slug": "Squad",
+    "appid": 393380,
+    "type": 0,
+    "content_descriptorids": [
+     2,
+     5
+    ],
+    "categories": {
+     "supported_player_categoryids": [
+      1,
+      49,
+      36,
+      9,
+      38
+     ],
+     "feature_categoryids": [
+      29,
+      30,
+      8
+     ],
+     "controller_categoryids": [
+      18
+     ]
+    },
+    "basic_info": {
+     "short_description": "Squad est un FPS tactique qui offre des expériences de combat authentiques grâce au travail d'équipe, à la communication et à des combats réalistes. Il comble le fossé entre le shooter arcade et le réalisme militaire avec des batailles à 100 joueurs.",
+     "publishers": [
+      {
+       "name": "Offworld",
+       "creator_clan_account_id": 33965189
+      }
+     ],
+     "developers": [
+      {
+       "name": "Offworld",
+       "creator_clan_account_id": 33965189
+      }
+     ],
+     "capsule_headline": "#label_just_updated"
+    },
+    "assets": {
+     "asset_url_format": "steam/apps/393380/${FILENAME}?t=1790023076",
+     "main_capsule": "ad23025eadcd9c8a1281f3e8a8904308a9e61dd8/capsule_616x353.jpg",
+     "main_capsule_2x": "ad23025eadcd9c8a1281f3e8a8904308a9e61dd8/capsule_616x353_2x.jpg",
+     "small_capsule": "e069cbeca98b633002e2d2202b4cc4ae58138549/capsule_231x87.jpg",
+     "small_capsule_2x": "e069cbeca98b633002e2d2202b4cc4ae58138549/capsule_231x87_2x.jpg",
+     "header": "0b19b50aabea356bd8f534fbe7d6db9bd227810a/header.jpg",
+     "header_2x": "0b19b50aabea356bd8f534fbe7d6db9bd227810a/header_2x.jpg",
+     "page_background": "page_bg_generated_v6b.jpg",
+     "hero_capsule": "eff0a61bade13e02446fa24e3c4322425880fbab/hero_capsule.jpg",
+     "hero_capsule_2x": "eff0a61bade13e02446fa24e3c4322425880fbab/hero_capsule_2x.jpg",
+     "library_capsule": "98a2fb72a788b60361f98ea07d1584ced808bcaa/library_600x900.jpg",
+     "library_capsule_2x": "98a2fb72a788b60361f98ea07d1584ced808bcaa/library_600x900_2x.jpg",
+     "library_hero": "library_hero.jpg",
+     "library_hero_2x": "library_hero_2x.jpg",
+     "community_icon": "eb66a8cb52165274c84cae6526205065d13119d5",
+     "page_background_path": "app/393380?t=1790023076",
+     "raw_page_background": "page_bg_raw.jpg",
+     "edition_comparison": "607fa02b222cd0cd40c2899a30699b91eafe12a0/edition_comparision.png",
+     "last_modified": 1790023076
+    },
+    "best_purchase_option": {
+     "packageid": 78726,
+     "purchase_option_name": "Squad",
+     "final_price_in_cents": "1699",
+     "original_price_in_cents": "3399",
+     "formatted_final_price": "16,99€",
+     "formatted_original_price": "33,99€",
+     "discount_pct": 50,
+     "active_discounts": [
+      {
+       "discount_amount": "1700",
+       "discount_description": "#discount_desc_preset_weekend",
+       "discount_end_date": 1790874000
+      }
+     ],
+     "user_can_purchase_as_gift": true,
+     "hide_discount_pct_for_compliance": false,
+     "included_game_count": 1,
+     "lowest_recent_price_in_cents": "1699",
+     "must_purchase_as_set": false,
+     "package_group": "default",
+     "price_cannot_be_displayed_as_discount": false,
+     "formatted_lowest_recent_price": "16,99€"
+    },
+    "free_weekend": {
+     "start_time": 1790269200,
+     "end_time": 1790614800
+    }
+   },
+   {
+    "item_type": 0,
+    "id": 1286880,
+    "success": 1,
+    "visible": true,
+    "name": "Ship Graveyard Simulator",
+    "store_url_path": "app/1286880/Ship_Graveyard_Simulator",
+    "store_url_slug": "Ship_Graveyard_Simulator",
+    "appid": 1286880,
+    "type": 0,
+    "related_items": {
+     "demo_appid": [
+      1657470
+     ],
+     "demos": [
+      {
+       "appid": 1657470,
+       "label": "Play Now",
+       "show_above_purchase": true
+      }
+     ]
+    },
+    "categories": {
+     "supported_player_categoryids": [
+      2
+     ],
+     "feature_categoryids": [
+      22,
+      62
+     ]
+    },
+    "basic_info": {
+     "short_description": "Visitez le plus grand cimetière de navires au monde! Choisissez le navire le plus précieux pour vous et commencez votre aventure. Incarnez un des ouvriers pendant le travail le plus dangereux au monde. Démantelez tout le navire, vendez les pièces obtenues et améliorez votre équipement.",
+     "publishers": [
+      {
+       "name": "Games Incubator",
+       "creator_clan_account_id": 38194961
+      },
+      {
+       "name": "PlayWay S.A.",
+       "creator_clan_account_id": 33701576
+      }
+     ],
+     "developers": [
+      {
+       "name": "Games Incubator",
+       "creator_clan_account_id": 38194961
+      }
+     ],
+     "franchises": [
+      {
+       "name": "Ship Graveyard Simulator Franchise",
+       "creator_clan_account_id": 46405857
+      }
+     ]
+    },
+    "assets": {
+     "asset_url_format": "steam/apps/1286880/${FILENAME}?t=1790356887",
+     "main_capsule": "1424ad2ba02c31081fe6ebde5298fadf342f1b4c/capsule_616x353_alt_assets_4.jpg",
+     "main_capsule_2x": "1424ad2ba02c31081fe6ebde5298fadf342f1b4c/capsule_616x353_alt_assets_4_2x.jpg",
+     "small_capsule": "96a8bfed028396000cf69dbfd9cf73444f238899/capsule_231x87_alt_assets_4.jpg",
+     "small_capsule_2x": "96a8bfed028396000cf69dbfd9cf73444f238899/capsule_231x87_alt_assets_4_2x.jpg",
+     "header": "5fb62aaa4fcb6718799a67b5a2899db0fac4a1f5/header_alt_assets_4.jpg",
+     "header_2x": "5fb62aaa4fcb6718799a67b5a2899db0fac4a1f5/header_alt_assets_4_2x.jpg",
+     "hero_capsule": "87614c76df4d2da507ad130711c36eef2066f6e3/hero_capsule_alt_assets_4.jpg",
+     "hero_capsule_2x": "87614c76df4d2da507ad130711c36eef2066f6e3/hero_capsule_alt_assets_4_2x.jpg",
+     "library_capsule": "library_600x900.jpg",
+     "library_capsule_2x": "library_600x900_2x.jpg",
+     "library_hero": "3f919bc4eaa9c68d4bdadf9457a8e3bfe86ff021/library_hero.jpg",
+     "library_hero_2x": "3f919bc4eaa9c68d4bdadf9457a8e3bfe86ff021/library_hero_2x.jpg",
+     "community_icon": "2080cac52bd8ec2bba1609dd61954da250887ba0",
+     "page_background_path": "app/1286880?t=1790356887",
+     "edition_comparison": "07744b1aa2d79b3240f4470de08129d91b57275c/edition_comparision.png",
+     "last_modified": 1790356887
+    },
+    "best_purchase_option": {
+     "packageid": 448615,
+     "purchase_option_name": "Ship Graveyard Simulator",
+     "final_price_in_cents": "103",
+     "original_price_in_cents": "1479",
+     "formatted_final_price": "1,03€",
+     "formatted_original_price": "14,79€",
+     "discount_pct": 93,
+     "active_discounts": [
+      {
+       "discount_amount": "1376",
+       "discount_description": "#discount_desc_preset_daily",
+       "discount_end_date": 1790874000
+      }
+     ],
+     "user_can_purchase_as_gift": true,
+     "hide_discount_pct_for_compliance": false,
+     "included_game_count": 1,
+     "lowest_recent_price_in_cents": "103",
+     "must_purchase_as_set": false,
+     "package_group": "default",
+     "price_cannot_be_displayed_as_discount": false,
+     "formatted_lowest_recent_price": "1,03€"
+    },
+    "free_weekend": {
+     "start_time": 1790355600,
+     "end_time": 1790614800
+    }
+   },
+   {
+    "item_type": 0,
+    "id": 4694270,
+    "success": 1,
+    "visible": true,
+    "name": "Backrooms: Code Yellow",
+    "store_url_path": "app/4694270/Backrooms_Code_Yellow",
+    "store_url_slug": "Backrooms_Code_Yellow",
+    "appid": 4694270,
+    "type": 0,
+    "is_early_access": true,
+    "categories": {
+     "supported_player_categoryids": [
+      2,
+      1,
+      9,
+      38
+     ],
+     "feature_categoryids": [
+      62
+     ]
+    },
+    "basic_info": {
+     "short_description": "An online 1-6 player co-op game about investigating and collecting data in the infinitely massive Backrooms with your fellow employees. \r\n\r\nExplore. Do your job. Return alive.",
+     "publishers": [
+      {
+       "name": " GameMechanic"
+      }
+     ],
+     "developers": [
+      {
+       "name": " GameMechanic"
+      }
+     ]
+    },
+    "assets": {
+     "asset_url_format": "steam/apps/4694270/${FILENAME}?t=1790352033",
+     "main_capsule": "d9833b2ba7ad2b62100bfe1ab0d7b1e4f7a74483/capsule_616x353.jpg",
+     "main_capsule_2x": "d9833b2ba7ad2b62100bfe1ab0d7b1e4f7a74483/capsule_616x353_2x.jpg",
+     "small_capsule": "68f950d6953d8524aa6ae02a58d3d76b7ad7d3f4/capsule_231x87.jpg",
+     "small_capsule_2x": "68f950d6953d8524aa6ae02a58d3d76b7ad7d3f4/capsule_231x87_2x.jpg",
+     "header": "89a94e014b54f925af55d29121a6197fb76e7286/header.jpg",
+     "header_2x": "89a94e014b54f925af55d29121a6197fb76e7286/header_2x.jpg",
+     "page_background": "f0313735bfc3652b6bab5b60c913c5f0c5a8e411/page_bg_v6.jpg",
+     "hero_capsule": "06ed688599d0b19976f0c812b3d5780461a2e770/hero_capsule.jpg",
+     "hero_capsule_2x": "06ed688599d0b19976f0c812b3d5780461a2e770/hero_capsule_2x.jpg",
+     "library_capsule": "bb51151e008219e802c67ba73b9b06d5ee22d10c/library_capsule.jpg",
+     "library_capsule_2x": "bb51151e008219e802c67ba73b9b06d5ee22d10c/library_capsule_2x.jpg",
+     "library_hero": "2e709fcfea6e7c9568682705d531e7e6e5cecde5/library_hero.jpg",
+     "library_hero_2x": "2e709fcfea6e7c9568682705d531e7e6e5cecde5/library_hero_2x.jpg",
+     "community_icon": "5f2bf70543632d6f70e407942c67aecede33e7d4",
+     "page_background_path": "app/4694270?t=1790352033",
+     "raw_page_background": "f0313735bfc3652b6bab5b60c913c5f0c5a8e411/page_bg_raw.jpg",
+     "last_modified": 1790352033
+    },
+    "best_purchase_option": {
+     "packageid": 1633718,
+     "purchase_option_name": "Backrooms: Code Yellow",
+     "final_price_in_cents": "820",
+     "original_price_in_cents": "1025",
+     "formatted_final_price": "8,20€",
+     "formatted_original_price": "10,25€",
+     "discount_pct": 20,
+     "active_discounts": [
+      {
+       "discount_amount": "205",
+       "discount_description": "#discount_desc_preset_launch",
+       "discount_end_date": 1791565214
+      }
+     ],
+     "user_can_purchase_as_gift": true,
+     "hide_discount_pct_for_compliance": false,
+     "included_game_count": 1,
+     "lowest_recent_price_in_cents": "820",
+     "must_purchase_as_set": false,
+     "package_group": "default",
+     "price_cannot_be_displayed_as_discount": false,
+     "formatted_lowest_recent_price": "8,20€"
+    }
+   }
+  ]
+ }
+}

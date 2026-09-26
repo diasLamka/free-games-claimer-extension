@@ -47,6 +47,7 @@ import { ALL, byStore, storeChips } from '../lib/store-chips.js';
 import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/month-chart.js';
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
+import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import {
   BACKUP_KEYS, HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES, snapshot,
 } from '../watch/full-backup.js';
@@ -208,6 +209,7 @@ const KEYS_READ = [
   KEY_SEEN,
   KEY_COLLECTION,
   KEY_DRY_RUN,
+  KEY_WEEKENDS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -989,6 +991,44 @@ function renderGames(all, behaviour) {
 /* La meme liste que le recap du jeudi (2.65.0) : elle vit desormais dans
    watch/recap.js, pour que les deux ne divergent pas. */
 const upcomingWindows = announcedWindows;
+
+/* Les week-ends gratuits de Steam (2.75.0). La meme grammaire que « Bientot » :
+   la jaquette, le titre, le magasin, et a droite jusqu'a quand. En dessous,
+   le prix si l'on veut le garder -- souvent en promotion ce week-end-la. */
+function renderWeekends(all, behaviour) {
+  const section = document.getElementById('weekends-section');
+  const host = document.getElementById('weekends');
+  if (!section || !host) return;
+  host.textContent = '';
+  const watched = (behaviour && behaviour.watchedStores) || DEFAULT_WATCHED;
+  const liste = (behaviour && behaviour.steamWeekends === false) || !watched.includes(STORES.STEAM)
+    ? [] : openWeekends(get(all, KEY_WEEKENDS, null), Date.now());
+  section.hidden = !liste.length;
+  document.getElementById('weekends-count').textContent = liste.length ? String(liste.length) : '';
+  for (const w of liste) {
+    const row = el('button', 'row go');
+    row.title = t('weekendsOpen', w.title);
+    row.addEventListener('click', () => openTab(w.url));
+    const art = el('span', 'soon-art');
+    if (w.image) art.append(thumb(w.image));
+    else art.append(el('span', 'letter', (w.title || '?').trim().charAt(0).toUpperCase()));
+    row.append(art);
+    const body = el('span', 'soon-body');
+    body.append(el('span', 'label', displayTitle(w.title)));
+    const prix = w.price
+      ? (w.discount ? t('weekendsPriceDiscount', String(w.discount), w.price) : t('weekendsPrice', w.price))
+      : null;
+    if (prix) body.append(el('span', 'soon-price', prix));
+    else body.append(storeTag(STORES.STEAM));
+    row.append(body);
+    // Le temps qui reste, comme sur les cartes : la date exacte est dans l'infobulle.
+    const reste = el('span', 'aside hi', readableDelay(w.end - Date.now()));
+    reste.title = t('weekendsUntil', shortDateTime(w.end));
+    row.append(reste);
+    row.append(el('span', 'soon-go', '↗'));
+    host.append(row);
+  }
+}
 
 function renderUpcoming(all) {
   const next = upcomingWindows(get(all, KEY_SOURCES, {}), Date.now());
@@ -2056,6 +2096,8 @@ function renderNotifications(behaviour) {
   const hours = Number.isFinite(behaviour.reminderHours) ? behaviour.reminderHours : 6;
   document.getElementById('reminder').value = String(hours);
   document.getElementById('reminder-value').textContent = hours > 0 ? String(hours) : t('reminderOff');
+  // Les week-ends gratuits de Steam (2.75.0) : actifs sauf refus explicite.
+  document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
   document.getElementById('weekly-recap').checked = behaviour.weeklyRecap !== false;
 }
@@ -2146,6 +2188,7 @@ async function render() {
   renderStatus(all);
   renderGames(all, behaviourCache);
   renderUpcoming(all);
+  renderWeekends(all, behaviourCache);
   renderLog(all);
   renderCodes(get(all, KEY_CODES, []));
   renderTally(all);
@@ -2419,6 +2462,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
 });
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
+document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 
 /* The slider writes the floor; the daily cap follows from it on the scheduler
    side, and is never entered separately. */

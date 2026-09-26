@@ -291,7 +291,9 @@ test('l\'essai part d\'une page de l\'extension, la reponse d\'un script de cont
   assert.match(bg, /if \(await isStopped\(api\)\) return \{ stopped: true \};/);
   const html = lire('pages/popup.html');
   assert.match(html, /<button class="btn-sm" id="dry-run" data-i18n="dryRunButton"/);
-  assert.match(lire('pages/popup.js'), /KEY_DRY_RUN,\r?\n\];/);
+  const js = lire('pages/popup.js');
+  const liste = js.slice(js.indexOf('const KEYS_READ = ['), js.indexOf('];', js.indexOf('const KEYS_READ = [')));
+  assert.match(liste, /\n\s+KEY_DRY_RUN,\r?\n/, 'le popup relit l\'essai quand il change');
   assert.equal(KEY_DRY_RUN, 'veille:essai-a-blanc');
   for (const l of ['en', 'fr', 'de', 'es']) {
     const table = JSON.parse(lire(`_locales/${l}/messages.json`));

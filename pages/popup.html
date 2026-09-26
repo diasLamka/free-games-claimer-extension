@@ -732,9 +732,9 @@
   }
   /* « Bientot » : la jaquette en paysage, comme les cartes, et une fleche
      visible sans survol quand la ligne ouvre la fiche du jeu. */
-  #upcoming .row { gap: 9px; padding: 5px 4px; }
+  #upcoming .row, #weekends .row { gap: 9px; padding: 5px 4px; }
   .soon-art { width: 40px; height: 25px; flex: none; display: block; }
-  #upcoming .soon-art .mini, .soon-art .letter {
+  #upcoming .soon-art .mini, #weekends .soon-art .mini, .soon-art .letter {
     width: 100%; height: 100%; border-radius: 4px; object-fit: cover;
     background: var(--ink-3); opacity: 1; display: grid; place-items: center;
     font-family: var(--display); font-size: 12px; color: var(--mute);
@@ -743,6 +743,9 @@
   .soon-body .label { flex: none; }
   .soon-body .store-tag { font-size: 8.5px; }
   .soon-go { flex: none; color: var(--mute); font-size: 12px; width: 12px; text-align: center; }
+  /* Week-ends gratuits (2.75.0) : le prix si on veut le garder, en retrait. */
+  .soon-body .soon-price { font-size: 10.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :root[data-vue="onglet"] #weekends { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0 12px; }
   .row.go:hover .soon-go { color: var(--amber); }
   .row .mini {
     width: 24px;
@@ -1308,6 +1311,12 @@
       </div>
     </section>
 
+    <!-- Les week-ends gratuits de Steam (2.75.0) : a essayer, rien a garder. -->
+    <section id="weekends-section" hidden>
+      <h2><span data-i18n="weekendsTitle"></span><span class="count" id="weekends-count"></span></h2>
+      <div id="weekends"></div>
+    </section>
+
     <section id="upcoming-section">
       <h2 data-i18n="comingUp"></h2>
       <div id="upcoming"></div>
@@ -1417,6 +1426,11 @@
           <span class="aside" id="dry-run-when"></span>
         </div>
         <div id="dry-run-results"></div>
+        <label class="toggle">
+          <input type="checkbox" id="steam-weekends">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="weekendsLabel"></span><small data-i18n="weekendsToggleHint"></small></span>
+        </label>
         <details id="more-stores">
           <summary><span data-i18n="moreStores"></span><span class="aside" id="more-stores-count"></span></summary>
           <p class="hint" data-i18n="moreStoresHint"></p>

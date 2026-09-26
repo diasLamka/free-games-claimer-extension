@@ -1984,5 +1984,26 @@
   },
   "importRestoredAll": {
     "message": "Restored: $1 claimed game(s), $2 code(s), $3 wish(es) added. The rest was already here."
+  },
+  "weekendsTitle": {
+    "message": "Free to try this weekend"
+  },
+  "weekendsOpen": {
+    "message": "Open $1 on Steam"
+  },
+  "weekendsPrice": {
+    "message": "then $1"
+  },
+  "weekendsPriceDiscount": {
+    "message": "-$1% · $2"
+  },
+  "weekendsUntil": {
+    "message": "until $1"
+  },
+  "weekendsLabel": {
+    "message": "Steam free weekends"
+  },
+  "weekendsToggleHint": {
+    "message": "Games to play free for a few days. Nothing to keep: the extension shows them, it does not claim them."
   }
 }

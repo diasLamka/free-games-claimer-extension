@@ -1984,5 +1984,26 @@
   },
   "importRestoredAll": {
     "message": "Restaurado: $1 juego(s) obtenido(s), $2 código(s), $3 deseo(s) añadidos. El resto ya estaba."
+  },
+  "weekendsTitle": {
+    "message": "Para probar este fin de semana"
+  },
+  "weekendsOpen": {
+    "message": "Abrir $1 en Steam"
+  },
+  "weekendsPrice": {
+    "message": "después $1"
+  },
+  "weekendsPriceDiscount": {
+    "message": "-$1 % · $2"
+  },
+  "weekendsUntil": {
+    "message": "hasta el $1"
+  },
+  "weekendsLabel": {
+    "message": "Fines de semana gratis de Steam"
+  },
+  "weekendsToggleHint": {
+    "message": "Juegos para probar gratis unos días. Nada que conservar: la extensión los muestra, no los obtiene."
   }
 }

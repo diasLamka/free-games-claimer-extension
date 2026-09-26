@@ -111,6 +111,7 @@ est declare `"type": "module"`.
 | `incidents.js` | une panne cesse d'etre un compteur : ouverture, reconstat, cloture |
 | `health.js` | le tour d'inspection, hors du cycle -- il voit une veille arretee |
 | `notify-actions.js` | quels boutons sur une notification, et ce qu'un index veut dire |
+| `steam-weekends.js` | les week-ends gratuits de Steam : la page d'accueil designe, GetItems confirme et date -- montres, jamais reclames |
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `code-reminders.js` | un code bientot perime le dit : a sept jours, puis le dernier jour -- jamais le code lui-meme |
 | `recap.js` | le recap du jeudi soir : recupere, a prendre soi-meme, rate, annonce -- une fois par semaine, jamais vide |
@@ -300,6 +301,12 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Les week-ends gratuits de Steam** (2.75.0) : une section « A essayer ce
+week-end » dans l'onglet Jeux -- des jeux payants ouverts a tous quelques
+jours, le temps qui reste, et le prix s'il est en promotion pour qui veut le
+garder. Rien a recuperer : l'extension les montre, un clic ouvre la fiche.
+Reglages -> Magasins -> « Week-ends gratuits Steam » les coupe.
 
 **La sauvegarde complete** (2.74.0, Reglages -> Sauvegarde -> Exporter en
 JSON) : le fichier emporte tout ce qui ne se reconstruit pas seul -- jeux
