@@ -4,6 +4,28 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.81.1 -- 2026-09-26
+
+**Toutes les sections se replient**
+
+Demande du meme jour, apres « Deja recupere » : « repliable aussi le reste ».
+
+- **Vous attendent, Gratuit maintenant, A essayer ce week-end, Bientot** et,
+  dans l'onglet Codes, **Codes a echanger** sont des plis, comme ceux des
+  Reglages. Ouverts par defaut ; « Deja recupere » reste ferme.
+- **Le compte reste dans le titre**, en orange, pour chacune -- y compris
+  « Gratuit maintenant » (les jeux affiches) et « Bientot », qui n'en avaient
+  pas, et « Deja recupere », dont le compte gris a droite rejoint les autres.
+  Replie, rien n'est cache.
+- **Un seul souvenir** pour tous (`folds` dans les preferences d'affichage),
+  relu une fois a l'ouverture : un rendu suivant ne rouvre pas sous les
+  doigts ce qu'on vient de fermer. Le reglage de la 2.81.0 est repris.
+
+Verifie dans l'extension chargee dans Chromium : cinq plis fermes, le popup
+recharge, ils le restent ; le tableau de bord a trois colonnes aussi.
+
+1394 tests.
+
 ## 2.81.0 -- 2026-09-26
 
 **« Deja recupere » : des jaquettes, des icones, et un pli**

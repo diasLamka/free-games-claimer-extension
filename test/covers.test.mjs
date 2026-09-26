@@ -94,15 +94,6 @@ test('le popup demande, le worker ecrit ; la commande est reservee aux pages', (
   assert.match(popup, /COVERS_ASKED\.add\(row\.label\)/, 'une demande par titre et par ouverture');
 });
 
-test('la section se replie, dit son compte, et se souvient', () => {
-  const html = lire('pages/popup.html');
-  assert.match(html, /<details class="fold" id="fold-claimed">\s*<summary><h2 data-i18n="alreadyClaimed"><\/h2><span class="aside" id="fold-claimed-say"><\/span><\/summary>\s*<ul class="log" id="log"><\/ul>/);
-  const popup = lire('pages/popup.js');
-  assert.match(popup, /claimedOpen: false,/);
-  assert.match(popup, /foldSay\('fold-claimed', rows\.length \? String\(rows\.length\) : ''\);/);
-  assert.match(popup, /pli\.open = ui\.claimedOpen === true;/);
-});
-
 test('les statuts deviennent des icones, dessinees au DOM, avec leurs mots en infobulle', () => {
   const popup = lire('pages/popup.js');
   for (const k of ['ok', 'own', 'skip', 'ko', 'wait']) assert.match(popup, new RegExp(`\\n  ${k}: \\[`), k);

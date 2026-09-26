@@ -255,8 +255,8 @@ const DEFAULT_UI = {
   dismissed: [],
   onboarded: false,
   syncSettings: false,
-  /** « Deja recupere » deplie (2.81.0) : replie par defaut, et on s'en souvient. */
-  claimedOpen: false,
+  /** Les plis de Jeux et de Codes qu'on a ouverts ou refermes (2.81.1) : { id: ouvert }. */
+  folds: {},
 };
 
 /* Behaviour the service worker reads too. Imported, never re-declared: a
@@ -417,6 +417,27 @@ const PLIS_OUVERTS = new Set();
 function foldSay(id, texte) {
   const n = document.getElementById(`${id}-say`);
   if (n) n.textContent = texte || '';
+}
+
+/* Les plis de Jeux et de Codes (2.81.1) : tous repliables, et retenus.
+ *
+ * L'attribut `open` du HTML est l'etat par defaut -- ouvert partout, sauf
+ * « Deja recupere ». Ce qu'on en fait ensuite est garde dans `ui.folds` et
+ * relu UNE fois, a la premiere lecture des preferences : un rendu suivant ne
+ * rouvre pas sous les doigts ce qu'on vient de fermer. Le compte de chaque
+ * section reste dans son titre : replie, rien n'est cache. */
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+
+function applyFolds() {
+  for (const id of REMEMBERED_FOLDS) {
+    const pli = document.getElementById(id);
+    if (!pli || pli.dataset.init) continue;
+    pli.dataset.init = '1';
+    const garde = ui.folds && typeof ui.folds[id] === 'boolean' ? ui.folds[id]
+      // Le reglage de la 2.81.0, repris tel quel.
+      : id === 'fold-claimed' && typeof ui.claimedOpen === 'boolean' ? ui.claimedOpen : null;
+    if (garde !== null) pli.open = garde;
+  }
 }
 
 function foldOpen(id, alerte) {
@@ -911,6 +932,7 @@ function renderGames(all, behaviour) {
   renderStoreChips(puces);
   const visible = sortOffers(byStore(rows.filter(({ offer }) => matchesQuery(offer)), puces.active), now);
   shownOffers = visible.map(({ offer }) => offer);
+  document.getElementById('free-count').textContent = visible.length ? String(visible.length) : '';
   document.getElementById('share-row').hidden = !visible.length;
 
   const ctx = {
@@ -1085,6 +1107,7 @@ function renderUpcoming(all) {
 
   if (!next.length) { section.hidden = true; return; }
   section.hidden = false;
+  document.getElementById('upcoming-count').textContent = String(Math.min(next.length, 6));
 
   for (const w of next.slice(0, 6)) {
     /* La ligne mene a la fiche quand l'adresse existe.
@@ -1181,9 +1204,6 @@ const COVERS_ASKED = new Set();
 function renderLog(all) {
   const host = document.getElementById('log');
   host.textContent = '';
-  // L'etat du pli, lu une fois : ensuite c'est l'utilisateur qui l'ouvre ou le ferme.
-  const pli = document.getElementById('fold-claimed');
-  if (!pli.dataset.init) { pli.open = ui.claimedOpen === true; pli.dataset.init = '1'; }
   const catalog = get(all, KEY_CATALOG, {});
   const library = get(all, KEY_LIBRARY, {});
   const covers = get(all, KEY_COVERS, {});
@@ -1237,8 +1257,8 @@ function renderLog(all) {
   rows.sort((a, b) => b.ts - a.ts);
 
   document.getElementById('reset-log').hidden = !rows.length;
-  // Replie, le pli dit encore combien : « 24 ».
-  foldSay('fold-claimed', rows.length ? String(rows.length) : '');
+  // Replie, le pli dit encore combien : « 24 », comme les autres sections.
+  document.getElementById('claimed-count').textContent = rows.length ? String(rows.length) : '';
 
   if (!rows.length) {
     const empty = el('li', 'empty', t('emptyLog'));
@@ -2333,6 +2353,7 @@ async function render() {
   const all = await readAll();
 
   ui = { ...DEFAULT_UI, ...get(all, KEY_UI, {}) };
+  applyFolds();
   behaviourCache = { ...DEFAULT_BEHAVIOUR, ...get(all, KEY_SETTINGS, {}) };
   ratesCache = get(all, KEY_RATES, null);
 
@@ -3146,12 +3167,18 @@ document.getElementById('auto-backup-show').addEventListener('click', async (e) 
 
 /* « Copier la liste » (2.80.0) : voir watch/share-list.js. Le texte se
    compose au clic, avec ce qui est affiche a cet instant. */
-/* « Deja recupere » se souvient d'avoir ete ouvert (2.81.0). */
-document.getElementById('fold-claimed').addEventListener('toggle', (e) => {
-  if (ui.claimedOpen === e.target.open) return;
-  ui = { ...ui, claimedOpen: e.target.open };
-  setValue(KEY_UI, ui);
-});
+/* Chaque pli retenu dit ce qu'on en a fait (2.81.1). */
+for (const id of REMEMBERED_FOLDS) {
+  const pli = document.getElementById(id);
+  if (!pli) continue;
+  pli.addEventListener('toggle', () => {
+    const folds = { ...(ui.folds || {}) };
+    if (folds[id] === pli.open) return;
+    folds[id] = pli.open;
+    ui = { ...ui, folds };
+    setValue(KEY_UI, ui);
+  });
+}
 
 document.getElementById('share-list').addEventListener('click', async (e) => {
   const bouton = e.currentTarget;

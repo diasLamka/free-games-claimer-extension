@@ -307,8 +307,10 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
-**« Deja recupere » se replie** (2.81.0) : ferme par defaut, le titre garde
-le nombre de jeux, et le popup se souvient si on l'a laisse ouvert. Chaque
+**Les sections de Jeux et de Codes se replient** (2.81.0, puis 2.81.1 pour
+toutes) : Vous attendent, Gratuit maintenant, A essayer ce week-end, Bientot,
+Deja recupere (ferme par defaut) et Codes a echanger. Chaque titre garde son
+compte, et le popup se souvient de ce qu'on a replie. Chaque
 ligne a sa jaquette -- celle du catalogue ou du registre, sinon celle que la
 recherche Steam trouve au titre exact, sinon l'initiale --, son magasin, et
 son statut en icone : cercle coche (recupere), double coche (deja a vous),
