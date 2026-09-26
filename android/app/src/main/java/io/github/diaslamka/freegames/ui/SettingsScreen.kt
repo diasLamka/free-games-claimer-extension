@@ -53,6 +53,10 @@ fun SettingsScreen(
     onExport: () -> Unit,
     onClearSessions: () -> Unit,
     onCheckNow: () -> Unit,
+    onRelayScan: () -> Unit = {},
+    onRelayCode: (String) -> Unit = {},
+    onRelaySync: () -> Unit = {},
+    onRelayUnpair: () -> Unit = {},
 ) {
     val s = state.settings
     var steamWarning by remember { mutableStateOf(false) }
@@ -114,6 +118,8 @@ fun SettingsScreen(
                     Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
                 }
             }
+            item { SectionHeader(stringResource(R.string.section_relay), null) }
+            item { RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair) }
             item { SectionHeader(stringResource(R.string.section_data), null) }
             item {
                 Group {
@@ -130,6 +136,14 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.labelLarge, color = Color.White,
                         modifier = Modifier.padding(top = 10.dp).background(Color.Black).clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                     )
+                }
+            }
+            item { SectionHeader(stringResource(R.string.section_privacy), null) }
+            item {
+                Group {
+                    listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5).forEach { id ->
+                        Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+                    }
                 }
             }
             item {
@@ -173,6 +187,53 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { clearConfirm = false; onClearSessions() }) { Text(stringResource(R.string.clear)) } },
             dismissButton = { TextButton(onClick = { clearConfirm = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+/**
+ * Le relais avec le PC : associer (scanner le QR code du popup de
+ * l'extension, ou coller son code), voir quand le PC a parle, dissocier.
+ */
+@Composable
+private fun RelayGroup(
+    state: AppState,
+    now: Long,
+    onScan: () -> Unit,
+    onCode: (String) -> Unit,
+    onSync: () -> Unit,
+    onUnpair: () -> Unit,
+) {
+    var pasting by remember { mutableStateOf(false) }
+    var code by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf(false) }
+    val r = state.relay
+    Group {
+        Text(stringResource(R.string.relay_intro), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        if (r == null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 8.dp)) {
+                BrutButton(stringResource(R.string.relay_scan), onScan)
+                BrutButton(stringResource(R.string.relay_paste), { pasting = !pasting }, primary = false)
+            }
+            if (pasting) {
+                BrutField(code, { code = it }, "FGC1-…", onDone = { onCode(code.trim()); code = ""; pasting = false })
+                BrutButton(stringResource(R.string.relay_pair), { onCode(code.trim()); code = ""; pasting = false })
+            }
+            Text("> " + stringResource(R.string.relay_how), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+        } else {
+            Tag(
+                (if (r.peerAt != null) stringResource(R.string.relay_heard, Fmt.ago(LocalContext.current, r.peerAt, now)) else stringResource(R.string.relay_not_heard)).uppercase(),
+                if (r.peerAt != null) LocalBrut.current.accent else Color.White, Color.Black,
+                bordered = r.peerAt == null, maxLines = 3,
+            )
+            Text("> " + stringResource(R.string.relay_paired_on, Fmt.date(r.pairedAt)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+            r.lastError?.let { Text("> " + stringResource(R.string.relay_error, it), style = MaterialTheme.typography.bodySmall, color = Color.Black) }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
+                BrutButton(stringResource(R.string.relay_sync), onSync, primary = false)
+                BrutButton(stringResource(if (confirm) R.string.relay_unpair_confirm else R.string.relay_unpair), {
+                    if (confirm) { confirm = false; onUnpair() } else confirm = true
+                }, primary = false)
+            }
+        }
     }
 }
 

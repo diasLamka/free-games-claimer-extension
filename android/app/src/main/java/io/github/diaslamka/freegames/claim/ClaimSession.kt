@@ -17,6 +17,8 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.Relay
+import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AccountState
@@ -318,15 +320,21 @@ class ClaimSession(
         val blocked = mutableSetOf<String>()
         var steamDone = 0
         val won = mutableListOf<String>()
+        // Le relais d'abord : ce que le PC vient de prendre n'est pas retente.
+        runCatching { RelayLink.sync(context, System.currentTimeMillis()) }
         try {
             for ((i, offer) in todo.withIndex()) {
                 if (System.currentTimeMillis() > deadline) break
+                val st = Graph.store.value
+                if (Rules.claimedEntry(offer, st.library) != null) continue
+                if (Relay.held(st, offer, System.currentTimeMillis())) continue
                 if (offer.store in blocked) {
                     record(offer, Verdicts.LOGIN, "session a reprendre", count = false)
                     continue
                 }
                 _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
                 if (headless) Notifier.working(context, offer.shownTitle, i + 1, todo.size)
+                runCatching { RelayLink.lock(context, offer, System.currentTimeMillis()) }
                 var result = runOne(offer, steamDone)
                 if (result.first == Verdicts.CHALLENGE) {
                     if (headless) {
@@ -347,7 +355,12 @@ class ClaimSession(
                     blocked += offer.store
                     Notifier.login(context, offer.store)
                 }
-                if (result.first in Verdicts.ACQUIRED) won += offer.shownTitle
+                if (result.first in Verdicts.ACQUIRED) {
+                    won += offer.shownTitle
+                    if (result.first != Verdicts.ALREADY_REDEEMED) {
+                        runCatching { RelayLink.claimed(context, offer, result.first, System.currentTimeMillis()) }
+                    }
+                }
             }
         } finally {
             piloting = false

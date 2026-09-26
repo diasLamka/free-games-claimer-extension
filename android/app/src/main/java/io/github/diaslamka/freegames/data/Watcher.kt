@@ -55,6 +55,8 @@ object Watcher {
         Graph.init(context)
         val store = Graph.store
         val now = System.currentTimeMillis()
+        // Le relais avant tout : un jeu deja pris par le PC n'est ni annonce ni retente.
+        runCatching { RelayLink.sync(context, now) }
         val st = store.value.settings
         EpicSource.pageLang = if (Locale.getDefault().language == "fr") "fr" else "en"
 
@@ -107,6 +109,7 @@ object Watcher {
         remindEnding(context, now)
         refreshRatings(now)
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
+        runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
         return Summary(after.offers.size, fresh.size, errors)
     }

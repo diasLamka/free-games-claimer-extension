@@ -165,6 +165,26 @@ data class Settings(
     val onboarded: Boolean = false,
 )
 
+/**
+ * Ce que le relais sait, SANS le secret (1.2.0). Le secret vit a part, chiffre
+ * par le Keystore (data/RelaySecret.kt) : cet etat-ci peut etre lu, ecrit,
+ * affiche sans rien exposer.
+ */
+@Serializable
+data class RelayState(
+    val dev: String,
+    val pairedAt: Long,
+    val since: String? = null,
+    val lastSync: Long? = null,
+    val lastAlive: Long? = null,
+    val lastError: String? = null,
+    /** L'autre appareil : son role (« pc »), quand on l'a entendu, ses sessions. */
+    val peerRole: String? = null,
+    val peerAt: Long? = null,
+    /** « magasin|titre normalise » -> fin du verrou pose par l'autre. */
+    val locks: Map<String, Long> = emptyMap(),
+)
+
 /** Tout l'etat de l'appli, dans un seul fichier. */
 @Serializable
 data class AppState(
@@ -184,4 +204,5 @@ data class AppState(
     val engine: Map<String, JsonElement> = emptyMap(),
     val accounts: Map<String, AccountState> = emptyMap(),
     val importedAt: Long? = null,
+    val relay: RelayState? = null,
 )

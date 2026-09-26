@@ -149,6 +149,9 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("com.squareup.okhttp3:okhttp:5.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    /* Le lecteur de QR code de Google Play : il ouvre SA camera, dans son processus.
+       L'appli n'a donc pas a demander la permission CAMERA. */
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(composeBom)

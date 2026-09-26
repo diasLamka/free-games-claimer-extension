@@ -3,6 +3,7 @@ package io.github.diaslamka.freegames.claim
 import android.content.Context
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
@@ -35,7 +36,7 @@ object BackgroundClaim {
         if (!s.settings.claimInBackground) return emptyList()
         return Rules.pending(s, now).filter { o ->
             val a = s.accounts[o.store]?.status
-            a == Accounts.OK || a == Accounts.PRESENT
+            (a == Accounts.OK || a == Accounts.PRESENT) && !Relay.held(s, o, now)
         }
     }
 

@@ -44,12 +44,16 @@ import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.BackupIO
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.ShareText
 import io.github.diaslamka.freegames.data.Watcher
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.work.Scheduler
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -99,6 +103,25 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         } else if (!session.ui.value.running) {
             Toast.makeText(context, context.getString(R.string.nothing_to_claim), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /* Le relais avec le PC (1.2.0) : un code scanne ou colle. */
+    fun pairRelay(code: String) {
+        scope.launch {
+            val ok = RelayLink.pair(context, code, System.currentTimeMillis())
+            Toast.makeText(context, context.getString(if (ok) R.string.relay_paired else R.string.relay_bad_code), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /* Le lecteur de Google Play : sa camera, dans son processus -- l'appli ne
+       demande pas la permission CAMERA. Sans Google Play, on colle le code. */
+    fun scanRelay() {
+        val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+        runCatching {
+            GmsBarcodeScanning.getClient(context, options).startScan()
+                .addOnSuccessListener { b -> b.rawValue?.let { pairRelay(it) } }
+                .addOnFailureListener { Toast.makeText(context, context.getString(R.string.relay_scan_failed), Toast.LENGTH_LONG).show() }
+        }.onFailure { Toast.makeText(context, context.getString(R.string.relay_scan_failed), Toast.LENGTH_LONG).show() }
     }
 
     fun updateSettings(block: (Settings) -> Settings) {
@@ -227,9 +250,21 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onClearSessions = {
                         CookieManager.getInstance().removeAllCookies(null)
                         CookieManager.getInstance().flush()
+                        // Le stockage des pages aussi (localStorage, IndexedDB) : une session s'y cache parfois.
+                        android.webkit.WebStorage.getInstance().deleteAllData()
                         scope.launch { Graph.store.update { it.copy(accounts = emptyMap(), steamOwned = emptyList()) } }
                     },
                     onCheckNow = { refresh() },
+                    onRelayScan = { scanRelay() },
+                    onRelayCode = { code -> pairRelay(code) },
+                    onRelaySync = {
+                        scope.launch {
+                            val n = RelayLink.sync(context, System.currentTimeMillis())
+                            RelayLink.alive(context, System.currentTimeMillis(), force = true)
+                            Toast.makeText(context, context.getString(R.string.relay_synced, n), Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onRelayUnpair = { scope.launch { RelayLink.unpair(context) } },
                 )
             }
         }
