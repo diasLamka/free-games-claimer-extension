@@ -2185,5 +2185,68 @@
   },
   "omniAlsoYours": {
     "message": "ya es tuyo"
+  },
+  "relayTitle": {
+    "message": "Relé con el teléfono"
+  },
+  "relayIntro": {
+    "message": "La app de Android y la extensión se dicen lo que consiguen: el que está encendido se queda el juego y el otro no lo reintenta. Cifrado de extremo a extremo, por ntfy — ningún servidor nuestro."
+  },
+  "relayPair": {
+    "message": "Vincular mi teléfono"
+  },
+  "relayScanHint": {
+    "message": "En la app: Ajustes → Relé con el PC → Escanear. ¿Sin cámara? Copia el código y pégalo en la app."
+  },
+  "relayQrLabel": {
+    "message": "Código QR de vinculación"
+  },
+  "relayCopy": {
+    "message": "Copiar el código"
+  },
+  "relayCopied": {
+    "message": "Código copiado. Pégalo en la app y guárdalo para ti."
+  },
+  "relayDone": {
+    "message": "Hecho"
+  },
+  "relayShowAgain": {
+    "message": "Volver a ver el código QR"
+  },
+  "relayUnpair": {
+    "message": "Desvincular"
+  },
+  "relayUnpairConfirm": {
+    "message": "Pulsa otra vez para desvincular"
+  },
+  "relayUnpaired": {
+    "message": "Desvinculado. Desvincula también en la app: ya no oye a este ordenador."
+  },
+  "relaySecretHint": {
+    "message": "El código es la llave del relé: no lo compartas. Nunca se sincroniza ni entra en una copia."
+  },
+  "relayPairedOn": {
+    "message": "Vinculado el $1."
+  },
+  "relaySeen": {
+    "message": "Teléfono oído por última vez $1."
+  },
+  "relayNeverSeen": {
+    "message": "El teléfono aún no ha dado señales: escanea el código en la app."
+  },
+  "relayLastError": {
+    "message": "Último problema: $1."
+  },
+  "relayDenied": {
+    "message": "Sin acceso a ntfy.sh, el relé no puede funcionar."
+  },
+  "relayOnSay": {
+    "message": "vinculado"
+  },
+  "relayOffSay": {
+    "message": "apagado"
+  },
+  "relayConfirmed": {
+    "message": "Teléfono vinculado: ya se hablan."
   }
 }

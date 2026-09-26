@@ -1,0 +1,25 @@
+{
+  "note": "Vecteur commun du relais (docs/specs/2026-09-26-relais-design.md) : extension et appli doivent le reproduire.",
+  "secret": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "code": "FGC1-AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "topic": "fgcr-e39fec4ea91fe91d9e9a7d0b4f13e0bd",
+  "nonce": "0102030405060708090a0b0c",
+  "message": {
+    "v": 1,
+    "dev": "a1b2c3d4",
+    "role": "phone",
+    "type": "claimed",
+    "ts": 1790000000000,
+    "games": [
+      {
+        "s": "epic",
+        "i": "hades",
+        "t": "Hades",
+        "at": 1790000000000,
+        "st": "claimed",
+        "w": "24,99 €"
+      }
+    ]
+  },
+  "envelope": "fgc1.AQIDBAUGBwgJCgsMzKXsb1BWvap8nUHEYTyKR1GuQWIQci03IzG7Qn3xAbMw_NePQ6GIXNlVWrkrpgVclKzPHirBqysaaTQpABblWHMR-TJHWk73zAGoX20u2qJWb_Qhz2ZBkzwMB4r9JLIarDwfZxSpZyorfiVfExIobeAUZ-0id14NN79p9g5zrnLettnFSN7WXWtZMIPU7e9OGBVdlT11Kk_BkZrfgCYSP28c6TM6_-wXC_DmLSNB6kbRSyjho6w2zV3J_FI"
+}

@@ -2185,5 +2185,68 @@
   },
   "omniAlsoYours": {
     "message": "schon deins"
+  },
+  "relayTitle": {
+    "message": "Handy-Relais"
+  },
+  "relayIntro": {
+    "message": "Die Android-App und die Erweiterung sagen sich gegenseitig, was sie holen: Wer an ist, nimmt das Spiel, der andere versucht es nicht erneut. Ende-zu-Ende-verschlüsselt, über ntfy — kein Server von uns."
+  },
+  "relayPair": {
+    "message": "Mein Handy koppeln"
+  },
+  "relayScanHint": {
+    "message": "In der App: Einstellungen → PC-Relais → Scannen. Keine Kamera? Code kopieren und in der App einfügen."
+  },
+  "relayQrLabel": {
+    "message": "QR-Code zum Koppeln"
+  },
+  "relayCopy": {
+    "message": "Code kopieren"
+  },
+  "relayCopied": {
+    "message": "Code kopiert. In der App einfügen und für dich behalten."
+  },
+  "relayDone": {
+    "message": "Erledigt"
+  },
+  "relayShowAgain": {
+    "message": "QR-Code erneut zeigen"
+  },
+  "relayUnpair": {
+    "message": "Entkoppeln"
+  },
+  "relayUnpairConfirm": {
+    "message": "Zum Entkoppeln erneut klicken"
+  },
+  "relayUnpaired": {
+    "message": "Entkoppelt. Auch in der App entkoppeln: Sie hört diesen Rechner nicht mehr."
+  },
+  "relaySecretHint": {
+    "message": "Der Code ist der Schlüssel des Relais: nicht teilen. Er wird nie synchronisiert und nie gesichert."
+  },
+  "relayPairedOn": {
+    "message": "Gekoppelt am $1."
+  },
+  "relaySeen": {
+    "message": "Handy zuletzt gehört $1."
+  },
+  "relayNeverSeen": {
+    "message": "Das Handy hat sich noch nicht gemeldet: Code in der App scannen."
+  },
+  "relayLastError": {
+    "message": "Letztes Problem: $1."
+  },
+  "relayDenied": {
+    "message": "Ohne Zugriff auf ntfy.sh funktioniert das Relais nicht."
+  },
+  "relayOnSay": {
+    "message": "gekoppelt"
+  },
+  "relayOffSay": {
+    "message": "aus"
+  },
+  "relayConfirmed": {
+    "message": "Handy gekoppelt: Sie sprechen jetzt miteinander."
   }
 }

@@ -462,3 +462,26 @@ button.row.go:hover:not(:disabled) { background: var(--accent); color: #000; }
    sur la barre blanche. */
 .head h2 { color: var(--base); font-family: var(--mono); letter-spacing: .06em; }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+/* Le relais (2.87.0) : le QR code toujours noir sur blanc, cerne et
+   ombre comme un bloc de la charte ; le code en dessous, coupable n'importe ou. */
+.relay-qr {
+  width: 176px;
+  margin: 10px 0 12px;
+  background: #FFFFFF;
+  border: 3px solid #000000;
+  box-shadow: 5px 5px 0 var(--shadow);
+}
+.relay-qr svg { display: block; width: 100%; height: auto; }
+.relay-code {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  word-break: break-all;
+  background: #FFFFFF;
+  color: #000000;
+  border: 2px dashed #000000;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+#relay-pairing .actions { margin-bottom: 10px; }

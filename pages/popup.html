@@ -1641,6 +1641,35 @@
       </details>
     </section>
 
+    <!-- Le relais avec l'appli Android (2.87.0) : voir watch/relay.js. -->
+    <section>
+      <details class="fold" id="fold-relay">
+        <summary><h2 data-i18n="relayTitle"></h2><span class="aside" id="fold-relay-say"></span></summary>
+        <p class="hint" data-i18n="relayIntro"></p>
+        <div id="relay-off">
+          <div class="actions"><button class="primary" id="relay-pair" data-i18n="relayPair"></button></div>
+        </div>
+        <div id="relay-pairing" hidden>
+          <p class="hint" data-i18n="relayScanHint"></p>
+          <div class="relay-qr" id="relay-qr" role="img" data-i18n-attr="aria-label:relayQrLabel"></div>
+          <code class="relay-code" id="relay-code"></code>
+          <div class="actions">
+            <button id="relay-copy" data-i18n="relayCopy"></button>
+            <button class="primary" id="relay-done" data-i18n="relayDone"></button>
+          </div>
+          <p class="hint" data-i18n="relaySecretHint"></p>
+        </div>
+        <div id="relay-on" hidden>
+          <p class="hint" id="relay-state"></p>
+          <div class="actions">
+            <button id="relay-show" data-i18n="relayShowAgain"></button>
+            <button class="btn-sm danger" id="relay-unpair" data-i18n="relayUnpair"></button>
+          </div>
+        </div>
+        <p class="hint" id="relay-note" role="status"></p>
+      </details>
+    </section>
+
     <section>
       <details class="fold">
         <summary><h2 data-i18n="onPagesIOpen"></h2></summary>

@@ -30,7 +30,8 @@ import {
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
-import { ownedKeys } from './library.js';
+import { ownedKeys, ownedKeyFor } from './library.js';
+import { TYPES as RELAY_TYPES, syncRelay, announce, maybeAlive } from './relay.js';
 import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
@@ -644,6 +645,18 @@ export async function runCycle({
     let cadence = ctx.cadence;
 
     if (autonomousClaim && ctx.settings.autonomousClaim !== false) {
+      /* Le relais (2.87.0) : ce que le telephone a pris entre au registre
+         AVANT de choisir quoi reclamer, et ce qu'il est en train de prendre
+         est laisse de cote. Sans association, rien ne change. */
+      let relais = null;
+      if (fetchImpl) {
+        try {
+          relais = await syncRelay({ chrome, fetch: fetchImpl, now, record });
+        } catch (e) {
+          record('warn', `relais : ${(e && e.message) || e}`);
+        }
+      }
+      const library = (relais && relais.library) || ctx.library;
       const result = await claimWhatCanBe({
         chrome,
         now,
@@ -655,11 +668,28 @@ export async function runCycle({
         watchedStores: ctx.settings.watchedStores,
         cadence,
         canary: ctx.canary,
-        library: ctx.library,
+        library,
         collection: ctx.collection,
         maxReclamations,
         record,
+        held: relais ? relais.held : null,
+        onClaimStart: relais ? (offer) => announce({
+          chrome, fetch: fetchImpl, ctx: relais.ctx, now: Date.now(), type: RELAY_TYPES.LOCK, record,
+          games: [{ store: offer.store, id: offer.storeId || offer.sourceId || offer.normalisedTitle, title: offer.title, until: Date.now() + 10 * 60 * 1000 }],
+        }) : null,
+        onClaimed: relais ? (offer, r) => announce({
+          chrome, fetch: fetchImpl, ctx: relais.ctx, now: Date.now(), type: RELAY_TYPES.CLAIMED, record,
+          games: [{ store: r.store || offer.store, id: offer.storeId || offer.sourceId || offer.normalisedTitle, title: offer.title, ts: Date.now(),
+            status: r.verdict, worth: offer.worth, url: offer.url }],
+        }) : null,
       });
+      if (relais) {
+        try {
+          await maybeAlive({ chrome, fetch: fetchImpl, ctx: relais.ctx, now, library, record });
+        } catch (e) {
+          record('warn', `relais : ${(e && e.message) || e}`);
+        }
+      }
       catalog = result.catalog;
       cadence = result.cadence;
       claims = result.claims;
@@ -818,6 +848,12 @@ export async function claimWhatCanBe({
   maxReclamations,
   record = () => {},
   fetch: fetchImpl,
+  /* Le relais (2.87.0) : les cles « magasin|titre » que l'autre appareil est
+     en train de prendre, et deux avis -- avant une reclamation (un verrou),
+     apres un succes (le jeu obtenu). Une panne du relais ne bloque rien. */
+  held = null,
+  onClaimStart = null,
+  onClaimed = null,
   /* Le geste de reclamation lui-meme, injectable.
    *
    * Par defaut c'est claimOffer, qui ouvre un onglet et joue l'etape dans la
@@ -839,9 +875,16 @@ export async function claimWhatCanBe({
   const owned = library ? ownedKeys(library, normaliseTitle) : null;
   const ownedIds = collection ? ownedStoreKeys(collection) : null;
 
-  const { candidates, dropped } = claimCandidates(next, filters, {
+  const tri = claimCandidates(next, filters, {
     claimableStores, watchedStores, now, owned, ownedIds,
   });
+  const { dropped } = tri;
+  let { candidates } = tri;
+  if (held && held.size) {
+    const avant = candidates.length;
+    candidates = candidates.filter((o) => !held.has(ownedKeyFor(o.store, normaliseTitle(o.title))));
+    if (candidates.length < avant) record('info', `relais : ${avant - candidates.length} jeu(x) en cours sur l'autre appareil`);
+  }
   if (dropped.length) {
     record('info', `${dropped.length} offre(s) ecartee(s) par les filtres`, {
       reasons: [...new Set(dropped.map((e) => e.reason))],
@@ -895,6 +938,9 @@ export async function claimWhatCanBe({
     };
     await writeCycle(chrome, { catalog: next });
 
+    if (onClaimStart) {
+      try { await onClaimStart(offer); } catch { /* le relais n'arrete jamais une reclamation */ }
+    }
     const r = await claim(offer, {
       chrome,
       now: commence,
@@ -910,6 +956,9 @@ export async function claimWhatCanBe({
     if (!touche && offer.store === STORES.STEAM) steamThisRun = Math.max(0, steamThisRun - 1);
     if (touche) timestamps = recordClaim(timestamps, Date.now());
     claims.push({ title: offer.title, catalogKey: offer.catalogKey, verdict: r.verdict, details: r.details });
+    if (onClaimed && (r.verdict === VERDICTS.CLAIMED || r.verdict === VERDICTS.REDEEMED)) {
+      try { await onClaimed(offer, r); } catch { /* idem */ }
+    }
 
     const attempts = (next[offer.catalogKey].attempts || 0) + 1;
     const definitif = FINAL_VERDICTS.includes(r.verdict);

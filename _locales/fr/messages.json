@@ -2185,5 +2185,68 @@
   },
   "omniAlsoYours": {
     "message": "déjà à vous"
+  },
+  "relayTitle": {
+    "message": "Relais avec le téléphone"
+  },
+  "relayIntro": {
+    "message": "L'appli Android et l'extension se disent ce qu'elles récupèrent : celui qui est allumé prend le jeu, l'autre ne le retente pas. Chiffré de bout en bout, par ntfy — aucun serveur à nous."
+  },
+  "relayPair": {
+    "message": "Associer mon téléphone"
+  },
+  "relayScanHint": {
+    "message": "Dans l'appli : Réglages → Relais avec le PC → Scanner. Pas de caméra utilisable ? Copiez le code et collez-le dans l'appli."
+  },
+  "relayQrLabel": {
+    "message": "QR code d'association"
+  },
+  "relayCopy": {
+    "message": "Copier le code"
+  },
+  "relayCopied": {
+    "message": "Code copié. Collez-le dans l'appli, puis gardez-le pour vous."
+  },
+  "relayDone": {
+    "message": "C'est fait"
+  },
+  "relayShowAgain": {
+    "message": "Revoir le QR code"
+  },
+  "relayUnpair": {
+    "message": "Dissocier"
+  },
+  "relayUnpairConfirm": {
+    "message": "Cliquez encore pour dissocier"
+  },
+  "relayUnpaired": {
+    "message": "Dissocié. Dissociez aussi dans l'appli : elle n'entend plus cet ordinateur."
+  },
+  "relaySecretHint": {
+    "message": "Le code est la clé du relais : ne le partagez pas. Il n'est jamais synchronisé ni mis dans une sauvegarde."
+  },
+  "relayPairedOn": {
+    "message": "Associé le $1."
+  },
+  "relaySeen": {
+    "message": "Téléphone entendu $1."
+  },
+  "relayNeverSeen": {
+    "message": "Le téléphone ne s'est pas encore manifesté : scannez le code dans l'appli."
+  },
+  "relayLastError": {
+    "message": "Dernier souci : $1."
+  },
+  "relayDenied": {
+    "message": "Sans l'accès à ntfy.sh, le relais ne peut pas fonctionner."
+  },
+  "relayOnSay": {
+    "message": "associé"
+  },
+  "relayOffSay": {
+    "message": "coupé"
+  },
+  "relayConfirmed": {
+    "message": "Téléphone associé : ils se parlent désormais."
   }
 }

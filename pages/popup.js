@@ -60,6 +60,10 @@ import {
 } from '../watch/auto-backup.js';
 import { KEY_TAUGHT, SURFACES, wouldAccept } from '../watch/teaching.js';
 import { KEY_SYNC_CODES } from '../watch/backup.js';
+import {
+  KEY_RELAY, DEFAULT_SERVER as RELAY_SERVER, readRelay, newSecret, newDeviceId, pairingCode, relayContext, maybeAlive, syncRelay,
+} from '../watch/relay.js';
+import qrcodegen from './vendor/qrcodegen.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
 import {
@@ -221,6 +225,7 @@ const KEYS_READ = [
   KEY_AUTO_BACKUP,
   KEY_RATINGS,
   KEY_COVERS,
+  KEY_RELAY,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -2408,6 +2413,7 @@ async function render() {
   renderSyncLibrary(behaviourCache);
   renderAutoBackup(all);
   renderPhone(all);
+  renderRelay(all);
   renderShortcuts();
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
@@ -2819,6 +2825,151 @@ function renderPhone(all) {
   } else zone.textContent = '';
 }
 
+/* ------------------------------------------------------------- le relais */
+
+/* Le QR code reste affiche tant qu'on ne dit pas « C'est fait » : un rendu
+   declenche par le worker ne doit pas le retirer sous l'appareil photo. */
+let relayShowing = false;
+let relayUnpairArmed = null;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/* Le QR code, dessine en SVG noeud par noeud (aucun innerHTML), noir sur
+   blanc avec sa marge de quatre modules : c'est ce que les lecteurs
+   attendent, quel que soit le theme. */
+function drawRelayQr(text) {
+  const box = document.getElementById('relay-qr');
+  if (box.dataset.code === text) return;
+  const qr = qrcodegen.QrCode.encodeText(text, qrcodegen.QrCode.Ecc.MEDIUM);
+  const marge = 4;
+  const n = qr.size + marge * 2;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${n} ${n}`);
+  svg.setAttribute('shape-rendering', 'crispEdges');
+  const fond = document.createElementNS(SVG_NS, 'rect');
+  fond.setAttribute('width', String(n));
+  fond.setAttribute('height', String(n));
+  fond.setAttribute('fill', '#FFFFFF');
+  svg.append(fond);
+  let d = '';
+  for (let y = 0; y < qr.size; y++) {
+    for (let x = 0; x < qr.size; x++) if (qr.getModule(x, y)) d += `M${x + marge},${y + marge}h1v1h-1z`;
+  }
+  const modules = document.createElementNS(SVG_NS, 'path');
+  modules.setAttribute('d', d);
+  modules.setAttribute('fill', '#000000');
+  svg.append(modules);
+  box.replaceChildren(svg);
+  box.dataset.code = text;
+  document.getElementById('relay-code').textContent = text;
+}
+
+function renderRelay(all) {
+  const r = readRelay(all[KEY_RELAY]);
+  document.getElementById('relay-off').hidden = !!r;
+  document.getElementById('relay-on').hidden = !r;
+  document.getElementById('relay-pairing').hidden = !(r && relayShowing);
+  document.getElementById('relay-show').hidden = relayShowing;
+  foldSay('fold-relay', t(r ? 'relayOnSay' : 'relayOffSay'));
+  relayWatch(Boolean(r && relayShowing));
+  if (!r) return;
+  if (relayShowing) drawRelayQr(pairingCode(r.secret, r.server));
+  const lignes = [];
+  if (r.pairedAt) lignes.push(t('relayPairedOn', shortDateTime(r.pairedAt)));
+  lignes.push(r.peer && typeof r.peer.at === 'number' ? t('relaySeen', since(r.peer.at)) : t('relayNeverSeen'));
+  if (r.lastError) lignes.push(t('relayLastError', r.lastError));
+  document.getElementById('relay-state').textContent = lignes.join(' ');
+}
+
+function relaySay(message) {
+  document.getElementById('relay-note').textContent = message || '';
+}
+
+/* Pendant que le QR code est a l'ecran, le popup ecoute le relais toutes les
+   cinq secondes : des que le telephone parle, l'association est confirmee et
+   le QR code se range. Le worker, lui, n'ecoute qu'a chaque cycle. */
+let relayTimer = null;
+function relayWatch(on) {
+  if (!on) { clearInterval(relayTimer); relayTimer = null; return; }
+  if (relayTimer) return;
+  relayTimer = setInterval(async () => {
+    try {
+      const avant = readRelay((await api.storage.local.get(KEY_RELAY))[KEY_RELAY]);
+      if (!avant) return;
+      await syncRelay({ chrome: api, fetch: (u, i) => fetch(u, i), now: Date.now() });
+      const apres = readRelay((await api.storage.local.get(KEY_RELAY))[KEY_RELAY]);
+      if (apres && apres.peer && apres.peer.at && (!avant.peer || apres.peer.at !== avant.peer.at)) {
+        relayShowing = false;
+        relaySay(t('relayConfirmed'));
+        renderRelay(await readAll());
+      }
+    } catch { /* on reessaiera */ }
+  }, 5000);
+}
+
+/* Un premier signe de vie, tout de suite : le telephone voit le PC des
+   l'association, sans attendre le prochain cycle. */
+async function relayHello() {
+  try {
+    const ctx = await relayContext(api);
+    const library = (await api.storage.local.get(KEY_LIBRARY))[KEY_LIBRARY] || {};
+    await maybeAlive({ chrome: api, fetch: (u, i) => fetch(u, i), ctx, now: Date.now(), library });
+  } catch { /* le cycle suivant le fera */ }
+}
+
+document.getElementById('relay-pair').addEventListener('click', async () => {
+  // La permission d'abord, dans le geste : voir askPhoneHost.
+  // En deux morceaux : la barre suivie de l'etoile passerait pour un debut de commentaire au balayage i18n.
+  const origin = `${RELAY_SERVER}/` + '*';
+  let accorde = false;
+  if (declaresOptionalOrigin(api.runtime.getManifest(), origin)) {
+    try { accorde = await api.permissions.request({ origins: [origin] }); } catch { accorde = false; }
+  }
+  if (!accorde) { relaySay(t('relayDenied')); return; }
+  const secret = newSecret(crypto.getRandomValues(new Uint8Array(32)));
+  const dev = newDeviceId(crypto.getRandomValues(new Uint8Array(4)));
+  await api.storage.local.set({ [KEY_RELAY]: { secret, server: RELAY_SERVER, dev, pairedAt: Date.now() } });
+  relayShowing = true;
+  relaySay('');
+  renderRelay(await readAll());
+  relayHello();
+});
+
+document.getElementById('relay-copy').addEventListener('click', async () => {
+  const code = document.getElementById('relay-code').textContent;
+  try { await navigator.clipboard.writeText(code); } catch { return; }
+  relaySay(t('relayCopied'));
+});
+
+document.getElementById('relay-done').addEventListener('click', async () => {
+  relayShowing = false;
+  relaySay('');
+  renderRelay(await readAll());
+});
+
+document.getElementById('relay-show').addEventListener('click', async () => {
+  relayShowing = true;
+  renderRelay(await readAll());
+});
+
+/* Dissocier se fait en deux temps : un premier clic arme le bouton cinq
+   secondes. Sans cela, un clic de trop coupait le relais, et il fallait
+   rescanner sur le telephone. */
+document.getElementById('relay-unpair').addEventListener('click', async (e) => {
+  const b = e.currentTarget;
+  if (!relayUnpairArmed) {
+    b.textContent = t('relayUnpairConfirm');
+    relayUnpairArmed = setTimeout(() => { relayUnpairArmed = null; b.textContent = t('relayUnpair'); }, 5000);
+    return;
+  }
+  clearTimeout(relayUnpairArmed);
+  relayUnpairArmed = null;
+  b.textContent = t('relayUnpair');
+  await api.storage.local.remove(KEY_RELAY);
+  relayShowing = false;
+  relaySay(t('relayUnpaired'));
+  renderRelay(await readAll());
+});
+
 function phoneSay(message) {
   document.getElementById('phone-state').textContent = message;
 }
@@ -2856,8 +3007,11 @@ document.getElementById('phone-on').addEventListener('change', async (e) => {
   const champs = phoneFromFields();
   if (!e.target.checked) {
     const origin = originPattern(serviceUrl(champs) || champs.url);
-    // Se retire aussi facilement qu'elle s'accorde.
-    if (origin) { try { await api.permissions.remove({ origins: [origin] }); } catch { /* deja retiree */ } }
+    /* Se retire aussi facilement qu'elle s'accorde -- sauf si le relais passe
+       par le meme serveur : il en a besoin, lui (2.87.0). */
+    const relais = readRelay((await api.storage.local.get(KEY_RELAY))[KEY_RELAY]);
+    const partage = relais && origin === `${relais.server}/` + '*';
+    if (origin && !partage) { try { await api.permissions.remove({ origins: [origin] }); } catch { /* deja retiree */ } }
     await writePhone({ on: false });
     return;
   }

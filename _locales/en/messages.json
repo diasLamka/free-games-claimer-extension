@@ -2185,5 +2185,68 @@
   },
   "omniAlsoYours": {
     "message": "already yours"
+  },
+  "relayTitle": {
+    "message": "Phone relay"
+  },
+  "relayIntro": {
+    "message": "The Android app and the extension tell each other what they claim: whichever is on takes the game, the other never retries it. End-to-end encrypted, through ntfy — no server of ours."
+  },
+  "relayPair": {
+    "message": "Pair my phone"
+  },
+  "relayScanHint": {
+    "message": "In the app: Settings → PC relay → Scan. No usable camera? Copy the code and paste it in the app."
+  },
+  "relayQrLabel": {
+    "message": "Pairing QR code"
+  },
+  "relayCopy": {
+    "message": "Copy the code"
+  },
+  "relayCopied": {
+    "message": "Code copied. Paste it in the app, then keep it to yourself."
+  },
+  "relayDone": {
+    "message": "Done"
+  },
+  "relayShowAgain": {
+    "message": "Show the QR code again"
+  },
+  "relayUnpair": {
+    "message": "Unpair"
+  },
+  "relayUnpairConfirm": {
+    "message": "Click again to unpair"
+  },
+  "relayUnpaired": {
+    "message": "Unpaired. Also unpair in the app: it no longer hears from this computer."
+  },
+  "relaySecretHint": {
+    "message": "The code is the key to the relay: do not share it. It is never synced nor included in a backup."
+  },
+  "relayPairedOn": {
+    "message": "Paired on $1."
+  },
+  "relaySeen": {
+    "message": "Phone last heard $1."
+  },
+  "relayNeverSeen": {
+    "message": "The phone has not spoken yet: scan the code in the app."
+  },
+  "relayLastError": {
+    "message": "Last issue: $1."
+  },
+  "relayDenied": {
+    "message": "Without access to ntfy.sh, the relay cannot work."
+  },
+  "relayOnSay": {
+    "message": "paired"
+  },
+  "relayOffSay": {
+    "message": "off"
+  },
+  "relayConfirmed": {
+    "message": "Phone paired: they now talk to each other."
   }
 }
