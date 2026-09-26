@@ -512,6 +512,16 @@ function dismissUndo() {
 /* ------------------------------------------------------------------- games */
 
 let searchQuery = '';
+
+/* La recherche arrive parfois toute faite : Entree dans la barre d'adresse
+   apres « fg hades » ouvre le tableau de bord avec ?q=hades (2.85.0). */
+{
+  const demande = new URLSearchParams(location.search).get('q');
+  if (demande) {
+    searchQuery = demande.trim().slice(0, 100).toLowerCase();
+    document.getElementById('search').value = demande.trim().slice(0, 100);
+  }
+}
 /* Le magasin choisi dans les puces (2.61.0). En memoire seulement, comme la
    recherche : voir lib/store-chips.js. */
 let storeFilter = ALL;

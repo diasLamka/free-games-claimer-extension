@@ -2158,5 +2158,32 @@
   },
   "vacationBackNothing": {
     "message": "Nothing missed: no offer came and went while you were away."
+  },
+  "omniDefault": {
+    "message": "Search Free Games for “%s”"
+  },
+  "omniFree": {
+    "message": "$1 — free on $2 until $3"
+  },
+  "omniFreeNoEnd": {
+    "message": "$1 — free on $2 now"
+  },
+  "omniSoon": {
+    "message": "$1 — free on $2 from $3"
+  },
+  "omniClaimed": {
+    "message": "$1 — claimed on $2 on $3"
+  },
+  "omniClaimedNoDate": {
+    "message": "$1 — claimed on $2"
+  },
+  "omniOwned": {
+    "message": "$1 — already in your $2 library"
+  },
+  "omniWished": {
+    "message": "$1 — on your wishlist: you will be notified"
+  },
+  "omniAlsoYours": {
+    "message": "already yours"
   }
 }

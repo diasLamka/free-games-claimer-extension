@@ -115,6 +115,7 @@ est declare `"type": "module"`.
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
 | `covers.js` | les jaquettes de « Deja recupere » que ni le catalogue ni le registre ne connaissent : cherchees une fois sur Steam, au titre exact |
+| `omnibox.js` | la barre d'adresse : « fg » puis un titre -- gratuit, bientot, recupere, possede ou souhaite, en une suggestion par jeu |
 | `vacation.js` | le mode vacances : le depart, et le resume du retour -- les lignes du recap du jeudi, comptees depuis le depart |
 | `share-list.js` | « Copier la liste » : les jeux affiches, leur magasin, leur valeur, jusqu'a quand et leur lien, en texte simple a coller sur Discord ou WhatsApp |
 | `context-wish.js` | le clic droit « Me prevenir quand ce jeu sera gratuit » : le titre lu sur la fiche Steam, Epic ou GOG (ou tire d'un lien), ajoute a la liste de souhaits |
@@ -307,6 +308,13 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**« fg » dans la barre d'adresse** (2.85.0) : tapez `fg`, un espace, puis un
+titre. Chaque jeu qui correspond donne une suggestion qui dit le plus utile :
+gratuit en ce moment (ou, jusqu'a quand), bientot gratuit, deja recupere
+(quand), deja dans une bibliotheque importee, ou dans vos souhaits. La choisir
+ouvre la fiche ; Entree sur le texte seul ouvre le tableau de bord, la
+recherche remplie. Tout est lu dans l'extension : rien ne sort.
 
 **Le mode vacances** (2.84.0, Reglages -> Notifications) : pour 3 a 30 jours,
 notifications, alertes, rappels, recap et telephone se taisent -- la

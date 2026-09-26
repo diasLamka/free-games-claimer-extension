@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "2.84.0",
+  "version": "2.85.0",
   "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
@@ -155,5 +155,8 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "omnibox": {
+    "keyword": "fg"
   }
 }

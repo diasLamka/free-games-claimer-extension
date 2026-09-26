@@ -32,7 +32,7 @@
 import { runCycle } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
 import {
-  readState, readKeys, readSettings, write, KEYS, DEFAULT_SETTINGS,
+  readState, readKeys, readSettings, write, KEYS, DEFAULT_SETTINGS, normaliseSettings,
   rememberNotification, readNotification, readNotificationLink,
 } from './watch/storage.js';
 import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
@@ -59,7 +59,8 @@ import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watc
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
-import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, makeImportedWishlist } from './watch/wishlist.js';
+import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, KEY_WISHLIST, makeImportedWishlist } from './watch/wishlist.js';
+import { escapeXml, omniSuggestions, omniTarget } from './watch/omnibox.js';
 import { MENU_LINK, MENU_PAGE, menuItems, wishFromClick } from './watch/context-wish.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
 import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
@@ -869,6 +870,61 @@ api.storage.onChanged.addListener((changes, area) => {
     for (const id of [MENU_PAGE, MENU_LINK]) api.contextMenus.update(id, { title: t('ctxWishMenu') }, () => void api.runtime.lastError);
   }
 });
+
+/* --------------------------------------------- la barre d'adresse (2.85.0) */
+
+/* « fg » puis un titre : voir watch/omnibox.js. Les donnees sont lues une fois
+   et gardees tant que le stockage ne change pas -- chaque lettre tapee
+   relancerait sinon la lecture d'une collection de plusieurs milliers de
+   jeux. */
+const OMNI_KEYS = [KEYS.OFFERS, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEYS.SOURCES, KEYS.SETTINGS];
+let omniCache = null;
+
+async function omniData() {
+  if (omniCache) return omniCache;
+  const raw = await readKeys(api, OMNI_KEYS);
+  omniCache = {
+    catalog: raw[KEYS.OFFERS] || {},
+    library: raw[KEY_LIBRARY] || {},
+    collection: (raw[KEY_COLLECTION_LOOKUP] || {}).items || {},
+    wishlist: raw[KEY_WISHLIST] || [],
+    steamWishlist: raw[KEY_STEAM_WISHLIST] || null,
+    gogWishlist: raw[KEY_GOG_WISHLIST] || null,
+    sources: raw[KEYS.SOURCES] || {},
+    watched: normaliseSettings(raw[KEYS.SETTINGS]).watchedStores,
+  };
+  return omniCache;
+}
+
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && OMNI_KEYS.some((k) => changes[k])) omniCache = null;
+});
+
+/** « 3 oct. », ou « 3 oct. 2025 » quand ce n'est pas cette annee. */
+function omniDate(ms) {
+  const d = new Date(ms);
+  const autreAnnee = d.getFullYear() !== new Date().getFullYear();
+  return d.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short', ...(autreAnnee ? { year: 'numeric' } : {}) });
+}
+
+if (api.omnibox) {
+  api.omnibox.onInputStarted.addListener(() => {
+    langue.then(() => api.omnibox.setDefaultSuggestion({ description: escapeXml(t('omniDefault')) })).catch(() => {});
+  });
+  api.omnibox.onInputChanged.addListener((text, suggest) => {
+    langue
+      .then(omniData)
+      .then((data) => suggest(omniSuggestions(text, { ...data, now: Date.now() }, {
+        t, storeLabel: (s) => STORE_LABELS[s] || s, dateText: omniDate,
+      })))
+      .catch(() => suggest([]));
+  });
+  api.omnibox.onInputEntered.addListener((text, disposition) => {
+    const url = omniTarget(text, api.runtime.getURL('pages/popup.html?vue=onglet'));
+    if (disposition === 'currentTab') api.tabs.update({ url }).catch(() => {});
+    else api.tabs.create({ url, active: disposition !== 'newBackgroundTab' }).catch(() => {});
+  });
+}
 
 /* ------------------------------------------- souhait par clic droit (2.79.0) */
 

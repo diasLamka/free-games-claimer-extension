@@ -4,6 +4,35 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.85.0 -- 2026-09-26
+
+**« fg » dans la barre d'adresse**
+
+« Est-ce que je l'ai deja ? Est-il gratuit quelque part ? » -- la question
+vient en lisant un article, un message, un forum, et la reponse etait a trois
+clics.
+
+- **Tapez `fg`, un espace, puis un titre** dans la barre d'adresse de Chrome.
+  Chaque jeu qui correspond donne UNE suggestion, qui dit le plus utile, dans
+  cet ordre : gratuit en ce moment (« Hades -- gratuit sur Epic Games Store
+  jusqu'au 29 sept. », suivi de « deja a vous » le cas echeant), bientot
+  gratuit (annonce d'Epic), deja recupere par l'extension (et quand), deja
+  dans une bibliotheque importee, ou dans vos souhaits. Le titre exact passe
+  devant ; deux lettres au moins.
+- **Choisir une suggestion ouvre la fiche** du jeu quand on la connait ;
+  **Entree sur le texte seul** ouvre le tableau de bord avec la recherche
+  remplie (`?q=`). Jamais une adresse qui n'est pas https.
+- **Rien ne sort de la machine** : tout est lu dans le stockage de
+  l'extension, garde en memoire tant qu'il ne change pas. La cle `omnibox`
+  du manifeste n'est pas une permission.
+
+Verifie dans l'extension chargee dans Chromium : le mot-cle est pris,
+l'API presente, et `?q=mecha` filtre le tableau de bord. La saisie dans la
+barre d'adresse elle-meme, native, ne se pilote pas d'un script : les
+suggestions sont verifiees par les tests.
+
+1417 tests.
+
 ## 2.84.0 -- 2026-09-26
 
 **Le mode vacances**

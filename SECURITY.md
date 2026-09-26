@@ -262,6 +262,11 @@ vous qui decidez.
 | `downloads` | **Optionnelle, coupee par defaut, Chrome seulement** (2.77.0). Deposer la sauvegarde de la semaine dans Telechargements et effacer la plus ancienne des cinq. Chrome l annonce comme « Gerer vos telechargements » : elle permettrait aussi de LIRE la liste de vos telechargements. L extension n y cherche que ses propres fichiers, par le numero que Chrome lui a rendu en les creant (`watch/auto-backup.js`), et n efface que ceux-la. Demandee sur un geste, retiree du meme geste -- et c est elle, pas un reglage, qui allume la sauvegarde automatique |
 | `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |
 
+La cle `omnibox` du manifeste (2.85.0) n'est pas une permission : elle
+reserve le mot-cle « fg » dans la barre d'adresse. L'extension ne voit ce qui
+y est tape qu'APRES « fg » et un espace, et n'en fait rien d'autre que
+chercher dans son propre stockage.
+
 **Ce qui est absent, et c'est le point** : pas de `tabs`, pas de `cookies`,
 pas de `webRequest`, pas de `identity`, pas de `history`, pas de
 `<all_urls>`. L'extension ne peut pas lire l'URL de vos onglets. `downloads`
