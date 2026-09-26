@@ -302,6 +302,9 @@ pas :
 - **Liste blanche de schemas** (`webUrl`, `watch/offer.js`) plutot que liste
   noire : une URL d'origine distante n'atteint un onglet ou un `href` que si
   elle est en `http(s)`.
+- **Aucune police chargee depuis le web** : Space Mono et Archivo Black
+  (licence OFL) sont dans le paquet, sous `pages/fonts/`. Ouvrir le popup ne
+  previent aucun serveur de polices.
 
 La 2.24.0 a ferme quatre faiblesses de defense en profondeur -- aucune
 joignable depuis le web, toutes reelles : le relais reseau du service worker

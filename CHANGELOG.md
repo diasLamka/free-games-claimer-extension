@@ -4,6 +4,39 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.86.0 -- 2026-09-26
+
+**L'interface brute, jaune cyber**
+
+- **Les pages de l'extension prennent le style de l'appli Android 1.1.0** :
+  fond noir ou blanc, un seul accent jaune cyber (#E8FF00), traits noirs de
+  3 px, ombres portees dures et decalees, angles droits, titres en Archivo
+  Black et texte en Space Mono. Le popup, le tableau de bord, l'historique,
+  le journal, la collection, le diagnostic et la veille en repli.
+- **Clair et sombre** : le theme suit le systeme, ou le choix fait dans
+  Apparence. En sombre, les ombres sont jaunes ; en clair, noires.
+- **Une seule feuille**, `pages/brut.css`, chargee APRES le style de chaque
+  page : elle redefinit les couleurs partagees (`--ink`, `--paper`,
+  `--amber`...) et habille boutons, puces, cartes, sections et champs. Le
+  code des pages ne change pas ; retirer la ligne `<link>` rend l'ancien
+  style.
+- **Les polices voyagent avec l'extension** (`pages/fonts/`, woff2, sous-
+  ensemble latin, 52 Ko en tout), avec leur licence OFL. Aucune police
+  n'est chargee depuis le web.
+- `build/package.mjs` suit desormais les `url(...)` des feuilles CSS, et
+  joint la licence OFL de chaque police qu'il embarque.
+- Details : les cartes de jeux sont decalees une sur deux ; le grand
+  chiffre des economies devient un bloc jaune ; les lignes cliquables de
+  « Bientot » passent au jaune au survol ; une case a cocher passe a la
+  ligne au lieu de couper sa phrase ; le tri « Fin la plus proche » n'est
+  plus coupe dans le popup.
+
+Le panneau affiche sur les pages des magasins garde son style : il vit dans
+la page du magasin, ou les polices de l'extension demanderaient une
+ouverture (`web_accessible_resources`) qu'il ne vaut pas la peine de faire.
+
+1418 tests.
+
 ## 2.85.1 -- 2026-09-26
 
 **L'appli Android, et les jaquettes GOG**

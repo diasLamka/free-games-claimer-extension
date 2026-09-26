@@ -1,0 +1,464 @@
+/* La charte brute (2.86.0) -- la meme que l'appli Android.
+ *
+ * Un fond uni (noir profond ou blanc pur, selon le theme), UNE couleur
+ * d'accent -- le jaune cyber --, des bordures noires epaisses, des ombres
+ * PLEINES et decalees, des angles droits. Aucun degrade, aucun flou, aucune
+ * pastille de couleur par magasin : le magasin est une etiquette noire.
+ *
+ * Cette feuille se charge APRES le style propre a chaque page et le
+ * redefinit : les jetons d'abord (les pages les lisent tous), puis les
+ * composants. Les memes selecteurs que les pages, places plus loin : a
+ * specificite egale, le dernier gagne.
+ *
+ * Polices embarquees (licence OFL, fichiers dans pages/fonts/) : Archivo
+ * Black pour les titres et les chiffres, Space Mono pour tout le reste.
+ * Aucune ressource distante.
+ */
+
+@font-face {
+  font-family: "Space Mono";
+  src: url("fonts/space-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Space Mono";
+  src: url("fonts/space-mono-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Archivo Black";
+  src: url("fonts/archivo-black-400.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: block;
+}
+
+/* ---------------------------------------------------------------- jetons
+   Sombre : fond noir, texte blanc, accent jaune, ombre jaune.
+   Clair  : fond blanc, texte noir, accent jaune EN APLAT, ombre noire.
+   `--amber` sert de COULEUR DE TEXTE d'accent dans les pages : en clair,
+   du jaune sur blanc ne se lirait pas, il devient donc noir, et l'accent
+   passe par les aplats (`--accent`). */
+:root {
+  --accent: #E8FF00;
+  --on-accent: #000000;
+  --base: #000000;
+  --txt: #FFFFFF;
+  --shadow: #E8FF00;
+  --block: #FFFFFF;
+  --on-block: #000000;
+
+  --ink:    #000000;
+  --ink-2:  #000000;
+  --ink-3:  #1A1A1A;
+  --line:   #FFFFFF;
+  --rail:   #000000;
+  --paper:  #FFFFFF;
+  --mute:   #B8B8B8;
+  --amber:  #E8FF00;
+  --amber-d:#E8FF00;
+  --jade:   #E8FF00;
+  --rose:   #E8FF00;
+  --chart:  #E8FF00;
+  --epic:   #FFFFFF;
+  --gog:    #FFFFFF;
+  --steam:  #FFFFFF;
+  --amazon: #FFFFFF;
+
+  --display: "Archivo Black", "Arial Black", sans-serif;
+  --body:    "Space Mono", ui-monospace, monospace;
+  --mono:    "Space Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --base: #FFFFFF;
+    --txt: #000000;
+    --shadow: #000000;
+    --ink:    #FFFFFF;
+    --ink-2:  #FFFFFF;
+    --ink-3:  #EFEFEF;
+    --line:   #000000;
+    --rail:   #FFFFFF;
+    --paper:  #000000;
+    --mute:   #4D4D4D;
+    --amber:  #000000;
+    --amber-d:#000000;
+    --jade:   #000000;
+    --rose:   #000000;
+    --chart:  #E8FF00;
+    --epic:   #000000;
+    --gog:    #000000;
+    --steam:  #000000;
+    --amazon: #000000;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --base: #FFFFFF;
+  --txt: #000000;
+  --shadow: #000000;
+  --ink:    #FFFFFF;
+  --ink-2:  #FFFFFF;
+  --ink-3:  #EFEFEF;
+  --line:   #000000;
+  --rail:   #FFFFFF;
+  --paper:  #000000;
+  --mute:   #4D4D4D;
+  --amber:  #000000;
+  --amber-d:#000000;
+  --jade:   #000000;
+  --rose:   #000000;
+  --chart:  #E8FF00;
+  --epic:   #000000;
+  --gog:    #000000;
+  --steam:  #000000;
+  --amazon: #000000;
+  color-scheme: light;
+}
+
+/* Les blocs blancs (cartes, champs, tickets) : a l'interieur, le texte est
+   noir quel que soit le theme. Les jetons y sont redefinis, et tout ce qui
+   les lit suit. */
+.game, .ticket, .canary, .risk, .ext-block {
+  --ink-2: #FFFFFF;
+  --ink-3: #EFEFEF;
+  --paper: #000000;
+  --mute:  #4D4D4D;
+  --line:  #000000;
+  --rail:  #FFFFFF;
+  --amber: #000000;
+  --amber-d: #000000;
+  --jade:  #000000;
+  --rose:  #000000;
+  --epic:  #000000;
+  --gog:   #000000;
+  --steam: #000000;
+  --amazon:#000000;
+}
+
+/* ------------------------------------------------------------- matiere */
+*, *::before, *::after { border-radius: 0 !important; text-shadow: none !important; }
+
+html, body {
+  background: var(--base);
+  color: var(--txt);
+  font-family: var(--body);
+}
+body { font-size: 12px; }
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent) !important;
+  border: 3px solid var(--base) !important;
+}
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: var(--base); }
+
+/* Les titres de page : massifs, a gauche. */
+h1 {
+  font-family: var(--display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Les titres de section : une barre pleine de la couleur du texte, le
+   compte dans une case d'accent. */
+h2 {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--base);
+  background: var(--txt);
+  padding: 5px 8px;
+  align-items: center;
+}
+h2 .count {
+  color: var(--on-accent);
+  background: var(--accent);
+  padding: 0 5px;
+  outline: 2px solid var(--base);
+}
+
+/* ------------------------------------------------------------- en-tete */
+header { border-bottom: 3px solid var(--txt); background: var(--base); }
+.wordmark { font-family: var(--display); font-size: 17px; letter-spacing: 0; }
+.version { color: var(--mute); font-family: var(--mono); }
+.icon-button { color: var(--txt); }
+.status { border-bottom: 3px solid var(--txt); color: var(--mute); }
+section { border-bottom: 3px solid var(--txt); }
+footer { border-top: 3px solid var(--txt); }
+
+/* ------------------------------------------------------------- onglets */
+.tabs { border-bottom: 3px solid var(--txt); background: var(--base); gap: 6px; padding-top: 8px; padding-bottom: 8px; }
+.tab {
+  font-family: var(--mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--txt);
+  border: 3px solid transparent;
+  padding: 5px 9px;
+}
+.tab[aria-selected="true"] {
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 var(--txt);
+}
+.tab .n { color: inherit; }
+
+/* ------------------------------------------------------------ champs */
+input[type="search"], input[type="url"], input[type="password"], input[type="text"], select, textarea, input[type="time"] {
+  background: #FFFFFF;
+  color: #000000;
+  border: 3px solid #000000;
+  font-family: var(--mono);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+input::placeholder { color: #6A6A6A; }
+
+/* ------------------------------------------------------------- boutons */
+button {
+  font-family: var(--mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  background: #FFFFFF;
+  color: #000000;
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0 var(--shadow);
+  transition: transform .06s, box-shadow .06s;
+}
+button:hover:not(:disabled) { background: #FFFFFF; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--shadow); }
+button:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+button:disabled { background: #D6D6D6; color: #6A6A6A; box-shadow: none; }
+button.primary { background: var(--accent); color: var(--on-accent); border-color: #000; }
+button.primary:hover:not(:disabled) { background: var(--accent); }
+
+.btn-sm { box-shadow: 3px 3px 0 var(--shadow); font-size: 10.5px; }
+.btn-sm.danger:hover:not(:disabled) { background: #000; color: var(--accent); }
+
+/* Les petits boutons d'icone restent nus : une ombre sur chaque glyphe
+   serait du bruit. */
+.icon-button, .pin, .tab, .soon-go, .mcol, summary button {
+  box-shadow: none;
+  transform: none !important;
+}
+.icon-button, .pin { background: none; border-color: transparent; }
+.pin.on, .pin.go { color: var(--on-accent); background: var(--accent); }
+
+/* --------------------------------------------------------------- puces */
+.chip {
+  background: #FFFFFF;
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0 var(--shadow);
+  font-family: var(--mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10.5px;
+}
+.chip .n { color: inherit; }
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: #000;
+}
+
+/* --------------------------------------------------------- cartes de jeu */
+.game {
+  background: var(--block);
+  color: var(--on-block);
+  border: 3px solid #000000;
+  box-shadow: 5px 5px 0 var(--shadow);
+  margin-bottom: 10px;
+  padding: 6px 8px 6px 6px;
+  width: calc(100% - 5px);
+}
+.game:hover { background: var(--block); border-color: #000; }
+/* L'asymetrie voulue : une carte sur deux decalee. */
+.game:nth-of-type(even) { margin-left: 5px; }
+.art > img, .art > .letter { border: 2px solid #000; background: #FFFFFF; }
+.art > .letter { font-family: var(--display); color: #000; }
+.ring { display: none; }
+.game-title { font-family: var(--display); font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 0; }
+.store-tag {
+  color: #FFFFFF;
+  background: #000000;
+  padding: 1px 5px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.store-tag::before { content: "["; }
+.store-tag::after { content: "]"; }
+.kind-tag { border: 2px solid #000; color: #000; font-family: var(--mono); font-weight: 700; }
+.worth { color: #000; font-family: var(--mono); }
+.rating { font-family: var(--mono); font-weight: 700; }
+.rating.good { background: var(--accent); color: #000; padding: 0 4px; }
+.left {
+  font-family: var(--mono);
+  font-weight: 700;
+  background: #000000;
+  color: #FFFFFF;
+}
+.left.hot, .left.warm { background: #000000; color: var(--accent); }
+.left.unknown { background: #FFFFFF; color: #000; border: 2px dashed #000; }
+.game.fresh::before { background: var(--accent); width: 5px; left: -3px; outline: 2px solid #000; }
+.horizon { font-family: var(--mono); font-weight: 700; color: var(--txt); }
+.horizon::after { background: var(--txt); height: 3px; }
+.why { font-style: normal; font-family: var(--mono); }
+
+/* ------------------------------------------------------ lignes, listes */
+.row { border-bottom: 2px solid var(--txt); font-family: var(--mono); }
+.row .aside, .aside { font-family: var(--mono); }
+.row .aside.hi, .sessions-head .aside.hi { color: var(--on-accent); background: var(--accent); padding: 0 4px; }
+.soon-art .mini, .soon-art .letter, .row .mini, .log .soon-art .mini, .log .soon-art .letter { border: 2px solid var(--txt); }
+.log li + li { border-top: 2px solid var(--txt); }
+
+/* --------------------------------------------------------- le grand chiffre */
+:root[data-vue="onglet"] .hero:not([hidden]) {
+  background: var(--accent);
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 8px 8px 0 var(--txt);
+  margin: 16px 48px 22px 16px;
+}
+.hero-label { font-family: var(--mono); font-weight: 700; text-transform: uppercase; color: #000; }
+.hero-value { font-family: var(--display); font-weight: 900; color: #000; font-size: 60px; letter-spacing: -0.02em; }
+.hero-sub { color: #000; font-family: var(--mono); }
+.hero-delta { color: #000; background: #FFF; border: 2px solid #000; padding: 0 5px; transform: rotate(-3deg); display: inline-block; }
+
+/* ------------------------------------------------------- plis (details) */
+details { border-top: 2px solid var(--txt); }
+.fold { border-top: 0; }
+summary { font-family: var(--mono); font-weight: 700; text-transform: uppercase; }
+.fold > summary::before { color: var(--txt); }
+
+/* ------------------------------------------------------ interrupteurs */
+.switch {
+  width: 38px;
+  height: 20px;
+  background: #FFFFFF;
+  border: 3px solid #000;
+  box-shadow: 2px 2px 0 var(--shadow);
+  transition: none;
+}
+.switch::after {
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  background: #000;
+  transition: transform .08s;
+}
+.toggle input:checked + .switch { background: var(--accent); border-color: #000; }
+.toggle input:checked + .switch::after { transform: translateX(18px); background: #000; }
+.toggle-label { font-family: var(--mono); }
+
+.box { border: 2px solid #000; background: #FFFFFF; }
+.check input:checked + .box { background: var(--accent); border-color: #000; }
+.check input:checked + .box::after { border-color: #000; }
+
+input[type="range"] { height: 5px; background: var(--txt); }
+input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; background: var(--accent); border: 3px solid #000; }
+
+/* ------------------------------------------------------ bandes d'etat */
+.stopped { background: #000; color: var(--accent); border-bottom: 3px solid var(--accent); }
+.stopped.vacation { background: var(--accent); color: #000; border-bottom: 3px solid #000; }
+.canary, .risk {
+  background: var(--block);
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+.working::after { background: var(--accent); border-radius: 0; }
+
+/* -------------------------------------------------------------- codes */
+.ticket {
+  background: var(--block);
+  color: #000;
+  border: 3px solid #000;
+  border-left-width: 8px;
+  box-shadow: 5px 5px 0 var(--shadow);
+}
+.code { background: #FFFFFF; color: #000; border: 2px dashed #000; }
+
+/* ---------------------------------------------------------- graphique */
+.mbar { background: var(--accent); border: 2px solid var(--txt); border-bottom: 0; }
+.mchart-plot { border-bottom: 3px solid var(--txt); }
+.mchart-tip { background: #FFFFFF; color: #000; border: 3px solid #000; box-shadow: 3px 3px 0 var(--shadow) !important; }
+.pred-band i { background: var(--accent); }
+.dot { background: var(--accent); outline: 2px solid var(--txt); }
+.dot.off { background: transparent; }
+
+kbd { border: 2px solid var(--txt) !important; font-family: var(--mono); }
+
+/* ------------------------------------------------------ petits ajustements */
+h2 .count:empty { display: none; }
+.status { font-size: 11px; }
+.status b { white-space: nowrap; }
+.toolbar input[type="search"], .toolbar select { font-size: 11px; }
+/* Space Mono est plus large que la police systeme : a 48 %, le tri
+   redevenait « Fin la plus proc ». */
+.toolbar select { max-width: 56%; padding-left: 7px; padding-right: 4px; }
+.toolbar input[type="search"] { min-width: 0; }
+
+/* Le tableau de bord : les titres de volet deviennent massifs, les volets
+   se separent d'un trait epais. */
+@media (min-width: 760px) {
+  :root[data-vue="onglet"] .pane-title {
+    background: none;
+    color: var(--txt);
+    font-family: var(--display);
+    font-size: 34px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    padding: 18px var(--pad) 8px;
+  }
+  :root[data-vue="onglet"] #pane-codes,
+  :root[data-vue="onglet"] #pane-settings { border-left-width: 3px; border-top-width: 3px; border-color: var(--txt); }
+}
+
+/* Les lignes cliquables (Bientot, les week-ends, les jeux bloques) et le
+   nom des magasins sont des boutons dans le code, pas a l'oeil : ni cadre
+   ni ombre. Au survol, la ligne entiere passe au jaune. */
+button.row, button.label {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: inherit;
+  color: inherit;
+  transition: none;
+}
+button.row { border-bottom: 2px solid var(--txt); font-family: var(--mono); }
+button.row:hover:not(:disabled), button.row:active:not(:disabled),
+button.label:hover:not(:disabled), button.label:active:not(:disabled) {
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+button.row.go:hover:not(:disabled) { background: var(--accent); color: #000; }
+.row.go:hover .label, .row.go:hover .soon-go { color: #000; }
+.row.go:hover .aside.hi { background: #000; color: var(--accent); }
+.soon-body .store-tag { align-self: flex-start; }
+
+/* Space Mono est plus large : une case a cocher passe a la ligne plutot
+   que de couper sa phrase. */
+.check span:last-child { white-space: normal; line-height: 1.35; }
+#check-now { margin-bottom: 6px; }
+
+/* Diagnostic : ses titres de mesure avaient leur propre gris, illisible
+   sur la barre blanche. */
+.head h2 { color: var(--base); font-family: var(--mono); letter-spacing: .06em; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }

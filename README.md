@@ -12,6 +12,11 @@ Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
 Compose), qui embarque le moteur de recuperation de l'extension au caractere
 pres. Voir `android/README.md`.
 
+**L'interface** (2.86.0) suit la meme charte que l'appli : noir ou blanc, un
+seul accent jaune cyber, traits epais et ombres dures, Archivo Black et Space
+Mono. Tout tient dans `pages/brut.css`, chargee apres le style de chaque page ;
+les polices sont dans `pages/fonts/`, avec leur licence.
+
 ## Le moteur est genere
 
 `content/free-games-claimer.js` **ne s'edite pas a la main**. Il est produit a

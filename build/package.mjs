@@ -131,6 +131,25 @@ function references(chemin) {
     while ((m = re.exec(src))) vus.push(resoudre(chemin, m[1]));
     return vus;
   }
+  /* Une feuille cite ses polices par url(...). Un data: ou une adresse
+     web n'est pas un fichier du paquet -- et le second serait refuse par la
+     regle « aucune ressource distante » bien avant d'arriver ici. */
+  if (chemin.endsWith('.css')) {
+    const src = lire(chemin);
+    const re = /url\(\s*['"]?([^'")#:?]+)['"]?\s*\)/g;
+    const vus = [];
+    let m;
+    while ((m = re.exec(src))) vus.push(resoudre(chemin, m[1]));
+    return vus;
+  }
+  /* Une police sous licence OFL voyage avec sa licence : le texte est range
+     dans le meme dossier, sous OFL-*.txt. */
+  if (/\.(woff2?|ttf|otf)$/.test(chemin)) {
+    const dossier = dirname(chemin);
+    return readdirSync(join(ROOT, dossier))
+      .filter((nom) => /^OFL-.*\.txt$/.test(nom))
+      .map((nom) => `${dossier}/${nom}`);
+  }
   return [];
 }
 
