@@ -120,7 +120,7 @@ test('les modeles du lanceur gardent leurs $1..$4, et laissent les notifications
 
 test('le worker compose les notifications du moteur et envoie les modeles au lanceur', () => {
   const bg = lire('background.js');
-  assert.match(bg, /msg\.type === 'fgc-notify'[\s\S]{0,400}title: engineTitle\(msg\.title\), message: composeEngineText\(msg\.text, t\)/);
+  assert.match(bg, /msg\.type === 'fgc-notify'[\s\S]{0,900}title: engineTitle\(msg\.title\), message: composeEngineText\(msg\.text, t\)/);
   assert.match(bg, /engine: engineTemplates\(t, keysWith\('eng'\)\)/);
   assert.match(lire('content/gm-shim.js'), /text: opts\.text \|\| ''/, 'le relais GM transmet la piece sans la changer en chaine');
 });

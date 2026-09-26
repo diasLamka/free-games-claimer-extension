@@ -95,6 +95,8 @@ export const UI_COMMANDS = Object.freeze([
   /* Les jaquettes de « Deja recupere » (2.81.0) : le popup nomme les titres
      affiches, le worker cherche et ecrit. Pages seulement. */
   'fgc-covers',
+  /* « Je suis de retour » (2.84.0) : le resume part tout de suite. */
+  'fgc-vacation-back',
 ]);
 
 /**

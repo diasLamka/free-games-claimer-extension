@@ -115,6 +115,7 @@ est declare `"type": "module"`.
 | `full-backup.js` | la sauvegarde complete et sa restauration : ce qui ne se reconstruit pas, fusionne sans rien ecraser -- jamais le telephone |
 | `steam-ratings.js` | la note Steam des jeux offerts : le titre exact trouve par la recherche du magasin, puis le resume de ses evaluations, toutes langues -- relu une fois par semaine |
 | `covers.js` | les jaquettes de « Deja recupere » que ni le catalogue ni le registre ne connaissent : cherchees une fois sur Steam, au titre exact |
+| `vacation.js` | le mode vacances : le depart, et le resume du retour -- les lignes du recap du jeudi, comptees depuis le depart |
 | `share-list.js` | « Copier la liste » : les jeux affiches, leur magasin, leur valeur, jusqu'a quand et leur lien, en texte simple a coller sur Discord ou WhatsApp |
 | `context-wish.js` | le clic droit « Me prevenir quand ce jeu sera gratuit » : le titre lu sur la fiche Steam, Epic ou GOG (ou tire d'un lien), ajoute a la liste de souhaits |
 | `auto-backup.js` | la sauvegarde de la semaine, deposee dans Telechargements/free-games-claimer, les quatre dernieres gardees ; le fichier de l'export a la main se construit ici aussi |
@@ -306,6 +307,13 @@ dit ce qui y attend encore une main humaine.
 | Magasins | etat (pret / en pause / auto desactive) et ouverture en un clic ; « Tester la recuperation » |
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
+
+**Le mode vacances** (2.84.0, Reglages -> Notifications) : pour 3 a 30 jours,
+notifications, alertes, rappels, recap et telephone se taisent -- la
+recuperation, elle, continue. Comme la nuit, ce qui arrive est retenu, pas
+perdu. Une bande ambre en haut du popup le rappelle, avec « Je suis de
+retour » ; au retour, un seul message : ce qui a ete recupere pendant
+l'absence, ce qui reste a prendre soi-meme, ce qui a ete rate.
 
 **La page Historique refaite** (2.83.0, le bouton Historique du popup) :
 chaque offre terminee en carte -- jaquette, magasin, valeur, date, et son

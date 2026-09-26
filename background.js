@@ -65,7 +65,8 @@ import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js'
 import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
-import { badgeState, inQuietHours } from './watch/notify-policy.js';
+import { badgeState, effectiveQuiet, inQuietHours, onVacation } from './watch/notify-policy.js';
+import { runReturnSummary } from './watch/vacation.js';
 import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
@@ -184,6 +185,8 @@ async function ensureSchedule(now = Date.now()) {
 
   /* Le recap du jeudi part aussi d'ici : un ordinateur qui se reveille le
      vendredi matin n'attend pas le prochain cycle pour le recevoir. */
+  // Le retour de vacances d'abord : il tient lieu de recap de la semaine.
+  await maybeReturn(now);
   await maybeRecap(now);
   await maybeCodeReminders(now);
   await maybeWeekends(now);
@@ -418,6 +421,7 @@ async function startCycle(origine, options = {}) {
       if (result && !result.ignore && !result.stopped) {
         await armMain(result.nextWake, Date.now());
         // Apres le cycle : les jeux du jeudi viennent d'etre vus et pris.
+        await maybeReturn(Date.now());
         await maybeRecap(Date.now());
         await maybeCodeReminders(Date.now());
         await maybeWeekends(Date.now());
@@ -461,7 +465,7 @@ function maybeRecap(now = Date.now()) {
       t,
       storeLabel: (s) => STORE_LABELS[s] || s,
       format: money,
-      quietNow: inQuietHours(settings.quiet, now),
+      quietNow: inQuietHours(effectiveQuiet(settings), now),
       // Un clic mene au tableau de bord : le detail de la semaine y est.
       notify: ({ id, title, message }) => showNotice({ id, title, message, url: api.runtime.getURL(DASHBOARD_PAGE) }),
       phone: tel && tel.recap
@@ -473,6 +477,40 @@ function maybeRecap(now = Date.now()) {
     .catch((e) => record('warn', 'recap du jeudi impossible', e))
     .finally(() => { recapRunning = null; });
   return recapRunning;
+}
+
+/* ------------------------------------------------ retour de vacances */
+
+let returnRunning = null;
+
+/**
+ * Le resume du retour de vacances (2.84.0), une fois par depart. Voir
+ * watch/vacation.js. Il part sur le telephone si le recap du jeudi y va.
+ */
+function maybeReturn(now = Date.now()) {
+  if (returnRunning) return returnRunning;
+  returnRunning = (async () => {
+    await langue;
+    const settings = await readSettings(api);
+    const { [KEY_PHONE]: phoneRaw } = await readKeys(api, KEY_PHONE);
+    const tel = phoneTarget(phoneRaw);
+    return runReturnSummary({
+      chrome: api,
+      now,
+      t,
+      storeLabel: (s) => STORE_LABELS[s] || s,
+      format: money,
+      quietNow: inQuietHours(effectiveQuiet(settings), now),
+      notify: ({ id, title, message }) => showNotice({ id, title, message, url: api.runtime.getURL(DASHBOARD_PAGE) }),
+      phone: tel && tel.recap
+        ? (msg) => pushToPhone({ chrome: api, fetch: (u, i) => fetch(u, i), target: tel, msg, now, record, why: 'retour de vacances' })
+        : null,
+      record,
+    });
+  })()
+    .catch((e) => { record('warn', 'retour de vacances impossible', e); return { sent: false }; })
+    .finally(() => { returnRunning = null; });
+  return returnRunning;
 }
 
 /* ------------------------------------------- week-ends gratuits de Steam */
@@ -519,6 +557,8 @@ function maybeAutoBackup(now = Date.now(), { force = false } = {}) {
       now,
       force,
       version: api.runtime.getManifest().version,
+      // Les heures de la nuit seulement : une sauvegarde n'est pas une
+      // notification, elle ne se tait pas en vacances (2.84.0).
       quietNow: inQuietHours(settings.quiet, now),
       record,
     });
@@ -632,7 +672,7 @@ function maybeCodeReminders(now = Date.now()) {
       now,
       t,
       storeLabel: (s) => STORE_LABELS[s] || s,
-      quietNow: inQuietHours(settings.quiet, now),
+      quietNow: inQuietHours(effectiveQuiet(settings), now),
       computer: settings.alertMode !== 'off',
       notify: ({ id, title, message, url }) => showNotice({ id, title, message, url: url || api.runtime.getURL(DASHBOARD_PAGE) }),
       phone: tel
@@ -1183,9 +1223,15 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
        (2.55.0) : elles se composent ici, dans la langue choisie. */
     // create() rend une promesse : le try/catch d'origine ne voyait jamais son rejet.
     langue
-      .then(() => api.notifications.create('', {
-        type: 'basic', iconUrl: 'icons/icon128.png', title: engineTitle(msg.title), message: composeEngineText(msg.text, t),
-      }))
+      .then(() => readSettings(api))
+      .then((settings) => {
+        /* En vacances (2.84.0), le moteur continue de recuperer dans ses
+           fenetres reduites -- sans le dire : le retour le resumera. */
+        if (onVacation(settings.vacation, Date.now())) return null;
+        return api.notifications.create('', {
+          type: 'basic', iconUrl: 'icons/icon128.png', title: engineTitle(msg.title), message: composeEngineText(msg.text, t),
+        });
+      })
       .catch((e) => record('warn', 'notification impossible', e));
     return;
   }
@@ -1623,6 +1669,11 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         record('warn', 'restauration impossible', e);
         sendResponse({ ok: false, reason: String((e && e.message) || e) });
       });
+    return true;
+  }
+
+  if (msg.type === 'fgc-vacation-back') {
+    maybeReturn(Date.now()).then(sendResponse);
     return true;
   }
 

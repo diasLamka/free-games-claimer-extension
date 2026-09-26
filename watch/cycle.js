@@ -36,7 +36,7 @@ import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
 import { split } from './filters.js';
 import {
-  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours,
+  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet,
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../lib/i18n.js';
@@ -497,7 +497,7 @@ export async function runCycle({
 
     const decision = decideAnnouncement({
       mode: ctx.settings.notifyMode,
-      quiet: ctx.settings.quiet,
+      quiet: effectiveQuiet(ctx.settings),
       now,
       count: watched.length,
       lastDigestAt: ctx.state.lastDigestAt ?? null,
@@ -587,7 +587,7 @@ export async function runCycle({
 
     const remind = decideAnnouncement({
       mode: ctx.settings.notifyMode,
-      quiet: ctx.settings.quiet,
+      quiet: effectiveQuiet(ctx.settings),
       now,
       // Un rappel n'attend pas le resume quotidien : l'offre se termine avant.
       count: ctx.state.booted ? closing.length : 0,
@@ -684,7 +684,7 @@ export async function runCycle({
         /* Un defi attend l'humain : c'est exactement ce que le telephone sait
            aller chercher. Pas en heures calmes -- l'offre reste dans « ce qui
            vous attend », rien n'est perdu a attendre le matin. */
-        if (manual && tel && fetchImpl && !inQuietHours(ctx.settings.quiet, now)) {
+        if (manual && tel && fetchImpl && !inQuietHours(effectiveQuiet(ctx.settings), now)) {
           await pushToPhone({
             chrome,
             fetch: fetchImpl,

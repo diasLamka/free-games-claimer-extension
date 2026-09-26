@@ -52,6 +52,8 @@ import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/stea
 import { composeShareList } from '../watch/share-list.js';
 import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
 import { statusIcon } from '../lib/status-icons.js';
+import { onVacation, readVacation } from '../watch/notify-policy.js';
+import { VACATION_CHOICES, planVacation } from '../watch/vacation.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
   EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
@@ -2255,8 +2257,24 @@ function renderFilters(all, behaviour) {
 
 /* ----------------------------------------------------- notifications, look */
 
+/* Le mode vacances (2.84.0) : la bande en haut tant qu'il dure, et le
+   bouton du reglage dit « Prolonger » plutot que « Partir ». */
+function renderVacation(behaviour) {
+  const v = readVacation(behaviour.vacation);
+  const actif = onVacation(behaviour.vacation, Date.now());
+  document.getElementById('vacation-banner').hidden = !actif;
+  if (actif) {
+    const fin = new Date(v.until).toLocaleDateString(intlLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('vacation-say').textContent = t('vacationOn', fin);
+  }
+  document.getElementById('vacation-go').textContent = t(actif ? 'vacationExtend' : 'vacationGo');
+  // Les durees dans la langue choisie : le menu est rempli avant qu'elle soit lue.
+  for (const option of document.getElementById('vacation-days').options) option.textContent = t('vacationDays', option.value);
+}
+
 function renderNotifications(behaviour) {
   document.getElementById('notify-mode').value = behaviour.notifyMode || 'every';
+  renderVacation(behaviour);
 
   const quiet = behaviour.quiet || DEFAULT_BEHAVIOUR.quiet;
   document.getElementById('quiet-on').checked = quiet.on === true;
@@ -3176,6 +3194,29 @@ document.getElementById('share-list').addEventListener('click', async (e) => {
   bouton.textContent = t('copied');
   bouton.classList.add('done');
   setTimeout(() => { bouton.textContent = t('shareButton'); bouton.classList.remove('done'); }, 1400);
+});
+
+/* Le mode vacances (2.84.0) : partir (ou prolonger) a partir de maintenant,
+   et revenir -- le resume part tout de suite. */
+{
+  const menu = document.getElementById('vacation-days');
+  for (const jours of VACATION_CHOICES) {
+    const option = el('option', null, t('vacationDays', String(jours)));
+    option.value = String(jours);
+    menu.append(option);
+  }
+  menu.value = '7';
+}
+
+document.getElementById('vacation-go').addEventListener('click', async () => {
+  await writeBehaviour({ vacation: planVacation(document.getElementById('vacation-days').value, Date.now()) });
+});
+
+document.getElementById('vacation-back').addEventListener('click', async () => {
+  const v = readVacation(behaviourCache.vacation);
+  const now = Date.now();
+  await writeBehaviour({ vacation: v && now > v.from ? { from: v.from, until: now } : null });
+  await tell('fgc-vacation-back');
 });
 
 document.getElementById('codes-add').addEventListener('click', async () => {

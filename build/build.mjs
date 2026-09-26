@@ -409,7 +409,9 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   /* Le souhait par clic droit (2.79.0) compose sa notification. */
   'watch/context-wish.js',
   /* « Copier la liste » (2.80.0) compose son texte. */
-  'watch/share-list.js']);
+  'watch/share-list.js',
+  /* Le retour de vacances (2.84.0) compose son message. */
+  'watch/vacation.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -450,7 +452,9 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   /* Le souhait par clic droit (2.79.0) compose sa notification. */
   'watch/context-wish.js',
   /* « Copier la liste » (2.80.0) compose son texte. */
-  'watch/share-list.js'].map((f) => {
+  'watch/share-list.js',
+  /* Le retour de vacances (2.84.0) compose son message. */
+  'watch/vacation.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

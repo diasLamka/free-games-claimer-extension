@@ -2125,5 +2125,38 @@
   },
   "historyRecurringNone": {
     "message": "Noch kein Titel ist wiedergekommen."
+  },
+  "vacationLabel": {
+    "message": "Urlaubsmodus"
+  },
+  "vacationHint": {
+    "message": "Schaltet Benachrichtigungen, Warnungen und Telefon stumm; das Abholen läuft weiter. Bei deiner Rückkehr fasst eine Nachricht alles zusammen."
+  },
+  "vacationDays": {
+    "message": "$1 Tage"
+  },
+  "vacationGo": {
+    "message": "Starten"
+  },
+  "vacationExtend": {
+    "message": "Verlängern"
+  },
+  "vacationOn": {
+    "message": "Im Urlaub bis $1: Das Abholen läuft still weiter."
+  },
+  "vacationBack": {
+    "message": "Ich bin zurück"
+  },
+  "vacationBackTitle": {
+    "message": "Willkommen zurück!"
+  },
+  "vacationBackTitleOne": {
+    "message": "Willkommen zurück: 1 Spiel während deiner Abwesenheit abgeholt"
+  },
+  "vacationBackTitleMany": {
+    "message": "Willkommen zurück: $1 Spiele während deiner Abwesenheit abgeholt"
+  },
+  "vacationBackNothing": {
+    "message": "Nichts verpasst: Während deiner Abwesenheit kam und ging kein Angebot."
   }
 }

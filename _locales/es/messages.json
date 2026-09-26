@@ -2125,5 +2125,38 @@
   },
   "historyRecurringNone": {
     "message": "Ningún título ha vuelto todavía."
+  },
+  "vacationLabel": {
+    "message": "Modo vacaciones"
+  },
+  "vacationHint": {
+    "message": "Silencia notificaciones, alertas y teléfono; la obtención continúa. A tu vuelta, un solo mensaje resume lo que pasó."
+  },
+  "vacationDays": {
+    "message": "$1 días"
+  },
+  "vacationGo": {
+    "message": "Empezar"
+  },
+  "vacationExtend": {
+    "message": "Prolongar"
+  },
+  "vacationOn": {
+    "message": "De vacaciones hasta el $1: la obtención continúa, en silencio."
+  },
+  "vacationBack": {
+    "message": "He vuelto"
+  },
+  "vacationBackTitle": {
+    "message": "¡Hola de nuevo!"
+  },
+  "vacationBackTitleOne": {
+    "message": "Hola de nuevo: 1 juego obtenido durante tu ausencia"
+  },
+  "vacationBackTitleMany": {
+    "message": "Hola de nuevo: $1 juegos obtenidos durante tu ausencia"
+  },
+  "vacationBackNothing": {
+    "message": "Nada perdido: ninguna oferta pasó durante tu ausencia."
   }
 }

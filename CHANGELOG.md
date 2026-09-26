@@ -4,6 +4,43 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.84.0 -- 2026-09-26
+
+**Le mode vacances**
+
+Partir une semaine sans ordinateur, c'etait revenir a une pile de
+notifications -- une par jeu, une par rappel, une alerte de session -- et a un
+telephone qui avait sonne tous les jours pour rien. Or la recuperation, elle,
+n'a besoin de personne.
+
+- **Reglages -> Notifications -> Mode vacances** : 3, 7, 14, 21 ou 30 jours,
+  a partir de maintenant ; « Prolonger » tant qu'il dure.
+- **Des heures calmes qui durent des jours.** `effectiveQuiet` ajoute les
+  vacances aux heures calmes des reglages, et tout ce qui previent les lit :
+  annonces d'offres, rappels avant la fin, alertes (session perdue, canari),
+  rappels de codes, recap du jeudi, telephone -- et les notifications du
+  moteur pendant une recuperation de fond. Comme la nuit, ce qui arrive est
+  RETENU : une offre encore ouverte au retour s'annonce au premier cycle, un
+  code qui expire se rappelle. La sauvegarde automatique, qui n'est pas une
+  notification, ne se tait pas.
+- **La recuperation continue**, en silence.
+- **Une bande ambre en haut du popup** tant qu'il dure : « En vacances
+  jusqu'au mercredi 30 septembre : la recuperation continue, en silence »,
+  avec « Je suis de retour ».
+- **Au retour -- a la date prevue ou au clic --, un seul message** : « Bon
+  retour : 2 jeux recuperes pendant votre absence », puis les lignes du recap
+  du jeudi comptees depuis le depart (recupere, a prendre soi-meme, rate,
+  annonce), ou « Rien de manque ». Une fois par depart, dans la semaine qui
+  suit ; la nuit, il attend le matin. Il remplace le recap de la semaine, qui
+  ne part pas en plus, et va sur le telephone si le recap y va.
+
+Verifie dans l'extension chargee dans Chromium : depart de 14 jours, bande
+et bouton « Prolonger » ; un depart commence trois jours plus tot, deux jeux
+recuperes entre-temps, « Je suis de retour » -> la notification de retour,
+le journal et la bande qui disparait.
+
+1411 tests.
+
 ## 2.83.0 -- 2026-09-26
 
 **La page Historique refaite**

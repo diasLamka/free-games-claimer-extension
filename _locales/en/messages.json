@@ -2125,5 +2125,38 @@
   },
   "historyRecurringNone": {
     "message": "No title has come back yet."
+  },
+  "vacationLabel": {
+    "message": "Vacation mode"
+  },
+  "vacationHint": {
+    "message": "Silences notifications, alerts and phone; claiming carries on. When you are back, one message says what happened."
+  },
+  "vacationDays": {
+    "message": "$1 days"
+  },
+  "vacationGo": {
+    "message": "Go"
+  },
+  "vacationExtend": {
+    "message": "Extend"
+  },
+  "vacationOn": {
+    "message": "On vacation until $1: claiming carries on, silently."
+  },
+  "vacationBack": {
+    "message": "I’m back"
+  },
+  "vacationBackTitle": {
+    "message": "Welcome back!"
+  },
+  "vacationBackTitleOne": {
+    "message": "Welcome back: 1 game claimed while you were away"
+  },
+  "vacationBackTitleMany": {
+    "message": "Welcome back: $1 games claimed while you were away"
+  },
+  "vacationBackNothing": {
+    "message": "Nothing missed: no offer came and went while you were away."
   }
 }

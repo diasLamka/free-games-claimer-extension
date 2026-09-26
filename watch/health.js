@@ -23,7 +23,7 @@ import {
 } from './incidents.js';
 import { KEY_PHONE, KEY_PHONE_STATE, incidentsMessage, mayRetry, phoneTarget, pushToPhone } from './phone.js';
 import { STORE_LABELS } from './offer.js';
-import { ALERTS, badgeState, decideAlert } from './notify-policy.js';
+import { ALERTS, badgeState, decideAlert, effectiveQuiet } from './notify-policy.js';
 import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
 import { t } from '../lib/i18n.js';
@@ -86,7 +86,7 @@ export async function inspectHealth({
     ? { notify: false, hold: true }
     : decideAlert({
       mode: settings.alertMode || ALERTS.ON,
-      quiet: settings.quiet,
+      quiet: effectiveQuiet(settings),
       now,
       count: aDire.length,
     });
@@ -135,7 +135,7 @@ export async function inspectHealth({
     const aTel = phonePending(suivant);
     const d = decideAlert({
       mode: settings.alertMode || ALERTS.ON,
-      quiet: settings.quiet,
+      quiet: effectiveQuiet(settings),
       now,
       count: aTel.length,
     });

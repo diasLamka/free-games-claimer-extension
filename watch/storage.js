@@ -260,6 +260,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * cookie. Voir watch/steam-ratings.js.
    */
   steamRatings: true,
+  /**
+   * Le mode vacances (2.84.0) : { from, until } en millisecondes, ou null.
+   * Des heures calmes qui durent des jours ; la recuperation continue, et un
+   * resume part au retour. Voir watch/vacation.js et effectiveQuiet.
+   */
+  vacation: null,
   /** Magasins suivis. Le catalogue garde tout ; ceci filtre les annonces. */
   watchedStores: Object.freeze(['epic', 'gog', 'amazon', 'steam']),
 

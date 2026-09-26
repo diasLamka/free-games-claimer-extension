@@ -2125,5 +2125,38 @@
   },
   "historyRecurringNone": {
     "message": "Aucun titre n’est encore revenu."
+  },
+  "vacationLabel": {
+    "message": "Mode vacances"
+  },
+  "vacationHint": {
+    "message": "Coupe notifications, alertes et téléphone ; la récupération continue. Au retour, un seul message dit ce qui s’est passé."
+  },
+  "vacationDays": {
+    "message": "$1 jours"
+  },
+  "vacationGo": {
+    "message": "Partir"
+  },
+  "vacationExtend": {
+    "message": "Prolonger"
+  },
+  "vacationOn": {
+    "message": "En vacances jusqu’au $1 : la récupération continue, en silence."
+  },
+  "vacationBack": {
+    "message": "Je suis de retour"
+  },
+  "vacationBackTitle": {
+    "message": "Bon retour !"
+  },
+  "vacationBackTitleOne": {
+    "message": "Bon retour : 1 jeu récupéré pendant votre absence"
+  },
+  "vacationBackTitleMany": {
+    "message": "Bon retour : $1 jeux récupérés pendant votre absence"
+  },
+  "vacationBackNothing": {
+    "message": "Rien de manqué : aucune offre n’est passée pendant votre absence."
   }
 }

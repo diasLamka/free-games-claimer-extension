@@ -54,6 +54,11 @@ export function readClock(text) {
  * la suite passerait ou echouerait selon la region du portable qui la lance.
  */
 export function inQuietHours(quiet, instant, zone) {
+  /* Le mode vacances (2.84.0) : des heures calmes qui durent des jours. Tout
+     ce qui passe par ici -- annonces, rappels, alertes, telephone -- est
+     RETENU, comme la nuit, et non perdu. Voir effectiveQuiet. */
+  const conge = quiet ? readVacation(quiet.vacation) : null;
+  if (conge && instant >= conge.from && instant < conge.until) return true;
   if (!quiet || quiet.on !== true) return false;
 
   const start = readClock(quiet.start);
@@ -68,6 +73,37 @@ export function inQuietHours(quiet, instant, zone) {
   return start < end
     ? nowMin >= start && nowMin < end            // 08:00 -> 22:00, dans la journee
     : nowMin >= start || nowMin < end;           // 23:00 -> 08:00, a cheval sur minuit
+}
+
+/* -------------------------------------------------------------- vacances */
+
+/** Le plus long depart accepte : deux mois. Au-dela, c'est une faute de saisie. */
+export const VACATION_MAX_MS = 62 * 24 * 3600 * 1000;
+
+/** Le mode vacances des reglages, relu : { from, until } en millisecondes, ou null. */
+export function readVacation(v) {
+  if (!v || typeof v !== 'object') return null;
+  const from = Number(v.from);
+  const until = Number(v.until);
+  if (!Number.isFinite(from) || !Number.isFinite(until) || until <= from || until - from > VACATION_MAX_MS) return null;
+  return { from, until };
+}
+
+/** Est-on en vacances a cet instant ? */
+export function onVacation(v, now) {
+  const r = readVacation(v);
+  return Boolean(r && now >= r.from && now < r.until);
+}
+
+/**
+ * Les heures calmes a appliquer : celles des reglages, plus les vacances.
+ * C'est ce que tout ce qui previent doit lire -- et seulement ce qui
+ * previent : la sauvegarde automatique, elle, ne se tait pas en vacances.
+ */
+export function effectiveQuiet(settings) {
+  const quiet = (settings && settings.quiet) || {};
+  const conge = readVacation(settings && settings.vacation);
+  return conge ? { ...quiet, vacation: conge } : quiet;
 }
 
 /* ------------------------------------------------------------- decision */

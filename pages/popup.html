@@ -274,7 +274,13 @@
     font-size: 12px;
     font-weight: 600;
   }
-  .stopped button { margin-left: auto; font-weight: 400; }
+  .stopped button { margin-left: auto; font-weight: 400; flex: none; white-space: nowrap; }
+  /* Les vacances ne sont pas une panne : la meme bande, en ambre. */
+  .stopped.vacation {
+    background: color-mix(in srgb, var(--amber) 14%, transparent);
+    border-bottom-color: var(--amber);
+    color: var(--amber);
+  }
 
   /* ------------------------------------------------------------- canari */
   /* Le seul bloc du popup qui parle d'une panne du MAGASIN, par opposition a
@@ -1302,6 +1308,12 @@
     <button id="resume" data-i18n="resume"></button>
   </div>
 
+  <!-- Le mode vacances (2.84.0) : impossible a oublier, facile a quitter. -->
+  <div class="stopped vacation" id="vacation-banner" hidden>
+    <span id="vacation-say"></span>
+    <button id="vacation-back" data-i18n="vacationBack"></button>
+  </div>
+
   <div class="stopped" id="health-banner" hidden></div>
 
   <p class="status" id="status"></p>
@@ -1567,6 +1579,15 @@
           <span class="switch"></span>
           <span class="toggle-label"><span data-i18n="recapLabel"></span><small data-i18n="recapHint"></small></span>
         </label>
+        <!-- Le mode vacances (2.84.0). -->
+        <div class="field" id="vacation-row">
+          <span data-i18n="vacationLabel"></span>
+          <span class="pair">
+            <select id="vacation-days" data-i18n-attr="aria-label:vacationLabel"></select>
+            <button class="btn-sm" id="vacation-go" data-i18n="vacationGo"></button>
+          </span>
+        </div>
+        <p class="hint" data-i18n="vacationHint"></p>
         <label class="toggle">
           <input type="checkbox" id="phone-on">
           <span class="switch"></span>
