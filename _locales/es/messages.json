@@ -1316,12 +1316,6 @@
   "historyUnknown": {
     "message": "dudoso"
   },
-  "historyAll": {
-    "message": "Cualquier resultado"
-  },
-  "historyAllStores": {
-    "message": "Cualquier tienda"
-  },
   "historySearch": {
     "message": "Buscar un título"
   },
@@ -1331,26 +1325,14 @@
   "historyDownload": {
     "message": "Descargar CSV"
   },
-  "historyWhen": {
-    "message": "Terminó"
-  },
   "historyGame": {
     "message": "Juego"
   },
   "historyStore": {
     "message": "Tienda"
   },
-  "historyWorth": {
-    "message": "Valor"
-  },
   "historyOutcome": {
     "message": "Resultado"
-  },
-  "historyByMonth": {
-    "message": "Mes a mes"
-  },
-  "historyMonth": {
-    "message": "Mes"
   },
   "historyRate": {
     "message": "El $1 % de las ofertas resueltas acabó en tu cuenta. Perdido: $2 de valor."
@@ -2137,5 +2119,11 @@
   },
   "verdictNeedsBase": {
     "message": "requiere el juego base"
+  },
+  "historyChipAll": {
+    "message": "Todo"
+  },
+  "historyRecurringNone": {
+    "message": "Ningún título ha vuelto todavía."
   }
 }

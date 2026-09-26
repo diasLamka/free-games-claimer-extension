@@ -307,6 +307,12 @@ dit ce qui y attend encore une main humaine.
 | Reglages | auto Epic, auto Luna, contenu en jeu (DLC), relance immediate |
 | Dernieres recuperations | les 8 dernieres, toutes plateformes confondues |
 
+**La page Historique refaite** (2.83.0, le bouton Historique du popup) :
+chaque offre terminee en carte -- jaquette, magasin, valeur, date, et son
+issue en icone (pris, rate, incertain ; le verdict au survol) --, groupee par
+mois, chaque mois avec ses comptes. Des puces filtrent par issue et par
+magasin, avec leur nombre ; la recherche et l'export CSV restent.
+
 **La note Steam sur les fiches Epic et GOG** (2.82.0) : le panneau de la page
 l'affiche en tete de « Sur cette page » -- « Steam : Tres positives (92 %) »,
 etoile verte, orange ou rouge. Elle ne compte pas dans la pastille et ne fait

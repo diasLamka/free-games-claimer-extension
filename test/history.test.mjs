@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 
 import {
   byMonth, filterHistory, historyRows, summariseHistory,
+  groupByMonth,
 } from '../watch/history.js';
 import { OUTCOMES } from '../watch/outcomes.js';
 
@@ -166,4 +167,21 @@ test('le decoupage par mois va du plus recent au plus ancien', () => {
   assert.equal(mois[0].taken, 1);
   assert.equal(mois[0].missed, 1);
   assert.equal(mois[1].month, '2026-08');
+});
+
+test('groupByMonth : les lignes sous leur mois, avec les comptes de byMonth (2.83.0)', () => {
+  const T = (iso) => Date.parse(iso);
+  const lignes = [
+    { ts: T('2026-09-20T10:00:00Z'), outcome: OUTCOMES.TAKEN, title: 'A' },
+    { ts: T('2026-09-02T10:00:00Z'), outcome: OUTCOMES.MISSED, title: 'B' },
+    { ts: T('2026-08-31T23:59:00Z'), outcome: OUTCOMES.UNKNOWN, title: 'C' },
+    { ts: NaN, outcome: OUTCOMES.TAKEN, title: 'sans date' },
+  ];
+  const g = groupByMonth(lignes);
+  assert.deepEqual(g.map((m) => m.month), ['2026-09', '2026-08'], 'plus recent d\'abord, en UTC comme byMonth');
+  assert.deepEqual(g[0].rows.map((r) => r.title), ['A', 'B'], 'l\'ordre recu est garde');
+  assert.equal(g[0].taken, 1);
+  assert.equal(g[0].missed, 1);
+  assert.equal(g[1].unknown, 1);
+  assert.deepEqual(groupByMonth([]), []);
 });

@@ -40,6 +40,24 @@ export function safeImage(u) {
     ? u : null;
 }
 
+/* Les editions qui gardent la jaquette du jeu : mesure du 2026-09-26, Steam ne
+   connait plus « The Witcher 3: Wild Hunt » que sous « ... - Complete
+   Edition ». Pour une image, l'edition vaut le jeu ; pour la note Steam, non
+   -- elle garde le titre exact. */
+const EDITIONS = /^(complete|definitive|enhanced|game of the year|goty|deluxe|ultimate|anniversary|remastered|director s cut)( edition)?$/;
+
+/** Le resultat « <titre> - <edition> », quand le titre exact manque. */
+export function findEditionItem(data, title) {
+  const cible = normaliseTitle(title);
+  if (!cible) return null;
+  const items = (data && Array.isArray(data.items)) ? data.items : [];
+  return items.find((i) => {
+    if (!i || (i.type && i.type !== 'app') || !/^\d+$/.test(String(i.id))) return false;
+    const nom = normaliseTitle(i.name);
+    return nom.startsWith(`${cible} `) && EDITIONS.test(nom.slice(cible.length + 1));
+  }) || null;
+}
+
 /** La jaquette connue pour ce titre, ou null. */
 export function coverFor(covers, title) {
   const k = normaliseTitle(title);
@@ -68,7 +86,8 @@ export async function fetchCover(title, { fetch: fetchImpl = fetch, now = Date.n
       credentials: 'omit', headers: { Accept: 'application/json' }, signal: arret ? arret.signal : undefined,
     });
     if (!r.ok) return null;
-    const item = findSearchItem(await r.json(), title);
+    const data = await r.json();
+    const item = findSearchItem(data, title) || findEditionItem(data, title);
     const image = item ? safeImage(item.tiny_image) : null;
     return image ? { image, appid: String(item.id), at: now } : { none: true, at: now };
   } catch {

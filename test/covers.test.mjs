@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  KEY_COVERS, MAX_ENTRIES, NONE_MS, PER_RUN, coverFor, fetchCover, needsCover, refreshCovers, safeImage,
+  KEY_COVERS, MAX_ENTRIES, NONE_MS, PER_RUN, coverFor, fetchCover, findEditionItem, needsCover, refreshCovers, safeImage,
 } from '../watch/covers.js';
 import { UI_COMMANDS, messageAllowed } from '../watch/messaging.js';
 
@@ -96,12 +96,31 @@ test('le popup demande, le worker ecrit ; la commande est reservee aux pages', (
 
 test('les statuts deviennent des icones, dessinees au DOM, avec leurs mots en infobulle', () => {
   const popup = lire('pages/popup.js');
-  for (const k of ['ok', 'own', 'skip', 'ko', 'wait']) assert.match(popup, new RegExp(`\\n  ${k}: \\[`), k);
-  assert.match(popup, /document\.createElementNS\(SVG_NS, 'svg'\)/);
-  assert.match(popup, /svg\.setAttribute\('aria-label', label\);/);
+  const icones = lire('lib/status-icons.js');
+  for (const k of ['ok', 'own', 'skip', 'ko', 'wait']) assert.match(icones, new RegExp(`\\n  ${k}: \\[`), k);
+  assert.match(icones, /doc\.createElementNS\(SVG_NS, 'svg'\)/);
+  assert.match(icones, /svg\.setAttribute\('aria-label', label\);/);
+  assert.match(popup, /import \{ statusIcon \} from '\.\.\/lib\/status-icons\.js';/);
   assert.match(popup, /st\.title = mots;/);
   const code = popup.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   assert.doesNotMatch(code, /innerHTML/, 'jamais d\'innerHTML');
   const html = lire('pages/popup.html');
   for (const k of ['ok', 'own', 'skip', 'wait', 'ko']) assert.match(html, new RegExp(`\\.st-icon\\.${k}\\s+\\{ color: `), k);
+});
+
+test('une edition garde la jaquette du jeu -- pas une bande-son (2.83.0)', async () => {
+  /* Mesure du 2026-09-26 : Steam ne connait plus « The Witcher 3: Wild Hunt »
+     que sous « ... - Complete Edition ». */
+  const witcher = { items: [
+    { type: 'app', name: 'The Witcher 3: Wild Hunt - Complete Edition', id: 292030, tiny_image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/capsule_231x87.jpg' },
+    { type: 'app', name: 'The Witcher 3: Wild Hunt Soundtrack', id: 1229320 },
+  ] };
+  assert.equal(findEditionItem(witcher, 'The Witcher 3: Wild Hunt').id, 292030);
+  assert.equal(findEditionItem({ items: [witcher.items[1]] }, 'The Witcher 3: Wild Hunt'), null, 'une bande-son n\'est pas une edition');
+  assert.equal(findEditionItem({ items: [{ type: 'app', name: 'Hue 2', id: 5 }] }, 'Hue'), null);
+  for (const e of ['Game of the Year Edition', 'GOTY', 'Definitive Edition', 'Remastered', "Director's Cut"]) {
+    assert.ok(findEditionItem({ items: [{ type: 'app', name: `Jeu - ${e}`, id: 7 }] }, 'Jeu'), e);
+  }
+  const c = await fetchCover('The Witcher 3: Wild Hunt', { fetch: fauxFetch({ 'The Witcher 3: Wild Hunt': witcher }), now: NOW });
+  assert.equal(c.appid, '292030');
 });

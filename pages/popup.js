@@ -51,6 +51,7 @@ import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
 import { composeShareList } from '../watch/share-list.js';
 import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
+import { statusIcon } from '../lib/status-icons.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
 import {
   EXPORT_KEYS, KEY_AUTO_BACKUP, PERMISSION as AUTO_BACKUP_PERMISSION, describeAutoBackup, exportFromStorage,
@@ -1148,36 +1149,8 @@ function renderUpcoming(all) {
 /* Le magasin de chaque historique du moteur. */
 const HISTORY_STORES = { 'Epic Games': STORES.EPIC, GOG: STORES.GOG, 'Amazon Luna': STORES.AMAZON };
 
-/* Les icones de statut, dessinees au DOM -- jamais d'innerHTML, voir
-   SECURITY.md. 16 x 16, un trait : un cercle coche pour « recupere », une
-   double coche pour « deja a vous », un cercle barre pour « ignore », une
-   croix pour l'echec, une horloge pour ce qui attend. */
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const CERCLE = ['circle', { cx: 8, cy: 8, r: 6.5 }];
-const STATUS_ICONS = {
-  ok: [CERCLE, ['path', { d: 'M5.2 8.3l1.9 1.9 3.7-4.1' }]],
-  own: [['path', { d: 'M1.6 8.7l2.5 2.5 5-5.6' }], ['path', { d: 'M7.7 10.9l.3.3 5-5.6' }]],
-  skip: [CERCLE, ['path', { d: 'M5.4 10.6l5.2-5.2' }]],
-  ko: [CERCLE, ['path', { d: 'M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2' }]],
-  wait: [CERCLE, ['path', { d: 'M8 4.9V8l2.1 1.4' }]],
-};
-
-function statusIcon(kind, label) {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.setAttribute('class', `st-icon ${kind}`);
-  svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', label);
-  const titre = document.createElementNS(SVG_NS, 'title');
-  titre.textContent = label;
-  svg.append(titre);
-  for (const [tag, attrs] of STATUS_ICONS[kind] || STATUS_ICONS.wait) {
-    const n = document.createElementNS(SVG_NS, tag);
-    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
-    svg.append(n);
-  }
-  return svg;
-}
+/* Les icones de statut : lib/status-icons.js, partagees avec la page
+   Historique (2.83.0). */
 
 /** Recupere, deja a vous, ignore, echec, en attente : l'icone qui le dit. */
 function statusKind(row, css) {

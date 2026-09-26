@@ -1316,12 +1316,6 @@
   "historyUnknown": {
     "message": "unclear"
   },
-  "historyAll": {
-    "message": "Any outcome"
-  },
-  "historyAllStores": {
-    "message": "Any store"
-  },
   "historySearch": {
     "message": "Search a title"
   },
@@ -1331,26 +1325,14 @@
   "historyDownload": {
     "message": "Download CSV"
   },
-  "historyWhen": {
-    "message": "Ended"
-  },
   "historyGame": {
     "message": "Game"
   },
   "historyStore": {
     "message": "Store"
   },
-  "historyWorth": {
-    "message": "Worth"
-  },
   "historyOutcome": {
     "message": "Outcome"
-  },
-  "historyByMonth": {
-    "message": "Month by month"
-  },
-  "historyMonth": {
-    "message": "Month"
   },
   "historyRate": {
     "message": "$1% of judged offers ended up on your account. Missed: $2 worth."
@@ -2137,5 +2119,11 @@
   },
   "verdictNeedsBase": {
     "message": "base game required"
+  },
+  "historyChipAll": {
+    "message": "All"
+  },
+  "historyRecurringNone": {
+    "message": "No title has come back yet."
   }
 }

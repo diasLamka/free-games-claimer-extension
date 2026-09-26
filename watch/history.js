@@ -105,3 +105,22 @@ export function byMonth(rows) {
 
   return [...table.values()].sort((a, b) => (a.month < b.month ? 1 : -1));
 }
+
+/**
+ * Les lignes regroupees par mois (2.83.0), dans l'ordre recu : la page les
+ * affiche sous l'en-tete de leur mois, qui porte les comptes de `byMonth`.
+ * Memes cles UTC « AAAA-MM » que lui, pour que les deux ne se contredisent
+ * jamais.
+ */
+export function groupByMonth(rows) {
+  const comptes = new Map(byMonth(rows).map((m) => [m.month, m]));
+  const groupes = new Map();
+  for (const r of rows || []) {
+    if (!Number.isFinite(r.ts)) continue;
+    const d = new Date(r.ts);
+    const mois = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    if (!groupes.has(mois)) groupes.set(mois, { ...comptes.get(mois), rows: [] });
+    groupes.get(mois).rows.push(r);
+  }
+  return [...groupes.values()].sort((a, b) => (a.month < b.month ? 1 : -1));
+}

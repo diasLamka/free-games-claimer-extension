@@ -1316,12 +1316,6 @@
   "historyUnknown": {
     "message": "unklar"
   },
-  "historyAll": {
-    "message": "Jedes Ergebnis"
-  },
-  "historyAllStores": {
-    "message": "Jeder Shop"
-  },
   "historySearch": {
     "message": "Titel suchen"
   },
@@ -1331,26 +1325,14 @@
   "historyDownload": {
     "message": "CSV herunterladen"
   },
-  "historyWhen": {
-    "message": "Beendet"
-  },
   "historyGame": {
     "message": "Spiel"
   },
   "historyStore": {
     "message": "Shop"
   },
-  "historyWorth": {
-    "message": "Wert"
-  },
   "historyOutcome": {
     "message": "Ergebnis"
-  },
-  "historyByMonth": {
-    "message": "Monat für Monat"
-  },
-  "historyMonth": {
-    "message": "Monat"
   },
   "historyRate": {
     "message": "$1 % der entschiedenen Angebote sind in deinem Konto gelandet. Verpasst: Wert von $2."
@@ -2137,5 +2119,11 @@
   },
   "verdictNeedsBase": {
     "message": "Hauptspiel nötig"
+  },
+  "historyChipAll": {
+    "message": "Alle"
+  },
+  "historyRecurringNone": {
+    "message": "Noch kein Titel ist wiedergekommen."
   }
 }

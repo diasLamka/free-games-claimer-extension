@@ -19,6 +19,10 @@
     --amber-d:#FF8A3D;
     --jade:   #56D6A0;
     --rose:   #FF6B81;
+    --epic:   #E4DDF5;
+    --gog:    #A567FF;
+    --steam:  #66C0F4;
+    --amazon: #00C2FF;
     color-scheme: dark;
 
     --display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
@@ -39,6 +43,10 @@
       --amber-d:#A85400;
       --jade:   #12805B;
       --rose:   #D62B47;
+      --epic:   #3D3459;
+      --gog:    #7A32E0;
+      --steam:  #1B7FB8;
+      --amazon: #0079A8;
       color-scheme: light;
     }
   }
@@ -55,6 +63,10 @@
     --amber-d:#A85400;
     --jade:   #12805B;
     --rose:   #D62B47;
+    --epic:   #3D3459;
+    --gog:    #7A32E0;
+    --steam:  #1B7FB8;
+    --amazon: #0079A8;
     color-scheme: light;
   }
 
@@ -195,6 +207,50 @@
   .details { display: block; color: var(--mute); margin-top: 3px; white-space: pre-wrap; }
 
   .empty { color: var(--mute); padding: 28px 10px; text-align: center; }
+
+  /* -------------------------------------------- la liste (2.83.0)
+     La grammaire de « Deja recupere » dans le popup, en grand : jaquette,
+     titre, magasin, valeur, date, et l'issue en icone. Groupee par mois ;
+     l'en-tete du mois porte ce que le tableau « Mois par mois » disait. */
+  .filters { display: flex; flex-direction: column; gap: 8px; flex: 1 1 100%; }
+  .chip-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .chip-row > .lbl { font: 600 10.5px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); min-width: 64px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--mute); font-size: 12px; line-height: 1.45;
+  }
+  .chip .n { font-variant-numeric: tabular-nums; opacity: .8; }
+  .chip:hover { color: var(--paper); border-color: var(--mute); }
+  .chip[aria-pressed="true"] { background: color-mix(in srgb, var(--amber) 16%, transparent); border-color: var(--amber); color: var(--amber); }
+  .month { margin: 18px 0 6px; }
+  .month-head {
+    display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--line); font: 600 12px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase;
+  }
+  .month-head .n { color: var(--mute); font: 12px/1.2 var(--body); letter-spacing: 0; text-transform: none; margin-left: auto; }
+  .games { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 2px 18px; }
+  .game { display: flex; align-items: center; gap: 12px; padding: 7px 6px; border-radius: 8px; min-width: 0; }
+  .game:hover { background: var(--ink-2); }
+  .cover { width: 92px; height: 43px; flex: none; border-radius: 6px; overflow: hidden; background: var(--ink-3); display: grid; place-items: center; }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover .letter { font: 600 16px/1 var(--display); color: var(--mute); }
+  .g-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .g-info .title { font-weight: 600; font-size: 13px; color: var(--paper); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .g-info a.title:hover { color: var(--amber); }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--mute); min-width: 0; white-space: nowrap; }
+  .store-tag { font: 600 9.5px/1 var(--display); letter-spacing: .11em; text-transform: uppercase; color: var(--tag, var(--mute)); }
+  .store-tag.epic { --tag: var(--epic); }
+  .store-tag.gog { --tag: var(--gog); }
+  .store-tag.steam { --tag: var(--steam); }
+  .store-tag.amazon { --tag: var(--amazon); }
+  .meta .worth { font-variant-numeric: tabular-nums; }
+  .st { flex: none; display: grid; place-items: center; width: 26px; height: 26px; }
+  .st-icon { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .st-icon.ok { color: var(--jade); }
+  .st-icon.miss { color: var(--amber); }
+  .st-icon.unknown { color: var(--rose); }
+  table.recur { font-family: var(--body); font-size: 12.5px; }
+  h2 { font: 600 13px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; margin: 30px 0 6px; }
   .note { color: var(--mute); font-size: 11px; margin-top: 16px; max-width: 70ch; }
 </style>
 </head>
@@ -213,51 +269,27 @@
     <p class="sub" id="rate"></p>
 
     <div class="bar">
-      <select id="outcome">
-        <option value="" data-i18n="historyAll"></option>
-        <option value="taken" data-i18n="historyTaken"></option>
-        <option value="missed" data-i18n="historyMissed"></option>
-        <option value="unknown" data-i18n="historyUnknown"></option>
-      </select>
-      <select id="store">
-        <option value="" data-i18n="historyAllStores"></option>
-      </select>
+      <div class="filters">
+        <div class="chip-row" id="outcome-chips" role="group" data-i18n-attr="aria-label:historyOutcome">
+          <span class="lbl" data-i18n="historyOutcome"></span>
+        </div>
+        <div class="chip-row" id="store-chips" role="group" data-i18n-attr="aria-label:historyStore">
+          <span class="lbl" data-i18n="historyStore"></span>
+        </div>
+      </div>
       <input type="search" id="search" data-i18n-attr="placeholder:historySearch">
       <span class="spacer"></span>
       <button id="refresh" data-i18n="historyRefresh"></button>
       <button id="download" data-i18n="historyDownload"></button>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th data-i18n="historyWhen"></th>
-          <th data-i18n="historyGame"></th>
-          <th data-i18n="historyStore"></th>
-          <th data-i18n="historyWorth"></th>
-          <th data-i18n="historyOutcome"></th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-
+    <div id="list"></div>
     <p class="empty" id="empty" hidden></p>
-
-    <h2 data-i18n="historyByMonth"></h2>
-    <table>
-      <thead>
-        <tr>
-          <th data-i18n="historyMonth"></th>
-          <th data-i18n="historyTaken"></th>
-          <th data-i18n="historyMissed"></th>
-        </tr>
-      </thead>
-      <tbody id="months"></tbody>
-    </table>
 
     <h2 data-i18n="historyRecurring"></h2>
     <p class="sub" data-i18n="historyRecurringSub"></p>
-    <table>
+    <p class="sub" id="recurring-none" data-i18n="historyRecurringNone" hidden></p>
+    <table class="recur" id="recurring-table">
       <thead>
         <tr>
           <th data-i18n="historyGame"></th>

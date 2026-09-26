@@ -4,6 +4,43 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.83.0 -- 2026-09-26
+
+**La page Historique refaite**
+
+La page Historique etait un tableau en police a chasse fixe : date, titre,
+magasin, valeur, issue en toutes lettres, deux listes deroulantes pour
+filtrer, et un second tableau « Mois par mois » plus bas.
+
+- **Chaque offre terminee en carte**, comme « Deja recupere » dans le popup :
+  la jaquette, le titre (lien vers la fiche quand il a survecu), le magasin
+  en couleur, la valeur, la date, et l'issue en icone -- cercle coche vert
+  (pris), point d'exclamation orange (rate), point d'interrogation rouge
+  (incertain). Les mots et le verdict brut restent au survol. Deux colonnes
+  sur une page large.
+- **Groupee par mois**, et l'en-tete de chaque mois porte ses comptes
+  (« pris 3 · rates 1 ») : le tableau « Mois par mois » disait la meme chose
+  plus bas, il est parti.
+- **Des puces pour filtrer**, par issue et par magasin, chacune avec son
+  nombre sur tout l'historique. La recherche et l'export CSV restent.
+- **Les jaquettes** : celle figee avec l'issue, sinon celle de la recherche
+  Steam (2.81.0), demandee par lots de seize, chacune une fois, la page se
+  redessinant a mesure qu'elles arrivent ; sinon l'initiale. Pour une image
+  seulement, une edition connue compte : Steam ne connait plus « The Witcher
+  3: Wild Hunt » que sous « ... - Complete Edition ». La note Steam, elle,
+  garde le titre exact.
+- **« Ce qui revient »** vide le dit en une phrase, au lieu d'en-tetes de
+  tableau sans ligne.
+- Les icones de statut vivent desormais dans `lib/status-icons.js`, partagees
+  par le popup et la page. Corrige au passage : « rates » et « Rafraichir »
+  sans leurs accents.
+
+Verifie dans l'extension chargee dans Chromium, sur le vrai Steam, themes
+clair et sombre : dix offres sur trois mois, neuf jaquettes trouvees, les
+filtres « Rates » et « GOG ».
+
+1402 tests.
+
 ## 2.82.0 -- 2026-09-26
 
 **La note Steam sur les fiches Epic et GOG**

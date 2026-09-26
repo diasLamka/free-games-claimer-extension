@@ -1311,28 +1311,19 @@
     "message": "pris"
   },
   "historyMissed": {
-    "message": "rates"
+    "message": "ratés"
   },
   "historyUnknown": {
     "message": "incertains"
-  },
-  "historyAll": {
-    "message": "Toutes les issues"
-  },
-  "historyAllStores": {
-    "message": "Tous les magasins"
   },
   "historySearch": {
     "message": "Chercher un titre"
   },
   "historyRefresh": {
-    "message": "Rafraichir"
+    "message": "Rafraîchir"
   },
   "historyDownload": {
     "message": "Télécharger en CSV"
-  },
-  "historyWhen": {
-    "message": "Termine"
   },
   "historyGame": {
     "message": "Jeu"
@@ -1340,17 +1331,8 @@
   "historyStore": {
     "message": "Magasin"
   },
-  "historyWorth": {
-    "message": "Valeur"
-  },
   "historyOutcome": {
     "message": "Issue"
-  },
-  "historyByMonth": {
-    "message": "Mois par mois"
-  },
-  "historyMonth": {
-    "message": "Mois"
   },
   "historyRate": {
     "message": "$1 % des offres tranchées ont fini sur votre compte. Raté : $2 de valeur."
@@ -2137,5 +2119,11 @@
   },
   "verdictNeedsBase": {
     "message": "jeu de base requis"
+  },
+  "historyChipAll": {
+    "message": "Tout"
+  },
+  "historyRecurringNone": {
+    "message": "Aucun titre n’est encore revenu."
   }
 }

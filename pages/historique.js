@@ -19,8 +19,10 @@ import { worthLabel, sumWorths } from '../lib/money.js';
 import { normaliseTitle, displayTitle } from '../watch/offer.js';
 import { recurrenceIndex, recurring } from '../watch/recurrence.js';
 import {
-  byMonth, filterHistory, historyRows, summariseHistory,
+  filterHistory, groupByMonth, historyRows, summariseHistory,
 } from '../watch/history.js';
+import { KEY_COVERS, PER_RUN as COVERS_PER_RUN, coverFor, needsCover } from '../watch/covers.js';
+import { statusIcon } from '../lib/status-icons.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -28,6 +30,11 @@ const KEY_UI = 'veille:ui';
 
 let rows = [];
 let library = {};
+/* Les jaquettes trouvees sur Steam (2.83.0, comme « Deja recupere »). */
+let covers = {};
+/* Les filtres en puces : '' veut dire tout. */
+let filtreIssue = '';
+let filtreMagasin = '';
 /* Le taux du jour, pose par le cycle de veille. Sans lui, les montants restent
    dans leur devise d'origine. */
 let rates = null;
@@ -54,11 +61,56 @@ function monthText(cle) {
     .toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
-/** Le libelle et la couleur d'une issue. Les trois, jamais deux. */
+/** Le libelle et l'icone d'une issue. Les trois, jamais deux. */
 function outcomeLabel(outcome) {
-  if (outcome === OUTCOMES.TAKEN) return { text: t('historyTaken'), level: 'info' };
-  if (outcome === OUTCOMES.MISSED) return { text: t('historyMissed'), level: 'warn' };
-  return { text: t('historyUnknown'), level: 'error' };
+  if (outcome === OUTCOMES.TAKEN) return { text: t('historyTaken'), icon: 'ok' };
+  if (outcome === OUTCOMES.MISSED) return { text: t('historyMissed'), icon: 'miss' };
+  return { text: t('historyUnknown'), icon: 'unknown' };
+}
+
+const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+
+/* Les etiquettes de magasin du popup, pour que la page parle pareil. */
+const TAGS = { epic: 'EPIC', 'epic-mobile': 'EPIC MOBILE', gog: 'GOG', amazon: 'LUNA', steam: 'STEAM' };
+
+function storeTag(store) {
+  const n = el('span', `store-tag ${store || ''}`, TAGS[store] || String(STORE_LABELS[store] || store || '—').toUpperCase());
+  n.title = STORE_LABELS[store] || store || '';
+  return n;
+}
+
+/** La jaquette : figee avec l'issue, sinon trouvee sur Steam, sinon l'initiale. */
+function coverTile(src, title) {
+  const box = el('span', 'cover');
+  const lettre = () => el('span', 'letter', String(title || '?').trim().charAt(0).toUpperCase() || '?');
+  if (!src) { box.append(lettre()); return box; }
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = '';
+  img.loading = 'lazy';
+  img.referrerPolicy = 'no-referrer';
+  img.addEventListener('error', () => { box.textContent = ''; box.append(lettre()); });
+  box.append(img);
+  return box;
+}
+
+/* Chaque titre n'est demande qu'une fois par ouverture de la page ; les
+   suivants partent quand les premieres jaquettes sont arrivees. */
+const DEMANDEES = new Set();
+
+/** Une rangee de puces : « Tout », puis chaque valeur avec son compte. */
+function chipRow(id, valeurs, active, libelle, choisir) {
+  const hote = document.getElementById(id);
+  for (const n of [...hote.querySelectorAll('.chip')]) n.remove();
+  for (const [valeur, compte] of valeurs) {
+    const b = el('button', 'chip');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(valeur === active));
+    b.append(document.createTextNode(valeur ? libelle(valeur) : t('historyChipAll')));
+    b.append(el('span', 'n', String(compte)));
+    b.addEventListener('click', () => { choisir(valeur); render(); });
+    hote.append(b);
+  }
 }
 
 function download(name, type, text) {
@@ -98,8 +150,8 @@ function toCsv(liste) {
 
 function currentFilters() {
   return {
-    outcome: document.getElementById('outcome').value || '',
-    store: document.getElementById('store').value || '',
+    outcome: filtreIssue,
+    store: filtreMagasin,
     query: document.getElementById('search').value || '',
   };
 }
@@ -123,62 +175,94 @@ function render() {
     : t('historyRate', String(total.rate),
       sumWorths(rows.filter((r) => r.outcome === OUTCOMES.MISSED).map((r) => r.worth).filter(Boolean), rates, Date.now()));
 
-  const corps = document.getElementById('rows');
+  /* Les puces, avec leurs comptes sur TOUT l'historique -- comme les
+     compteurs du haut : elles disent ce qu'il y a, pas ce qu'on regarde. */
+  const parIssue = [OUTCOMES.TAKEN, OUTCOMES.MISSED, OUTCOMES.UNKNOWN]
+    .map((o) => [o, rows.filter((r) => r.outcome === o).length]).filter(([, n]) => n > 0);
+  chipRow('outcome-chips', [['', rows.length], ...parIssue], filtreIssue,
+    (o) => cap(outcomeLabel(o).text), (v) => { filtreIssue = v; });
+  const magasins = [...new Set(rows.map((r) => r.store).filter(Boolean))].sort();
+  chipRow('store-chips', [['', rows.length], ...magasins.map((m) => [m, rows.filter((r) => r.store === m).length])],
+    filtreMagasin, (m) => STORE_LABELS[m] || m, (v) => { filtreMagasin = v; });
+
+  /* La liste, groupee par mois : l'en-tete porte les comptes du mois (ce
+     que disait le tableau « Mois par mois »), sur la vue filtree. */
+  const liste = document.getElementById('list');
   const lot = document.createDocumentFragment();
+  const aDemander = [];
 
-  for (const r of visibles) {
-    const tr = el('tr');
-    tr.append(el('td', 'when', whenText(r.ts)));
+  for (const mois of groupByMonth(visibles)) {
+    const bloc = el('section', 'month');
+    const tete = el('h3', 'month-head', monthText(mois.month));
+    const comptes = [[mois.taken, 'historyTaken'], [mois.missed, 'historyMissed'], [mois.unknown, 'historyUnknown']]
+      .filter(([n]) => n > 0).map(([n, cle]) => `${t(cle)} ${n}`).join(' · ');
+    tete.append(el('span', 'n', comptes));
+    bloc.append(tete);
 
-    /* Le titre mene a la fiche quand l'URL a survecu au figement. Sans elle,
-       du texte : un lien mort serait pire qu'une absence de lien. */
-    const titre = el('td');
-    if (r.url) {
-      const a = el('a', null, r.title ? displayTitle(r.title) : (r.id || '—'));
-      a.href = r.url;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      titre.append(a);
-    } else titre.textContent = r.title ? displayTitle(r.title) : (r.id || '—');
-    tr.append(titre);
+    const ul = el('ul', 'games');
+    for (const r of mois.rows) {
+      const nom = r.title ? displayTitle(r.title) : (r.id || '—');
+      const li = el('li', 'game');
 
-    tr.append(el('td', null, STORE_LABELS[r.store] || r.store || '—'));
-    if (r.worth) {
-      const shown = worthLabel(r.worth, rates, Date.now());
-      const valeur = el('td', null, shown.text);
-      if (shown.title) valeur.title = shown.title;
-      tr.append(valeur);
-    } else tr.append(el('td', null, '—'));
+      const image = r.image || coverFor(covers, nom);
+      if (!image && r.title && !DEMANDEES.has(nom) && needsCover(covers, nom, Date.now())) aDemander.push(nom);
+      li.append(coverTile(image, nom));
 
-    const issue = outcomeLabel(r.outcome);
-    const cell = el('td', issue.level, issue.text);
-    /* Le verdict brut en infobulle : « needs_login » n'a rien a faire dans une
-       colonne, et tout a faire a portee de souris le jour ou on cherche
-       pourquoi une offre est passee a cote. */
-    if (r.verdict) cell.title = r.verdict;
-    tr.append(cell);
+      /* Le titre mene a la fiche quand l'URL a survecu au figement. Sans elle,
+         du texte : un lien mort serait pire qu'une absence de lien. */
+      const info = el('div', 'g-info');
+      let titre;
+      if (r.url) {
+        titre = el('a', 'title', nom);
+        titre.href = r.url;
+        titre.target = '_blank';
+        titre.rel = 'noreferrer';
+      } else titre = el('span', 'title', nom);
+      titre.title = nom;
+      info.append(titre);
 
-    lot.append(tr);
+      const meta = el('div', 'meta');
+      meta.append(storeTag(r.store));
+      if (r.worth) {
+        const shown = worthLabel(r.worth, rates, Date.now());
+        const valeur = el('span', 'worth', shown.text);
+        if (shown.title) valeur.title = shown.title;
+        meta.append(valeur);
+      }
+      meta.append(el('span', 'when', whenText(r.ts)));
+      info.append(meta);
+      li.append(info);
+
+      /* L'issue en icone ; ses mots, et le verdict brut, au survol : « needs_login »
+         n'a rien a faire dans la liste, et tout a faire a portee de souris le
+         jour ou on cherche pourquoi une offre est passee a cote. */
+      const issue = outcomeLabel(r.outcome);
+      const mots = cap(issue.text) + (r.verdict ? ` (${r.verdict})` : '');
+      const st = el('span', 'st');
+      st.title = mots;
+      st.append(statusIcon(issue.icon, mots));
+      li.append(st);
+      ul.append(li);
+    }
+    bloc.append(ul);
+    lot.append(bloc);
   }
 
-  corps.textContent = '';
-  corps.append(lot);
+  liste.textContent = '';
+  liste.append(lot);
 
   const vide = document.getElementById('empty');
   vide.hidden = visibles.length > 0;
   vide.textContent = rows.length ? t('historyNoMatch') : t('historyEmpty');
 
-  const mois = document.getElementById('months');
-  const lotMois = document.createDocumentFragment();
-  for (const m of byMonth(rows)) {
-    const tr = el('tr');
-    tr.append(el('td', null, monthText(m.month)));
-    tr.append(el('td', 'info', String(m.taken)));
-    tr.append(el('td', 'warn', String(m.missed)));
-    lotMois.append(tr);
+  /* Les jaquettes manquantes, par lots : le worker cherche, ecrit, et le
+     changement de stockage redessine la page -- qui demande alors les
+     suivantes. */
+  const lotDemande = aDemander.slice(0, COVERS_PER_RUN);
+  if (lotDemande.length) {
+    for (const nom of lotDemande) DEMANDEES.add(nom);
+    try { api.runtime.sendMessage({ type: 'fgc-covers', titles: lotDemande }, () => void api.runtime.lastError); } catch { /* worker endormi */ }
   }
-  mois.textContent = '';
-  mois.append(lotMois);
 
   /* Ce qui revient : le seul tableau de la page qui parle d'AVENIR. Les autres
      racontent ce qui s'est passe ; celui-ci dit ce qu'on peut attendre plutot
@@ -200,11 +284,16 @@ function render() {
   }
   cible.textContent = '';
   cible.append(lotRevient);
+  // Sans rien qui revienne, une phrase plutot qu'un tableau aux en-tetes vides.
+  const aucun = !cible.children.length;
+  document.getElementById('recurring-table').hidden = aucun;
+  document.getElementById('recurring-none').hidden = !aucun;
 }
 
 async function load() {
-  const brut = await api.storage.local.get([KEY_OUTCOMES, KEY_LIBRARY, KEY_RATES]);
+  const brut = await api.storage.local.get([KEY_OUTCOMES, KEY_LIBRARY, KEY_RATES, KEY_COVERS]);
   rates = brut[KEY_RATES] || null;
+  covers = brut[KEY_COVERS] || {};
   rows = historyRows(brut[KEY_OUTCOMES]);
   /* Le registre entre ici, et pas seulement les issues : il n'est JAMAIS
      purge, donc il porte seul les passages anterieurs a la 2.27.0. */
@@ -224,28 +313,20 @@ async function boot() {
   translateDocument();
   document.title = t('historyTitle');
 
-  /* La liste des magasins vient des DONNEES, pas d'une constante : un magasin
-     qui n'a jamais rien laisse passer n'a pas a encombrer le filtre. */
-  const choix = document.getElementById('store');
-  const vus = [...new Set(rows.map((r) => r.store).filter(Boolean))].sort();
-  for (const store of vus) {
-    const option = el('option', null, STORE_LABELS[store] || store);
-    option.value = store;
-    choix.append(option);
-  }
-
+  /* Les puces des magasins viennent des DONNEES, pas d'une constante : un
+     magasin qui n'a jamais rien laisse passer n'a pas a encombrer le filtre
+     (voir render). */
   render();
 }
 
 document.getElementById('search').addEventListener('input', render);
-for (const id of ['outcome', 'store']) document.getElementById(id).addEventListener('change', render);
 document.getElementById('refresh').addEventListener('click', load);
 document.getElementById('download').addEventListener('click', () => {
   download(`historique-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv', toCsv(rows));
 });
 
 api.storage.onChanged.addListener((changes, zone) => {
-  if (zone === 'local' && changes[KEY_OUTCOMES]) load();
+  if (zone === 'local' && (changes[KEY_OUTCOMES] || changes[KEY_COVERS])) load();
 });
 
 load().then(boot);
