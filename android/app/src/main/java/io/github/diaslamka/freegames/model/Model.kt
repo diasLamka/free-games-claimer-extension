@@ -157,6 +157,8 @@ data class Settings(
     val claimGog: Boolean = true,
     val claimAmazon: Boolean = true,
     val claimSteam: Boolean = false,
+    /** Recuperer aussi ecran eteint, sans ouvrir l'appli (1.2.0). Coupe par defaut. */
+    val claimInBackground: Boolean = false,
     val showMobile: Boolean = true,
     val showOthers: Boolean = true,
     val steamRatings: Boolean = true,

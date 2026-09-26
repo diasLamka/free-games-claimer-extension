@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.github.diaslamka.freegames.claim.BackgroundClaim
 import io.github.diaslamka.freegames.data.Watcher
 import java.util.concurrent.TimeUnit
 
@@ -17,7 +18,12 @@ import java.util.concurrent.TimeUnit
 class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
         Watcher.check(applicationContext, "fond")
+        // Ecran eteint (reglage coupe par defaut) : ce qui reste a prendre, sur place.
+        BackgroundClaim.run(applicationContext)
+        if (BackgroundClaim.more(System.currentTimeMillis())) Scheduler.soon(applicationContext)
         Result.success()
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
     } catch (_: Exception) {
         if (runAttemptCount < 3) Result.retry() else Result.failure()
     }
@@ -26,6 +32,7 @@ class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 object Scheduler {
     private const val PERIODIC = "veille"
     private const val OPENING = "ouverture-epic"
+    private const val FOLLOW_UP = "suite-recuperation"
 
     /** Sans planificateur (environnement de test), l'appli s'ouvre quand meme : la veille manque, pas l'ecran. */
     private fun manager(context: Context): WorkManager? = try {
@@ -47,6 +54,15 @@ object Scheduler {
             if (replace) ExistingPeriodicWorkPolicy.UPDATE else ExistingPeriodicWorkPolicy.KEEP,
             req,
         )
+    }
+
+    /** Il reste des jeux apres un passage de fond : on revient dans un quart d'heure. */
+    fun soon(context: Context) {
+        val req = OneTimeWorkRequestBuilder<WatchWorker>()
+            .setInitialDelay(15, TimeUnit.MINUTES)
+            .setConstraints(network)
+            .build()
+        manager(context)?.enqueueUniqueWork(FOLLOW_UP, ExistingWorkPolicy.KEEP, req)
     }
 
     /**

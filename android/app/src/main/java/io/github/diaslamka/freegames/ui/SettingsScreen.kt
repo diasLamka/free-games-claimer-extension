@@ -57,6 +57,7 @@ fun SettingsScreen(
     val s = state.settings
     var steamWarning by remember { mutableStateOf(false) }
     var clearConfirm by remember { mutableStateOf(false) }
+    var backgroundInfo by remember { mutableStateOf(false) }
     val b = LocalBrut.current
     Column(Modifier.fillMaxSize().background(b.base)) {
         TopBlock(stringResource(R.string.tab_settings))
@@ -81,6 +82,9 @@ fun SettingsScreen(
             item {
                 Group {
                     Toggle(stringResource(R.string.set_claim_on_open), stringResource(R.string.set_claim_on_open_hint), s.claimOnOpen) { v -> onSettings { it.copy(claimOnOpen = v) } }
+                    Toggle(stringResource(R.string.set_background), stringResource(R.string.set_background_hint), s.claimInBackground) { v ->
+                        if (v) backgroundInfo = true else onSettings { it.copy(claimInBackground = false) }
+                    }
                     Toggle(Stores.label(Stores.EPIC), null, s.claimEpic) { v -> onSettings { it.copy(claimEpic = v) } }
                     Toggle(Stores.label(Stores.GOG), null, s.claimGog) { v -> onSettings { it.copy(claimGog = v) } }
                     Toggle(stringResource(R.string.set_amazon), null, s.claimAmazon) { v -> onSettings { it.copy(claimAmazon = v) } }
@@ -148,6 +152,17 @@ fun SettingsScreen(
                 TextButton(onClick = { steamWarning = false; onSettings { it.copy(claimSteam = true) } }) { Text(stringResource(R.string.steam_warning_ok)) }
             },
             dismissButton = { TextButton(onClick = { steamWarning = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (backgroundInfo) {
+        AlertDialog(
+            onDismissRequest = { backgroundInfo = false },
+            title = { Text(stringResource(R.string.background_title)) },
+            text = { Text(stringResource(R.string.background_text)) },
+            confirmButton = {
+                TextButton(onClick = { backgroundInfo = false; onSettings { it.copy(claimInBackground = true) } }) { Text(stringResource(R.string.background_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { backgroundInfo = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
     if (clearConfirm) {

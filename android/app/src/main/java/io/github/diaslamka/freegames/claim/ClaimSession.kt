@@ -68,7 +68,17 @@ import kotlin.coroutines.resume
  * `steamPageStep`, de watch/steam-claim.js, jouee dans la page, et la preuve
  * est la bibliotheque (dynamicstore/userdata) -- jamais la page seule.
  */
-class ClaimSession(private val context: Context, private val scope: CoroutineScope) {
+class ClaimSession(
+    private val context: Context,
+    private val scope: CoroutineScope,
+    /**
+     * Sans ecran (2.0 : « ecran eteint ») : la page n'est attachee a aucune
+     * fenetre. Elle est mesuree a la taille de l'ecran du telephone, comme un
+     * onglet d'arriere-plan de l'extension -- que le moteur sait deja servir.
+     * Un defi (captcha) n'y est JAMAIS resolu : il part en notification.
+     */
+    private val headless: Boolean = false,
+) {
 
     data class Outcome(val key: String, val title: String, val store: String, val verdict: String, val details: String?)
 
@@ -135,6 +145,12 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
         settings.builtInZoomControls = true
         settings.displayZoomControls = false
         settings.mediaPlaybackRequiresUserGesture = true
+        // Une page de magasin n'a rien a lire sur le telephone.
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+            androidx.webkit.WebSettingsCompat.setSafeBrowsingEnabled(settings, true)
+        }
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
@@ -171,6 +187,13 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
         }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             WebViewCompat.addDocumentStartJavaScript(this, engineScript(), ORIGINS)
+        }
+        if (headless) {
+            val m = context.resources.displayMetrics
+            val w = android.view.View.MeasureSpec.makeMeasureSpec(m.widthPixels, android.view.View.MeasureSpec.EXACTLY)
+            val h = android.view.View.MeasureSpec.makeMeasureSpec(m.heightPixels, android.view.View.MeasureSpec.EXACTLY)
+            measure(w, h)
+            layout(0, 0, m.widthPixels, m.heightPixels)
         }
     }
 
@@ -260,36 +283,65 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
      * Tout ce qui reste a prendre -- ou seulement `keys`, qui passent alors
      * outre le recul (le bouton « Recuperer » d'une carte).
      */
-    fun start(keys: Set<String> = emptySet()) {
-        if (_ui.value.running) return
+    /**
+     * Tout ce qui reste a prendre -- ou seulement `keys`, qui passent alors
+     * outre le recul. Rend faux si la recuperation de fond tient deja la
+     * main : jamais deux pages pilotees a la fois sur un meme compte.
+     */
+    fun start(keys: Set<String> = emptySet()): Boolean {
+        if (_ui.value.running) return true
         val now = System.currentTimeMillis()
         val s = Graph.store.value
         val todo = Rules.pending(s, now, force = keys).let { list -> if (keys.isEmpty()) list else list.filter { it.key in keys } }
         if (todo.isEmpty()) {
             _ui.value = Ui(outcomes = emptyList(), visible = false)
-            return
+            return true
         }
+        if (!Graph.claimLock.tryLock()) return false
         _ui.value = Ui(running = true, total = todo.size, visible = true)
         job = scope.launch {
-            val blocked = mutableSetOf<String>()
-            var steamDone = 0
-            val won = mutableListOf<String>()
-            todo.forEachIndexed { i, offer ->
+            try {
+                runAll(todo)
+            } finally {
+                Graph.claimLock.unlock()
+            }
+        }
+        return true
+    }
+
+    /**
+     * La boucle, pour l'ecran comme pour le fond. `deadline` : l'heure apres
+     * laquelle on n'entame plus de jeu (le fond a dix minutes en tout).
+     * Rend les titres obtenus.
+     */
+    suspend fun runAll(todo: List<Offer>, deadline: Long = Long.MAX_VALUE): List<String> {
+        val blocked = mutableSetOf<String>()
+        var steamDone = 0
+        val won = mutableListOf<String>()
+        try {
+            for ((i, offer) in todo.withIndex()) {
+                if (System.currentTimeMillis() > deadline) break
                 if (offer.store in blocked) {
                     record(offer, Verdicts.LOGIN, "session a reprendre", count = false)
-                    return@forEachIndexed
+                    continue
                 }
                 _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
+                if (headless) Notifier.working(context, offer.shownTitle, i + 1, todo.size)
                 var result = runOne(offer, steamDone)
                 if (result.first == Verdicts.CHALLENGE) {
-                    _ui.value = _ui.value.copy(needsUser = true, visible = true)
-                    userDone = CompletableDeferred()
-                    val retry = userDone!!.await()
-                    _ui.value = _ui.value.copy(needsUser = false)
-                    if (retry) result = runOne(offer, steamDone)
+                    if (headless) {
+                        // Jamais resolu par l'appli : l'humain est appele, et le jeu attend.
+                        Notifier.challenge(context, offer)
+                    } else {
+                        _ui.value = _ui.value.copy(needsUser = true, visible = true)
+                        userDone = CompletableDeferred()
+                        val retry = userDone!!.await()
+                        _ui.value = _ui.value.copy(needsUser = false)
+                        if (retry) result = runOne(offer, steamDone)
+                    }
                 }
                 if (offer.store == Stores.STEAM && result.first != "steam-gate") steamDone++
-                if (result.first == "steam-gate") return@forEachIndexed
+                if (result.first == "steam-gate") continue
                 record(offer, result.first, result.second)
                 if (result.first == Verdicts.LOGIN) {
                     blocked += offer.store
@@ -297,18 +349,21 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
                 }
                 if (result.first in Verdicts.ACQUIRED) won += offer.shownTitle
             }
+        } finally {
             piloting = false
-            withContext(Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
+            if (created) withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
             _ui.value = _ui.value.copy(running = false, step = null, title = null)
-            Notifier.claimed(context, won)
+            if (headless) Notifier.doneWorking(context)
         }
+        Notifier.claimed(context, won)
+        return won
     }
 
     private suspend fun record(o: Offer, verdictName: String, details: String?, count: Boolean = true) {
         val now = System.currentTimeMillis()
         _ui.value = _ui.value.copy(outcomes = _ui.value.outcomes + Outcome(o.key, o.shownTitle, o.store, verdictName, details))
         Graph.store.update { s ->
-            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now) else s.attempts[o.key]
+            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless) else s.attempts[o.key]
             var lib = s.library
             var accounts = s.accounts
             if (verdictName in Verdicts.ACQUIRED) {
@@ -370,10 +425,11 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
             return Verdicts.FAILURE to "le moteur ne s'est pas annonce"
         }
         _ui.value = _ui.value.copy(step = STEP_CLAIM)
-        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", BUDGET_MS) }) }.toString()
+        val budget = if (headless) HEADLESS_BUDGET_MS else BUDGET_MS
+        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget) }) }.toString()
         withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
-        val v = withTimeoutOrNull(BUDGET_MS + 10_000) { verdict!!.await() }
-            ?: return Verdicts.FAILURE to "aucun verdict en ${BUDGET_MS / 1000} s"
+        val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }
+            ?: return Verdicts.FAILURE to "aucun verdict en ${budget / 1000} s"
         val name = v["verdict"].str ?: Verdicts.UNDETERMINED
         return name to v["reasonText"].str
     }
@@ -462,6 +518,10 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
         const val LOAD_WAIT_MS = 45_000L
         const val READY_WAIT_MS = 60_000L
         const val BUDGET_MS = 5 * 60_000L
+        /** Le fond a dix minutes en tout (WorkManager) : un jeu en prend quatre au plus. */
+        const val HEADLESS_BUDGET_MS = 4 * 60_000L
+        /** Apres trois minutes, le fond n'entame plus de jeu : le reste passe au tour suivant. */
+        const val HEADLESS_START_WINDOW_MS = 3 * 60_000L
 
         /** Les pages ou le moteur est injecte : celles de l'extension (manifest.json). */
         val ORIGINS = setOf(
@@ -477,10 +537,12 @@ class ClaimSession(private val context: Context, private val scope: CoroutineSco
 
         private val ALLOWED_FETCH = listOf("epicgames.com", "gog.com", "gamerpower.com", "steampowered.com")
 
+        /** Seul le web s'ouvre au-dehors : une adresse venue d'une source ne lance jamais une autre appli. */
         fun openExternally(context: Context, url: String) {
+            val web = Titles.webUrl(url) ?: return
             runCatching {
                 context.startActivity(
-                    android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(web))
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                 )
             }

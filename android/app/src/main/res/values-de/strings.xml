@@ -93,7 +93,26 @@
     <string name="login">Anmelden</string>
     <string name="login_title">Anmelden: %1$s</string>
     <string name="login_hint">Wie gewohnt anmelden, dann auf Fertig tippen.</string>
-    <string name="login_hint_epic">Nutze E-Mail und Passwort: Google verweigert Anmeldungen in Apps. Dann auf Fertig tippen.</string>
+    <string name="login_hint_epic">E-Mail und Epic-Passwort. Konto mit Google oder Facebook erstellt? Gib ihm zuerst ein Epic-Passwort: Epic schickt es per E-Mail, die Google-Anmeldung bleibt.</string>
+    <string name="set_background">Auch bei ausgeschaltetem Bildschirm</string>
+    <string name="set_background_hint">Holt während der Hintergrundprüfung, ohne die App zu öffnen. Nur angemeldete Shops.</string>
+    <string name="background_title">Bei ausgeschaltetem Bildschirm holen?</string>
+    <string name="background_text">Bei jeder Hintergrundprüfung öffnet die App die Shopseite selbst, unsichtbar, und holt, was übrig ist — dieselbe Engine wie auf dem Bildschirm, ein Spiel nach dem anderen, höchstens zehn Minuten.
+
+Verlangt ein Shop eine menschliche Prüfung (Captcha), löst die App sie nie: Eine Benachrichtigung ruft dich, ein Tippen beendet das Spiel auf dem Bildschirm.
+
+Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nichts das Handy.</string>
+    <string name="background_ok">Einschalten</string>
+    <string name="busy_background">Im Hintergrund wird schon geholt: Das endet von selbst.</string>
+    <string name="notif_working_title">Hole %1$d/%2$d</string>
+    <string name="notif_challenge_title">%1$s verlangt eine Prüfung</string>
+    <string name="notif_challenge_text">Tippen, um %1$s auf dem Bildschirm abzuschließen. Die App löst sie nie selbst.</string>
+    <string name="login_set_password">Mein Epic-Passwort erstellen</string>
+    <string name="login_back">Zurück zur Anmeldung</string>
+    <string name="login_refused_title">%1$s verweigert Anmeldungen in Apps</string>
+    <string name="login_refused_why">Das ist eine Sicherheitsregel von %1$s: Die Anmeldeseite öffnet sich nur in einem echten Browser, nie in einer App. Die App hält hier an, statt dich dorthin zu schicken.</string>
+    <string name="login_refused_epic">Dein Epic-Konto kann zusätzlich zu %1$s ein Passwort haben: Epic schickt einen Code per E-Mail, du wählst das Passwort, und die %1$s-Anmeldung funktioniert überall sonst weiter. Dann hier mit E-Mail und diesem Passwort anmelden.</string>
+    <string name="login_refused_other">Melde dich mit E-Mail und Passwort deines %1$s-Kontos an.</string>
     <string name="close">Schließen</string>
     <string name="done">Fertig</string>
     <string name="claim_progress">Hole %1$d/%2$d: %3$s</string>

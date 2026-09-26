@@ -93,7 +93,26 @@
     <string name="login">Iniciar sesión</string>
     <string name="login_title">Iniciar sesión: %1$s</string>
     <string name="login_hint">Inicia sesión como siempre y toca Listo.</string>
-    <string name="login_hint_epic">Usa tu correo y contraseña: Google rechaza el inicio de sesión dentro de apps. Luego toca Listo.</string>
+    <string name="login_hint_epic">Correo y contraseña de Epic. ¿Cuenta creada con Google o Facebook? Ponle antes una contraseña de Epic: Epic la envía por correo y el acceso con Google sigue funcionando.</string>
+    <string name="set_background">También con la pantalla apagada</string>
+    <string name="set_background_hint">Consigue durante la vigilancia en segundo plano, sin abrir la app. Solo tiendas con sesión.</string>
+    <string name="background_title">¿Conseguir con la pantalla apagada?</string>
+    <string name="background_text">En cada comprobación en segundo plano, la app abre ella misma la página de la tienda, sin mostrarla, y consigue lo que queda — el mismo motor que en pantalla, un juego a la vez, diez minutos como máximo.
+
+Si una tienda pide una verificación humana (captcha), la app nunca la resuelve: una notificación te avisa y un toque termina ese juego en pantalla.
+
+Una notificación discreta se muestra mientras trabaja. Nada más sale del teléfono.</string>
+    <string name="background_ok">Activar</string>
+    <string name="busy_background">Ya hay una obtención en segundo plano: terminará sola.</string>
+    <string name="notif_working_title">Consiguiendo %1$d/%2$d</string>
+    <string name="notif_challenge_title">%1$s pide una verificación</string>
+    <string name="notif_challenge_text">Toca para terminar %1$s en pantalla. La app nunca la resuelve sola.</string>
+    <string name="login_set_password">Crear mi contraseña de Epic</string>
+    <string name="login_back">Volver al inicio de sesión</string>
+    <string name="login_refused_title">%1$s rechaza el inicio de sesión en apps</string>
+    <string name="login_refused_why">Es una regla de seguridad de %1$s: su página de acceso solo se abre en un navegador de verdad, nunca dentro de una app. La app se detiene aquí en lugar de mandarte allí.</string>
+    <string name="login_refused_epic">Tu cuenta de Epic puede tener una contraseña además de %1$s: Epic envía un código por correo, eliges la contraseña y el acceso con %1$s sigue funcionando en todo lo demás. Luego inicia sesión aquí con tu correo y esa contraseña.</string>
+    <string name="login_refused_other">Inicia sesión con el correo y la contraseña de tu cuenta de %1$s.</string>
     <string name="close">Cerrar</string>
     <string name="done">Listo</string>
     <string name="claim_progress">Consiguiendo %1$d/%2$d: %3$s</string>

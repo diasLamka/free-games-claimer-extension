@@ -94,8 +94,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     }
 
     fun claim(keys: Set<String>) {
-        session.start(keys)
-        if (!session.ui.value.running) {
+        if (!session.start(keys)) {
+            Toast.makeText(context, context.getString(R.string.busy_background), Toast.LENGTH_LONG).show()
+        } else if (!session.ui.value.running) {
             Toast.makeText(context, context.getString(R.string.nothing_to_claim), Toast.LENGTH_SHORT).show()
         }
     }
@@ -170,7 +171,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             i.hasExtra(MainActivity.EXTRA_CLAIM) -> {
                 val key = i.getStringExtra(MainActivity.EXTRA_CLAIM)
                 tab = 0
-                session.start(if (key == null || key == "*") emptySet() else setOf(key))
+                claim(if (key == null || key == "*") emptySet() else setOf(key))
             }
             i.hasExtra(MainActivity.EXTRA_TAB) -> tab = i.getIntExtra(MainActivity.EXTRA_TAB, 0)
         }

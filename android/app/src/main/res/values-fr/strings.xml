@@ -93,7 +93,26 @@
     <string name="login">Se connecter</string>
     <string name="login_title">Connexion : %1$s</string>
     <string name="login_hint">Connecte-toi comme d’habitude, puis touche Terminé.</string>
-    <string name="login_hint_epic">Utilise ton e-mail et ton mot de passe : Google refuse les connexions dans les applis. Puis touche Terminé.</string>
+    <string name="login_hint_epic">E-mail et mot de passe Epic. Compte créé avec Google ou Facebook ? Donne-lui d\'abord un mot de passe Epic : Epic l\'envoie par e-mail, et la connexion Google continue de marcher.</string>
+    <string name="set_background">Aussi écran éteint</string>
+    <string name="set_background_hint">Récupère pendant la veille de fond, sans ouvrir l\'appli. Seulement les magasins connectés.</string>
+    <string name="background_title">Récupérer écran éteint ?</string>
+    <string name="background_text">À chaque passage de la veille de fond, l\'appli ouvre elle-même la page du magasin, sans l\'afficher, et récupère ce qui reste — le même moteur qu\'à l\'écran, un jeu à la fois, dix minutes au plus.
+
+Si un magasin demande une vérification humaine (captcha), l\'appli ne la résout jamais : une notification t\'appelle, et un appui finit ce jeu à l\'écran.
+
+Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitte le téléphone.</string>
+    <string name="background_ok">Activer</string>
+    <string name="busy_background">Une récupération tourne déjà en arrière-plan : elle finira seule.</string>
+    <string name="notif_working_title">Récupération %1$d/%2$d</string>
+    <string name="notif_challenge_title">%1$s demande une vérification</string>
+    <string name="notif_challenge_text">Touche pour finir %1$s à l\'écran. L\'appli ne la résout jamais seule.</string>
+    <string name="login_set_password">Créer mon mot de passe Epic</string>
+    <string name="login_back">Revenir à la connexion</string>
+    <string name="login_refused_title">%1$s refuse les connexions dans une appli</string>
+    <string name="login_refused_why">C\'est une règle de sécurité de %1$s : sa page de connexion ne s\'ouvre que dans un vrai navigateur, jamais à l\'intérieur d\'une appli. L\'appli s\'arrête ici au lieu de t\'y envoyer.</string>
+    <string name="login_refused_epic">Ton compte Epic peut avoir un mot de passe en plus de %1$s : Epic envoie un code par e-mail, tu choisis le mot de passe, et la connexion %1$s continue de marcher partout ailleurs. Connecte-toi ensuite ici avec ton e-mail et ce mot de passe.</string>
+    <string name="login_refused_other">Connecte-toi avec l’e-mail et le mot de passe de ton compte %1$s.</string>
     <string name="close">Fermer</string>
     <string name="done">Terminé</string>
     <string name="claim_progress">Récupération %1$d/%2$d : %3$s</string>

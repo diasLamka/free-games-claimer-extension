@@ -96,10 +96,13 @@ object Rules {
             .sortedWith(compareBy<Offer> { it.end ?: Long.MAX_VALUE }.thenBy { it.title })
 
     /** Ce que devient l'essai d'une offre apres un verdict. */
-    fun afterVerdict(prev: Attempt?, verdict: String, details: String?, now: Long): Attempt {
+    fun afterVerdict(prev: Attempt?, verdict: String, details: String?, now: Long, unattended: Boolean = false): Attempt {
         val count = (prev?.count ?: 0) + if (verdict in Verdicts.HUMAN) 0 else 1
         val next = when {
             verdict in Verdicts.FINAL -> null
+            // Un defi rencontre sans personne devant : le fond ne revient pas le
+            // provoquer a chaque passage. La notification, elle, passe outre.
+            verdict == Verdicts.CHALLENGE && unattended -> now + Verdicts.BACKOFF_MS[2]
             verdict in Verdicts.HUMAN -> null
             verdict == Verdicts.NEEDS_BASE -> now + Verdicts.WAITING_RECHECK_MS
             else -> Verdicts.nextAttemptAt(count, now)

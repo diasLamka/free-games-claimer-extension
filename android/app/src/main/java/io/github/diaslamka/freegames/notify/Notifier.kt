@@ -22,6 +22,7 @@ import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.Titles
 
 /**
  * Les notifications : un jeu par notification, avec sa jaquette, comme
@@ -105,7 +106,7 @@ object Notifier {
             .setPriority(if (wished) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
         cover(o.image)?.let { b.setLargeIcon(it).setStyle(NotificationCompat.BigPictureStyle().bigPicture(it).bigLargeIcon(null as Bitmap?)) }
         if (Rules.claimable(o, s.settings)) b.addAction(0, context.getString(R.string.action_claim), openApp(context, id + 1, claimKey = o.key))
-        (o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
+        Titles.webUrl(o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
         post(context, id, b.build())
     }
 
@@ -136,7 +137,7 @@ object Notifier {
             .setContentIntent(openApp(context, id))
         cover(o.image)?.let { b.setLargeIcon(it) }
         if (Rules.claimable(o, s.settings)) b.addAction(0, context.getString(R.string.action_claim), openApp(context, id + 1, claimKey = o.key))
-        (o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
+        Titles.webUrl(o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
         post(context, id, b.build())
     }
 
@@ -149,6 +150,42 @@ object Notifier {
             .setAutoCancel(true)
             .setContentIntent(openApp(context, 2001, tab = 1))
         post(context, 2000, b.build())
+    }
+
+    private const val WORKING_ID = 4000
+
+    /** Pendant la recuperation de fond : une notification discrete, qu'on voit sans qu'elle sonne. */
+    fun working(context: Context, title: String, index: Int, total: Int) {
+        val b = NotificationCompat.Builder(context, CH_CLAIMS)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_working_title, index, total))
+            .setContentText(title)
+            .setOngoing(true)
+            .setSilent(true)
+            .setProgress(total, index - 1, false)
+            .setContentIntent(openApp(context, WORKING_ID + 1))
+        post(context, WORKING_ID, b.build())
+    }
+
+    fun doneWorking(context: Context) {
+        runCatching { NotificationManagerCompat.from(context).cancel(WORKING_ID) }
+    }
+
+    /**
+     * Le magasin demande une verification humaine pendant que personne ne
+     * regarde. L'appli ne la resout jamais : elle appelle, et un appui
+     * reprend ce jeu-la, a l'ecran.
+     */
+    fun challenge(context: Context, o: Offer) {
+        val id = ("defi:" + o.key).hashCode()
+        val b = NotificationCompat.Builder(context, CH_ACCOUNT)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_challenge_title, Stores.label(o.store)))
+            .setContentText(context.getString(R.string.notif_challenge_text, o.shownTitle))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openApp(context, id, claimKey = o.key))
+        post(context, id, b.build())
     }
 
     fun login(context: Context, store: String) {

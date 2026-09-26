@@ -30,6 +30,29 @@ object Accounts {
         else -> "https://store.epicgames.com/"
     }
 
+    /** Epic envoie par e-mail de quoi poser un mot de passe, meme a un compte cree avec Google. */
+    const val EPIC_SET_PASSWORD = "https://www.epicgames.com/id/login/forgot-password"
+
+    /**
+     * Le fournisseur d'identite qui REFUSE les pages integrees a une appli, si
+     * `url` est chez lui. Google l'interdit depuis 2021 (OAuth dans une
+     * WebView), Facebook aussi : la page de connexion s'arrete avant de les
+     * charger, et l'appli explique quoi faire. Rien n'est envoye a ces
+     * fournisseurs -- et surtout pas sous un deguisement de navigateur.
+     */
+    fun refusedProvider(url: String?): String? {
+        val u = runCatching { java.net.URI(url ?: return null) }.getOrNull() ?: return null
+        val host = u.host?.lowercase() ?: return null
+        val path = u.path.orEmpty().lowercase()
+        return when {
+            host == "accounts.google.com" || host.endsWith(".accounts.google.com") -> "Google"
+            (host == "google.com" || host.endsWith(".google.com")) && (path.startsWith("/o/oauth2") || path.startsWith("/signin")) -> "Google"
+            (host == "facebook.com" || host.endsWith(".facebook.com")) &&
+                (path.contains("/dialog/oauth") || path.startsWith("/login")) -> "Facebook"
+            else -> null
+        }
+    }
+
     /** Les domaines dont les cookies font la session : pour la bonne page d'accueil. */
     fun homeUrl(store: String, country: String?): String = when (store) {
         Stores.EPIC -> "https://store.epicgames.com/"

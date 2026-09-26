@@ -94,7 +94,26 @@
     <string name="login">Sign in</string>
     <string name="login_title">Sign in: %1$s</string>
     <string name="login_hint">Sign in as usual, then tap Done.</string>
-    <string name="login_hint_epic">Use your email and password: Google refuses sign-in inside apps. Then tap Done.</string>
+    <string name="login_hint_epic">Epic email and password. Account made with Google or Facebook? Give it an Epic password first: Epic emails it, and Google sign-in keeps working.</string>
+    <string name="set_background">Also with the screen off</string>
+    <string name="set_background_hint">Claims during background checks, without opening the app. Signed-in stores only.</string>
+    <string name="background_title">Claim with the screen off?</string>
+    <string name="background_text">During each background check, the app opens the store page itself, invisibly, and claims what is left — the same engine as on screen, one game at a time, ten minutes at most.
+
+If a store asks for a human check (captcha), the app never solves it: a notification calls you, and one tap finishes that game on screen.
+
+A discreet notification shows while it works. Nothing else leaves the phone.</string>
+    <string name="background_ok">Turn on</string>
+    <string name="busy_background">A claim is already running in the background: it will finish on its own.</string>
+    <string name="notif_working_title">Claiming %1$d/%2$d</string>
+    <string name="notif_challenge_title">%1$s asks for a human check</string>
+    <string name="notif_challenge_text">Tap to finish %1$s on screen. The app never solves it by itself.</string>
+    <string name="login_set_password">Create my Epic password</string>
+    <string name="login_back">Back to sign-in</string>
+    <string name="login_refused_title">%1$s refuses sign-in inside apps</string>
+    <string name="login_refused_why">It is a security rule of %1$s: its sign-in page only opens in a real browser, never inside an app. The app stops here instead of sending you there.</string>
+    <string name="login_refused_epic">Your Epic account can have a password as well as %1$s: Epic sends a code by email, you choose the password, and %1$s sign-in keeps working everywhere else. Then sign in here with your email and that password.</string>
+    <string name="login_refused_other">Sign in with the email and password of your %1$s account.</string>
     <string name="close">Close</string>
     <string name="done">Done</string>
     <string name="claim_progress">Claiming %1$d/%2$d: %3$s</string>

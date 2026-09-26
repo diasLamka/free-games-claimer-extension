@@ -20,6 +20,12 @@ object Graph {
 
     @Volatile private var ua: String? = null
 
+    /**
+     * Une seule recuperation a la fois, ecran ou fond : deux pages pilotees
+     * en meme temps sur un meme compte, c'est le trafic qu'un magasin remarque.
+     */
+    val claimLock = kotlinx.coroutines.sync.Mutex()
+
     fun init(context: Context) {
         if (ready) return
         synchronized(this) {
