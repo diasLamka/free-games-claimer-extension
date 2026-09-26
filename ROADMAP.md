@@ -89,7 +89,7 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   Vingt-cinq versions n'avaient atteint personne : le seul mode d'installation
   documente excluait quiconque n'ouvre pas le mode developpeur. La soumission
   aux magasins reste manuelle, et `store/README.md` dit ce qui y attend une
-  main humaine.
+  main humaine. Elle n'aura pas lieu : voir « Hors perimetre » (2026-09-26).
 - **Le chien de garde** (2.28.0). Une panne cesse d'etre un compteur : elle
   a une ouverture, un dernier constat et une cloture implicite. Cinq genres
   detectes, dont deux qui n'avaient aucune voix -- la veille arretee et le
@@ -225,3 +225,5 @@ que ce soit ecrit une fois pour toutes.
 | Contourner un captcha ou une limite de debit | Non-objectif. Un defi de securite rend la main a l'humain et remonte l'onglet dans sa fenetre (2.13.4). |
 | Prime Gaming (`gaming.amazon.com`) | **Mesure le 2026-09-17** : le domaine repond, mais sert l'application Luna -- titre « Amazon Luna Cloud Gaming », aucune mention de Prime Gaming, aucun bloc de donnees embarquees. Le commentaire du moteur disait vrai, et les reclamations Prime vivent deja sous `luna.amazon.*/claims`, que l'extension couvre. |
 | Predire QUEL jeu sera offert | La seule question posee par l'ordonnanceur est « quand regarder » (design §2). |
+| Publier sur le Chrome Web Store (ou le site des modules Firefox) | **Decision de l'auteur, 2026-09-26.** Extension personnelle : aucune retribution, et une fiche, des captures et une politique de confidentialite a tenir a jour pour personne. L'installation reste « charger l'extension non empaquetee » depuis le dossier, tenue a jour par le git pull planifie de `tools/` et le rechargement automatique (2.53.0). `store/` et `npm run package` restent tels quels, sans etre des cibles a entretenir. |
+| Finir et verifier la version Firefox | **Decision de l'auteur, 2026-09-26** : il n'utilise que Chrome. `manifest.firefox.json` et l'archive Firefox continuent d'etre produits par le build, et les tests qui les lisent restent ; mais aucune verification dans un vrai Firefox n'est prevue, et un ecart propre a Firefox n'est pas une panne a corriger en priorite. |

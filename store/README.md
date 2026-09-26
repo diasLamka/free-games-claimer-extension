@@ -1,5 +1,9 @@
 # Publier l'extension
 
+> **Pas de publication prevue** (decision du 2026-09-26, voir la table « Hors
+> perimetre » de `ROADMAP.md`). Ce dossier reste pour memoire ; l'extension
+> s'installe depuis le dossier du depot.
+
 Ce dossier porte ce qu'un magasin d'extensions demande et que le code ne
 contient pas : une fiche, une justification par permission, une politique de
 confidentialite. Il ne part jamais dans l'archive -- `build/package.mjs`
