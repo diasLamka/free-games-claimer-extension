@@ -22,7 +22,6 @@ import {
   filterHistory, groupByMonth, historyRows, summariseHistory,
 } from '../watch/history.js';
 import { KEY_COVERS, PER_RUN as COVERS_PER_RUN, coverFor, needsCover } from '../watch/covers.js';
-import { statusIcon } from '../lib/status-icons.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
@@ -61,11 +60,11 @@ function monthText(cle) {
     .toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
-/** Le libelle et l'icone d'une issue. Les trois, jamais deux. */
+/** Le libelle, le tampon et son mot pour une issue. Les trois, jamais deux. */
 function outcomeLabel(outcome) {
-  if (outcome === OUTCOMES.TAKEN) return { text: t('historyTaken'), icon: 'ok' };
-  if (outcome === OUTCOMES.MISSED) return { text: t('historyMissed'), icon: 'miss' };
-  return { text: t('historyUnknown'), icon: 'unknown' };
+  if (outcome === OUTCOMES.TAKEN) return { text: t('historyTaken'), stamp: 'ok', word: t('stampClaimed') };
+  if (outcome === OUTCOMES.MISSED) return { text: t('historyMissed'), stamp: 'miss', word: t('stampMissed') };
+  return { text: t('historyUnknown'), stamp: 'unknown', word: t('stampUnknown') };
 }
 
 const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
@@ -233,15 +232,16 @@ function render() {
       info.append(meta);
       li.append(info);
 
-      /* L'issue en icone ; ses mots, et le verdict brut, au survol : « needs_login »
-         n'a rien a faire dans la liste, et tout a faire a portee de souris le
-         jour ou on cherche pourquoi une offre est passee a cote. */
+      /* L'issue en tampon (2.97.0, comme le popup) ; ses mots, et le verdict
+         brut, au survol : « needs_login » n'a rien a faire dans la liste, et
+         tout a faire a portee de souris le jour ou on cherche pourquoi une
+         offre est passee a cote. */
       const issue = outcomeLabel(r.outcome);
       const mots = cap(issue.text) + (r.verdict ? ` (${r.verdict})` : '');
-      const st = el('span', 'st');
-      st.title = mots;
-      st.append(statusIcon(issue.icon, mots));
-      li.append(st);
+      const tampon = el('span', `stamp ${issue.stamp}`, issue.word);
+      tampon.title = mots;
+      tampon.setAttribute('aria-label', mots);
+      li.append(tampon);
       ul.append(li);
     }
     bloc.append(ul);

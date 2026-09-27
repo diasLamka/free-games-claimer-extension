@@ -16,13 +16,20 @@ test('des puces plutot que des listes deroulantes, et une liste plutot qu\'un ta
   assert.match(CODE, /b\.setAttribute\('aria-pressed', String\(valeur === active\)\);/);
 });
 
-test('chaque jeu : jaquette (figee, sinon Steam, sinon l\'initiale), magasin, valeur, date, issue en icone', () => {
+test('chaque jeu : jaquette (figee, sinon Steam, sinon l\'initiale), magasin, valeur, date, issue en tampon', () => {
   assert.match(CODE, /const image = r\.image \|\| coverFor\(covers, nom\);/);
   assert.match(CODE, /li\.append\(coverTile\(image, nom\)\);/);
   assert.match(CODE, /meta\.append\(storeTag\(r\.store\)\);/);
-  assert.match(CODE, /st\.append\(statusIcon\(issue\.icon, mots\)\);/);
-  assert.match(CODE, /import \{ statusIcon \} from '\.\.\/lib\/status-icons\.js';/);
-  for (const k of ['ok', 'miss', 'unknown']) assert.match(HTML, new RegExp(`\\.st-icon\\.${k} \\{ color: `), k);
+  // L'issue en tampon, comme dans le popup (2.97.0) : son mot, et ses mots exacts au survol.
+  assert.match(CODE, /const tampon = el\('span', `stamp \$\{issue\.stamp\}`, issue\.word\);/);
+  assert.match(CODE, /tampon\.title = mots;/);
+  assert.match(CODE, /stamp: 'ok', word: t\('stampClaimed'\)/);
+  assert.match(CODE, /stamp: 'miss', word: t\('stampMissed'\)/);
+  assert.match(CODE, /stamp: 'unknown', word: t\('stampUnknown'\)/);
+  const css = lire('pages/brut.css');
+  assert.match(css, /\.stamp\.ko, \.stamp\.miss \{/);
+  assert.match(css, /\.stamp\.wait, \.stamp\.unknown \{/);
+  assert.match(HTML, /<link rel="stylesheet" href="brut\.css">/, 'les tampons viennent de la charte');
   assert.doesNotMatch(CODE, /innerHTML/);
 });
 

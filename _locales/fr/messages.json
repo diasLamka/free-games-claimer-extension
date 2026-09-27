@@ -2587,5 +2587,11 @@
   },
   "stampWaiting": {
     "message": "En attente"
+  },
+  "stampMissed": {
+    "message": "Raté"
+  },
+  "stampUnknown": {
+    "message": "Incertain"
   }
 }

@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.97.0 -- 2026-09-27
+
+**La page Historique tamponnee aussi**
+
+- Chaque issue y porte son tampon, comme dans le popup : **RECUPERE**
+  (double trait), **RATE** (inverse), **INCERTAIN** (pointilles). Au survol,
+  l'issue et le verdict brut, comme avant.
+- Un tampon prend l'encre de son support : celle de la page dans le popup,
+  le noir sur les cartes blanches de l'Historique -- lisible en theme sombre.
+- Plus aucune page n'utilisait les icones dessinees au DOM :
+  `lib/status-icons.js` s'en va.
+
 ## 2.96.0 -- 2026-09-27
 
 **Des tampons partout, et un vrai « Ce soir »**
