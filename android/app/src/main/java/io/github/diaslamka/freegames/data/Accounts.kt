@@ -62,15 +62,25 @@ object Accounts {
         else -> "https://store.epicgames.com/"
     }
 
-    private fun hasCookie(url: String, vararg names: String): Boolean {
-        val jar = Graph.cookiesFor(url).orEmpty()
+    private fun hasCookie(cookies: (String) -> String?, url: String, vararg names: String): Boolean {
+        val jar = cookies(url).orEmpty()
         return names.any { n -> jar.split(';').any { it.trim().startsWith("$n=") && it.trim().length > n.length + 1 } }
     }
 
-    /** Ce que la session dit d'elle-meme, et ce que Steam dit posseder. */
-    suspend fun check(store: String, country: String?, now: Long): Pair<AccountState, Set<String>?> = when (store) {
+    /**
+     * Ce que la session dit d'elle-meme, et ce que Steam dit posseder. Les
+     * cookies sont ceux du compte principal, ou ceux du profil d'un membre de
+     * la famille (1.9.0).
+     */
+    suspend fun check(
+        store: String,
+        country: String?,
+        now: Long,
+        http: io.github.diaslamka.freegames.sources.Fetcher? = null,
+        cookies: (String) -> String? = { Graph.cookiesFor(it) },
+    ): Pair<AccountState, Set<String>?> = when (store) {
         Stores.STEAM -> try {
-            val r = Graph.http.get("${SteamSource.OWNED_URL}?t=$now", withCookies = true)
+            val r = (http ?: Graph.http).get("${SteamSource.OWNED_URL}?t=$now", withCookies = true)
             val owned = if (r.ok) SteamSource.parseOwned(r.body) else null
             when {
                 owned == null -> AccountState(UNKNOWN, now) to null
@@ -81,7 +91,7 @@ object Accounts {
             AccountState(UNKNOWN, now) to null
         }
         Stores.GOG -> try {
-            val r = Graph.http.get("https://www.gog.com/userData.json", withCookies = true)
+            val r = (http ?: Graph.http).get("https://www.gog.com/userData.json", withCookies = true)
             val j = parseJson(r.body)
             when (j["isLoggedIn"].bool) {
                 true -> AccountState(OK, now, j["username"].str) to null
@@ -92,15 +102,15 @@ object Accounts {
             AccountState(UNKNOWN, now) to null
         }
         Stores.EPIC -> AccountState(
-            if (hasCookie("https://www.epicgames.com/", "EPIC_EG1", "EPIC_SSO", "EPIC_BEARER_TOKEN") ||
-                hasCookie("https://store.epicgames.com/", "EPIC_EG1", "EPIC_SSO", "EPIC_BEARER_TOKEN")) PRESENT else LOGGED_OUT,
+            if (hasCookie(cookies, "https://www.epicgames.com/", "EPIC_EG1", "EPIC_SSO", "EPIC_BEARER_TOKEN") ||
+                hasCookie(cookies, "https://store.epicgames.com/", "EPIC_EG1", "EPIC_SSO", "EPIC_BEARER_TOKEN")) PRESENT else LOGGED_OUT,
             now,
         ) to null
         Stores.AMAZON -> {
             val host = Countries.lunaHost(country).removePrefix("luna.")
             AccountState(
-                if (hasCookie("https://www.$host/", "at-main", "sess-at-main", "at-acbfr", "at-acbde", "at-acbuk") ||
-                    hasCookie("https://luna.$host/", "at-main", "sess-at-main")) PRESENT else LOGGED_OUT,
+                if (hasCookie(cookies, "https://www.$host/", "at-main", "sess-at-main", "at-acbfr", "at-acbde", "at-acbuk") ||
+                    hasCookie(cookies, "https://luna.$host/", "at-main", "sess-at-main")) PRESENT else LOGGED_OUT,
                 now,
             ) to null
         }

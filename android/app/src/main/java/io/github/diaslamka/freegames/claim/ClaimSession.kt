@@ -16,6 +16,7 @@ import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.RelayLink
@@ -80,7 +81,16 @@ class ClaimSession(
      * Un defi (captcha) n'y est JAMAIS resolu : il part en notification.
      */
     private val headless: Boolean = false,
+    /**
+     * Toute la famille (1.9.0) : l'identifiant du membre pour qui l'on
+     * recupere, ou null pour le compte principal. Sa page vit dans son profil
+     * WebView ; ses verdicts vont a ses jeux ; le relais avec le PC -- qui est
+     * celui du compte principal -- n'en sait rien.
+     */
+    val member: String? = null,
 ) {
+    /** Le nom du membre, pour le panneau et les notifications. */
+    val memberName: String? get() = Family.member(Graph.store.value, member)?.name
 
     data class Outcome(val key: String, val title: String, val store: String, val verdict: String, val details: String?)
 
@@ -138,6 +148,8 @@ class ClaimSession(
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun build(): WebView = WebView(context).apply {
+        // Avant tout autre usage de la page : ses cookies seront ceux du membre.
+        if (member != null) Family.attach(this, member)
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.userAgentString = Graph.userAgent()
@@ -153,8 +165,9 @@ class ClaimSession(
         if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
             androidx.webkit.WebSettingsCompat.setSafeBrowsingEnabled(settings, true)
         }
-        CookieManager.getInstance().setAcceptCookie(true)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+        val jar = if (member != null && Family.supported()) WebViewCompat.getProfile(this).cookieManager else CookieManager.getInstance()
+        jar.setAcceptCookie(true)
+        jar.setAcceptThirdPartyCookies(this, true)
 
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -213,10 +226,12 @@ class ClaimSession(
         when (msg["type"].str) {
             "fgc-suis-je-pilote" -> reply(buildJsonObject { put("piloted", isMainFrame && piloting) })
             "fgc-storage-get" -> reply(storageGet(msg["keys"]))
-            "fgc-storage-set" -> msg["items"].obj?.let { items -> scope.launch { Graph.store.update { it.copy(engine = it.engine + items) } } }
+            "fgc-storage-set" -> msg["items"].obj?.let { items ->
+                scope.launch { Graph.store.update { if (member != null) Family.engineWrite(it, member, items) else it.copy(engine = it.engine + items) } }
+            }
             "fgc-storage-remove" -> {
-                val keys = msg["keys"].arr?.mapNotNull { it.str }.orEmpty()
-                scope.launch { Graph.store.update { it.copy(engine = it.engine - keys.toSet()) } }
+                val keys = msg["keys"].arr?.mapNotNull { it.str }.orEmpty().toSet()
+                scope.launch { Graph.store.update { if (member != null) Family.engineRemove(it, member, keys) else it.copy(engine = it.engine - keys) } }
             }
             "fgc-pret" -> if (isMainFrame && piloting) {
                 mainProxy = proxy
@@ -232,7 +247,8 @@ class ClaimSession(
     private fun storageGet(keys: JsonElement?): JsonObject {
         val s = Graph.store.value
         val country = Countries.of(s.settings.country)
-        val all = s.engine + mapOf(
+        val base = Family.member(s, member)?.let { Family.engineFor(s, it) } ?: s.engine
+        val all = base + mapOf(
             "FGC_epic_country" to JsonPrimitive(country.code),
             "FGC_epic_lang" to JsonPrimitive(country.lang),
         )
@@ -311,6 +327,12 @@ class ClaimSession(
         return true
     }
 
+    /** Toute la famille (1.9.0) : la meme boucle, a l'ecran, pour un membre. Le verrou est tenu par l'appelant. */
+    suspend fun runShown(todo: List<Offer>): List<String> {
+        _ui.value = Ui(running = true, total = todo.size, visible = true)
+        return runAll(todo)
+    }
+
     /**
      * La boucle, pour l'ecran comme pour le fond. `deadline` : l'heure apres
      * laquelle on n'entame plus de jeu (le fond a dix minutes en tout).
@@ -320,28 +342,36 @@ class ClaimSession(
         val blocked = mutableSetOf<String>()
         var steamDone = 0
         val won = mutableListOf<String>()
+        // Un membre sans profil separe : jamais dans la session du compte principal.
+        if (member != null && !Family.supported()) return won
+        val family = member != null
         // Le relais d'abord : ce que le PC vient de prendre n'est pas retente.
-        runCatching { RelayLink.sync(context, System.currentTimeMillis()) }
+        if (!family) runCatching { RelayLink.sync(context, System.currentTimeMillis()) }
         try {
             for ((i, offer) in todo.withIndex()) {
                 if (System.currentTimeMillis() > deadline) break
                 val st = Graph.store.value
-                if (Rules.claimedEntry(offer, st.library) != null) continue
-                if (Relay.held(st, offer, System.currentTimeMillis())) continue
+                val m = Family.member(st, member)
+                if (family && m == null) break
+                if (Rules.claimedEntry(offer, m?.library ?: st.library) != null) continue
+                if (!family && Relay.held(st, offer, System.currentTimeMillis())) continue
                 if (offer.store in blocked) {
                     record(offer, Verdicts.LOGIN, "session a reprendre", count = false)
                     continue
                 }
                 _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
                 if (headless) Notifier.working(context, offer.shownTitle, i + 1, todo.size)
-                runCatching { RelayLink.lock(context, offer, System.currentTimeMillis()) }
+                if (!family) runCatching { RelayLink.lock(context, offer, System.currentTimeMillis()) }
                 var result = runOne(offer, steamDone)
                 if (result.first == Verdicts.CHALLENGE) {
                     if (headless) {
                         // Jamais resolu par l'appli : l'humain est appele, et le jeu attend.
                         // Le PC l'apprend aussi (1.4.0) : il tentera ce jeu a son prochain cycle.
-                        Notifier.challenge(context, offer)
-                        runCatching { RelayLink.help(context, offer, System.currentTimeMillis()) }
+                        if (family) Notifier.familyChallenge(context, m!!.name, offer)
+                        else {
+                            Notifier.challenge(context, offer)
+                            runCatching { RelayLink.help(context, offer, System.currentTimeMillis()) }
+                        }
                     } else {
                         _ui.value = _ui.value.copy(needsUser = true, visible = true)
                         userDone = CompletableDeferred()
@@ -355,11 +385,11 @@ class ClaimSession(
                 record(offer, result.first, result.second)
                 if (result.first == Verdicts.LOGIN) {
                     blocked += offer.store
-                    Notifier.login(context, offer.store)
+                    Notifier.login(context, offer.store, m?.name)
                 }
                 if (result.first in Verdicts.ACQUIRED) {
                     won += offer.shownTitle
-                    if (result.first != Verdicts.ALREADY_REDEEMED) {
+                    if (!family && result.first != Verdicts.ALREADY_REDEEMED) {
                         runCatching { RelayLink.claimed(context, offer, result.first, System.currentTimeMillis()) }
                     }
                 }
@@ -370,13 +400,17 @@ class ClaimSession(
             _ui.value = _ui.value.copy(running = false, step = null, title = null)
             if (headless) Notifier.doneWorking(context)
         }
-        Notifier.claimed(context, won)
+        Notifier.claimed(context, won, memberName)
         return won
     }
 
     private suspend fun record(o: Offer, verdictName: String, details: String?, count: Boolean = true) {
         val now = System.currentTimeMillis()
         _ui.value = _ui.value.copy(outcomes = _ui.value.outcomes + Outcome(o.key, o.shownTitle, o.store, verdictName, details))
+        if (member != null) {
+            Graph.store.update { Family.record(it, member, o, verdictName, details, now, unattended = headless, count = count) }
+            return
+        }
         Graph.store.update { s ->
             val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless) else s.attempts[o.key]
             var lib = s.library

@@ -254,6 +254,28 @@ data class AppState(
     val tonightAt: Long? = null,
     /** Le choix du soir, et ses reglages. */
     val tonight: TonightPick = TonightPick(),
+    /**
+     * Toute la famille (1.9.0) : d'autres comptes, recuperes par ce meme
+     * telephone. Le compte principal reste dans les champs ci-dessus.
+     */
+    val family: List<Member> = emptyList(),
+)
+
+/**
+ * Un membre de la famille (1.9.0). Ses sessions vivent dans un profil
+ * WebView a lui (« famille-<id> ») : ses cookies ne croisent jamais ceux du
+ * compte principal. Ici, seulement ce qu'il faut pour recuperer a sa place :
+ * ses comptes, ses jeux, ses essais, la memoire du moteur.
+ */
+@Serializable
+data class Member(
+    val id: String,
+    val name: String,
+    val createdAt: Long = 0,
+    val accounts: Map<String, AccountState> = emptyMap(),
+    val library: Map<String, LibraryEntry> = emptyMap(),
+    val attempts: Map<String, Attempt> = emptyMap(),
+    val engine: Map<String, JsonElement> = emptyMap(),
 )
 
 /** Un jeu de Ma collection (1.8.0). */

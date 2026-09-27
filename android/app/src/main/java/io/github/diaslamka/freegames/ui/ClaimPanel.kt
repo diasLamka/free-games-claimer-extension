@@ -38,10 +38,16 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
  * s'agrandit quand le magasin demande une verification a un humain.
  */
 @Composable
-fun ClaimPanel(session: ClaimSession) {
+fun ClaimPanel(session: ClaimSession, onStopped: () -> Unit = {}, onDismissed: () -> Unit = {}) {
     val ui by session.ui.collectAsState()
     if (!ui.visible) return
-    ClaimPanelContent(ui, onToggle = null, onStop = { session.stop() }, onDismiss = { session.dismiss() }, onUser = { session.userFinished(it) }) {
+    ClaimPanelContent(
+        ui, onToggle = null,
+        onStop = { session.stop(); onStopped() },
+        onDismiss = { session.dismiss(); onDismissed() },
+        onUser = { session.userFinished(it) },
+        who = session.memberName,
+    ) {
         AndroidView(
             factory = { session.webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
             modifier = it,
@@ -57,6 +63,8 @@ fun ClaimPanelContent(
     onStop: () -> Unit,
     onDismiss: () -> Unit,
     onUser: (Boolean) -> Unit,
+    /** Toute la famille (1.9.0) : pour qui l'on recupere. */
+    who: String? = null,
     page: @Composable (Modifier) -> Unit,
 ) {
     val b = LocalBrut.current
@@ -72,6 +80,10 @@ fun ClaimPanelContent(
                     if (ui.running) stringResource(R.string.claim_count, ui.index, ui.total).uppercase()
                     else stringResource(R.string.claim_done).uppercase(),
                     style = MaterialTheme.typography.labelLarge, color = if (ui.needsUser) b.accent else b.onAccent,
+                )
+                if (who != null) Text(
+                    stringResource(R.string.family_for, who).uppercase(), style = MaterialTheme.typography.labelMedium,
+                    color = if (ui.needsUser) Color.White else Color.Black,
                 )
                 if (ui.running && ui.title != null) Text(
                     ui.title.uppercase(), style = MaterialTheme.typography.titleMedium,

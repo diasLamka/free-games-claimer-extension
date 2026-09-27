@@ -2,6 +2,7 @@ package io.github.diaslamka.freegames.claim
 
 import android.content.Context
 import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.Rules
@@ -40,18 +41,39 @@ object BackgroundClaim {
         }
     }
 
-    /** Rend le nombre de jeux obtenus. Ne fait rien si l'ecran recupere deja. */
+    /** Toute la famille (1.9.0) : ce que le fond tenterait pour chaque membre. */
+    fun familyTodo(s: AppState, now: Long): List<Pair<String, List<Offer>>> {
+        if (!s.settings.claimInBackground || !Family.supported()) return emptyList()
+        return s.family.map { it.id to Family.todo(s, it, now) }.filter { it.second.isNotEmpty() }
+    }
+
+    /**
+     * Rend le nombre de jeux obtenus. Ne fait rien si l'ecran recupere deja.
+     * Le compte principal d'abord, puis chaque membre de la famille, dans sa
+     * propre page et son propre profil -- dans le meme budget de temps.
+     */
     suspend fun run(context: Context): Int {
         Graph.init(context)
         val start = System.currentTimeMillis()
         val list = todo(Graph.store.value, start)
-        if (list.isEmpty()) return 0
+        if (list.isEmpty() && familyTodo(Graph.store.value, start).isEmpty()) return 0
         if (!Graph.claimLock.tryLock()) return 0
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         var session: ClaimSession? = null
+        var won = 0
+        val deadline = start + ClaimSession.HEADLESS_START_WINDOW_MS
         try {
-            session = withContext(Dispatchers.Main) { ClaimSession(context.applicationContext, scope, headless = true) }
-            return session.runAll(list, deadline = start + ClaimSession.HEADLESS_START_WINDOW_MS).size
+            if (list.isNotEmpty()) {
+                session = withContext(Dispatchers.Main) { ClaimSession(context.applicationContext, scope, headless = true) }
+                won += session.runAll(list, deadline = deadline).size
+            }
+            for ((id, todo) in familyTodo(Graph.store.value, System.currentTimeMillis())) {
+                if (System.currentTimeMillis() > deadline) break
+                withContext(NonCancellable + Dispatchers.Main) { runCatching { session?.release() } }
+                session = withContext(Dispatchers.Main) { ClaimSession(context.applicationContext, scope, headless = true, member = id) }
+                won += session.runAll(todo, deadline = deadline).size
+            }
+            return won
         } finally {
             withContext(NonCancellable + Dispatchers.Main) { runCatching { session?.release() } }
             scope.cancel()
@@ -60,5 +82,5 @@ object BackgroundClaim {
     }
 
     /** Il en reste apres ce passage ? */
-    fun more(now: Long): Boolean = todo(Graph.store.value, now).isNotEmpty()
+    fun more(now: Long): Boolean = todo(Graph.store.value, now).isNotEmpty() || familyTodo(Graph.store.value, now).isNotEmpty()
 }

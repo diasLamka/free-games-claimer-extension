@@ -160,15 +160,31 @@ object Notifier {
         post(context, id, b.build())
     }
 
-    fun claimed(context: Context, titles: List<String>) {
+    /** `who` : le membre de la famille pour qui l'on a recupere (1.9.0), ou null. */
+    fun claimed(context: Context, titles: List<String>, who: String? = null) {
         if (titles.isEmpty()) return
+        val id = if (who == null) 2000 else 2100 + (who.hashCode() and 0x3f) * 2
         val b = NotificationCompat.Builder(context, CH_CLAIMS)
             .setSmallIcon(R.drawable.ic_stat_ticket)
             .setContentTitle(context.resources.getQuantityString(R.plurals.notif_claimed_title, titles.size, titles.size))
             .setContentText(titles.joinToString(", "))
             .setAutoCancel(true)
-            .setContentIntent(openApp(context, 2001, tab = 1))
-        post(context, 2000, b.build())
+            .setContentIntent(openApp(context, id + 1, tab = if (who == null) 1 else 3))
+        if (who != null) b.setSubText(context.getString(R.string.family_for, who))
+        post(context, id, b.build())
+    }
+
+    /** Un membre de la famille (1.9.0) : une verification attend, a faire depuis l'appli. */
+    fun familyChallenge(context: Context, who: String, o: Offer) {
+        val id = ("famille-defi:" + who + o.key).hashCode()
+        val b = NotificationCompat.Builder(context, CH_ACCOUNT)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_family_challenge_title, who))
+            .setContentText(context.getString(R.string.notif_family_challenge_text, o.shownTitle))
+            .setSubText(context.getString(R.string.family_for, who))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, id + 1, tab = 3))
+        post(context, id, b.build())
     }
 
     private const val WORKING_ID = 4000
@@ -263,13 +279,15 @@ object Notifier {
         runCatching { nm.activeNotifications.filter { it.tag == TAG_LAST_CHANCE }.forEach { nm.cancel(it.tag, it.id) } }
     }
 
-    fun login(context: Context, store: String) {
+    fun login(context: Context, store: String, who: String? = null) {
+        val base = 3000 + store.hashCode() % 100 + (who?.let { 200 + (it.hashCode() and 0x3f) * 4 } ?: 0)
         val b = NotificationCompat.Builder(context, CH_ACCOUNT)
             .setSmallIcon(R.drawable.ic_stat_ticket)
             .setContentTitle(context.getString(R.string.notif_login_title, Stores.label(store)))
             .setContentText(context.getString(R.string.notif_login_text))
             .setAutoCancel(true)
-            .setContentIntent(openApp(context, 3001 + store.hashCode() % 100, tab = 3))
-        post(context, 3000 + store.hashCode() % 100, b.build())
+            .setContentIntent(openApp(context, base + 1, tab = 3))
+        if (who != null) b.setSubText(context.getString(R.string.family_for, who))
+        post(context, base, b.build())
     }
 }

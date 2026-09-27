@@ -37,6 +37,12 @@ import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.ui.BrutTabs
 import io.github.diaslamka.freegames.ui.ClaimPanelContent
 import io.github.diaslamka.freegames.ui.Cover
+import io.github.diaslamka.freegames.ui.FamilyActions
+import io.github.diaslamka.freegames.ui.FamilyGroup
+import io.github.diaslamka.freegames.ui.SectionHeader
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.ui.theme.Accent
 import io.github.diaslamka.freegames.ui.theme.FreeGamesTheme
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
@@ -221,4 +227,23 @@ class ScreenshotTest {
         }
     }
 
+
+    /** Toute la famille (1.9.0) : la section des Reglages, et le panneau au nom d'un membre. */
+    @Test
+    fun famille() = shoot("C-reglages-famille", Accent.JAUNE, dark = true, tabs = 3) {
+        var s = io.github.diaslamka.freegames.data.Family.add(live, "Léa", now)
+        s = io.github.diaslamka.freegames.data.Family.add(s, "Tom", now + 1)
+        val lea = s.family[0].id
+        s = io.github.diaslamka.freegames.data.Family.setAccount(s, lea, Stores.EPIC, io.github.diaslamka.freegames.model.AccountState(io.github.diaslamka.freegames.data.Accounts.PRESENT, now))
+        s = io.github.diaslamka.freegames.data.Family.setAccount(s, lea, Stores.GOG, io.github.diaslamka.freegames.model.AccountState(io.github.diaslamka.freegames.data.Accounts.OK, now, "lea"))
+        s = s.copy(family = s.family.map { if (it.id == lea) it.copy(library = mapOf("epic:x" to io.github.diaslamka.freegames.model.LibraryEntry(Stores.EPIC, "x", "Hades", ts = now))) else it })
+        Column(Modifier.padding(16.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+            SectionHeader("Toute la famille", s.family.size)
+            FamilyGroup(s, supported = true, actions = FamilyActions())
+            ClaimPanelContent(
+                ClaimSession.Ui(running = true, title = "Tunic", store = Stores.EPIC, index = 1, total = 2, step = ClaimSession.STEP_CLAIM, visible = true),
+                onToggle = null, onStop = {}, onDismiss = {}, onUser = {}, who = "Léa",
+            ) { m -> Box(m.background(androidx.compose.ui.graphics.Color(0xFFEDEDED))) }
+        }
+    }
 }

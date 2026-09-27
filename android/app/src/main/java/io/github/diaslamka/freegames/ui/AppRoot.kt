@@ -60,6 +60,7 @@ import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.BackupIO
+import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Tonight
 import io.github.diaslamka.freegames.widget.TonightWidget
@@ -88,6 +89,10 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     val intent by intents.collectAsState()
     var tab by rememberSaveable { mutableStateOf(0) }
     var login by rememberSaveable { mutableStateOf<String?>(null) }
+    // Toute la famille (1.9.0) : la connexion au nom d'un membre, et sa recuperation a l'ecran.
+    var loginMember by rememberSaveable { mutableStateOf<String?>(null) }
+    var familySession by remember { mutableStateOf<ClaimSession?>(null) }
+    var familyJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var shared by remember { mutableStateOf<String?>(null) }
     // Un lien fgclaimer://finir (1.4.0) : le jeu que le PC n'a pas pu finir.
     var helpLink by remember { mutableStateOf<io.github.diaslamka.freegames.data.Relay.AppLink?>(null) }
@@ -238,6 +243,18 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     }
 
     val current = login
+    val pour = loginMember
+    if (current != null && pour != null) {
+        LoginScreen(current, state.settings.country, onClose = {
+            login = null
+            loginMember = null
+            scope.launch {
+                val acc = Family.check(pour, current, state.settings.country, System.currentTimeMillis())
+                Graph.store.update { s -> Family.setAccount(s, pour, current, acc) }
+            }
+        }, member = pour, memberName = Family.member(state, pour)?.name)
+        return
+    }
     if (current != null) {
         LoginScreen(current, state.settings.country, onClose = {
             login = null
@@ -249,6 +266,40 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             }
         })
         return
+    }
+
+    /*
+     * Toute la famille (1.9.0) : un membre (ou tous, `id` null) apres l'autre,
+     * chacun dans sa page et son profil, a l'ecran : une verification
+     * demandee se fait ici, au nom du membre.
+     */
+    fun claimFamily(id: String?) {
+        if (familyJob?.isActive == true || session.ui.value.running) return
+        familyJob = scope.launch {
+            if (!Graph.claimLock.tryLock()) {
+                Toast.makeText(context, context.getString(R.string.busy_background), Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            try {
+                val members = Graph.store.value.family.filter { id == null || it.id == id }
+                var ran = false
+                for (m in members) {
+                    val todo = Family.todo(Graph.store.value, m, System.currentTimeMillis(), force = emptySet())
+                    if (todo.isEmpty()) {
+                        if (id != null) Toast.makeText(context, context.getString(R.string.family_nothing, m.name), Toast.LENGTH_LONG).show()
+                        continue
+                    }
+                    familySession?.release()
+                    val fs = ClaimSession(context, scope, member = m.id)
+                    familySession = fs
+                    ran = true
+                    fs.runShown(todo)
+                }
+                if (!ran && id == null) Toast.makeText(context, context.getString(R.string.nothing_to_claim), Toast.LENGTH_SHORT).show()
+            } finally {
+                Graph.claimLock.unlock()
+            }
+        }
     }
 
     /* Ce soir je joue a... (1.8.0) : chaque geste change l'etat, puis le widget. */
@@ -315,7 +366,13 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         CookieManager.getInstance().flush()
                         // Le stockage des pages aussi (localStorage, IndexedDB) : une session s'y cache parfois.
                         android.webkit.WebStorage.getInstance().deleteAllData()
-                        scope.launch { Graph.store.update { it.copy(accounts = emptyMap(), steamOwned = emptyList()) } }
+                        // Et celles de la famille (1.9.0).
+                        Family.clearAll(state)
+                        scope.launch {
+                            Graph.store.update { st ->
+                                st.copy(accounts = emptyMap(), steamOwned = emptyList(), family = st.family.map { it.copy(accounts = emptyMap()) })
+                            }
+                        }
                     },
                     onCheckNow = { refresh() },
                     onRelayScan = { scanRelay() },
@@ -328,11 +385,28 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         }
                     },
                     onRelayUnpair = { scope.launch { RelayLink.unpair(context) } },
+                    family = FamilyActions(
+                        onAdd = { name -> scope.launch { Graph.store.update { Family.add(it, name, System.currentTimeMillis()) } } },
+                        onRemove = { id ->
+                            if (familySession?.member == id) { familySession?.release(); familySession = null }
+                            Family.forget(id)
+                            scope.launch { Graph.store.update { Family.remove(it, id) } }
+                        },
+                        onLogin = { id, store -> loginMember = id; login = store },
+                        onClaim = { id -> claimFamily(id) },
+                    ),
                 )
             }
     }
 
-    AdaptiveFrame(tab, { tab = it }, top = { ClaimPanel(session) }) { screen() }
+    AdaptiveFrame(tab, { tab = it }, top = {
+        val fs = familySession
+        if (fs != null) ClaimPanel(
+            fs,
+            onStopped = { familyJob?.cancel() },
+            onDismissed = { fs.release(); familySession = null },
+        ) else ClaimPanel(session)
+    }) { screen() }
 
     helpLink?.let { link ->
         HelpDialog(

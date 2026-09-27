@@ -60,6 +60,8 @@ fun SettingsScreen(
     onRelayCode: (String) -> Unit = {},
     onRelaySync: () -> Unit = {},
     onRelayUnpair: () -> Unit = {},
+    family: FamilyActions = FamilyActions(),
+    familySupported: Boolean = io.github.diaslamka.freegames.data.Family.supported(),
 ) {
     val s = state.settings
     var steamWarning by remember { mutableStateOf(false) }
@@ -128,6 +130,8 @@ fun SettingsScreen(
             }
             item { SectionHeader(stringResource(R.string.section_relay), null) }
             item { RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair) }
+            item { SectionHeader(stringResource(R.string.section_family), state.family.size.takeIf { it > 0 }) }
+            item { FamilyGroup(state, familySupported, family) }
             item { SectionHeader(stringResource(R.string.section_data), null) }
             item {
                 Group {

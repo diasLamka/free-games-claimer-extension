@@ -35,6 +35,11 @@ genere : voir `build/build.mjs`.
   Recuperes, et un **widget** pour l'ecran d'accueil -- le jeu du soir, ses
   raisons, « Un autre ». Ma collection et les etats des jeux arrivent par la
   sauvegarde de l'extension, et les etats y retournent.
+- **Appli Android 1.9.0 : toute la famille.** Un seul telephone recupere
+  pour plusieurs comptes (Epic, GOG, Amazon) : chaque personne a son profil
+  WebView, ses cookies, ses jeux, ses essais. Steam et le relais restent au
+  compte principal. Sur le PC, la meme chose se fait avec un profil Chrome
+  par personne, chacun avec l'extension.
 
 ## 2.94.0 -- 2026-09-27
 

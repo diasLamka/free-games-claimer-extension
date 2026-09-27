@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.Family
+import androidx.webkit.WebViewCompat
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
@@ -52,13 +54,15 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun LoginScreen(store: String, country: String, onClose: () -> Unit) {
+fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: String? = null, memberName: String? = null) {
     val context = LocalContext.current
     val b = LocalBrut.current
     var loading by remember { mutableStateOf(true) }
     var refused by remember { mutableStateOf<String?>(null) }
     val web = remember {
         WebView(context).apply {
+            // Toute la famille (1.9.0) : la session du membre vit dans son profil, avant tout autre usage.
+            if (member != null) Family.attach(this, member)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.userAgentString = Graph.userAgent()
@@ -69,8 +73,9 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit) {
             settings.displayZoomControls = false
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            CookieManager.getInstance().setAcceptCookie(true)
-            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+            val jar = if (member != null && Family.supported()) WebViewCompat.getProfile(this).cookieManager else CookieManager.getInstance()
+            jar.setAcceptCookie(true)
+            jar.setAcceptThirdPartyCookies(this, true)
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val scheme = request.url.scheme?.lowercase()
@@ -94,7 +99,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit) {
     }
     DisposableEffect(Unit) {
         onDispose {
-            CookieManager.getInstance().flush()
+            runCatching { (if (member != null && Family.supported()) WebViewCompat.getProfile(web).cookieManager else CookieManager.getInstance()).flush() }
             web.destroy()
         }
     }
@@ -111,7 +116,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit) {
     }
     val storeName = if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)
     Column(Modifier.fillMaxSize().background(b.base)) {
-        TopBlock(stringResource(R.string.login_title, storeName)) {
+        TopBlock(stringResource(R.string.login_title, storeName) + (memberName?.let { " · " + it } ?: "")) {
             BrutButton(stringResource(R.string.done), onClose)
             SquareButton(Icons.Rounded.Close, stringResource(R.string.close), onClose)
         }
