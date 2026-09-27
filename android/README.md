@@ -111,7 +111,9 @@ cd android
 
 Il faut un JDK 17+ et le SDK Android (plateforme 36). Le workflow
 `.github/workflows/android.yml` fait la meme chose a chaque push qui touche
-l'appli ou le moteur, et publie l'APK sur une release pour un tag `app-vX.Y.Z`.
+l'appli ou le moteur. **Publier une version** : changer `versionName` (et
+`versionCode`, +1) dans `app/build.gradle.kts` et pousser sur `main` : le
+workflow cree la release `app-vX.Y.Z`, tag compris, avec l'APK signe.
 
 Les textes des quatre langues sont generes depuis une seule table :
 `python3 tools/strings.py app/src/main/res`.
