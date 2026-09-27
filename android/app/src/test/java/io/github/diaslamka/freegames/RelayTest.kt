@@ -12,7 +12,9 @@ import io.github.diaslamka.freegames.sources.obj
 import io.github.diaslamka.freegames.sources.parseJson
 import io.github.diaslamka.freegames.sources.str
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -119,5 +121,73 @@ class RelayTest {
             """{"id":"a3","event":"message","message":"fgc1.y"}""",
         ).joinToString("\n")
         assertEquals(listOf("fgc1.x", "fgc1.y") to "a3", Relay.parsePoll(body, null))
+    }
+
+    /* ------------------------------------------ la demande d'aide (1.4.0) */
+
+    private fun help(dev: String = "b0b0b0b0", until: Long = now + 3_600_000L, title: String = "Hades") = buildJsonObject {
+        put("v", 1); put("dev", dev); put("role", "pc"); put("type", Relay.HELP); put("ts", now)
+        put("games", kotlinx.serialization.json.JsonArray(listOf(Relay.wireGame(Stores.EPIC, "hades", title, url = "https://store.epicgames.com/p/hades", until = until))))
+    }
+
+    @Test
+    fun theSharedAppLinkReadsBackIdentically() {
+        val v = fx["appLink"].obj!!
+        val g = v["game"].obj!!
+        val link = v["link"].str!!
+        assertEquals(Relay.AppLink(g["s"].str!!, g["i"].str!!, g["t"].str!!), Relay.parseAppLink(link))
+        assertEquals(link, Relay.appLink(g["s"].str!!, g["i"].str!!, g["t"].str!!))
+    }
+
+    @Test
+    fun anAppLinkOnlyNamesAGame() {
+        assertNull(Relay.parseAppLink("https://evil.test/finir?s=epic&i=x&t=X"))
+        assertNull(Relay.parseAppLink("fgclaimer://autre?s=epic&i=x&t=X"))
+        assertNull("magasin inconnu", Relay.parseAppLink("fgclaimer://finir?s=evil&i=x&t=X"))
+        assertNull("identifiant hors forme", Relay.parseAppLink("fgclaimer://finir?s=epic&i=%2F..%2Fx&t=X"))
+        assertNull("titre vide", Relay.parseAppLink("fgclaimer://finir?s=epic&i=x&t=+"))
+        assertEquals(Relay.AppLink("gog", "", "Gris"), Relay.parseAppLink("fgclaimer://finir?s=gog&t=Gris"))
+    }
+
+    @Test
+    fun aHelpRequestIsKeptUntilTheGameIsClaimed() {
+        val (s1, _) = Relay.apply(base(), listOf(help()), now)
+        val open = Relay.openHelp(s1, now)
+        assertEquals(1, open.size)
+        assertEquals("Hades", open[0].second.title)
+        assertEquals("https://store.epicgames.com/p/hades", open[0].second.url)
+        assertFalse(open[0].second.notified)
+        // Rejouee : la meme, pas une seconde.
+        assertEquals(1, Relay.apply(s1, listOf(help()), now).first.relay!!.help.size)
+        // Obtenu ici (le telephone l'a pris) : plus rien a afficher.
+        val lib = s1.copy(library = mapOf("epic:hades" to LibraryEntry(Stores.EPIC, "hades", "Hades", null, null, null, now, status = "claimed")))
+        assertTrue(Relay.openHelp(lib, now).isEmpty())
+        // Son terme passe, ou de soi-meme : rien.
+        assertTrue(Relay.openHelp(s1, now + 3_600_001L).isEmpty())
+        assertTrue(Relay.apply(base(), listOf(help(dev = "c0ffee01")), now).first.relay!!.help.isEmpty())
+        // Un jour au plus.
+        val (s2, _) = Relay.apply(base(), listOf(help(until = now + 9 * 86_400_000L)), now)
+        assertEquals(now + Relay.MAX_HELP_MS, s2.relay!!.help.values.first().until)
+    }
+
+    @Test
+    fun theOfferIsFoundByIdThenByTitle() {
+        val o = Offer(key = "epic:hades", source = "epic", store = Stores.EPIC, storeId = "hades", title = "Hades")
+        val s = base().copy(offers = mapOf(o.key to o))
+        assertEquals(o, Relay.findOffer(s, Stores.EPIC, "hades", "autre titre"))
+        assertEquals(o, Relay.findOffer(s, Stores.EPIC, "", "HADES"))
+        assertNull("le magasin compte", Relay.findOffer(s, Stores.GOG, "hades", "Hades"))
+    }
+
+    @Test
+    fun aLinkIsAnsweredFromTheAppsOwnOffers() {
+        val o = Offer(key = "epic:hades", source = "epic", store = Stores.EPIC, storeId = "hades", title = "Hades")
+        val link = Relay.AppLink(Stores.EPIC, "hades", "Hades")
+        val s = base().copy(offers = mapOf(o.key to o))
+        assertEquals(io.github.diaslamka.freegames.ui.HelpAsk.Found(link, o), io.github.diaslamka.freegames.ui.resolveHelp(link, s, refreshed = false))
+        val owned = s.copy(library = mapOf("epic:hades" to LibraryEntry(Stores.EPIC, "hades", "Hades", null, null, null, now, status = "claimed")))
+        assertTrue(io.github.diaslamka.freegames.ui.resolveHelp(link, owned, refreshed = false) is io.github.diaslamka.freegames.ui.HelpAsk.Owned)
+        assertTrue(io.github.diaslamka.freegames.ui.resolveHelp(link, base(), refreshed = false) is io.github.diaslamka.freegames.ui.HelpAsk.Looking)
+        assertTrue(io.github.diaslamka.freegames.ui.resolveHelp(link, base(), refreshed = true) is io.github.diaslamka.freegames.ui.HelpAsk.Missing)
     }
 }

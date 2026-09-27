@@ -2287,5 +2287,8 @@
   },
   "stampClaimed": {
     "message": "Claimed"
+  },
+  "phoneChallengeHere": {
+    "message": "Tap to finish it on the phone."
   }
 }

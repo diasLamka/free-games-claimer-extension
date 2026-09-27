@@ -76,6 +76,9 @@ export const TIMEOUT_MS = 10000;
  */
 export const RETRY_MS = 60 * 60 * 1000;
 
+/** Le lien de l'appli Android, tel que watch/relay.js l'ecrit (appLink). */
+const APP_LINK_RE = /^fgclaimer:\/\/finir\?[A-Za-z0-9%+&=._~-]{1,600}$/;
+
 /** Longueur maximale du corps. ntfy en accepte plus ; un telephone en affiche moins. */
 const MAX_BODY = 1000;
 
@@ -261,7 +264,12 @@ export function mobileMessage(offers, { title, line }) {
  * ferait jeter `fetch` avant meme de partir. Le corps, lui, est de l'UTF-8.
  */
 export function publishRequest(target, msg) {
-  const click = msg.click && /^https:\/\//i.test(msg.click) ? msg.click : null;
+  /* Le lien d'une alerte : une page web, ou -- pour ntfy seulement, dont
+     l'appli ouvre n'importe quel lien -- celui de l'appli Android (2.89.0),
+     qui ouvre le jeu a finir sur le telephone. */
+  const appli = typeof msg.click === 'string' && APP_LINK_RE.test(msg.click)
+    && target.service !== SERVICES.DISCORD && target.service !== SERVICES.TELEGRAM;
+  const click = msg.click && (/^https:\/\//i.test(msg.click) || appli) ? msg.click : null;
   const corps = String(msg.message || '').trim();
   const titre = String(msg.title || '').trim();
 

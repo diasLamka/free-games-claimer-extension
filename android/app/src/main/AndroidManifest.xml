@@ -36,6 +36,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Le jeu que le PC n'a pas pu finir (1.4.0) : fgclaimer://finir?s=&i=&t=,
+                 depuis l'alerte ntfy du PC ou la notification du relais. Le
+                 lien designe un jeu, rien de plus : l'appli le cherche dans
+                 ses offres et demande avant d'agir. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="fgclaimer" android:host="finir" />
+            </intent-filter>
             <!-- « Partager » depuis une autre appli : une fiche de jeu ou un titre. -->
             <intent-filter android:label="@string/share_target">
                 <action android:name="android.intent.action.SEND" />

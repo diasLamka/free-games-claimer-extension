@@ -43,7 +43,7 @@ Chaque message est un objet JSON, chiffre de bout en bout :
 Un message chiffre pour un autre sujet ne s'ouvre pas ici. Le clair :
 
     { "v": 1, "dev": "a1b2c3d4", "role": "pc" | "phone",
-      "type": "claimed" | "lock" | "alive", "ts": 1790000000000,
+      "type": "claimed" | "lock" | "alive" | "help", "ts": 1790000000000,
       "games": [ { "s": "epic", "i": "hades", "t": "Hades",
                    "at": 1790000000000, "st": "claimed",
                    "w": "24,99 EUR", "u": "https://...", "until": 1790000600000 } ],
@@ -57,6 +57,28 @@ Un message chiffre pour un autre sujet ne s'ouvre pas ici. Le clair :
 - `alive` : un signe de vie, avec les derniers jeux obtenus (quinze au plus)
   et l'etat des sessions. C'est lui qui rattrape un appareil reste eteint :
   ntfy.sh ne garde les messages que douze heures.
+- `help` (2.89.0 / appli 1.4.0) : une verification humaine (captcha) arrete
+  l'appareil sur ces jeux. Le recepteur garde la demande jusqu'a `until` (un
+  jour au plus apres `ts`), ou jusqu'a ce que le jeu soit obtenu, ici ou
+  la-bas. Le telephone qui la recoit appelle l'humain (notification, bandeau
+  « Le PC a besoin de toi ») ; le jeu se finit SUR LE TELEPHONE, avec sa
+  propre session -- rien n'est resolu a distance. Le PC qui la recoit efface
+  le recul de ces offres : il les tente a son cycle suivant.
+
+Un type inconnu est ignore : un appareil plus ancien ne casse pas.
+
+## Le lien de l'appli
+
+L'alerte ntfy d'un defi (quand le relais est associe) porte, comme lien a
+toucher, celui de l'appli :
+
+    fgclaimer://finir?s=<magasin>&i=<identifiant>&t=<titre>
+
+encode comme `URLSearchParams` (`appLink`, `Relay.appLink` ; vecteur commun
+dans `test/fixtures/relais.json`, champ `appLink`). Il DESIGNE un jeu, rien de
+plus : l'appli le cherche dans ses propres offres, ne suit jamais une adresse
+venue du lien, et demande avant d'agir. N'importe quelle page peut ouvrir ce
+lien ; au pire, elle fait poser une question sur un jeu gratuit connu.
 
 Un message de son propre `dev` est ignore. Un message de plus de sept jours
 aussi. Le corps chiffre tient sous 4 000 caracteres : `alive` retire ses liens,

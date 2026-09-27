@@ -31,7 +31,7 @@ import {
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { ownedKeys, ownedKeyFor } from './library.js';
-import { TYPES as RELAY_TYPES, syncRelay, announce, maybeAlive } from './relay.js';
+import { TYPES as RELAY_TYPES, MAX_HELP_MS, ROLES as RELAY_ROLES, syncRelay, announce, maybeAlive, appLink } from './relay.js';
 import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
@@ -211,6 +211,8 @@ export async function runCycle({
   /** Faux en test, ou quand l'utilisateur coupe la reclamation autonome. */
   autonomousClaim = true,
   maxReclamations = MAX_CLAIMS_PER_CYCLE,
+  /** Le geste de reclamation, remplacable en test (voir claimWhatCanBe). */
+  claim = undefined,
 }) {
   if (typeof now !== 'number') throw new TypeError('executerCycle : "maintenant" est obligatoire');
 
@@ -657,6 +659,16 @@ export async function runCycle({
         }
       }
       const library = (relais && relais.library) || ctx.library;
+      /* Le telephone demande de l'aide (2.89.0) : une verification humaine
+         l'arrete sur ces jeux. Le PC, lui, passe peut-etre : leur recul est
+         efface, ils sont tentes des ce cycle. */
+      if (relais && relais.help && relais.help.length) {
+        const r = retryHelped(catalog, relais.help, { now });
+        if (r.keys.length) {
+          catalog = r.catalog;
+          record('info', `relais : le telephone demande de l'aide pour ${r.keys.length} jeu(x), le PC s'en charge`);
+        }
+      }
       const result = await claimWhatCanBe({
         chrome,
         now,
@@ -672,6 +684,7 @@ export async function runCycle({
         collection: ctx.collection,
         maxReclamations,
         record,
+        ...(claim ? { claim } : {}),
         held: relais ? relais.held : null,
         onClaimStart: relais ? (offer) => announce({
           chrome, fetch: fetchImpl, ctx: relais.ctx, now: Date.now(), type: RELAY_TYPES.LOCK, record,
@@ -711,19 +724,35 @@ export async function runCycle({
           text: t('notifyChallengeBody'),
           id: `defi-${now}`,
         });
+        /* Le relais (2.89.0) : un defi, c'est une demande d'aide. L'appli la
+           lit a son prochain passage, sonne, et le jeu se finit sur le
+           telephone -- avec SA session : rien n'est resolu a distance. */
+        const bloques = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE)
+          .map((x) => catalog[x.catalogKey]).filter(Boolean)
+          .map((o) => ({
+            store: o.store, id: o.storeId || o.sourceId || o.normalisedTitle, title: o.title, url: o.url,
+            until: Math.min(typeof o.end === 'number' ? o.end : Infinity, Date.now() + MAX_HELP_MS),
+          }));
+        if (relais && bloques.length) {
+          await announce({ chrome, fetch: fetchImpl, ctx: relais.ctx, now: Date.now(), type: RELAY_TYPES.HELP, games: bloques, record });
+        }
         /* Un defi attend l'humain : c'est exactement ce que le telephone sait
            aller chercher. Pas en heures calmes -- l'offre reste dans « ce qui
-           vous attend », rien n'est perdu a attendre le matin. */
+           vous attend », rien n'est perdu a attendre le matin. Avec le relais,
+           toucher l'alerte ouvre l'appli sur le jeu. */
         if (manual && tel && fetchImpl && !inQuietHours(effectiveQuiet(ctx.settings), now)) {
+          const titres = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).map((x) => x.title).join('\n');
+          const ici = relais && bloques.length;
           await pushToPhone({
             chrome,
             fetch: fetchImpl,
             target: tel,
             msg: {
               title: t('notifyChallengeTitle'),
-              message: claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).map((x) => x.title).join('\n'),
+              message: ici ? `${titres}\n${t('phoneChallengeHere')}` : titres,
               priority: PRIORITY.HIGH,
               tags: ['lock'],
+              click: ici ? appLink(bloques[0]) : null,
             },
             now,
             record,
@@ -752,6 +781,32 @@ export async function runCycle({
 }
 
 /* ------------------------------------------------------- reclamation */
+
+/**
+ * Les offres pour lesquelles le telephone demande de l'aide (2.89.0), sans
+ * leur recul : le PC les tente tout de suite. Seulement les demandes du
+ * telephone, seulement les offres encore ouvertes. Pure.
+ */
+export function retryHelped(catalog, help, { now }) {
+  const next = { ...catalog };
+  const keys = [];
+  for (const h of help || []) {
+    if (!h || h.role !== RELAY_ROLES.PHONE || !(h.until > now)) continue;
+    const norm = normaliseTitle(h.t || '');
+    for (const [k, o] of Object.entries(next)) {
+      if (!o || o.store !== h.s) continue;
+      if (FINAL_VERDICTS.includes(o.verdict)) continue;
+      const meme = (h.i && (o.storeId === h.i || o.sourceId === h.i)) || (norm && normaliseTitle(o.title || '') === norm);
+      if (!meme) continue;
+      // Mise de cote par l'utilisateur : c'est sa decision, pas celle du telephone.
+      if (typeof o.snoozedUntil === 'number' && o.snoozedUntil > now) continue;
+      if (o.nextAttemptAt == null) continue;
+      next[k] = { ...o, nextAttemptAt: null };
+      keys.push(k);
+    }
+  }
+  return { catalog: next, keys };
+}
 
 /**
  * Les offres du catalogue qu'on peut tenter maintenant, dans l'ordre d'urgence.

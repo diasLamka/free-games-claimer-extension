@@ -87,6 +87,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     var tab by rememberSaveable { mutableStateOf(0) }
     var login by rememberSaveable { mutableStateOf<String?>(null) }
     var shared by remember { mutableStateOf<String?>(null) }
+    // Un lien fgclaimer://finir (1.4.0) : le jeu que le PC n'a pas pu finir.
+    var helpLink by remember { mutableStateOf<io.github.diaslamka.freegames.data.Relay.AppLink?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
@@ -203,6 +205,15 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     LaunchedEffect(intent) {
         val i = intent ?: return@LaunchedEffect
         when {
+            i.action == Intent.ACTION_VIEW && i.data?.scheme == "fgclaimer" -> {
+                tab = 0
+                val link = io.github.diaslamka.freegames.data.Relay.parseAppLink(i.dataString)
+                if (link != null) {
+                    helpLink = link
+                    // Pas encore dans les offres de l'appli : une verification, puis la reponse.
+                    if (io.github.diaslamka.freegames.data.Relay.findOffer(Graph.store.value, link.store, link.id, link.title) == null) refresh()
+                }
+            }
             i.action == Intent.ACTION_SEND -> {
                 val (t, _) = Titles.titleFromShared(i.getStringExtra(Intent.EXTRA_SUBJECT), i.getStringExtra(Intent.EXTRA_TEXT))
                 shared = t
@@ -246,6 +257,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         )
                     },
                     onAccounts = { tab = 3 },
+                    onHelpDismiss = { key ->
+                        scope.launch { Graph.store.update { s -> s.copy(relay = s.relay?.let { r -> r.copy(help = r.help - key) }) } }
+                    },
                 )
                 1 -> ClaimedScreen(state, onOpen = { ClaimSession.openExternally(context, it) })
                 2 -> WishlistScreen(
@@ -282,6 +296,15 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     }
 
     AdaptiveFrame(tab, { tab = it }, top = { ClaimPanel(session) }) { screen() }
+
+    helpLink?.let { link ->
+        HelpDialog(
+            // Pendant une verification, « recherche » ; apres, la reponse.
+            ask = resolveHelp(link, state, refreshed = !refreshing),
+            onFinish = { o -> helpLink = null; claim(setOf(o.key)) },
+            onDismiss = { helpLink = null },
+        )
+    }
 
     shared?.let { t ->
         ShareDialog(

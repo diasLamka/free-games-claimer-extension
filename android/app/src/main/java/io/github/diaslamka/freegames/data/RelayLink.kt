@@ -3,6 +3,7 @@ package io.github.diaslamka.freegames.data
 import android.content.Context
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.RelayState
+import io.github.diaslamka.freegames.notify.Notifier
 import io.github.diaslamka.freegames.sources.obj
 import io.github.diaslamka.freegames.sources.parseJson
 import kotlinx.coroutines.Dispatchers
@@ -77,10 +78,20 @@ object RelayLink {
         val (bodies, last) = result
         val messages = bodies.mapNotNull { e -> Relay.open(e, c.key, c.topic)?.let { parseJson(it).obj } }
         var added = 0
-        Graph.store.update { s ->
+        val after = Graph.store.update { s ->
             val (next, n) = Relay.apply(s, messages, now)
             added = n
             next.copy(relay = next.relay?.copy(since = last, lastSync = now, lastError = null))
+        }
+        // Le PC demande de l'aide (1.4.0) : l'humain est appele, une fois par demande.
+        val fresh = Relay.openHelp(after, now).filter { !it.second.notified }
+        if (fresh.isNotEmpty()) {
+            fresh.forEach { (_, h) -> Notifier.help(context, h) }
+            val keys = fresh.map { it.first }.toSet()
+            Graph.store.update { s ->
+                val r = s.relay ?: return@update s
+                s.copy(relay = r.copy(help = r.help.mapValues { (k, v) -> if (k in keys) v.copy(notified = true) else v }))
+            }
         }
         return added
     }
@@ -101,6 +112,17 @@ object RelayLink {
         val c = ctx(context) ?: return
         val dev = Graph.store.value.relay?.dev ?: return
         publish(c, Relay.message(Relay.LOCK, dev, now, listOf(Relay.gameOf(o, until = now + Relay.MAX_LOCK_MS))))
+    }
+
+    /**
+     * Bloque par une verification humaine, ecran eteint (1.4.0) : le PC le
+     * saura a son prochain cycle, et tentera ce jeu tout de suite.
+     */
+    suspend fun help(context: Context, o: Offer, now: Long) {
+        val c = ctx(context) ?: return
+        val dev = Graph.store.value.relay?.dev ?: return
+        val until = minOf(o.end ?: Long.MAX_VALUE, now + Relay.MAX_HELP_MS)
+        publish(c, Relay.message(Relay.HELP, dev, now, listOf(Relay.gameOf(o, until = until))))
     }
 
     suspend fun claimed(context: Context, o: Offer, verdict: String, now: Long) {

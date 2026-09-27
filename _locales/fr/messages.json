@@ -2287,5 +2287,8 @@
   },
   "stampClaimed": {
     "message": "Récupéré"
+  },
+  "phoneChallengeHere": {
+    "message": "Touche pour le finir sur le téléphone."
   }
 }

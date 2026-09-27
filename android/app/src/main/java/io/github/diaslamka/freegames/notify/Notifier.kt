@@ -34,6 +34,7 @@ object Notifier {
     const val CH_ENDING = "fins"
     const val CH_CLAIMS = "recuperations"
     const val CH_ACCOUNT = "comptes"
+    const val CH_HELP = "aide"
 
     fun createChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
@@ -43,6 +44,7 @@ object Notifier {
                 NotificationChannel(CH_ENDING, context.getString(R.string.channel_ending), NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CH_CLAIMS, context.getString(R.string.channel_claims), NotificationManager.IMPORTANCE_LOW),
                 NotificationChannel(CH_ACCOUNT, context.getString(R.string.channel_account), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CH_HELP, context.getString(R.string.channel_help), NotificationManager.IMPORTANCE_HIGH),
             ),
         )
     }
@@ -185,6 +187,28 @@ object Notifier {
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openApp(context, id, claimKey = o.key))
+        post(context, id, b.build())
+    }
+
+    /**
+     * Le PC demande de l'aide (1.4.0) : une verification humaine l'arrete sur
+     * ce jeu. Un appui ouvre l'appli sur lui, par le meme lien que l'alerte
+     * ntfy -- et c'est la page du telephone, avec sa session, qui le prend.
+     */
+    fun help(context: Context, h: io.github.diaslamka.freegames.model.HelpRequest) {
+        val id = ("aide:" + h.store + "|" + Titles.normalise(h.title)).hashCode()
+        val link = Intent(Intent.ACTION_VIEW, Uri.parse(io.github.diaslamka.freegames.data.Relay.appLink(h.store, h.id, h.title)))
+            .setClass(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val b = NotificationCompat.Builder(context, CH_HELP)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_help_title))
+            .setContentText(context.getString(R.string.notif_help_text, h.title, Stores.label(h.store)))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(context.getString(R.string.notif_help_text, h.title, Stores.label(h.store))))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(PendingIntent.getActivity(context, id, link, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         post(context, id, b.build())
     }
 

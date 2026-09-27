@@ -21,5 +21,14 @@
       }
     ]
   },
-  "envelope": "fgc1.AQIDBAUGBwgJCgsMzKXsb1BWvap8nUHEYTyKR1GuQWIQci03IzG7Qn3xAbMw_NePQ6GIXNlVWrkrpgVclKzPHirBqysaaTQpABblWHMR-TJHWk73zAGoX20u2qJWb_Qhz2ZBkzwMB4r9JLIarDwfZxSpZyorfiVfExIobeAUZ-0id14NN79p9g5zrnLettnFSN7WXWtZMIPU7e9OGBVdlT11Kk_BkZrfgCYSP28c6TM6_-wXC_DmLSNB6kbRSyjho6w2zV3J_FI"
+  "envelope": "fgc1.AQIDBAUGBwgJCgsMzKXsb1BWvap8nUHEYTyKR1GuQWIQci03IzG7Qn3xAbMw_NePQ6GIXNlVWrkrpgVclKzPHirBqysaaTQpABblWHMR-TJHWk73zAGoX20u2qJWb_Qhz2ZBkzwMB4r9JLIarDwfZxSpZyorfiVfExIobeAUZ-0id14NN79p9g5zrnLettnFSN7WXWtZMIPU7e9OGBVdlT11Kk_BkZrfgCYSP28c6TM6_-wXC_DmLSNB6kbRSyjho6w2zV3J_FI",
+  "appLink": {
+    "note": "Le lien qui ouvre l'appli sur un jeu a finir (2.89.0) : l'extension l'ecrit, l'appli le relit.",
+    "game": {
+      "s": "epic",
+      "i": "hades-2",
+      "t": "Hades II : l'été, 100 % & plus"
+    },
+    "link": "fgclaimer://finir?s=epic&i=hades-2&t=Hades+II+%3A+l%27%C3%A9t%C3%A9%2C+100+%25+%26+plus"
+  }
 }

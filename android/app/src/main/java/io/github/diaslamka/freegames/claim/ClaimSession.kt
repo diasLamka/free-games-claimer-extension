@@ -339,7 +339,9 @@ class ClaimSession(
                 if (result.first == Verdicts.CHALLENGE) {
                     if (headless) {
                         // Jamais resolu par l'appli : l'humain est appele, et le jeu attend.
+                        // Le PC l'apprend aussi (1.4.0) : il tentera ce jeu a son prochain cycle.
                         Notifier.challenge(context, offer)
+                        runCatching { RelayLink.help(context, offer, System.currentTimeMillis()) }
                     } else {
                         _ui.value = _ui.value.copy(needsUser = true, visible = true)
                         userDone = CompletableDeferred()

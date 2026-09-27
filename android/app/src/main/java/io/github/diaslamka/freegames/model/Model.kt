@@ -183,6 +183,23 @@ data class RelayState(
     val peerAt: Long? = null,
     /** « magasin|titre normalise » -> fin du verrou pose par l'autre. */
     val locks: Map<String, Long> = emptyMap(),
+    /** Les demandes d'aide de l'autre appareil (1.4.0), par « magasin|titre normalise ». */
+    val help: Map<String, HelpRequest> = emptyMap(),
+)
+
+/**
+ * Une demande d'aide de l'autre appareil (1.4.0) : une verification humaine
+ * l'arrete sur ce jeu. L'humain le finit ici, avec la session du telephone.
+ */
+@Serializable
+data class HelpRequest(
+    val store: String,
+    val id: String,
+    val title: String,
+    val url: String? = null,
+    val until: Long,
+    val at: Long,
+    val notified: Boolean = false,
 )
 
 /** Tout l'etat de l'appli, dans un seul fichier. */

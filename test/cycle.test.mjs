@@ -736,3 +736,41 @@ test('telephone : coupe par defaut, rien ne part', async () => {
   const { appels } = await cycleAvecTelephone({ phone: undefined });
   assert.equal(appels.length, 0);
 });
+
+/* ------------------------------ un defi : finir sur le telephone (2.89.0) */
+
+import { KEY_RELAY, deriveRelay, open as ouvrirRelais, TYPES as RELAY_TYPES } from '../watch/relay.js';
+import { VERDICTS } from '../watch/claim.js';
+
+test('un defi de securite : demande d\'aide au relais, et l\'alerte ouvre l\'appli sur le jeu', async () => {
+  const secret = 'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8';
+  const src = sourceFactice('test', [response([offer('Jeu A')]), response([offer('Jeu A'), offer('Hades')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'] },
+    [KEY_PHONE]: { on: true, url: 'https://ntfy.sh/fgc-test', wished: false },
+    [KEY_RELAY]: { secret, server: 'https://ntfy.sh', dev: 'c0ffee01', pairedAt: T - 1000 },
+  });
+  const f = fetchNtfy();
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  f.appels.length = 0;
+  await c.cycle(T + DAY, {
+    force: true, fetch: f, claimableStores: ['epic'],
+    claim: async (o) => ({ verdict: o.title === 'Hades' ? VERDICTS.CHALLENGE : VERDICTS.CLAIMED, store: 'epic' }),
+  });
+
+  const ctx = await deriveRelay(secret);
+  const relais = [];
+  for (const a of f.appels.filter((x) => x.url === `https://ntfy.sh/${ctx.topic}`)) relais.push(await ouvrirRelais(a.init.body, ctx));
+  const aide = relais.find((m) => m && m.type === RELAY_TYPES.HELP);
+  assert.ok(aide, 'une demande d\'aide part au relais');
+  assert.deepEqual(aide.games.map((g) => g.t), ['Hades']);
+  assert.ok(aide.games[0].until > T + DAY);
+
+  const alerte = f.appels.find((x) => x.url.startsWith('https://ntfy.sh/fgc-test?'));
+  assert.ok(alerte, 'l\'alerte du defi part au telephone');
+  const lien = new URL(alerte.url).searchParams.get('click');
+  assert.match(lien, /^fgclaimer:\/\/finir\?/);
+  assert.equal(new URL(lien).searchParams.get('t'), 'Hades');
+  assert.match(alerte.init.body, /Hades/);
+});

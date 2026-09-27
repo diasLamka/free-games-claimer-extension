@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.89.0 -- 2026-09-27
+
+**Le PC a besoin de toi : une verification finie sur le telephone**
+
+- **Un captcha arrete le PC pendant que tu es dehors ?** Le telephone sonne.
+  L'alerte ntfy du defi (avec le relais associe) s'ouvre directement dans
+  l'appli Android 1.4.0 sur ce jeu : « Finir ici », tu fais la verification
+  sur le telephone, et le jeu est pris avec la session du telephone. Rien
+  n'est resolu a distance, rien n'est resolu par l'appli.
+- **Le relais apprend « a l'aide »** (`help`) : le PC l'envoie quand un defi
+  l'arrete ; l'appli le lit a chaque passage, notifie une fois, et affiche un
+  bandeau « Le PC a besoin de toi » en tete des jeux. Dans l'autre sens, un
+  defi rencontre ecran eteint par le telephone fait retenter ce jeu au PC des
+  son cycle suivant (le recul est efface, pas une mise de cote).
+- **Le lien de l'appli** `fgclaimer://finir?s=&i=&t=` ne fait que designer
+  un jeu : l'appli le cherche dans ses propres offres, ne suit aucune adresse
+  venue du lien, et ne recupere rien sans un appui. Vecteur commun extension
+  / appli dans `test/fixtures/relais.json`.
+
 ## 2.88.0 -- 2026-09-27
 
 **La signature, des survols lisibles, et l'appli sur tous les ecrans**

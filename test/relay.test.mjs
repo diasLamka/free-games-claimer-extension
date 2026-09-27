@@ -15,14 +15,15 @@ import { readFileSync } from 'node:fs';
 import { createDecipheriv, createHash } from 'node:crypto';
 
 import {
-  KEY_RELAY, DEFAULT_SERVER, MAX_ENVELOPE, MAX_LOCK_MS, TYPES, ROLES,
+  KEY_RELAY, DEFAULT_SERVER, MAX_ENVELOPE, MAX_LOCK_MS, MAX_HELP_MS, TYPES, ROLES,
   newSecret, pairingCode, parsePairingCode, relayServer, deriveRelay, seal, open,
   applyMessages, heldKeys, fitAlive, message, wireGame, recentGames, readRelay,
-  publish, poll, syncRelay, lockKey,
+  publish, poll, syncRelay, lockKey, appLink, openHelp,
 } from '../watch/relay.js';
+import { publishRequest } from '../watch/phone.js';
 import { KEY_LIBRARY, libraryKey, makeEntry, mergeEntry, ownedKeys } from '../watch/library.js';
 import { normaliseTitle, makeOffer } from '../watch/offer.js';
-import { claimWhatCanBe } from '../watch/cycle.js';
+import { claimWhatCanBe, retryHelped } from '../watch/cycle.js';
 import { VERDICTS } from '../watch/claim.js';
 import { BACKUP_KEYS } from '../watch/full-backup.js';
 import { fakeChrome } from './fake-chrome.mjs';
@@ -212,4 +213,88 @@ test('une panne du relais n\'arrete pas une reclamation', async () => {
     claim: async () => ({ verdict: VERDICTS.CLAIMED }),
   });
   assert.equal(r.claims[0].verdict, VERDICTS.CLAIMED);
+});
+
+/* ------------------------------------------- la demande d'aide (2.89.0) */
+
+const aide = (over = {}) => message({
+  type: TYPES.HELP, dev: 'b0b0b0b0', role: ROLES.PC, now: NOW,
+  games: [wireGame({ store: 'epic', id: 'hades', title: 'Hades', url: 'https://store.epicgames.com/p/hades', until: NOW + 3600_000 })],
+  ...over,
+});
+
+test('une demande d\'aide est notee une fois, et s\'eteint quand le jeu est obtenu', () => {
+  const r = applyMessages({ dev: 'c0ffee01', locks: {} }, [aide()], { library: {}, now: NOW, ...helpers });
+  const k = lockKey('epic', normaliseTitle('Hades'));
+  assert.deepEqual(r.helped, [k]);
+  assert.equal(r.state.help[k].role, ROLES.PC);
+  assert.equal(r.state.help[k].u, 'https://store.epicgames.com/p/hades');
+  assert.equal(openHelp(r.state, NOW)[0].t, 'Hades');
+  assert.equal(r.state.peer.role, ROLES.PC, 'une demande est aussi un signe de vie');
+
+  // Rejouee : rien de nouveau.
+  assert.deepEqual(applyMessages(r.state, [aide()], { library: r.library, now: NOW, ...helpers }).helped, []);
+
+  // Le telephone l'a eu : la demande s'eteint.
+  const eu = message({ type: TYPES.CLAIMED, dev: 'a1b2c3d4', role: ROLES.PHONE, now: NOW + 1000,
+    games: [wireGame({ store: 'epic', id: 'hades', title: 'Hades', ts: NOW + 1000, status: 'claimed' })] });
+  const apres = applyMessages(r.state, [eu], { library: r.library, now: NOW + 2000, ...helpers });
+  assert.equal(apres.state.help[k], undefined);
+
+  // Passe son terme : elle s'eteint aussi, et un jour au plus.
+  assert.equal(openHelp(applyMessages(r.state, [], { library: {}, now: NOW + 3600_001, ...helpers }).state, NOW + 3600_001).length, 0);
+  const longue = aide({ games: [wireGame({ store: 'gog', id: 'x', title: 'X', until: NOW + 9 * 24 * 3600_000 })] });
+  const rl = applyMessages({ dev: 'c0ffee01' }, [longue], { library: {}, now: NOW, ...helpers });
+  assert.equal(Object.values(rl.state.help)[0].until, NOW + MAX_HELP_MS);
+});
+
+test('une demande d\'aide deja obtenue ici, ou de soi-meme, n\'est pas notee', () => {
+  const lib = { [libraryKey('epic', 'hades')]: makeEntry({ store: 'epic', id: 'hades', title: 'Hades', ts: NOW - 5000, status: 'claimed' }) };
+  assert.deepEqual(applyMessages({ dev: 'c0ffee01' }, [aide()], { library: lib, now: NOW, ...helpers }).helped, []);
+  assert.deepEqual(applyMessages({ dev: 'b0b0b0b0' }, [aide()], { library: {}, now: NOW, ...helpers }).helped, []);
+});
+
+test('le lien de l\'appli : le vecteur commun, et seulement pour ntfy', () => {
+  assert.equal(appLink(FX.appLink.game), FX.appLink.link);
+  assert.equal(new URL(FX.appLink.link).searchParams.get('t'), FX.appLink.game.t);
+
+  const ntfy = publishRequest({ url: 'https://ntfy.sh/fgc-x', token: '' }, { title: 'Defi', message: 'Hades', click: FX.appLink.link });
+  assert.equal(new URL(ntfy.url).searchParams.get('click'), FX.appLink.link);
+  const discord = publishRequest({ service: 'discord', url: 'https://discord.com/api/webhooks/123456/abcdefghijklmnopqrstuvwxyz' },
+    { title: 'Defi', message: 'Hades', click: FX.appLink.link });
+  assert.ok(!JSON.parse(discord.init.body).content.includes('fgclaimer:'));
+  // Un autre schema ne passe pas.
+  const autre = publishRequest({ url: 'https://ntfy.sh/fgc-x', token: '' }, { title: 'x', message: 'y', click: 'intent://evil#Intent;end' });
+  assert.equal(new URL(autre.url).searchParams.get('click'), null);
+});
+
+test('le telephone demande de l\'aide : le PC retente tout de suite, sans toucher a une mise de cote', () => {
+  const o = (id, extra = {}) => ({ ...makeOffer({ source: 'epic', store: 'epic', storeId: id, title: id.toUpperCase(), url: `https://store.epicgames.com/p/${id}`, end: NOW + 86400000 }), catalogKey: `epic:${id}`, ...extra });
+  const catalog = {
+    'epic:a': o('a', { verdict: VERDICTS.CHALLENGE, nextAttemptAt: NOW + 3600_000 }),
+    'epic:b': o('b', { nextAttemptAt: NOW + 3600_000, snoozedUntil: NOW + 3600_000 }),
+    'epic:c': o('c', { verdict: VERDICTS.CLAIMED, nextAttemptAt: null }),
+  };
+  const help = ['a', 'b', 'c'].map((id) => ({ s: 'epic', i: id, t: id.toUpperCase(), until: NOW + 3600_000, role: ROLES.PHONE }));
+  const r = retryHelped(catalog, help, { now: NOW });
+  assert.deepEqual(r.keys, ['epic:a']);
+  assert.equal(r.catalog['epic:a'].nextAttemptAt, null);
+  assert.equal(r.catalog['epic:b'].nextAttemptAt, NOW + 3600_000);
+  // Une demande du PC (l'autre sens) ne concerne pas le PC.
+  assert.deepEqual(retryHelped(catalog, help.map((h) => ({ ...h, role: ROLES.PC })), { now: NOW }).keys, []);
+});
+
+test('syncRelay rend les demandes d\'aide nouvelles et les garde dans l\'etat', async () => {
+  const { chrome, payload } = fakeChrome({ now: NOW });
+  await chrome.storage.local.set({ [KEY_RELAY]: { secret: FX.secret, server: DEFAULT_SERVER, dev: 'c0ffee01', pairedAt: NOW - 1000 } });
+  const ctx = await deriveRelay(FX.secret);
+  const env = await seal(aide({ role: ROLES.PHONE }), ctx);
+  const fetchImpl = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ id: 'h1', event: 'message', message: env }) + '\n' });
+  const r = await syncRelay({ chrome, fetch: fetchImpl, now: NOW });
+  assert.equal(r.help.length, 1);
+  assert.equal(r.help[0].role, ROLES.PHONE);
+  assert.equal(readRelay(payload()[KEY_RELAY]).help[r.help[0].key].t, 'Hades');
+  // Le passage suivant ne la redonne pas comme nouvelle.
+  const r2 = await syncRelay({ chrome, fetch: async () => ({ ok: true, status: 200, text: async () => '' }), now: NOW + 1000 });
+  assert.equal(r2.help.length, 0);
 });

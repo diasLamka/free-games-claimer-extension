@@ -34,7 +34,9 @@ exemption d'optimisation de la batterie, installation d'autres applis.
   qu'elle travaille.
 - Un **captcha** ou toute verification humaine n'est **jamais** resolu par
   l'appli : il part en notification, et l'humain le fait a l'ecran. Au fond,
-  le jeu attend ensuite quatre heures avant d'etre retente.
+  le jeu attend ensuite quatre heures avant d'etre retente. Quand c'est le PC
+  qui bloque (1.4.0), le telephone appelle l'humain, et c'est encore
+  l'humain qui fait la verification, dans la page du telephone.
 
 ## Comptes et identifiants
 
@@ -79,7 +81,11 @@ exemption d'optimisation de la batterie, installation d'autres applis.
 - Les liens ouverts au-dehors sont limites a `http(s)` : une adresse venue
   d'une source ne lance jamais une autre appli.
 - `PendingIntent` immuables ; seule l'activite principale est exportee
-  (lanceur, et « Partager » du texte).
+  (lanceur, « Partager » du texte, et le lien `fgclaimer://finir`).
+- Ce lien (1.4.0) vient de l'alerte du PC ou de la notification du relais,
+  mais n'importe quelle page pourrait l'ouvrir : il ne fait que DESIGNER un
+  jeu. L'appli le cherche dans ses propres offres, ne suit aucune adresse
+  venue du lien, et ne recupere rien sans un appui sur « Finir ici ».
 
 ## La plateforme
 

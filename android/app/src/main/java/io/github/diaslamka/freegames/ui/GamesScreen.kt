@@ -56,6 +56,7 @@ import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.data.Money
 import io.github.diaslamka.freegames.data.Ratings
+import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AppState
@@ -87,6 +88,8 @@ fun GamesScreen(
     onOpen: (String) -> Unit,
     onShare: (List<Offer>) -> Unit,
     onAccounts: () -> Unit,
+    /** Ecarter une demande d'aide du PC (1.4.0). */
+    onHelpDismiss: (String) -> Unit = {},
 ) {
     val b = LocalBrut.current
     val context = LocalContext.current
@@ -130,6 +133,11 @@ fun GamesScreen(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                // Le PC a besoin de toi (1.4.0) : en tete, c'est le plus urgent.
+                val help = Relay.openHelp(state, now)
+                if (help.isNotEmpty()) item("help", span = full) {
+                    HelpBanner(help, state, claiming, onFinish = { onClaim(setOf(it.key)) }, onDismiss = onHelpDismiss)
+                }
                 item("hero", span = full) {
                     val cur = Countries.of(state.settings.country).currency
                     val total = Money.total(state.library.values.map { it.worth }, cur)

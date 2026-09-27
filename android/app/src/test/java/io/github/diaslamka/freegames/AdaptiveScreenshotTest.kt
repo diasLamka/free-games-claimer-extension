@@ -151,4 +151,18 @@ class AdaptiveScreenshotTest {
     @Test
     @Config(qualifiers = "fr-rFR-w1280dp-h800dp-land-night-xhdpi")
     fun tabletteReglages() = shoot("D-8-tablette-reglages", 3, screen = settings)
+
+    /** Le PC a besoin de toi (1.4.0) : la demande d'aide en tete des jeux. */
+    @Test
+    @Config(qualifiers = "fr-rFR-w411dp-h891dp-xxhdpi")
+    fun aideDuPc() {
+        val o = live.offers.values.first { it.store == Stores.EPIC && live.library.values.none { e -> e.id == it.storeId } }
+        val s = live.copy(relay = io.github.diaslamka.freegames.model.RelayState(
+            dev = "c0ffee01", pairedAt = now - 86_400_000L,
+            help = mapOf("epic|x" to io.github.diaslamka.freegames.model.HelpRequest(Stores.EPIC, o.storeId ?: "", o.title, o.url, now + 3_600_000L, now - 60_000L)),
+        ))
+        shoot("D-9-aide-du-pc", 0, dark = false) {
+            GamesScreen(s, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
+        }
+    }
 }

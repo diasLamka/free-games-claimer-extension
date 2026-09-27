@@ -2287,5 +2287,8 @@
   },
   "stampClaimed": {
     "message": "Geholt"
+  },
+  "phoneChallengeHere": {
+    "message": "Tippen, um es auf dem Handy abzuschließen."
   }
 }

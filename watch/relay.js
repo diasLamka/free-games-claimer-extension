@@ -12,6 +12,11 @@
  * rattraper un appareil reste eteint plus longtemps que ntfy ne garde ses
  * messages (douze heures sur ntfy.sh).
  *
+ * Bloque par une verification humaine (un captcha), il demande de l'aide
+ * (2.89.0) : l'autre appareil appelle l'humain, qui finit le jeu LA OU IL EST
+ * -- sur le telephone quand il est dehors. Le PC ne resout rien a distance :
+ * c'est le telephone qui recupere, avec sa propre session.
+ *
  * Le protocole est ecrit dans docs/specs/2026-09-26-relais-design.md, et
  * l'appli le suit a l'octet pres : test/fixtures/relais.json fixe un secret,
  * un sujet et un message chiffre que les deux cotes doivent reproduire.
@@ -34,11 +39,13 @@ export const CODE_PREFIX = 'FGC1-';
 export const ENVELOPE_PREFIX = 'fgc1.';
 export const VERSION = 1;
 
-export const TYPES = Object.freeze({ CLAIMED: 'claimed', LOCK: 'lock', ALIVE: 'alive' });
+export const TYPES = Object.freeze({ CLAIMED: 'claimed', LOCK: 'lock', ALIVE: 'alive', HELP: 'help' });
 export const ROLES = Object.freeze({ PC: 'pc', PHONE: 'phone' });
 
 /** Un verrou plus long que ceci est ignore : une reclamation dure cinq minutes au plus. */
 export const MAX_LOCK_MS = 10 * 60 * 1000;
+/** Une demande d'aide vaut un jour au plus : l'humain a eu le temps de la voir. */
+export const MAX_HELP_MS = 24 * 3600 * 1000;
 /** Au-dela, un message est trop vieux pour dire quoi que ce soit. */
 export const MAX_AGE_MS = 7 * 24 * 3600 * 1000;
 /** Un signe de vie par heure au plus. */
@@ -201,6 +208,22 @@ export async function fitAlive(base, games, size) {
   }
 }
 
+/**
+ * Le lien qui ouvre l'appli sur un jeu (2.89.0) : `fgclaimer://finir?s=&i=&t=`.
+ * Il ne porte que le magasin, l'identifiant et le titre -- l'appli retrouve
+ * le jeu dans SES offres, et ne suit jamais une adresse venue du lien.
+ */
+export const APP_LINK = 'fgclaimer://finir';
+
+export function appLink(g) {
+  const q = new URLSearchParams({
+    s: String(g.store || g.s || ''),
+    i: String(g.id ?? g.i ?? '').slice(0, 200),
+    t: String(g.title || g.t || '').slice(0, 140),
+  });
+  return `${APP_LINK}?${q.toString()}`;
+}
+
 /* ------------------------------------------------------------ l'integration */
 
 /** La cle d'un verrou : le magasin et le titre normalise, comme ownedKeys. */
@@ -210,15 +233,18 @@ export function lockKey(store, normalisedTitle) {
 
 /**
  * Integre des messages ouverts : les jeux obtenus ailleurs entrent au
- * registre, les verrous et le signe de vie de l'autre sont notes.
+ * registre, les verrous, les demandes d'aide et le signe de vie de l'autre
+ * sont notes.
  *
- * Rend { state, library, added } -- `added` compte les entrees nouvelles du
- * registre. Pure : ni horloge, ni stockage.
+ * Rend { state, library, added, helped } -- `added` compte les entrees
+ * nouvelles du registre, `helped` les cles des demandes d'aide nouvelles.
+ * Pure : ni horloge, ni stockage.
  */
 export function applyMessages(state, messages, { library = {}, now, normalise, libraryKey, makeEntry, mergeEntry }) {
-  const st = { ...state, locks: { ...(state.locks || {}) } };
+  const st = { ...state, locks: { ...(state.locks || {}) }, help: { ...(state.help || {}) } };
   const lib = { ...library };
   let added = 0;
+  const helped = [];
   for (const m of messages) {
     if (!m || m.v !== VERSION || typeof m.ts !== 'number') continue;
     if (m.dev === st.dev) continue;
@@ -255,7 +281,25 @@ export function applyMessages(state, messages, { library = {}, now, normalise, l
         st.locks[lockKey(g.s, normalise(g.t))] = { until, dev: m.dev };
       }
     }
-    if (m.type === TYPES.ALIVE || m.type === TYPES.CLAIMED || m.type === TYPES.LOCK) {
+    /* L'autre est bloque par une verification humaine sur ces jeux : a
+       l'humain de le finir ici. Une demande par jeu, la plus recente. */
+    if (m.type === TYPES.HELP) {
+      for (const g of games) {
+        if (!g || typeof g.s !== 'string' || !g.s || typeof g.t !== 'string' || !g.t) continue;
+        const until = Math.min(typeof g.until === 'number' ? g.until : m.ts + MAX_HELP_MS, m.ts + MAX_HELP_MS);
+        if (until <= now) continue;
+        const k = lockKey(g.s, normalise(g.t));
+        const avant = st.help[k];
+        if (avant && avant.at >= m.ts) continue;
+        st.help[k] = {
+          s: g.s.slice(0, 40), i: typeof g.i === 'string' ? g.i.slice(0, 200) : '', t: g.t.slice(0, 140),
+          u: typeof g.u === 'string' && /^https:\/\//.test(g.u) ? g.u.slice(0, 300) : null,
+          until, at: m.ts, dev: m.dev, role,
+        };
+        if (!avant) helped.push(k);
+      }
+    }
+    if (m.type === TYPES.ALIVE || m.type === TYPES.CLAIMED || m.type === TYPES.LOCK || m.type === TYPES.HELP) {
       if (!st.peer || !(st.peer.at > m.ts)) {
         st.peer = {
           role, dev: m.dev, at: m.ts,
@@ -268,7 +312,20 @@ export function applyMessages(state, messages, { library = {}, now, normalise, l
   }
   // Les verrous passes ne servent plus a rien.
   for (const [k, v] of Object.entries(st.locks)) if (!v || v.until <= now) delete st.locks[k];
-  return { state: st, library: lib, added };
+  // Une demande d'aide s'eteint a son terme, ou quand le jeu est obtenu -- ici ou la-bas.
+  const acquis = new Set(Object.values(lib)
+    .filter((e) => e && e.store && e.title && (!e.status || ACQUIRED.includes(e.status)))
+    .map((e) => lockKey(e.store, normalise(e.title))));
+  for (const [k, v] of Object.entries(st.help)) if (!v || v.until <= now || acquis.has(k)) delete st.help[k];
+  return { state: st, library: lib, added, helped: helped.filter((k) => st.help[k]) };
+}
+
+/** Les demandes d'aide encore ouvertes, de la plus recente a la plus ancienne. */
+export function openHelp(state, now) {
+  return Object.entries((state && state.help) || {})
+    .filter(([, v]) => v && v.until > now)
+    .map(([key, v]) => ({ key, ...v }))
+    .sort((a, b) => b.at - a.at);
 }
 
 /** Les verrous de l'autre appareil encore valides : des cles « magasin|titre ». */
@@ -296,6 +353,7 @@ export function readRelay(raw) {
     lastError: typeof raw.lastError === 'string' ? raw.lastError.slice(0, 200) : null,
     peer: raw.peer && typeof raw.peer === 'object' ? raw.peer : null,
     locks: raw.locks && typeof raw.locks === 'object' ? raw.locks : {},
+    help: raw.help && typeof raw.help === 'object' ? raw.help : {},
   };
 }
 
@@ -365,9 +423,9 @@ async function patchRelay(chrome, patch) {
 }
 
 /**
- * Lit le relais et integre ce qui est arrive. Rend { held, library, ctx } --
- * `held` : les jeux que l'autre appareil est en train de prendre -- ou null
- * s'il n'y a pas d'association.
+ * Lit le relais et integre ce qui est arrive. Rend { held, library, ctx, help }
+ * -- `held` : les jeux que l'autre appareil est en train de prendre ; `help` :
+ * ses demandes d'aide nouvelles -- ou null s'il n'y a pas d'association.
  */
 export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => {} }) {
   const ctx = await relayContext(chrome);
@@ -378,7 +436,7 @@ export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => 
     record('warn', `relais : lecture impossible (${p.status || p.note || '?'})`);
     await patchRelay(chrome, { lastError: `lecture ${p.status || p.note || '?'}` });
     const state = { ...cfg, locks: cfg.locks };
-    return { held: heldKeys(state, now), library: null, ctx };
+    return { held: heldKeys(state, now), library: null, ctx, help: [] };
   }
   const ouverts = [];
   for (const e of p.messages) {
@@ -386,7 +444,7 @@ export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => 
     if (m) ouverts.push(m);
   }
   const library0 = (await chrome.storage.local.get(KEY_LIBRARY))[KEY_LIBRARY] || {};
-  const r = applyMessages({ dev: cfg.dev, locks: cfg.locks, peer: cfg.peer }, ouverts, {
+  const r = applyMessages({ dev: cfg.dev, locks: cfg.locks, peer: cfg.peer, help: cfg.help }, ouverts, {
     library: library0, now, normalise: normaliseTitle, libraryKey, makeEntry, mergeEntry,
   });
   let library = null;
@@ -398,8 +456,10 @@ export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => 
     await chrome.storage.local.set({ [KEY_LIBRARY]: library });
     record('info', `relais : ${r.added} jeu(x) obtenu(s) par l'autre appareil`);
   }
-  await patchRelay(chrome, { since: p.last, lastSync: now, lastError: null, locks: r.state.locks, peer: r.state.peer || cfg.peer });
-  return { held: heldKeys(r.state, now), library, ctx };
+  await patchRelay(chrome, {
+    since: p.last, lastSync: now, lastError: null, locks: r.state.locks, peer: r.state.peer || cfg.peer, help: r.state.help,
+  });
+  return { held: heldKeys(r.state, now), library, ctx, help: r.helped.map((k) => ({ key: k, ...r.state.help[k] })) };
 }
 
 /** Publie un message du relais ; une panne est notee, jamais propagee. */

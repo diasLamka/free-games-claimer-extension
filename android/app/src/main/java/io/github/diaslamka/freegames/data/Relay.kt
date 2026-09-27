@@ -1,9 +1,11 @@
 package io.github.diaslamka.freegames.data
 
 import io.github.diaslamka.freegames.model.AppState
+import io.github.diaslamka.freegames.model.HelpRequest
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.RelayState
+import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.sources.arr
 import io.github.diaslamka.freegames.sources.get
@@ -31,7 +33,9 @@ import javax.crypto.spec.SecretKeySpec
  * deux cotes).
  *
  * Celui qui est allume recupere : avant un jeu, un verrou ; apres, « obtenu ».
- * L'autre inscrit le jeu et ne le retente pas. Tout est chiffre de bout en bout
+ * L'autre inscrit le jeu et ne le retente pas. Bloque par une verification
+ * humaine, il demande de l'aide (1.4.0) : l'autre appelle l'humain, qui finit
+ * le jeu la ou il est. Tout est chiffre de bout en bout
  * (AES-256-GCM) : ntfy voit un sujet tire au hasard, jamais un titre. Aucun
  * cookie, aucun code, aucun identifiant de compte ne passe.
  *
@@ -47,6 +51,13 @@ object Relay {
     const val CLAIMED = "claimed"
     const val LOCK = "lock"
     const val ALIVE = "alive"
+    const val HELP = "help"
+
+    /** Une demande d'aide vaut un jour au plus. */
+    const val MAX_HELP_MS = 24 * 3_600_000L
+
+    /** Le lien qui ouvre l'appli sur un jeu a finir (watch/relay.js, appLink). */
+    const val APP_LINK = "fgclaimer://finir"
 
     const val MAX_LOCK_MS = 10 * 60_000L
     const val MAX_AGE_MS = 7 * 24 * 3_600_000L
@@ -160,6 +171,54 @@ object Relay {
         }
     }
 
+    /* ------------------------------------------------------ le lien de l'appli */
+
+    /** Ce qu'un lien `fgclaimer://finir?s=&i=&t=` designe. */
+    data class AppLink(val store: String, val id: String, val title: String)
+
+    private fun form(v: String) = java.net.URLEncoder.encode(v, "UTF-8")
+
+    /** Le lien, encode comme URLSearchParams l'encode dans l'extension. */
+    fun appLink(store: String, id: String, title: String): String =
+        "$APP_LINK?s=${form(store)}&i=${form(id.take(200))}&t=${form(title.take(140))}"
+
+    /**
+     * Le lien relu, ou null. Il peut venir de n'importe ou (une page web, une
+     * autre appli) : il ne sert qu'a DESIGNER un jeu, que l'appli cherche dans
+     * ses propres offres. Aucune adresse n'en est jamais suivie.
+     */
+    fun parseAppLink(text: String?): AppLink? {
+        val t = text?.trim().orEmpty()
+        if (!t.startsWith("$APP_LINK?") || t.length > 1200) return null
+        val params = t.substringAfter('?').split('&').mapNotNull { part ->
+            val k = part.substringBefore('=', "")
+            if (k.isEmpty()) null else k to runCatching { java.net.URLDecoder.decode(part.substringAfter('='), "UTF-8") }.getOrNull()
+        }.toMap()
+        val store = params["s"]?.takeIf { it in Stores.LABELS } ?: return null
+        val id = params["i"].orEmpty().takeIf { it.length <= 200 && Regex("[A-Za-z0-9._:~-]*").matches(it) } ?: return null
+        val title = params["t"]?.trim()?.takeIf { it.isNotEmpty() && it.length <= 140 } ?: return null
+        return AppLink(store, id, title)
+    }
+
+    /** L'offre de l'appli que designe (magasin, identifiant, titre) -- l'identifiant d'abord. */
+    fun findOffer(state: AppState, store: String, id: String, title: String): Offer? {
+        val same = state.offers.values.filter { it.store == store }
+        if (id.isNotEmpty()) same.firstOrNull { it.storeId == id || it.sourceId == id }?.let { return it }
+        val norm = Titles.normalise(title)
+        return same.firstOrNull { it.normalisedTitle == norm }
+    }
+
+    /**
+     * Les demandes d'aide encore ouvertes, de la plus recente a la plus
+     * ancienne -- sans celles dont le jeu est deja obtenu, ici ou la-bas.
+     */
+    fun openHelp(state: AppState, now: Long): List<Pair<String, HelpRequest>> {
+        val owned = state.library.values.filter { it.status in ACQUIRED && it.title != null }
+            .map { lockKey(it.store, Titles.normalise(it.title)) }.toSet()
+        return state.relay?.help.orEmpty().filter { (k, v) -> v.until > now && k !in owned }
+            .toList().sortedByDescending { it.second.at }
+    }
+
     /* -------------------------------------------------------- l'integration */
 
     fun lockKey(store: String, normalisedTitle: String) = "$store|$normalisedTitle"
@@ -175,6 +234,7 @@ object Relay {
         val relay = state.relay ?: return state to 0
         var lib = state.library
         val locks = relay.locks.toMutableMap()
+        val help = relay.help.toMutableMap()
         var peerRole = relay.peerRole
         var peerAt = relay.peerAt
         var added = 0
@@ -215,7 +275,23 @@ object Relay {
                     locks[lockKey(store, Titles.normalise(title))] = until
                 }
             }
-            if (type == CLAIMED || type == ALIVE || type == LOCK) {
+            if (type == HELP) {
+                for (g in games) {
+                    val store = g["s"].str?.takeIf { it.isNotEmpty() } ?: continue
+                    val title = g["t"].str?.takeIf { it.isNotEmpty() } ?: continue
+                    val until = minOf(g["until"].long() ?: (ts + MAX_HELP_MS), ts + MAX_HELP_MS)
+                    if (until <= now) continue
+                    val k = lockKey(store, Titles.normalise(title))
+                    val before = help[k]
+                    if (before != null && before.at >= ts) continue
+                    help[k] = HelpRequest(
+                        store = store.take(40), id = g["i"].str.orEmpty().take(200), title = title.take(140),
+                        url = g["u"].str?.takeIf { it.startsWith("https://") }?.take(300),
+                        until = until, at = ts, notified = before?.notified ?: false,
+                    )
+                }
+            }
+            if (type == CLAIMED || type == ALIVE || type == LOCK || type == HELP) {
                 if (peerAt == null || ts >= peerAt) {
                     peerAt = ts
                     peerRole = m["role"].str?.takeIf { it == "pc" || it == "phone" } ?: peerRole
@@ -223,7 +299,10 @@ object Relay {
             }
         }
         val fresh = locks.filterValues { it > now }
-        return state.copy(library = lib, relay = relay.copy(locks = fresh, peerRole = peerRole, peerAt = peerAt)) to added
+        // Une demande d'aide s'eteint a son terme, ou quand le jeu est obtenu -- ici ou la-bas.
+        val owned = lib.values.filter { it.status in ACQUIRED && it.title != null }.map { lockKey(it.store, Titles.normalise(it.title)) }.toSet()
+        val stillHelp = help.filter { (k, v) -> v.until > now && k !in owned }
+        return state.copy(library = lib, relay = relay.copy(locks = fresh, peerRole = peerRole, peerAt = peerAt, help = stillHelp)) to added
     }
 
     /** L'autre appareil est-il en train de prendre ce jeu ? */
