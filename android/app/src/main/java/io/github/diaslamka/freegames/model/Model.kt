@@ -170,6 +170,8 @@ data class Settings(
     val showMobile: Boolean = true,
     val showOthers: Boolean = true,
     val steamRatings: Boolean = true,
+    /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */
+    val tonight: Boolean = true,
     val onboarded: Boolean = false,
 )
 
@@ -239,6 +241,61 @@ data class AppState(
     /** La fiche Steam de chaque souhait, par « app:<id> » ou « t:<titre> ». */
     val odds: Map<String, OddsInfo> = emptyMap(),
     val oddsAt: Long? = null,
+    /**
+     * « Ce soir je joue a... » (1.8.0). Ce que l'on possede, d'apres Ma
+     * collection de l'extension (sa sauvegarde l'apporte), par « magasin:id ».
+     */
+    val owned: Map<String, OwnedGame> = emptyMap(),
+    /** L'etat de chaque jeu (a essayer, en cours, fini...), le meme que dans Ma collection. */
+    val marks: Map<String, Mark> = emptyMap(),
+    /** La fiche Steam des jeux de la pile, par appid ; l'appid trouve pour les titres hors Steam. */
+    val tonightApps: Map<String, TonightInfo> = emptyMap(),
+    val tonightTitles: Map<String, TitleMatch> = emptyMap(),
+    val tonightAt: Long? = null,
+    /** Le choix du soir, et ses reglages. */
+    val tonight: TonightPick = TonightPick(),
+)
+
+/** Un jeu de Ma collection (1.8.0). */
+@Serializable
+data class OwnedGame(val store: String, val id: String, val title: String, val deck: String? = null)
+
+/** L'etat d'un jeu, comme watch/annotations.js : toTry, playing, done, dropped, notForMe. */
+@Serializable
+data class Mark(val status: String, val note: String = "")
+
+/** Ce que GetItems dit d'un jeu : son format, sa note, son Steam Deck, sa vignette. */
+@Serializable
+data class TonightInfo(
+    val at: Long,
+    val none: Boolean = false,
+    val name: String? = null,
+    val format: String? = null,
+    val deck: String? = null,
+    val percent: Int? = null,
+    val reviews: Int = 0,
+    val image: String? = null,
+)
+
+/** L'appid Steam d'un titre hors Steam, trouve par la recherche (ou non). */
+@Serializable
+data class TitleMatch(val at: Long, val appid: String? = null)
+
+/**
+ * Le choix du soir : le jeu tire, quand, pour quels reglages, ceux deja
+ * montres ; et, une fois « J'y joue » touche, le jeu retenu.
+ */
+@Serializable
+data class TonightPick(
+    val time: String = "evening",
+    val deckOnly: Boolean = false,
+    val key: String? = null,
+    val at: Long = 0,
+    val shown: List<String> = emptyList(),
+    val playing: String? = null,
+    val playingTitle: String? = null,
+    val playingPage: String? = null,
+    val playingAt: Long = 0,
 )
 
 /** Un jeu vu offert : ou, et quand (1.7.0). */

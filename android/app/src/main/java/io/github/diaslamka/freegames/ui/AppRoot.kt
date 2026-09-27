@@ -61,6 +61,8 @@ import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.BackupIO
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.Tonight
+import io.github.diaslamka.freegames.widget.TonightWidget
 import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.ShareText
@@ -176,9 +178,10 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             Toast.makeText(
                 context,
                 if (r == null) context.getString(R.string.import_failed)
-                else context.getString(R.string.import_done, r.library, r.wishes + r.imported),
+                else context.getString(R.string.import_done, r.library, r.wishes + r.imported, r.owned),
                 Toast.LENGTH_LONG,
             ).show()
+            if (r != null) runCatching { TonightWidget.refresh(context) }
         }
     }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -248,6 +251,14 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         return
     }
 
+    /* Ce soir je joue a... (1.8.0) : chaque geste change l'etat, puis le widget. */
+    fun tonightUpdate(change: (io.github.diaslamka.freegames.model.AppState) -> io.github.diaslamka.freegames.model.AppState) {
+        scope.launch {
+            Graph.store.update(change)
+            runCatching { TonightWidget.refresh(context) }
+        }
+    }
+
     val screen: @Composable () -> Unit = {
             when (tab) {
                 0 -> GamesScreen(
@@ -266,7 +277,28 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         scope.launch { Graph.store.update { s -> s.copy(relay = s.relay?.let { r -> r.copy(help = r.help - key) }) } }
                     },
                 )
-                1 -> ClaimedScreen(state, onOpen = { ClaimSession.openExternally(context, it) })
+                1 -> ClaimedScreen(
+                    state, onOpen = { ClaimSession.openExternally(context, it) }, now = now,
+                    tonight = TonightActions(
+                        onKeep = { pick -> tonightUpdate { it.copy(tonight = pick) } },
+                        onSettings = { time, deck -> tonightUpdate { it.copy(tonight = it.tonight.copy(time = time, deckOnly = deck, key = null, shown = emptyList())) } },
+                        onAnother = { tonightUpdate { Tonight.reroll(it, System.currentTimeMillis()) } },
+                        onPlaying = { jeu ->
+                            tonightUpdate {
+                                Tonight.mark(it, jeu.c.key, Tonight.PLAYING).copy(
+                                    tonight = it.tonight.copy(
+                                        key = null, playing = jeu.c.key, playingTitle = jeu.c.title,
+                                        playingPage = Tonight.page(jeu.c), playingAt = System.currentTimeMillis(),
+                                    ),
+                                )
+                            }
+                        },
+                        onNotForMe = { jeu ->
+                            tonightUpdate { Tonight.reroll(Tonight.mark(it, jeu.c.key, Tonight.NOT_FOR_ME), System.currentTimeMillis()) }
+                            Toast.makeText(context, context.getString(R.string.tonight_dropped, jeu.c.title), Toast.LENGTH_SHORT).show()
+                        },
+                    ),
+                )
                 2 -> WishlistScreen(
                     state, now,
                     onAdd = { t -> scope.launch { Graph.store.update { s -> if (s.wishlist.any { Titles.normalise(it) == Titles.normalise(t) }) s else s.copy(wishlist = listOf(t) + s.wishlist) } } },

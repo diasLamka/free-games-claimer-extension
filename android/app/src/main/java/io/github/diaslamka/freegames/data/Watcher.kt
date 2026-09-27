@@ -116,6 +116,8 @@ object Watcher {
         io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, now)
         refreshRatings(now)
         refreshOdds(now)
+        refreshTonight(now)
+        runCatching { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
         runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
@@ -143,6 +145,14 @@ object Watcher {
         if (Odds.targets(s).none { Odds.needsInfo(s, it, now) }) return
         val next = Odds.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
         Graph.store.update { st -> st.copy(odds = next, oddsAt = now) }
+    }
+
+    /** « Ce soir je joue a... » (1.8.0) : les fiches Steam de la pile, cent au plus, une fois par heure au plus. */
+    suspend fun refreshTonight(now: Long) {
+        val s = Graph.store.value
+        if (!Tonight.due(s, now) || Tonight.buildPile(s).isEmpty()) return
+        val (apps, titles) = Tonight.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        Graph.store.update { st -> st.copy(tonightApps = apps, tonightTitles = titles, tonightAt = now) }
     }
 
     /** Huit notes au plus par passage : poli envers Steam. */

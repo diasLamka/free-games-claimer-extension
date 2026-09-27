@@ -31,6 +31,10 @@ genere : voir `build/build.mjs`.
 - **La sauvegarde complete emporte ces etats** (et leurs notes) : c'est la
   seule donnee ecrite a la main, et elle ne suivait pas d'un ordinateur a
   l'autre. A la restauration, un etat pose ici gagne.
+- **Dans l'appli Android 1.8.0** : la meme carte en tete de l'onglet
+  Recuperes, et un **widget** pour l'ecran d'accueil -- le jeu du soir, ses
+  raisons, « Un autre ». Ma collection et les etats des jeux arrivent par la
+  sauvegarde de l'extension, et les etats y retournent.
 
 ## 2.94.0 -- 2026-09-27
 

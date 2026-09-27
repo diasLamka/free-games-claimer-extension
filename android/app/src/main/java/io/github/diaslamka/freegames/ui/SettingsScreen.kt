@@ -122,6 +122,7 @@ fun SettingsScreen(
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
+                    Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
                     Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
                 }
             }

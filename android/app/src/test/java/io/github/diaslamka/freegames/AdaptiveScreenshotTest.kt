@@ -16,6 +16,9 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.SourceStatus
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.sources.arr
+import io.github.diaslamka.freegames.sources.get
+import io.github.diaslamka.freegames.sources.text
 import io.github.diaslamka.freegames.sources.EpicMobileSource
 import io.github.diaslamka.freegames.sources.EpicSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
@@ -184,4 +187,27 @@ class AdaptiveScreenshotTest {
         )
         shoot("D-10-souhaits-chances", 2, dark = true) { io.github.diaslamka.freegames.ui.WishlistScreen(s, now, onAdd = {}, onRemove = {}) }
     }
+
+    /** Ce soir je joue a... (1.8.0) : la carte de l'onglet Recuperes. */
+    private val soir: AppState by lazy {
+        val items = io.github.diaslamka.freegames.sources.parseJson(
+            java.io.File(System.getProperty("fixtures"), "steam-getitems-tonight.json").readText(),
+        )["response"]["store_items"].arr!!
+        val apps = items.associate { it["appid"].text!! to io.github.diaslamka.freegames.data.Tonight.readItem(it, now)!! }
+        val owned = listOf("1145360" to "Hades", "292030" to "The Witcher 3: Wild Hunt", "400" to "Portal", "501300" to "What Remains of Edith Finch", "646570" to "Slay the Spire")
+            .associate { (id, t) -> "steam:$id" to io.github.diaslamka.freegames.model.OwnedGame(Stores.STEAM, id, t, "verified") }
+        live.copy(
+            owned = owned, tonightApps = apps,
+            marks = mapOf("steam:501300" to io.github.diaslamka.freegames.model.Mark("toTry")),
+            tonight = io.github.diaslamka.freegames.model.TonightPick(time = "evening", key = "steam:501300", at = now),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "fr-rFR-w411dp-h891dp-night-xxhdpi")
+    fun ceSoir() = shoot("D-11-ce-soir", 1, dark = true) { ClaimedScreen(soir, onOpen = {}, now = now) }
+
+    @Test
+    @Config(qualifiers = "fr-rFR-w1280dp-h800dp-land-xhdpi")
+    fun ceSoirTablette() = shoot("D-12-ce-soir-tablette", 1, dark = false) { ClaimedScreen(soir, onOpen = {}, now = now) }
 }

@@ -41,7 +41,7 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
 
 /** Ce qui a ete recupere, par l'appli ou par l'extension, mois par mois. */
 @Composable
-fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit) {
+fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.currentTimeMillis(), tonight: TonightActions = TonightActions()) {
     val b = LocalBrut.current
     val entries = state.library.values.sortedByDescending { it.ts ?: 0 }
     val groups = entries.groupBy { e -> e.ts?.let { Fmt.month(it) } ?: "—" }
@@ -68,6 +68,10 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit) {
                     val cur = Countries.of(state.settings.country).currency
                     val total = Money.total(state.library.values.map { it.worth }, cur)
                     Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
+                }
+                // Ce soir je joue a... (1.8.0) : un jeu de la pile, pour le temps qu'on a.
+                if (entries.isNotEmpty() || state.owned.isNotEmpty()) item("tonight", span = full) {
+                    TonightCard(state, now, tonight, onOpen)
                 }
                 if (entries.isEmpty()) item("empty", span = full) {
                     Text(stringResource(R.string.claimed_empty), style = MaterialTheme.typography.bodyMedium, color = b.ink)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le bloc de la charte, sur l'ecran d'accueil : aplat jaune, bordure noire
+     epaisse, ombre pleine decalee. Aucun arrondi. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="5dp" android:top="5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF000000" />
+        </shape>
+    </item>
+    <item android:right="5dp" android:bottom="5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFE8FF00" />
+            <stroke android:width="3dp" android:color="#FF000000" />
+        </shape>
+    </item>
+</layer-list>

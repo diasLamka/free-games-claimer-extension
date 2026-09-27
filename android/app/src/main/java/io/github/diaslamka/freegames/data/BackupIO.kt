@@ -4,6 +4,8 @@ import io.github.diaslamka.freegames.BuildConfig
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.ImportedWish
 import io.github.diaslamka.freegames.model.LibraryEntry
+import io.github.diaslamka.freegames.model.Mark
+import io.github.diaslamka.freegames.model.OwnedGame
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.arr
@@ -35,11 +37,15 @@ object BackupIO {
     const val KEY_STEAM_WISHLIST = "veille:souhaits-steam"
     const val KEY_GOG_WISHLIST = "veille:souhaits-gog"
     const val KEY_COUNTRY = "FGC_epic_country"
+    /** Ma collection et l'etat de chaque jeu (1.8.0), pour « Ce soir je joue a... ». */
+    const val KEY_COLLECTION = "veille:collection"
+    const val KEY_ANNOTATIONS = "veille:annotations"
+    private val STATUTS = setOf("toTry", "playing", "done", "dropped", "notForMe")
 
     /** Ce que le moteur garde et relit : l'historique par magasin, les libelles appris. */
     private val ENGINE_KEYS = Regex("^FGC_(history_.+|taught_labels|seen_labels)$")
 
-    data class Report(val library: Int, val wishes: Int, val imported: Int, val engine: Int)
+    data class Report(val library: Int, val wishes: Int, val imported: Int, val engine: Int, val owned: Int = 0, val marks: Int = 0)
 
     private fun backupBlock(root: JsonElement?): JsonObject? {
         root.obj ?: return null
@@ -87,6 +93,28 @@ object BackupIO {
             }
         }
 
+        /* Ma collection est une photographie : la plus recente remplace
+           l'ancienne. Les jeux seulement -- ni DLC, ni bandes-son. */
+        val owned = buildMap {
+            lire(bloc[KEY_COLLECTION])["items"].obj?.forEach { (k, it) ->
+                val store = it["store"].str ?: return@forEach
+                val id = it["id"].text ?: return@forEach
+                val title = it["title"].str?.trim().orEmpty()
+                val kind = it["kind"].str
+                if (title.isEmpty() || (kind != null && kind != "game")) return@forEach
+                put("$store:$id", OwnedGame(store, id, title, it["deck"].str?.takeIf { d -> d in setOf("verified", "playable", "unsupported") }))
+            }
+        }
+        /* L'etat des jeux : ceux du fichier s'ajoutent, ceux d'ici gagnent. */
+        var marks = state.marks
+        var marksAdded = 0
+        lire(bloc[KEY_ANNOTATIONS]).obj?.forEach { (k, v) ->
+            val st = v["status"].str
+            if (k in marks || st !in STATUTS) return@forEach
+            marks = marks + (k to Mark(st!!, v["note"].str?.take(500).orEmpty()))
+            marksAdded++
+        }
+
         val engine = bloc.filterKeys { ENGINE_KEYS.matches(it) }
         val country = bloc[KEY_COUNTRY].str?.let { Countries.of(it).code }
 
@@ -97,8 +125,10 @@ object BackupIO {
             engine = mergeEngine(state.engine, engine),
             settings = if (country != null) state.settings.copy(country = country) else state.settings,
             importedAt = now,
+            owned = if (owned.isNotEmpty()) owned else state.owned,
+            marks = marks,
         )
-        return next to Report(libAdded, added.size, imported.size, engine.size)
+        return next to Report(libAdded, added.size, imported.size, engine.size, owned.size, marksAdded)
     }
 
     /** L'historique du moteur : on garde les entrees des deux cotes. */
@@ -130,6 +160,10 @@ object BackupIO {
             put(KEY_WISHLIST, wishes)
             put(KEY_COUNTRY, state.settings.country)
             for ((k, v) in state.engine) if (k.startsWith("FGC_history_")) put(k, v)
+            // L'etat des jeux revient a l'extension, qui le fusionne (les siens gagnent).
+            if (state.marks.isNotEmpty()) put(KEY_ANNOTATIONS, buildJsonObject {
+                for ((k, m) in state.marks) put(k, buildJsonObject { put("status", m.status); put("note", m.note) })
+            })
         }
         return buildJsonObject {
             put("exportFormat", 2)

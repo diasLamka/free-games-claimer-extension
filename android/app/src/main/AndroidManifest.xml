@@ -72,5 +72,17 @@
             android:name=".notify.LastChanceReceiver"
             android:exported="false" />
 
+        <!-- « Ce soir je joue a... » (1.8.0) : le widget de l'ecran d'accueil. -->
+        <receiver
+            android:name=".widget.TonightWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_tonight" />
+        </receiver>
+
     </application>
 </manifest>
