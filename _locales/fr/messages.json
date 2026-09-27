@@ -2570,13 +2570,22 @@
   "tonightDeckPlayable": {
     "message": "Jouable sur Steam Deck"
   },
-  "tonightClaimed": {
-    "message": "Récupéré gratuitement en $1"
-  },
   "tonightLabel": {
     "message": "Ce soir je joue à…"
   },
   "tonightToggleHint": {
     "message": "Lit, sans cookie, la note, le format et le Steam Deck des jeux de votre pile."
+  },
+  "stampOwned": {
+    "message": "Déjà à vous"
+  },
+  "stampSkipped": {
+    "message": "Ignoré"
+  },
+  "stampFailed": {
+    "message": "Échec"
+  },
+  "stampWaiting": {
+    "message": "En attente"
   }
 }

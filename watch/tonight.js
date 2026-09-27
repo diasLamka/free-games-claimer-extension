@@ -32,6 +32,7 @@ import { deckAtLeast, deckFromItem, DECK } from './deck.js';
 import { normaliseTitle } from './offer.js';
 import { searchUrl, matchSearch } from './steam-ratings.js';
 import { ITEMS_URL, steamImage } from './sources/steam.js';
+import { coverFor } from './covers.js';
 
 export const KEY_TONIGHT = 'veille:ce-soir';
 
@@ -99,6 +100,38 @@ export const PICK_KEEP_MS = 12 * 3600 * 1000;
 /** Tire parmi les cinq meilleurs, pour qu'« Un autre » propose vraiment autre chose. */
 export const TOP = 5;
 
+/**
+ * La forme des fiches : 2 depuis la 2.96.0, qui y ajoute la description
+ * courte. Une fiche d'une forme plus ancienne est relue, sans attendre ses
+ * soixante jours.
+ */
+export const INFO_VERSION = 2;
+/** La description montree sur la carte : une phrase ou deux, pas la fiche. */
+export const MAX_DESCRIPTION = 300;
+
+/** La langue des descriptions Steam, d'apres celle de l'extension. */
+const STEAM_LANGS = Object.freeze({ fr: 'french', en: 'english', de: 'german', es: 'spanish' });
+export function steamLanguage(locale) {
+  return STEAM_LANGS[String(locale || '').toLowerCase().split('-')[0]] || 'english';
+}
+
+/** L'en-tete d'une fiche Steam, deduit de son appid : l'image est la avant toute lecture. */
+export function steamHeader(appid) {
+  return /^\d+$/.test(String(appid || '')) ? `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/header.jpg` : null;
+}
+
+/** Une description Steam en texte simple : sans balise, sans espaces doubles, coupee a un mot. */
+export function cleanDescription(text) {
+  const t = String(text || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (t.length <= MAX_DESCRIPTION) return t || null;
+  const coupe = t.slice(0, MAX_DESCRIPTION);
+  return `${coupe.slice(0, Math.max(coupe.lastIndexOf(' '), MAX_DESCRIPTION - 40)).trimEnd()}…`;
+}
+
 /** L'etat stocke, avec sa forme. */
 export function readTonightState(raw) {
   const r = raw && typeof raw === 'object' ? raw : {};
@@ -135,7 +168,9 @@ export function readItem(item) {
   const pct = rev && Number.isFinite(Number(rev.percent_positive)) ? Number(rev.percent_positive) : null;
   const n = rev && Number.isFinite(Number(rev.review_count)) ? Number(rev.review_count) : 0;
   return {
+    v: INFO_VERSION,
     name: String(item.name || '').slice(0, 160) || null,
+    description: cleanDescription(item.basic_info && item.basic_info.short_description),
     format: formatFromTags(item.tags),
     deck: deckFromItem(item),
     percent: pct !== null && pct >= 0 && pct <= 100 ? pct : null,
@@ -144,12 +179,16 @@ export function readItem(item) {
   };
 }
 
-/** La requete GetItems d'un lot, sans cookie. */
-export function tonightItemsUrl(appids, country = 'FR') {
+/**
+ * La requete GetItems d'un lot, sans cookie. `lang` : la langue de la
+ * description (Steam rend l'anglais quand la traduction manque) ; les
+ * etiquettes, elles, sont des numeros, les memes dans toutes les langues.
+ */
+export function tonightItemsUrl(appids, country = 'FR', lang = 'english') {
   const input = {
     ids: appids.map((appid) => ({ appid: Number(appid) })),
-    context: { language: 'english', country_code: /^[A-Z]{2}$/.test(country) ? country : 'FR' },
-    data_request: { include_tag_count: 20, include_reviews: true, include_platforms: true, include_assets: true },
+    context: { language: Object.values(STEAM_LANGS).includes(lang) ? lang : 'english', country_code: /^[A-Z]{2}$/.test(country) ? country : 'FR' },
+    data_request: { include_basic_info: true, include_tag_count: 20, include_reviews: true, include_platforms: true, include_assets: true },
   };
   return `${ITEMS_URL}?input_json=${encodeURIComponent(JSON.stringify(input))}`;
 }
@@ -167,10 +206,17 @@ const HORS_PILE = new Set([STATUS.PLAYING, STATUS.DONE, STATUS.DROPPED, STATUS.N
  * `playtime` : la table du miroir (appid -> heures, null = jamais lance), ou
  * rien si elle n'a jamais ete lue -- et alors on ne sait pas, on ne suppose pas.
  */
-export function buildPile({ collection = null, library = {}, playtime = null, annotations = {}, state = null } = {}) {
+export function buildPile({ collection = null, library = {}, playtime = null, annotations = {}, state = null, covers = null } = {}) {
   const s = readTonightState(state);
   const pt = playtime && typeof playtime === 'object' ? playtime : null;
   const out = [];
+  /* Une image pour chaque jeu, meme sans fiche Steam : celle que le registre
+     a gardee de l'offre (la jaquette d'Amazon, d'Epic...), sinon celle que la
+     recherche Steam a trouvee pour « Deja recupere ». */
+  const images = new Map();
+  for (const e of Object.values(library || {})) {
+    if (e && e.title && typeof e.image === 'string' && /^https:\/\//i.test(e.image)) images.set(normaliseTitle(e.title), e.image);
+  }
   for (const row of buildRows({ collection, library })) {
     if (row.kind !== KINDS.GAME || !row.title) continue;
     const key = rowKey(row);
@@ -196,9 +242,15 @@ export function buildPile({ collection = null, library = {}, playtime = null, an
       claimed: row.claimed,
       since: row.since,
       deck: row.deck || null,
+      image: images.get(normaliseTitle(row.title)) || (covers ? coverFor(covers, row.title) : null) || null,
     });
   }
   return out;
+}
+
+/** L'image de la carte : la fiche Steam, l'en-tete deduit de l'appid, celle du registre, ou rien. */
+export function tonightImage(c, info) {
+  return (info && info.image) || steamHeader(c && c.appid) || (c && c.image) || null;
 }
 
 /* ------------------------------------------------------------- le choix */
@@ -243,7 +295,6 @@ export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false } = {
     if (deck === DECK.VERIFIED) score += 1;
     reasons.push({ key: deck === DECK.VERIFIED ? 'tonightDeckVerified' : 'tonightDeckPlayable', args: [] });
   }
-  if (c.claimed && c.since) reasons.push({ key: 'tonightClaimed', args: [c.since] });
   return { score, reasons };
 }
 
@@ -316,7 +367,10 @@ export function tonightPassDue(raw, now) {
   return !s.at || now - s.at >= PASS_EVERY_MS;
 }
 
-const aRelire = (e, now) => !e || now - (e.at || 0) >= (e.none ? NONE_MS : INFO_FRESH_MS);
+/** Un titre cherche : relu apres soixante jours (sept s'il n'a rien donne). */
+const titreARelire = (e, now) => !e || now - (e.at || 0) >= (e.none ? NONE_MS : INFO_FRESH_MS);
+/** Une fiche : de meme, et tout de suite si elle est d'une forme plus ancienne. */
+const ficheARelire = (e, now) => titreARelire(e, now) || (!e.none && e.v !== INFO_VERSION);
 
 /**
  * Un passage : huit titres hors Steam cherches (titre EXACT), puis deux lots
@@ -324,7 +378,7 @@ const aRelire = (e, now) => !e || now - (e.at || 0) >= (e.none ? NONE_MS : INFO_
  * jamais.
  */
 export async function refreshTonight({
-  fetch: fetchImpl, pile, state: raw, now, country = 'FR',
+  fetch: fetchImpl, pile, state: raw, now, country = 'FR', lang = 'english',
   pause = (ms) => new Promise((ok) => setTimeout(ok, ms)),
 }) {
   const s = readTonightState(raw);
@@ -333,7 +387,7 @@ export async function refreshTonight({
   let premier = true;
   const attendre = async () => { if (!premier) await pause(1200); premier = false; };
 
-  const aChercher = (pile || []).filter((c) => !c.ownedOnSteam && aRelire(titles[normaliseTitle(c.title)], now)).slice(0, SEARCHES_PER_RUN);
+  const aChercher = (pile || []).filter((c) => !c.ownedOnSteam && titreARelire(titles[normaliseTitle(c.title)], now)).slice(0, SEARCHES_PER_RUN);
   for (const c of aChercher) {
     await attendre();
     const json = await lireJson(fetchImpl, searchUrl(c.title, country));
@@ -348,12 +402,12 @@ export async function refreshTonight({
     const appid = c.appid || (titles[normaliseTitle(c.title)] || {}).appid;
     if (!appid || vus.has(appid)) continue;
     vus.add(appid);
-    if (aRelire(apps[appid], now)) ids.push(String(appid));
+    if (ficheARelire(apps[appid], now)) ids.push(String(appid));
   }
   for (let i = 0; i < Math.min(ids.length, LOT * LOTS_PER_RUN); i += LOT) {
     const lot = ids.slice(i, i + LOT);
     await attendre();
-    const json = await lireJson(fetchImpl, tonightItemsUrl(lot, country));
+    const json = await lireJson(fetchImpl, tonightItemsUrl(lot, country, lang));
     const items = json && json.response && Array.isArray(json.response.store_items) ? json.response.store_items : null;
     if (!items) continue;
     const lus = new Map(items.map((it) => [String(it && (it.appid || it.id)), it]));

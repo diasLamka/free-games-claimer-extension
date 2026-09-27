@@ -166,7 +166,6 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="tonight_rating">%1$d %% positive Steam-Bewertungen</string>
     <string name="tonight_deck_verified">Steam Deck verifiziert</string>
     <string name="tonight_deck_playable">Auf dem Steam Deck spielbar</string>
-    <string name="tonight_claimed">Im %1$s kostenlos geholt</string>
     <string name="set_tonight">„Heute Abend spiele ich…“: Steam-Seite der Spiele im Stapel lesen</string>
     <string name="widget_description">Ein Spiel aus deinem Stapel für heute Abend</string>
     <string name="widget_empty_title">Leerer Stapel</string>

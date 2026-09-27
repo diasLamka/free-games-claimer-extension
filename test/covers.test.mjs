@@ -94,18 +94,23 @@ test('le popup demande, le worker ecrit ; la commande est reservee aux pages', (
   assert.match(popup, /COVERS_ASKED\.add\(row\.label\)/, 'une demande par titre et par ouverture');
 });
 
-test('les statuts deviennent des icones, dessinees au DOM, avec leurs mots en infobulle', () => {
+test('les statuts deviennent des tampons, avec leurs mots en infobulle (2.96.0)', () => {
   const popup = lire('pages/popup.js');
+  // Les icones dessinees au DOM restent pour la page Historique.
   const icones = lire('lib/status-icons.js');
   for (const k of ['ok', 'own', 'skip', 'ko', 'wait']) assert.match(icones, new RegExp(`\\n  ${k}: \\[`), k);
   assert.match(icones, /doc\.createElementNS\(SVG_NS, 'svg'\)/);
-  assert.match(icones, /svg\.setAttribute\('aria-label', label\);/);
-  assert.match(popup, /import \{ statusIcon \} from '\.\.\/lib\/status-icons\.js';/);
-  assert.match(popup, /st\.title = mots;/);
+  // Dans le popup, chaque etat a son tampon, son mot, et ses mots exacts en infobulle.
+  assert.match(popup, /const STAMP_KEYS = Object\.freeze\(\{ ok: 'stampClaimed', own: 'stampOwned', skip: 'stampSkipped', ko: 'stampFailed', wait: 'stampWaiting' \}\);/);
+  assert.match(popup, /el\('span', `stamp \$\{genre\}`/);
+  assert.match(popup, /tampon\.title = mots;/);
   const code = popup.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   assert.doesNotMatch(code, /innerHTML/, 'jamais d\'innerHTML');
-  const html = lire('pages/popup.html');
-  for (const k of ['ok', 'own', 'skip', 'wait', 'ko']) assert.match(html, new RegExp(`\\.st-icon\\.${k}\\s+\\{ color: `), k);
+  const css = lire('pages/brut.css');
+  for (const k of ['own', 'skip', 'ko', 'wait']) assert.match(css, new RegExp(`\\.stamp\\.${k} \\{`), k);
+  for (const k of ['stampOwned', 'stampSkipped', 'stampFailed', 'stampWaiting']) {
+    for (const lang of ['fr', 'en', 'de', 'es']) assert.ok(JSON.parse(lire(`_locales/${lang}/messages.json`))[k], `${lang} ${k}`);
+  }
 });
 
 test('une edition garde la jaquette du jeu -- pas une bande-son (2.83.0)', async () => {

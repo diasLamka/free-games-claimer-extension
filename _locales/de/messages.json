@@ -2570,13 +2570,22 @@
   "tonightDeckPlayable": {
     "message": "Auf dem Steam Deck spielbar"
   },
-  "tonightClaimed": {
-    "message": "Im $1 kostenlos geholt"
-  },
   "tonightLabel": {
     "message": "Heute Abend spiele ich…"
   },
   "tonightToggleHint": {
     "message": "Liest ohne Cookies Bewertung, Format und Steam-Deck-Status der Spiele in Ihrem Stapel."
+  },
+  "stampOwned": {
+    "message": "Schon im Besitz"
+  },
+  "stampSkipped": {
+    "message": "Ignoriert"
+  },
+  "stampFailed": {
+    "message": "Fehlgeschlagen"
+  },
+  "stampWaiting": {
+    "message": "Wartet"
   }
 }

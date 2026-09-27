@@ -167,7 +167,6 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="tonight_rating">%1$d %% positive on Steam</string>
     <string name="tonight_deck_verified">Steam Deck Verified</string>
     <string name="tonight_deck_playable">Playable on Steam Deck</string>
-    <string name="tonight_claimed">Claimed for free in %1$s</string>
     <string name="set_tonight">“Tonight I\'m playing…”: read the Steam page of games in your pile</string>
     <string name="widget_description">One game from your pile for tonight</string>
     <string name="widget_empty_title">Empty pile</string>

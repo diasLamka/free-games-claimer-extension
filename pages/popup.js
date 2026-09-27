@@ -37,7 +37,7 @@ import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, LEVELS as ODDS, rankWishes, wishTargets } from '../watch/odds.js';
 import { recurrenceIndex } from '../watch/recurrence.js';
-import { KEY_TONIGHT, TIMES, PICK_KEEP_MS, buildPile, pickTonight, playLinks, keptPick } from '../watch/tonight.js';
+import { KEY_TONIGHT, TIMES, PICK_KEEP_MS, buildPile, pickTonight, playLinks, keptPick, tonightImage } from '../watch/tonight.js';
 import { KEY_PLAYTIME } from '../watch/playtime.js';
 import { KEY_ANNOTATIONS, STATUS as BACKLOG, setStatus } from '../watch/annotations.js';
 import { yearRecap, yearsOf, yearFileName } from '../watch/year.js';
@@ -63,7 +63,6 @@ import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
 import { composeShareList } from '../watch/share-list.js';
 import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
-import { statusIcon } from '../lib/status-icons.js';
 import { onVacation, readVacation } from '../watch/notify-policy.js';
 import { VACATION_CHOICES, planVacation } from '../watch/vacation.js';
 import { HISTORY_KEYS as HISTORY_BACKUP_KEYS, MAX_BACKUP_BYTES } from '../watch/full-backup.js';
@@ -1199,12 +1198,12 @@ const TONIGHT_TIMES = [[TIMES.HOUR, 'tonightHour'], [TIMES.EVENING, 'tonightEven
 let tonightNote = '';
 
 function tonightReason(r) {
-  if (r.key === 'tonightClaimed') {
-    const quand = typeof r.args[0] === 'number' ? new Date(r.args[0]).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' }) : '';
-    return quand ? t('tonightClaimed', quand) : '';
-  }
   return t(r.key, ...(r.args || []).map((x) => String(x ?? '')));
 }
+
+/* Le jeu montre n'a pas encore sa fiche Steam : le worker la lit tout de
+   suite, une fois par ouverture du popup. */
+let tonightAsked = false;
 
 function tonightPrefs() {
   const p = ui.tonight && typeof ui.tonight === 'object' ? ui.tonight : {};
@@ -1237,6 +1236,7 @@ function tonightPile(all) {
     playtime: (get(all, KEY_PLAYTIME, {}) || {}).games || null,
     annotations: get(all, KEY_ANNOTATIONS, {}),
     state: get(all, KEY_TONIGHT, null),
+    covers: get(all, KEY_COVERS, {}),
   });
 }
 
@@ -1319,15 +1319,29 @@ function renderTonight(all) {
 
   const carte = el('div', 'tonight-card');
   const info = tire.info || {};
+  /* L'image : la fiche Steam, l'en-tete deduit de l'appid, la jaquette du
+     registre ; l'initiale seulement si aucune ne se charge. */
   const art = el('div', 'tonight-art');
-  if (info.image) art.append(thumb(info.image));
-  else art.append(el('span', 'letter', tire.title.trim().charAt(0).toUpperCase()));
+  const lettre = () => el('span', 'letter', tire.title.trim().charAt(0).toUpperCase());
+  const src = tonightImage(tire, tire.info);
+  if (src) {
+    const img = thumb(src);
+    img.addEventListener('error', () => {
+      // L'en-tete deduit n'existe pas toujours : on essaie la jaquette du registre avant l'initiale.
+      if (tire.image && img.src !== tire.image) { img.src = tire.image; return; }
+      art.textContent = '';
+      art.append(lettre());
+    });
+    art.append(img);
+  } else art.append(lettre());
   carte.append(art);
   const corps = el('div', 'tonight-body');
   corps.append(el('p', 'tonight-kicker', t('tonightKicker')));
   corps.append(el('p', 'tonight-name', displayTitle(tire.title)));
   const magasins = ['steam', 'gog', 'epic', 'amazon'].filter((m) => tire.stores && tire.stores[m]).map((m) => STORE_LABELS[m] || m);
   if (magasins.length) corps.append(el('p', 'soon-price', magasins.join(' · ')));
+  // Ce que le jeu est, en deux lignes : la description courte de sa fiche Steam.
+  if (info.description) corps.append(el('p', 'tonight-desc', info.description));
   const raisons = (tire.reasons || []).map(tonightReason).filter(Boolean);
   if (raisons.length) {
     const ul = el('ul', 'tonight-why');
@@ -1368,7 +1382,14 @@ function renderTonight(all) {
   });
   actions.append(joue, autre, non);
   host.append(actions);
-  if (jeu && !tire.info && tire.appid) host.append(el('p', 'hint', t('tonightReading')));
+  if (!tire.info) {
+    const cherche = (get(all, KEY_TONIGHT, {}) || {}).titles || {};
+    const introuvable = !tire.appid && (cherche[normaliseTitle(tire.title)] || {}).none;
+    if (!introuvable) {
+      host.append(el('p', 'hint', t('tonightReading')));
+      if (!tonightAsked) { tonightAsked = true; tell('fgc-tonight'); }
+    }
+  }
 }
 
 function renderDlc(all) {
@@ -1515,10 +1536,10 @@ function renderUpcoming(all) {
 /* Le magasin de chaque historique du moteur. */
 const HISTORY_STORES = { 'Epic Games': STORES.EPIC, GOG: STORES.GOG, 'Amazon Luna': STORES.AMAZON };
 
-/* Les icones de statut : lib/status-icons.js, partagees avec la page
-   Historique (2.83.0). */
+/** Le mot de chaque tampon. */
+const STAMP_KEYS = Object.freeze({ ok: 'stampClaimed', own: 'stampOwned', skip: 'stampSkipped', ko: 'stampFailed', wait: 'stampWaiting' });
 
-/** Recupere, deja a vous, ignore, echec, en attente : l'icone qui le dit. */
+/** Recupere, deja a vous, ignore, echec, en attente : le tampon qui le dit. */
 function statusKind(row, css) {
   if (row.reason === 'ALREADY_OWNED' || row.reason === 'ALREADY_CLAIMED') return 'own';
   if (row.status === 'skipped') return 'skip';
@@ -1636,20 +1657,16 @@ function renderLog(all) {
     body.append(nom);
     if (row.store) body.append(storeTag(row.store));
     li.append(body);
-    // Le statut en icone ; ses mots restent dans l'infobulle et pour les lecteurs d'ecran.
+    /* Le tampon (2.88.0, tous les etats depuis la 2.96.0) : recupere, deja a
+       vous, ignore, echec, en attente -- chacun tamponne de travers, comme un
+       billet composte. Les mots exacts restent dans l'infobulle et pour les
+       lecteurs d'ecran. */
     const mots = key ? t(key) : String(row.status || '');
-    /* Le tampon (2.88.0) : ce qui est vraiment recupere est tamponne, de
-       travers, comme un billet composte. Le reste garde son icone. */
-    if (statusKind(row, css) === 'ok') {
-      const tampon = el('span', 'stamp', t('stampClaimed'));
-      tampon.title = mots;
-      li.append(tampon);
-    } else {
-      const st = el('span', 'st');
-      st.title = mots;
-      st.append(statusIcon(statusKind(row, css), mots));
-      li.append(st);
-    }
+    const genre = statusKind(row, css);
+    const tampon = el('span', `stamp ${genre}`, t(STAMP_KEYS[genre] || STAMP_KEYS.wait));
+    tampon.title = mots;
+    tampon.setAttribute('aria-label', mots);
+    li.append(tampon);
     host.append(li);
   }
   // Le worker cherche, ecrit ; le changement de stockage redessine la liste.

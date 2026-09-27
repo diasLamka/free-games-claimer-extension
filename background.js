@@ -64,7 +64,7 @@ import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, KEY_WISHLIST, makeImportedWishlis
 import { escapeXml, omniSuggestions, omniTarget } from './watch/omnibox.js';
 import { MENU_LINK, MENU_PAGE, menuItems, wishFromClick } from './watch/context-wish.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
-import { intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
+import { currentLocale, intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
 import { badgeState, effectiveQuiet, inQuietHours, onVacation } from './watch/notify-policy.js';
@@ -75,7 +75,7 @@ import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
-import { KEY_TONIGHT, buildPile, refreshTonight, tonightPassDue } from './watch/tonight.js';
+import { KEY_TONIGHT, buildPile, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
 import { KEY_PLAYTIME } from './watch/playtime.js';
 import { KEY_ANNOTATIONS } from './watch/annotations.js';
 import { runAutoBackup } from './watch/auto-backup.js';
@@ -628,24 +628,30 @@ function maybeOdds(now = Date.now()) {
  * watch/tonight.js.
  */
 let tonightRunning = null;
+/* Le popup peut demander un passage tout de suite (2.96.0) : le jeu montre
+   n'a pas encore sa fiche. Pas plus d'un toutes les deux minutes. */
+const TONIGHT_FORCE_MIN_MS = 2 * 60 * 1000;
 
-function maybeTonight(now = Date.now()) {
+function maybeTonight(now = Date.now(), { force = false } = {}) {
   if (tonightRunning) return tonightRunning;
   tonightRunning = (async () => {
     const settings = await readSettings(api);
     if (settings.tonight === false) return null;
-    const raw = await readKeys(api, [KEY_TONIGHT, KEY_COLLECTION_LOOKUP, KEY_LIBRARY, KEY_PLAYTIME, KEY_ANNOTATIONS, KEY_COUNTRY]);
-    if (!tonightPassDue(raw[KEY_TONIGHT], now)) return null;
+    const raw = await readKeys(api, [KEY_TONIGHT, KEY_COLLECTION_LOOKUP, KEY_LIBRARY, KEY_PLAYTIME, KEY_ANNOTATIONS, KEY_COUNTRY, KEY_COVERS]);
+    const dernier = readTonightState(raw[KEY_TONIGHT]).at;
+    if (force ? (dernier && now - dernier < TONIGHT_FORCE_MIN_MS) : !tonightPassDue(raw[KEY_TONIGHT], now)) return null;
     const pile = buildPile({
       collection: raw[KEY_COLLECTION_LOOKUP] || null,
       library: raw[KEY_LIBRARY] || {},
       playtime: (raw[KEY_PLAYTIME] || {}).games || null,
       annotations: raw[KEY_ANNOTATIONS] || {},
       state: raw[KEY_TONIGHT],
+      covers: raw[KEY_COVERS] || {},
     });
     if (!pile.length) return null;
     const next = await refreshTonight({
       fetch: (u, i) => fetch(u, i), pile, state: raw[KEY_TONIGHT], now, country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR',
+      lang: steamLanguage(currentLocale()),
     });
     await write(api, { [KEY_TONIGHT]: next });
     return next;
@@ -1886,6 +1892,13 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     ensureCovers(titres)
       .then(sendResponse)
       .catch((e) => { record('warn', 'jaquettes impossibles', e); sendResponse({ asked: 0, got: 0 }); });
+    return true;
+  }
+
+  if (msg.type === 'fgc-tonight') {
+    maybeTonight(Date.now(), { force: true })
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
     return true;
   }
 

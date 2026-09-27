@@ -83,6 +83,13 @@ class TonightTest {
         assertEquals(97, h.percent)
         assertEquals("verified", h.deck)
         assertTrue(h.image!!.startsWith("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145360/"))
+        assertTrue(h.description!!.startsWith("Défiez le dieu des morts"))
+        assertEquals(Tonight.INFO_VERSION, h.v)
+        assertNull(info("400").description)
+        assertEquals("Un jeu \"culte\" & court", Tonight.cleanDescription("Un <b>jeu</b> &quot;culte&quot;  &amp; court"))
+        assertTrue(Tonight.cleanDescription("mot ".repeat(200))!!.endsWith("mot…"))
+        assertEquals("french", Tonight.steamLanguage(java.util.Locale.FRANCE))
+        assertEquals("english", Tonight.steamLanguage(java.util.Locale("pt")))
         assertNull(Tonight.readItem(parseJson("""{"success":2}"""), now))
     }
 
@@ -112,7 +119,8 @@ class TonightTest {
         assertTrue(we("292030") > we("1145360"))
         assertNull(Tonight.score(c, null, Tonight.ANY, true))
         val r = Tonight.score(c.copy(toTry = true, claimed = true, since = now), apps["400"], Tonight.EVENING, true)!!
-        assertEquals(listOf("tonight_to_try", "tonight_short", "tonight_rating", "tonight_deck_verified", "tonight_claimed"), r.reasons.map { it.key })
+        // « Recupere gratuitement en... » n'est plus une raison (1.10.0) : la description le remplace.
+        assertEquals(listOf("tonight_to_try", "tonight_short", "tonight_rating", "tonight_deck_verified"), r.reasons.map { it.key })
 
         val pile = Tonight.buildPile(state.copy(tonightTitles = mapOf("balatro" to TitleMatch(now, "2379780"))))
         val premier = Tonight.pick(pile, apps, Tonight.EVENING, false) { 0.0 }
@@ -122,6 +130,16 @@ class TonightTest {
         val tout = Tonight.pick(pile, apps, Tonight.EVENING, false, pile.map { it.key }) { 0.0 }
         assertTrue(tout.wrapped)
         assertNotEquals("Portal", Tonight.pick(pile, apps, Tonight.EVENING, false, listOf(premier.pick!!.c.key)) { 0.0 }.pick!!.c.title)
+    }
+
+    @Test
+    fun everyGameGetsAnImage() {
+        val lib = state.library + ("amazon:bm" to LibraryEntry("amazon", "bm", "Botany Manor", null, null, "https://m.media-amazon.com/images/bm.jpg", now))
+        val bm = Tonight.buildPile(state.copy(library = lib)).first { it.title == "Botany Manor" }
+        assertEquals("https://m.media-amazon.com/images/bm.jpg", Tonight.image(bm, null))
+        assertEquals(Tonight.steamHeader("1425350"), Tonight.image(bm.copy(appid = "1425350"), null))
+        assertEquals(info("1145360").image, Tonight.image(bm, info("1145360")))
+        assertNull(Tonight.steamHeader("abc"))
     }
 
     @Test
@@ -170,10 +188,16 @@ class TonightTest {
         assertNull(t.getValue("celeste").appid)
         assertEquals(Tonight.SESSIONS, a.getValue("1145360").format)
         assertEquals(97, a.getValue("2379780").percent)
+        assertTrue(a.getValue("1145360").description!!.contains("dieu des morts"))
         appels.clear()
         val s2 = state.copy(tonightApps = a, tonightTitles = t)
         Tonight.refresh(fetcher, s2, now + 3_600_000L, "FR")
         assertTrue(appels.isEmpty())
+        // Une fiche d'une forme ancienne (sans description) est relue tout de suite.
+        val ancienne = s2.copy(tonightApps = a + ("1145360" to a.getValue("1145360").copy(v = 0, description = null)))
+        val (a3, _) = Tonight.refresh(fetcher, ancienne, now + 3_600_000L, "FR")
+        assertEquals(1, appels.count { "GetItems" in it.first })
+        assertTrue(a3.getValue("1145360").description!!.contains("dieu des morts"))
         assertTrue(Tonight.due(state, now))
         assertFalse(Tonight.due(state.copy(tonightAt = now), now + 60_000))
         assertFalse(Tonight.due(state.copy(settings = state.settings.copy(tonight = false)), now))

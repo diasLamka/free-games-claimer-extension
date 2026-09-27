@@ -59,6 +59,31 @@ object Tonight {
     const val SEARCHES_PER_RUN = 8
     const val PICK_KEEP_MS = 12L * 3600 * 1000
     const val TOP = 5
+    /** La forme des fiches : 2 avec la description (1.10.0). */
+    const val INFO_VERSION = 2
+    const val MAX_DESCRIPTION = 300
+    private val STEAM_LANGS = mapOf("fr" to "french", "en" to "english", "de" to "german", "es" to "spanish")
+
+    /** La langue des descriptions Steam, d'apres celle du telephone. */
+    fun steamLanguage(locale: java.util.Locale = java.util.Locale.getDefault()): String = STEAM_LANGS[locale.language] ?: "english"
+
+    /** L'en-tete d'une fiche Steam, deduit de son appid. */
+    fun steamHeader(appid: String?): String? =
+        appid?.takeIf { Regex("^\\d+$").matches(it) }?.let { "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/$it/header.jpg" }
+
+    /** Une description en texte simple, coupee a un mot. */
+    fun cleanDescription(text: String?): String? {
+        val t = text.orEmpty().replace(Regex("<[^>]*>"), " ")
+            .replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+            .replace(Regex("\\s+"), " ").trim()
+        if (t.isEmpty()) return null
+        if (t.length <= MAX_DESCRIPTION) return t
+        val coupe = t.take(MAX_DESCRIPTION)
+        return coupe.take(maxOf(coupe.lastIndexOf(' '), MAX_DESCRIPTION - 40)).trimEnd() + "…"
+    }
+
+    /** L'image de la carte : la fiche, l'en-tete deduit de l'appid, la jaquette du registre. */
+    fun image(c: Candidate, info: TonightInfo?): String? = info?.image ?: steamHeader(c.appid) ?: c.image
 
     private const val ITEMS_URL = "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/"
     private val ORDRE = listOf("steam", "gog", "epic", "amazon")
@@ -76,6 +101,8 @@ object Tonight {
         val claimed: Boolean,
         val since: Long?,
         val deck: String?,
+        /** La jaquette que le registre a gardee de l'offre, s'il y en a une. */
+        val image: String? = null,
     )
 
     data class Reason(val key: String, val args: List<Any> = emptyList())
@@ -114,7 +141,9 @@ object Tonight {
         val pct = rev["percent_positive"].num?.toInt()?.takeIf { it in 0..100 }
         return TonightInfo(
             at = now,
+            v = INFO_VERSION,
             name = item["name"].str?.take(160),
+            description = cleanDescription(item["basic_info"]["short_description"].str),
             format = formatFromTags(tags),
             deck = deckOf(item["platforms"]["steam_deck_compat_category"]),
             percent = pct,
@@ -123,15 +152,16 @@ object Tonight {
         )
     }
 
-    fun itemsUrl(appids: List<String>, country: String): String {
+    fun itemsUrl(appids: List<String>, country: String, lang: String = "english"): String {
         val input = buildJsonObject {
             put("ids", buildJsonArray { appids.forEach { add(buildJsonObject { put("appid", it.toLong()) }) } })
             put("context", buildJsonObject {
-                put("language", "english")
+                put("language", if (lang in STEAM_LANGS.values) lang else "english")
                 put("country_code", if (Regex("^[A-Z]{2}$").matches(country)) country else "FR")
             })
             put("data_request", buildJsonObject {
-                put("include_tag_count", 20); put("include_reviews", true); put("include_platforms", true); put("include_assets", true)
+                put("include_basic_info", true); put("include_tag_count", 20); put("include_reviews", true)
+                put("include_platforms", true); put("include_assets", true)
             })
         }
         return ITEMS_URL + "?input_json=" + URLEncoder.encode(input.toString(), "UTF-8")
@@ -141,6 +171,7 @@ object Tonight {
 
     private class Row(val title: String) {
         val stores = linkedMapOf<String, Copy>()
+        var image: String? = null
         var claimed = false
         var since: Long? = null
         var deck: String? = null
@@ -148,7 +179,7 @@ object Tonight {
 
     fun buildPile(s: AppState): List<Candidate> {
         val rows = linkedMapOf<String, Row>()
-        fun add(store: String, id: String, title: String?, url: String?, claimed: Boolean, ts: Long?, deck: String?) {
+        fun add(store: String, id: String, title: String?, url: String?, claimed: Boolean, ts: Long?, deck: String?, image: String? = null) {
             val t = title?.trim().orEmpty()
             val n = Titles.normalise(t)
             if (n.isEmpty()) return
@@ -158,9 +189,10 @@ object Tonight {
             if (claimed) r.claimed = true
             if (ts != null) r.since = minOf(r.since ?: ts, ts)
             if (deck != null) r.deck = deck
+            if (r.image == null && image != null && image.startsWith("https://")) r.image = image
         }
         for (g in s.owned.values) add(g.store, g.id, g.title, null, false, null, g.deck)
-        for (e in s.library.values) if (e.status == "claimed" || e.status == "redeemed") add(e.store, e.id, e.title, e.url, true, e.ts, null)
+        for (e in s.library.values) if (e.status == "claimed" || e.status == "redeemed") add(e.store, e.id, e.title, e.url, true, e.ts, null, e.image)
 
         return rows.values.mapNotNull { r ->
             val first = ORDRE.firstOrNull { it in r.stores } ?: r.stores.keys.first()
@@ -172,6 +204,7 @@ object Tonight {
                 key = key, title = r.title, stores = r.stores.toMap(),
                 appid = steam ?: s.tonightTitles[Titles.normalise(r.title)]?.appid,
                 ownedOnSteam = steam != null, toTry = etat == TO_TRY, claimed = r.claimed, since = r.since, deck = r.deck,
+                image = r.image,
             )
         }
     }
@@ -210,7 +243,6 @@ object Tonight {
             if (deck == "verified") score += 1
             reasons += Reason(if (deck == "verified") "tonight_deck_verified" else "tonight_deck_playable")
         }
-        if (c.claimed && c.since != null) reasons += Reason("tonight_claimed", listOf(c.since))
         return Scored(c, info, score, reasons)
     }
 
@@ -283,6 +315,8 @@ object Tonight {
     /* ------------------------------------------------ la lecture Steam */
 
     private fun aRelire(at: Long?, none: Boolean, now: Long) = at == null || now - at >= (if (none) NONE_MS else INFO_FRESH_MS)
+    /** Une fiche d'une forme plus ancienne (sans description) est relue tout de suite. */
+    private fun ficheARelire(e: TonightInfo?, now: Long) = e == null || aRelire(e.at, e.none, now) || (!e.none && e.v != INFO_VERSION)
 
     fun due(s: AppState, now: Long): Boolean = s.settings.tonight && (s.tonightAt == null || now - s.tonightAt >= PASS_EVERY_MS)
 
@@ -290,7 +324,7 @@ object Tonight {
      * Un passage : huit titres hors Steam cherches (titre EXACT), puis deux
      * lots de cinquante fiches GetItems. Sans cookie. Ne jette jamais.
      */
-    suspend fun refresh(fetcher: Fetcher, s: AppState, now: Long, country: String): Pair<Map<String, TonightInfo>, Map<String, TitleMatch>> {
+    suspend fun refresh(fetcher: Fetcher, s: AppState, now: Long, country: String, lang: String = steamLanguage()): Pair<Map<String, TonightInfo>, Map<String, TitleMatch>> {
         val titles = s.tonightTitles.toMutableMap()
         val apps = s.tonightApps.toMutableMap()
         val pile = buildPile(s)
@@ -300,9 +334,9 @@ object Tonight {
             titles[Titles.normalise(c.title)] = TitleMatch(now, Ratings.matchSearch(r.body, c.title))
         }
         val ids = pile.mapNotNull { it.appid ?: titles[Titles.normalise(it.title)]?.appid }.distinct()
-            .filter { id -> apps[id].let { aRelire(it?.at, it?.none == true, now) } }
+            .filter { id -> ficheARelire(apps[id], now) }
         for (lot in ids.take(LOT * LOTS_PER_RUN).chunked(LOT)) {
-            val r = runCatching { fetcher.get(itemsUrl(lot, country)) }.getOrNull() ?: continue
+            val r = runCatching { fetcher.get(itemsUrl(lot, country, lang)) }.getOrNull() ?: continue
             if (!r.ok) continue
             val items = parseJson(r.body)["response"]["store_items"].arr ?: continue
             val lus = items.associateBy { (it["appid"] ?: it["id"]).text }

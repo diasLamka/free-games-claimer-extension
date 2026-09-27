@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.96.0 -- 2026-09-27
+
+**Des tampons partout, et un vrai « Ce soir »**
+
+- **« Deja recupere » : un tampon pour chaque etat.** Recupere, deja a vous
+  (jaune, plein), ignore (pointilles), echec (inverse), en attente -- chacun
+  de travers, comme un coup de tampon. Les petites icones du popup s'en
+  vont ; les mots exacts restent dans l'infobulle. La page Historique garde
+  ses icones.
+- **« Ce soir je joue a... » : l'image et la description du jeu.** L'image
+  vient de la fiche Steam, sinon de l'en-tete que l'appid suffit a trouver,
+  sinon de la jaquette gardee par le registre. La description courte est
+  celle de la fiche Steam, dans la langue de l'extension quand Steam l'a
+  (sinon en anglais). Elle remplace « Recupere gratuitement en... ».
+- Un jeu montre sans fiche : le popup demande au worker de la lire tout de
+  suite, au plus toutes les deux minutes. Les fiches lues avant cette
+  version sont relues pour prendre leur description.
+- **Dans l'appli Android 1.10.0** : la meme image, la meme description.
+
 ## 2.95.0 -- 2026-09-27
 
 **« Ce soir je joue a... »**

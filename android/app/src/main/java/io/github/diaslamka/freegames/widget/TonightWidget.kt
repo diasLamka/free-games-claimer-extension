@@ -122,7 +122,6 @@ class TonightWidget : AppWidgetProvider() {
         /** Une raison, dans la langue du telephone. */
         fun reasonText(context: Context, r: Tonight.Reason): String = when (r.key) {
             "tonight_rating" -> context.getString(R.string.tonight_rating, (r.args.firstOrNull() as? Int) ?: 0)
-            "tonight_claimed" -> context.getString(R.string.tonight_claimed, io.github.diaslamka.freegames.data.Fmt.monthInText((r.args.firstOrNull() as? Long) ?: 0L))
             "tonight_to_try" -> context.getString(R.string.tonight_to_try)
             "tonight_short" -> context.getString(R.string.tonight_short)
             "tonight_sessions" -> context.getString(R.string.tonight_sessions)

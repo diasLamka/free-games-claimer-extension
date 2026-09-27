@@ -166,7 +166,6 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="tonight_rating">%1$d %% de reseñas positivas en Steam</string>
     <string name="tonight_deck_verified">Verificado para Steam Deck</string>
     <string name="tonight_deck_playable">Jugable en Steam Deck</string>
-    <string name="tonight_claimed">Conseguido gratis en %1$s</string>
     <string name="set_tonight">«Esta noche juego a…»: leer la ficha de Steam de los juegos de tu pila</string>
     <string name="widget_description">Un juego de tu pila para esta noche</string>
     <string name="widget_empty_title">Pila vacía</string>

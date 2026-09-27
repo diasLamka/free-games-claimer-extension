@@ -11,8 +11,8 @@ import { readFileSync } from 'node:fs';
 
 import {
   formatFromTags, readItem, buildPile, scoreTonight, pickTonight, playLinks, keptPick, refreshTonight,
-  tonightItemsUrl, tonightPassDue, readTonightState,
-  FORMATS, TIMES, TOP, PICK_KEEP_MS, PASS_EVERY_MS, LOT,
+  tonightItemsUrl, tonightPassDue, readTonightState, tonightImage, steamHeader, steamLanguage, cleanDescription,
+  FORMATS, TIMES, TOP, PICK_KEEP_MS, PASS_EVERY_MS, LOT, INFO_VERSION, MAX_DESCRIPTION,
 } from '../watch/tonight.js';
 import { STATUS } from '../watch/annotations.js';
 
@@ -48,6 +48,9 @@ test('une fiche GetItems : note, Deck, vignette, format', () => {
   assert.equal(h.deck, 'verified');
   assert.equal(h.format, FORMATS.SESSIONS);
   assert.match(h.image, /^https:\/\/shared\.akamai\.steamstatic\.com\/store_item_assets\/steam\/apps\/1145360\//);
+  assert.match(h.description, /^Défiez le dieu des morts/);
+  assert.equal(h.v, INFO_VERSION);
+  assert.equal(readItem(item(400)).description, null, 'Portal n\'a pas de description courte');
   assert.equal(readItem({ success: 2, appid: 1 }), null);
   assert.equal(readItem(null), null);
   const u = new URL(tonightItemsUrl(['400', '620'], 'DE'));
@@ -56,6 +59,21 @@ test('une fiche GetItems : note, Deck, vignette, format', () => {
   assert.equal(input.context.country_code, 'DE');
   assert.equal(input.data_request.include_tag_count, 20);
   assert.equal(input.data_request.include_reviews, true);
+  assert.equal(input.data_request.include_basic_info, true, 'la description courte');
+  assert.equal(input.context.language, 'english');
+  assert.equal(JSON.parse(new URL(tonightItemsUrl(['1'], 'FR', 'french')).searchParams.get('input_json')).context.language, 'french');
+  assert.equal(JSON.parse(new URL(tonightItemsUrl(['1'], 'FR', 'klingon')).searchParams.get('input_json')).context.language, 'english');
+  assert.equal(steamLanguage('fr'), 'french');
+  assert.equal(steamLanguage('de-DE'), 'german');
+  assert.equal(steamLanguage('pt'), 'english');
+});
+
+test('la description : du texte simple, coupe a un mot', () => {
+  assert.equal(cleanDescription('Un <b>jeu</b> &quot;culte&quot;  &amp; court'), 'Un jeu "culte" & court');
+  assert.equal(cleanDescription(''), null);
+  const longue = cleanDescription('mot '.repeat(200));
+  assert.ok(longue.length <= MAX_DESCRIPTION + 1);
+  assert.match(longue, /mot…$/);
 });
 
 const collection = {
@@ -119,8 +137,9 @@ test('le temps qu\'on a : une heure ecarte le long cours, une soiree prefere le 
   assert.ok(heure(2379780) > heure(400), 'une heure : des parties courtes');
   const we = (a) => scoreTonight(c, APPS[a], { time: TIMES.WEEKEND }).score;
   assert.ok(we(292030) > we(1145360), 'un week-end : le long cours');
+  // « Recupere gratuitement en... » n'est plus une raison (2.96.0) : la description le remplace.
   const r = scoreTonight({ ...c, toTry: true, claimed: true, since: Date.UTC(2026, 2, 12) }, APPS[400], { time: TIMES.EVENING });
-  assert.deepEqual(r.reasons.map((x) => x.key), ['tonightToTry', 'tonightNever', 'tonightShort', 'tonightRating', 'tonightClaimed']);
+  assert.deepEqual(r.reasons.map((x) => x.key), ['tonightToTry', 'tonightNever', 'tonightShort', 'tonightRating']);
   assert.deepEqual(r.reasons[3].args, ['98']);
 });
 
@@ -151,6 +170,18 @@ test('le tirage : parmi les meilleurs, varie, et repart du debut quand tout est 
   assert.equal(pickTonight([], opts).pick, null);
   assert.equal(pickTonight(pile, { ...opts, time: TIMES.HOUR, deckOnly: true, apps: {} }).pick !== null, true, 'Hades : Deck verifie par la collection');
   assert.ok(TOP >= 3);
+});
+
+test('une image pour chaque jeu : la fiche, l\'en-tete Steam, la jaquette du registre', () => {
+  const lib = { ...library, 'amazon:bm': { store: 'amazon', id: 'bm', title: 'Botany Manor', image: 'https://m.media-amazon.com/images/bm.jpg', ts: 1, status: 'claimed' } };
+  const pile = buildPile({ collection, library: lib, covers: { celeste: { image: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/504230/header.jpg', at: 1 } } });
+  const bm = pile.find((c) => c.title === 'Botany Manor');
+  assert.equal(bm.image, 'https://m.media-amazon.com/images/bm.jpg');
+  assert.equal(tonightImage(bm, null), 'https://m.media-amazon.com/images/bm.jpg', 'pas encore d\'appid : la jaquette du registre');
+  assert.equal(tonightImage({ ...bm, appid: '1425350' }, null), steamHeader('1425350'), 'l\'appid trouve : l\'en-tete Steam');
+  assert.equal(tonightImage(bm, { image: 'https://x/y.jpg' }), 'https://x/y.jpg');
+  assert.match(pile.find((c) => c.title === 'Celeste').image, /504230/);
+  assert.equal(steamHeader('abc'), null);
 });
 
 test('les liens : Steam lance, les autres ouvrent leur fiche', () => {
@@ -200,6 +231,12 @@ test('le passage Steam : sans cookie, recherche exacte, lots GetItems, rythme te
   const encore = await refreshTonight({ fetch, pile: buildPile({ collection, library, state: next }), state: next, now: NOW + 3600e3, pause: async () => {} });
   assert.equal(appels.length, 0);
   assert.deepEqual(encore.apps, next.apps);
+  // Une fiche d'une forme ancienne (sans description) est relue sans attendre soixante jours.
+  appels.length = 0;
+  const ancienne = { ...next, apps: { ...next.apps, 1145360: { ...next.apps['1145360'], v: undefined, description: undefined } } };
+  const relue = await refreshTonight({ fetch, pile: buildPile({ collection, library, state: ancienne }), state: ancienne, now: NOW + 3600e3, pause: async () => {} });
+  assert.equal(appels.filter((a) => a.url.includes('GetItems')).length, 1);
+  assert.match(relue.apps['1145360'].description, /dieu des morts/);
   assert.equal(tonightPassDue(next, NOW + PASS_EVERY_MS - 1), false);
   assert.equal(tonightPassDue(next, NOW + PASS_EVERY_MS), true);
   assert.equal(tonightPassDue(null, NOW), true);

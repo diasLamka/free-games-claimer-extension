@@ -108,12 +108,12 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
                         .brut(b.accent, shadow = if (b.dark) Color.White else Color.Black, offset = 6.dp).padding(14.dp)
                     if (large) {
                         Row(carte, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Cover(jeu.info?.image, jeu.c.title, jeu.c.stores.keys.firstOrNull(), Modifier.width(240.dp).aspectRatio(460f / 215f))
+                            Cover(Tonight.image(jeu.c, jeu.info), jeu.c.title, jeu.c.stores.keys.firstOrNull(), Modifier.width(240.dp).aspectRatio(460f / 215f))
                             Column(Modifier.weight(1f)) { Body(jeu) }
                         }
                     } else {
                         Column(carte, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Cover(jeu.info?.image, jeu.c.title, jeu.c.stores.keys.firstOrNull(), Modifier.fillMaxWidth().aspectRatio(460f / 215f))
+                            Cover(Tonight.image(jeu.c, jeu.info), jeu.c.title, jeu.c.stores.keys.firstOrNull(), Modifier.fillMaxWidth().aspectRatio(460f / 215f))
                             Column { Body(jeu) }
                         }
                     }
@@ -153,6 +153,10 @@ private fun Body(jeu: Tonight.Scored) {
     Title(jeu.c.title)
     val magasins = listOf("steam", "gog", "epic", "amazon").filter { it in jeu.c.stores }.joinToString(" · ") { shortStore(it) }
     if (magasins.isNotEmpty()) Text(magasins, style = MaterialTheme.typography.labelSmall, color = Color.Black.copy(alpha = .75f))
+    // Ce que le jeu est, en deux ou trois lignes : la description courte de sa fiche Steam.
+    jeu.info?.description?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+    }
     val raisons = jeu.reasons.map { TonightWidget.reasonText(context, it) }.filter { it.isNotEmpty() }
     if (raisons.isNotEmpty()) {
         Column(Modifier.padding(top = 6.dp)) {

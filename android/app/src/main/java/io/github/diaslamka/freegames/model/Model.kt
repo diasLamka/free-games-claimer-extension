@@ -291,7 +291,11 @@ data class Mark(val status: String, val note: String = "")
 data class TonightInfo(
     val at: Long,
     val none: Boolean = false,
+    /** La forme de la fiche : 2 depuis la 1.10.0 (la description). Une plus ancienne est relue. */
+    val v: Int = 0,
     val name: String? = null,
+    /** La description courte de la fiche Steam, dans la langue du telephone quand Steam l'a. */
+    val description: String? = null,
     val format: String? = null,
     val deck: String? = null,
     val percent: Int? = null,

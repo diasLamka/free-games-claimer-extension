@@ -165,7 +165,6 @@ S = {
  'tonight_rating': ('%1$d %% positive on Steam', "%1$d %% d'avis positifs sur Steam", '%1$d %% positive Steam-Bewertungen', '%1$d %% de reseñas positivas en Steam'),
  'tonight_deck_verified': ('Steam Deck Verified', 'Vérifié Steam Deck', 'Steam Deck verifiziert', 'Verificado para Steam Deck'),
  'tonight_deck_playable': ('Playable on Steam Deck', 'Jouable sur Steam Deck', 'Auf dem Steam Deck spielbar', 'Jugable en Steam Deck'),
- 'tonight_claimed': ('Claimed for free in %1$s', 'Récupéré gratuitement en %1$s', 'Im %1$s kostenlos geholt', 'Conseguido gratis en %1$s'),
  'set_tonight': ("“Tonight I'm playing…”: read the Steam page of games in your pile", '« Ce soir je joue à… » : lire la fiche Steam des jeux de ta pile', '„Heute Abend spiele ich…“: Steam-Seite der Spiele im Stapel lesen', '«Esta noche juego a…»: leer la ficha de Steam de los juegos de tu pila'),
  'widget_description': ('One game from your pile for tonight', 'Un jeu de ta pile pour ce soir', 'Ein Spiel aus deinem Stapel für heute Abend', 'Un juego de tu pila para esta noche'),
  'widget_empty_title': ('Empty pile', 'Pile vide', 'Leerer Stapel', 'Pila vacía'),

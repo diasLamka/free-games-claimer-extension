@@ -166,7 +166,6 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="tonight_rating">%1$d %% d\'avis positifs sur Steam</string>
     <string name="tonight_deck_verified">Vérifié Steam Deck</string>
     <string name="tonight_deck_playable">Jouable sur Steam Deck</string>
-    <string name="tonight_claimed">Récupéré gratuitement en %1$s</string>
     <string name="set_tonight">« Ce soir je joue à… » : lire la fiche Steam des jeux de ta pile</string>
     <string name="widget_description">Un jeu de ta pile pour ce soir</string>
     <string name="widget_empty_title">Pile vide</string>
