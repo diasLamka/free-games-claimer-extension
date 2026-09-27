@@ -336,6 +336,8 @@ export function makeOffer(raw = {}) {
     start,
     end,
     worth: raw.worth || null,
+    /* L'editeur, quand la source le nomme (Epic, 2.94.0) : voir watch/odds.js. */
+    publisher: raw.publisher ? String(raw.publisher).slice(0, 120) : null,
     // Vignette du jeu, telle que la source la publie. Affichee dans le popup ;
     // c'est ce qui rend une liste de titres reconnaissable d'un coup d'oeil.
     image: webUrl(raw.image),

@@ -74,6 +74,7 @@ import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
+import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
 import { runAutoBackup } from './watch/auto-backup.js';
 import {
   KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, ratingLine, refreshRatings,
@@ -429,6 +430,7 @@ async function startCycle(origine, options = {}) {
         await maybeCodeReminders(Date.now());
         await maybeWeekends(Date.now());
         await maybeSteamDlc(Date.now());
+        await maybeOdds(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
       }
@@ -583,6 +585,36 @@ function maybeSteamDlc(now = Date.now()) {
     .catch((e) => record('warn', 'DLC Steam gratuits impossibles', e))
     .finally(() => { dlcRunning = null; });
   return dlcRunning;
+}
+
+/**
+ * « Attendez, il sera offert » (2.94.0) : apres chaque cycle, les editeurs des
+ * offres vues sont retenus ; une fois par heure au plus, huit fiches Steam de
+ * souhaits sont lues (sans cookie). Voir watch/odds.js.
+ */
+let oddsRunning = null;
+
+function maybeOdds(now = Date.now()) {
+  if (oddsRunning) return oddsRunning;
+  oddsRunning = (async () => {
+    const raw = await readKeys(api, [KEYS.OFFERS, KEY_GIVERS, KEY_ODDS, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEY_COUNTRY]);
+    const givers = recordGivers(raw[KEY_GIVERS] || {}, Object.values(raw[KEYS.OFFERS] || {}), now);
+    await write(api, { [KEY_GIVERS]: givers });
+    const cache = raw[KEY_ODDS] || {};
+    if (cache.__at && now - cache.__at < ODDS_EVERY_MS) return null;
+    const targets = wishTargets({
+      wishlist: raw[KEY_WISHLIST] || [], steamWishlist: raw[KEY_STEAM_WISHLIST] || null, gogWishlist: raw[KEY_GOG_WISHLIST] || null,
+    });
+    if (!targets.length) return null;
+    const next = await refreshOddsInfo({
+      fetch: (u, i) => fetch(u, i), targets, cache, now, country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR',
+    });
+    await write(api, { [KEY_ODDS]: { ...next, __at: now } });
+    return next;
+  })()
+    .catch((e) => record('warn', 'chances des souhaits impossibles', e))
+    .finally(() => { oddsRunning = null; });
+  return oddsRunning;
 }
 
 /* ------------------------------------------------- sauvegarde automatique */

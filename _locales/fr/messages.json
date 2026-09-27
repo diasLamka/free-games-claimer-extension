@@ -2416,5 +2416,65 @@
   },
   "yearEmpty": {
     "message": "Aucun jeu pris cette année-là."
+  },
+  "wishesTitle": {
+    "message": "Vos souhaits"
+  },
+  "oddsHint": {
+    "message": "Les chances de le voir passer gratuit : une estimation, d'après ce que l'extension a vu passer, l'éditeur et la fiche Steam. Pas une promesse."
+  },
+  "oddsHigh": {
+    "message": "Chances fortes"
+  },
+  "oddsMedium": {
+    "message": "Chances moyennes"
+  },
+  "oddsLow": {
+    "message": "Chances faibles"
+  },
+  "oddsUnknown": {
+    "message": "Inconnues"
+  },
+  "oddsF2p": {
+    "message": "Déjà gratuit"
+  },
+  "oddsGivenBefore": {
+    "message": "déjà offert $1 fois"
+  },
+  "oddsGivenBeforeOn": {
+    "message": "déjà offert $1 fois, dernièrement en $2 sur $3"
+  },
+  "oddsPublisherGave": {
+    "message": "$1 a déjà offert $2 jeu(x)"
+  },
+  "oddsUnreleased": {
+    "message": "pas encore sorti"
+  },
+  "oddsRecent": {
+    "message": "sorti il y a moins d'un an"
+  },
+  "oddsOld": {
+    "message": "sorti il y a $1 ans"
+  },
+  "oddsExpensive": {
+    "message": "prix de catalogue élevé ($1)"
+  },
+  "oddsCheap": {
+    "message": "prix de catalogue modeste ($1)"
+  },
+  "oddsFreeToPlay": {
+    "message": "il est déjà gratuit à jouer"
+  },
+  "wishRemove": {
+    "message": "Retirer des souhaits"
+  },
+  "wishesMore": {
+    "message": "+ $1 autres, dans le tableau de bord"
+  },
+  "oddsPending": {
+    "message": "fiche Steam pas encore lue"
+  },
+  "oddsNotOnSteam": {
+    "message": "introuvable sur Steam sous ce nom"
   }
 }

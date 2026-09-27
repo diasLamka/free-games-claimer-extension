@@ -23,6 +23,9 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Attendez, il sera offert** (2.94.0) : dans « Vos souhaits », les chances
+de chaque jeu attendu de passer gratuit, et pourquoi (`watch/odds.js`).
+
 **Votre annee en image** (2.93.0) : la valeur, les jeux, les magasins, les
 plus chers, en une image a partager (`watch/year.js`, `lib/year-card.js`).
 

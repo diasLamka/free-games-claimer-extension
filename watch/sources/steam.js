@@ -166,6 +166,21 @@ export function mapItem(item, now, owned) {
 }
 
 /**
+ * L'entree d'une reponse `api/appdetails` pour CET appid, ou null.
+ *
+ * Mesure du 2026-09-27 : Steam la range parfois sous une AUTRE cle --
+ * `appids=1145360` (Hades) repond sous "1206340", l'un de ses DLC, avec le bon
+ * `data.steam_appid`. Lire par la seule cle rendait « rien » pour un jeu bien
+ * reel. On cherche par la cle, puis par `steam_appid`.
+ */
+export function appDetailsEntry(json, appid) {
+  if (!json || typeof json !== 'object') return null;
+  const id = String(appid);
+  if (json[id]) return json[id];
+  return Object.values(json).find((e) => e && e.data && String(e.data.steam_appid) === id) || null;
+}
+
+/**
  * Ce que la session connectee possede deja.
  *
  * Rend null -- et non un ensemble vide -- quand on ne sait pas : une absence de

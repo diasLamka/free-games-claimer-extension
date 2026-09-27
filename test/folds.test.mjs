@@ -12,6 +12,7 @@ const PLIS = {
   'fold-free': ['freeNow', 'free-count', false],
   'fold-weekends': ['weekendsTitle', 'weekends-count', false],
   'fold-dlc': ['dlcTitle', 'dlc-count', false],
+  'fold-wishes': ['wishesTitle', 'wishes-count', false],
   'fold-upcoming': ['comingUp', 'upcoming-count', false],
   'fold-codes': ['codesToRedeem', 'codes-count', false],
   'fold-claimed': ['alreadyClaimed', 'claimed-count', false],

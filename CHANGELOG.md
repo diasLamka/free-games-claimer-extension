@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.94.0 -- 2026-09-27
+
+**« Attendez, il sera offert » : les chances de vos souhaits**
+
+- **« Vos souhaits »**, une section du popup (tout dans le tableau de bord) :
+  chaque jeu attendu -- saisi, ou importe de Steam ou de GOG -- avec ses
+  chances de passer gratuit, fortes, moyennes ou faibles, et POURQUOI :
+  deja offert (et quand, et ou), un editeur qui offre des jeux, l'age du
+  jeu, son prix de catalogue. Les meilleures chances d'abord. Une
+  estimation, dite comme telle -- jamais un pourcentage invente.
+- **Les indices.** Ce que l'extension a vu passer (les offres terminees,
+  prises ou ratees) ; les editeurs des offres Epic, retenus a chaque cycle
+  (Epic nomme le vendeur) ; la fiche Steam du souhait, lue sans cookie,
+  huit par heure, gardee trente jours.
+- **Mesure du 2026-09-27** : Steam range parfois sa reponse `appdetails`
+  sous une autre cle que celle demandee (Hades sous celle d'un de ses DLC).
+  Les DLC gratuits (2.92.0) et les chances la lisent desormais par
+  `steam_appid`.
+
 ## 2.93.0 -- 2026-09-27
 
 **Votre annee en jeux gratuits, en image**

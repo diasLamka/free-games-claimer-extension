@@ -27,7 +27,7 @@
  *
  * Module pur, sauf `runDlcPass`, qui recoit son `fetch`.
  */
-import { readOwnership } from './sources/steam.js';
+import { appDetailsEntry, readOwnership } from './sources/steam.js';
 
 export const KEY_STEAM_DLC = 'veille:dlc-steam';
 
@@ -80,7 +80,7 @@ export function dlcCandidates(json) {
 
 /** Le verdict d'`appdetails` sur un DLC : gratuit, sorti, son jeu -- ou null si illisible. */
 export function dlcVerdict(json, appid) {
-  const e = json && json[String(appid)];
+  const e = appDetailsEntry(json, appid);
   if (!e || e.success !== true || !e.data) return null;
   const d = e.data;
   const pkgs = Array.isArray(d.packages) ? d.packages.map(String) : [];

@@ -1,0 +1,29 @@
+{
+  "1206340": {
+    "success": true,
+    "data": {
+      "type": "game",
+      "name": "Hades",
+      "steam_appid": 1145360,
+      "is_free": false,
+      "release_date": {
+        "coming_soon": false,
+        "date": "17 Sep, 2020"
+      },
+      "price_overview": {
+        "currency": "EUR",
+        "initial": 2450,
+        "final": 612,
+        "discount_percent": 75,
+        "initial_formatted": "24,50€",
+        "final_formatted": "6,12€"
+      },
+      "publishers": [
+        "Supergiant Games"
+      ],
+      "developers": [
+        "Supergiant Games"
+      ]
+    }
+  }
+}

@@ -2416,5 +2416,65 @@
   },
   "yearEmpty": {
     "message": "No game taken that year."
+  },
+  "wishesTitle": {
+    "message": "Your wishes"
+  },
+  "oddsHint": {
+    "message": "The chances of it going free: an estimate, from what the extension has seen, the publisher and the Steam page. Not a promise."
+  },
+  "oddsHigh": {
+    "message": "Good chances"
+  },
+  "oddsMedium": {
+    "message": "Some chances"
+  },
+  "oddsLow": {
+    "message": "Slim chances"
+  },
+  "oddsUnknown": {
+    "message": "Unknown"
+  },
+  "oddsF2p": {
+    "message": "Already free"
+  },
+  "oddsGivenBefore": {
+    "message": "already given away $1 time(s)"
+  },
+  "oddsGivenBeforeOn": {
+    "message": "already given away $1 time(s), last in $2 on $3"
+  },
+  "oddsPublisherGave": {
+    "message": "$1 has already given away $2 game(s)"
+  },
+  "oddsUnreleased": {
+    "message": "not released yet"
+  },
+  "oddsRecent": {
+    "message": "released less than a year ago"
+  },
+  "oddsOld": {
+    "message": "released $1 years ago"
+  },
+  "oddsExpensive": {
+    "message": "high list price ($1)"
+  },
+  "oddsCheap": {
+    "message": "modest list price ($1)"
+  },
+  "oddsFreeToPlay": {
+    "message": "it is already free to play"
+  },
+  "wishRemove": {
+    "message": "Remove from wishes"
+  },
+  "wishesMore": {
+    "message": "+ $1 more, in the dashboard"
+  },
+  "oddsPending": {
+    "message": "Steam page not read yet"
+  },
+  "oddsNotOnSteam": {
+    "message": "not found on Steam under this name"
   }
 }

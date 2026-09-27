@@ -35,6 +35,8 @@ import { readPage, scanGames, classify, knownTitles } from '../watch/page-scan.j
 import { factLines } from '../watch/lookup.js';
 import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
+import { KEY_ODDS, KEY_GIVERS, LEVELS as ODDS, rankWishes, wishTargets } from '../watch/odds.js';
+import { recurrenceIndex } from '../watch/recurrence.js';
 import { yearRecap, yearsOf, yearFileName } from '../watch/year.js';
 import { drawYearCard, loadFonts, cardBlob } from '../lib/year-card.js';
 import { sumWorths } from '../lib/money.js';
@@ -235,6 +237,9 @@ const KEYS_READ = [
   KEY_COVERS,
   KEY_RELAY,
   KEY_STEAM_DLC,
+  KEY_ODDS,
+  KEY_GIVERS,
+  KEY_OUTCOMES,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -447,7 +452,7 @@ function foldSay(id, texte) {
  * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
  * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
  * de fermer. Le compte de chaque section reste dans son titre. */
-const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-dlc', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
 const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
@@ -1214,6 +1219,63 @@ function renderDlc(all) {
     row.append(ouvrir, masquer);
     host.append(row);
   }
+}
+
+/* Vos souhaits (2.94.0), chacun avec ses chances de passer gratuit
+   (watch/odds.js) -- une ESTIMATION, en trois niveaux, avec ses raisons. */
+const ODDS_LABELS = { high: 'oddsHigh', medium: 'oddsMedium', low: 'oddsLow', unknown: 'oddsUnknown', f2p: 'oddsF2p' };
+const MAX_WISHES_SHOWN = EN_ONGLET ? 2000 : 60;
+
+function oddsReason(r) {
+  const [a, b, c] = r.args || [];
+  const prix = (n, cur) => (typeof n === 'number' ? money(n, cur || null) : '');
+  if (r.key === 'oddsGivenBefore') {
+    const quand = typeof b === 'number' ? new Date(b).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' }) : '';
+    return quand ? t('oddsGivenBeforeOn', a, quand, STORE_LABELS[c] || c || '?') : t('oddsGivenBefore', a);
+  }
+  if (r.key === 'oddsExpensive' || r.key === 'oddsCheap') return t(r.key, prix(a, b));
+  return t(r.key, ...(r.args || []).map((x) => String(x ?? '')));
+}
+
+function renderWishes(all) {
+  const section = document.getElementById('wishes-section');
+  const host = document.getElementById('wishes-list');
+  if (!section || !host) return;
+  host.textContent = '';
+  const targets = wishTargets({
+    wishlist: get(all, KEY_WISHLIST, []), steamWishlist: get(all, KEY_STEAM_WISHLIST, null), gogWishlist: get(all, KEY_GOG_WISHLIST, null),
+  });
+  section.hidden = !targets.length;
+  document.getElementById('wishes-count').textContent = targets.length ? String(targets.length) : '';
+  if (!targets.length) return;
+  const index = recurrenceIndex({ outcomes: get(all, KEY_OUTCOMES, {}), library: get(all, KEY_LIBRARY, {}), normalise: normaliseTitle });
+  const rangs = rankWishes(targets, { cache: get(all, KEY_ODDS, {}), givers: get(all, KEY_GIVERS, {}), index, now: Date.now() });
+  for (const w of rangs.slice(0, MAX_WISHES_SHOWN)) {
+    const row = el('div', `row wish-row o-${w.level}`);
+    const body = el('span', 'soon-body');
+    const tete = el('span', 'label', displayTitle(w.title));
+    body.append(tete);
+    const raisons = (w.reasons || []).map(oddsReason).filter(Boolean);
+    if (raisons.length) body.append(el('span', 'soon-price wish-why', raisons.join(' · ')));
+    row.append(body);
+    const badge = el('span', 'wish-odds', t(ODDS_LABELS[w.level]));
+    badge.title = t('oddsHint');
+    row.append(badge);
+    if (w.info && w.info.appid) {
+      const fiche = el('button', 'btn-sm', t('scanOpen'));
+      fiche.addEventListener('click', () => openTab(`https://store.steampowered.com/app/${w.info.appid}/`));
+      row.append(fiche);
+    }
+    if (w.origin === 'manual') {
+      const retirer = el('button', 'icon-button', '\u2715');
+      retirer.title = t('wishRemove');
+      retirer.setAttribute('aria-label', `${t('wishRemove')} : ${w.title}`);
+      retirer.addEventListener('click', async () => { retirer.disabled = true; await tell('fgc-wish', { title: w.title, on: false }); });
+      row.append(retirer);
+    }
+    host.append(row);
+  }
+  if (rangs.length > MAX_WISHES_SHOWN) host.append(el('p', 'hint', t('wishesMore', String(rangs.length - MAX_WISHES_SHOWN))));
 }
 
 function renderUpcoming(all) {
@@ -2507,6 +2569,7 @@ async function render() {
   renderUpcoming(all);
   renderWeekends(all, behaviourCache);
   renderDlc(all);
+  renderWishes(all);
   renderLog(all);
   renderCodes(get(all, KEY_CODES, []));
   renderTally(all);

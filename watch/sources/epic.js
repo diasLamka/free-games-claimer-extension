@@ -317,6 +317,8 @@ export function mapElements(elements, now) {
       worth: originalWorth(el),
       keepable: isFreeToKeep(el),
       category: epicCategory(el),
+      // Le vendeur (2.94.0) : « Attendez, il sera offert » retient qui offre.
+      publisher: (el.seller && el.seller.name) || null,
       seenAt: now,
       updatedAt: now,
     }));
