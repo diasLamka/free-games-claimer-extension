@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -130,14 +131,15 @@ fun ClaimPanelContent(
         }
         ui.outcomes.takeLast(6).forEach { o ->
             val ok = o.verdict in Verdicts.ACQUIRED
-            Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Le tampon de l'issue (1.11.0), comme la liste « Deja recupere » de l'extension.
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Une colonne de largeur fixe : les titres s'alignent, quel que soit le tampon.
+                Box(Modifier.width(100.dp), contentAlignment = Alignment.CenterStart) {
+                    KindStamp(stampKindOf(o.verdict) ?: StampKind.WAITING, small = true)
+                }
                 Text(
-                    if (ok) "OK" else "!!", style = MaterialTheme.typography.labelMedium,
-                    color = if (ok) b.onAccent else Color.White,
-                    modifier = Modifier.background(if (ok) b.accent else Color.Black).padding(horizontal = 5.dp, vertical = 2.dp),
-                )
-                Text(
-                    o.title.uppercase() + " — " + (if (ok) stringResource(R.string.status_claimed) else verdictText(o.verdict, o.details)),
+                    // Le tampon dit l'etat ; le texte ne dit que ce qu'il ajoute (connexion requise, raison de l'echec...).
+                    o.title.uppercase() + (if (ok || (o.verdict == Verdicts.SKIPPED && o.details.isNullOrBlank())) "" else " — " + verdictText(o.verdict, o.details)),
                     style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 8.dp),
                 )

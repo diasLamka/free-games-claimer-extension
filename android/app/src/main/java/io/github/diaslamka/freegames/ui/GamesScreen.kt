@@ -259,13 +259,16 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
-            if (claimed != null || owned) {
-                // Le tampon (1.3.0) : pris, ou deja a toi -- de travers, sur la jaquette.
-                Stamp(
-                    stringResource(if (owned && claimed == null) R.string.status_owned else R.string.status_claimed),
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
-                )
+            /* Le tampon (1.3.0 ; un par etat depuis la 1.11.0, comme l'extension) :
+               pris, deja a toi, ou l'issue du dernier essai -- echec, en
+               attente, ignore -- de travers, sur la jaquette. */
+            val tampon = when {
+                claimed != null -> stampKindOf(claimed.status) ?: StampKind.CLAIMED
+                owned -> StampKind.OWNED
+                attempt?.verdict != null -> stampKindOf(attempt.verdict)
+                else -> null
             }
+            tampon?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) }
         }
         Perforation()
         Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {

@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import io.github.diaslamka.freegames.R
+import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.ui.theme.Display
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
 import io.github.diaslamka.freegames.ui.theme.Mono
@@ -129,6 +132,91 @@ fun Stamp(text: String, modifier: Modifier = Modifier, fill: Color = LocalBrut.c
             .padding(if (small) 2.dp else 3.dp)
             .border(if (small) 1.5.dp else 2.dp, ink)
             .padding(horizontal = if (small) 4.dp else 8.dp, vertical = if (small) 0.dp else 2.dp),
+    )
+}
+
+/**
+ * Les etats d'une recuperation, chacun son tampon (1.11.0) -- les memes que
+ * ceux de l'extension (2.96.0) : recupere, deja a toi, ignore, echec, en
+ * attente. Chacun son encre, son trait et son angle, comme des coups de
+ * tampon donnes a la main.
+ */
+enum class StampKind { CLAIMED, OWNED, SKIPPED, FAILED, WAITING }
+
+/** Le tampon d'un verdict du moteur ; null s'il n'y en a pas. La table de l'extension. */
+fun stampKindOf(verdict: String?): StampKind? = when (verdict) {
+    null -> null
+    Verdicts.CLAIMED, Verdicts.REDEEMED -> StampKind.CLAIMED
+    Verdicts.ALREADY_REDEEMED -> StampKind.OWNED
+    Verdicts.SKIPPED, Verdicts.OUT_OF_SCOPE -> StampKind.SKIPPED
+    Verdicts.FAILURE, Verdicts.BAD_URL -> StampKind.FAILED
+    else -> StampKind.WAITING
+}
+
+@Composable
+fun stampLabel(kind: StampKind): String = stringResource(
+    when (kind) {
+        StampKind.CLAIMED -> R.string.status_claimed
+        StampKind.OWNED -> R.string.stamp_owned
+        StampKind.SKIPPED -> R.string.stamp_skipped
+        StampKind.FAILED -> R.string.stamp_failed
+        StampKind.WAITING -> R.string.stamp_waiting
+    },
+)
+
+/**
+ * Le tampon d'un etat. Pose sur une jaquette ou sur une carte blanche : il a
+ * toujours son propre fond, pour rester lisible sur une image comme en
+ * theme sombre.
+ */
+@Composable
+fun KindStamp(kind: StampKind, modifier: Modifier = Modifier, small: Boolean = false, text: String = stampLabel(kind)) {
+    val b = LocalBrut.current
+    val base = MaterialTheme.typography.labelLarge
+    val style = base.copy(fontFamily = Display, letterSpacing = if (small) 0.8.sp else 1.5.sp, fontSize = if (small) 9.sp else base.fontSize)
+    val trait = if (small) 1.5.dp else 2.dp
+    val (fill, ink, angle) = when (kind) {
+        StampKind.CLAIMED -> Triple(Color.White, Color.Black, -8f)
+        StampKind.OWNED -> Triple(b.accent, Color.Black, -4f)
+        StampKind.SKIPPED -> Triple(Color.White, Color(0xFF6A6A6A), 5f)
+        StampKind.FAILED -> Triple(Color.Black, Color.White, -3f)
+        StampKind.WAITING -> Triple(Color.White, Color.Black, 3f)
+    }
+    // Un trait dessine (pointilles, tirets) prend sa place dans la marge : on lui en laisse plus.
+    val dessine = kind == StampKind.SKIPPED || kind == StampKind.WAITING
+    val pad = Modifier.padding(
+        horizontal = (if (small) 5.dp else 9.dp) + (if (dessine) trait else 0.dp),
+        vertical = (if (small) 1.dp else 3.dp) + (if (dessine) trait * 1.5f else 0.dp),
+    )
+    val forme = when (kind) {
+        // Double trait : le tampon « officiel ».
+        StampKind.CLAIMED, StampKind.OWNED -> Modifier.border(trait, ink).padding(if (small) 2.dp else 3.dp).border(trait, ink)
+        // Inverse, cerne de noir a l'exterieur : se detache sur une jaquette claire comme sombre.
+        StampKind.FAILED -> Modifier.border(trait, Color.Black).padding(trait).border(trait, ink)
+        // Pointilles (en attente) ou tirets (ignore) : un etat qui n'est pas fini.
+        StampKind.SKIPPED, StampKind.WAITING -> Modifier.drawBehind {
+            val w = trait.toPx()
+            val motif = if (kind == StampKind.WAITING) floatArrayOf(w, w * 1.2f) else floatArrayOf(w * 3f, w * 2f)
+            drawRect(
+                color = ink,
+                topLeft = Offset(w / 2, w / 2),
+                size = Size(size.width - w, size.height - w),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = w, pathEffect = PathEffect.dashPathEffect(motif)),
+            )
+        }
+    }
+    Text(
+        text.uppercase(),
+        style = style,
+        color = ink,
+        maxLines = 1,
+        // Un tampon ne se plie jamais : un mot coupe en deux n'est plus un tampon.
+        softWrap = false,
+        modifier = modifier.rotate(angle)
+            .then(if (kind == StampKind.OWNED) Modifier.drawBehind { drawRect(Color.Black, topLeft = Offset(2.dp.toPx(), 2.dp.toPx()), size = size) } else Modifier)
+            .background(fill)
+            .then(forme)
+            .then(pad),
     )
 }
 

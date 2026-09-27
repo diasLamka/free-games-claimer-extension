@@ -102,9 +102,9 @@ private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Uni
     ) {
         Box {
             Cover(image, title, e.store, Modifier.width(96.dp).height(64.dp), letterSize = 26)
-            // Le tampon (1.3.0), a cheval sur la jaquette.
-            if (e.status == "claimed" || e.status == "redeemed") {
-                Stamp(stringResource(R.string.status_claimed), Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), small = true)
+            // Le tampon (1.3.0 ; un par etat depuis la 1.11.0), a cheval sur la jaquette.
+            stampKindOf(e.status)?.let { kind ->
+                KindStamp(kind, Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), small = true)
             }
         }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {

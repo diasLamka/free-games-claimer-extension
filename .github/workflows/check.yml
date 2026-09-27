@@ -28,10 +28,13 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      # v5 : l'action tourne sur Node 24 (Node 20 est retire des runners
+      # GitHub). Pas de verrou npm dans ce depot : pas de cache automatique.
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
       - run: npm run check
 
       # La sonnette (2.54.0). Un push sur main dont le check passe previent le

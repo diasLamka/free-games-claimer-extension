@@ -15,6 +15,13 @@ genere : voir `build/build.mjs`.
   le noir sur les cartes blanches de l'Historique -- lisible en theme sombre.
 - Plus aucune page n'utilisait les icones dessinees au DOM :
   `lib/status-icons.js` s'en va.
+- **Dans l'appli Android 1.11.0**, les memes tampons : sur les cartes des
+  jeux (recupere, deja a toi, echec, en attente, ignore -- l'issue du
+  dernier essai), sur les jaquettes de l'onglet Recuperes, et dans le
+  panneau de recuperation a la place de « OK » et « !! ».
+- **CI GitHub** : les actions passent a leurs versions Node 24
+  (checkout v5, setup-node v5, setup-java v5, upload-artifact v6). GitHub
+  retire Node 20 de ses runners ; chaque run l'affichait en avertissement.
 
 ## 2.96.0 -- 2026-09-27
 

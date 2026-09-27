@@ -36,11 +36,14 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      # v5 : l'action tourne sur Node 24 (Node 20 est retire des runners
+      # GitHub). Pas de verrou npm dans ce depot : pas de cache automatique.
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
 
       - name: Le tag et package.json doivent dire la meme version
         run: |

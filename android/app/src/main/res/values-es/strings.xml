@@ -27,7 +27,10 @@
     <string name="checked_ago">Comprobado %1$s</string>
     <string name="wished">Deseado</string>
     <string name="rating_short">%1$d %% positivas</string>
-    <string name="status_owned">Ya lo tienes</string>
+    <string name="stamp_owned">Ya es tuyo</string>
+    <string name="stamp_skipped">Ignorado</string>
+    <string name="stamp_failed">Fallido</string>
+    <string name="stamp_waiting">En espera</string>
     <string name="status_claimed">Conseguido</string>
     <string name="free">Gratis</string>
     <string name="until">Hasta el %1$s</string>

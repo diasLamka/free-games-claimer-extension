@@ -246,4 +246,33 @@ class ScreenshotTest {
             ) { m -> Box(m.background(androidx.compose.ui.graphics.Color(0xFFEDEDED))) }
         }
     }
+
+    /** Un tampon par etat (1.11.0), comme l'extension : grands, petits, et dans le panneau. */
+    @Test
+    fun tampons() = shoot("C-tampons", Accent.JAUNE, dark = true) {
+        Column(Modifier.padding(16.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+            SectionHeader("Tampons", 5)
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(18.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(18.dp),
+                modifier = Modifier.padding(vertical = 18.dp),
+            ) {
+                for (k in io.github.diaslamka.freegames.ui.StampKind.values()) io.github.diaslamka.freegames.ui.KindStamp(k)
+                for (k in io.github.diaslamka.freegames.ui.StampKind.values()) io.github.diaslamka.freegames.ui.KindStamp(k, small = true)
+            }
+            ClaimPanelContent(
+                ClaimSession.Ui(
+                    running = false, visible = true,
+                    outcomes = listOf(
+                        ClaimSession.Outcome("a", "High on Life", Stores.AMAZON, "claimed", null),
+                        ClaimSession.Outcome("b", "RiMS Racing", Stores.AMAZON, "already_redeemed", null),
+                        ClaimSession.Outcome("c", "Botany Manor", Stores.AMAZON, "needs_login", "session expiree"),
+                        ClaimSession.Outcome("d", "DOOM Eternal", Stores.AMAZON, "failed", "le bouton n'est pas venu"),
+                        ClaimSession.Outcome("e", "The Da Vinci Cryptex", Stores.AMAZON, "skipped", null),
+                    ),
+                ),
+                onToggle = null, onStop = {}, onDismiss = {}, onUser = {},
+            ) { m -> Box(m) }
+        }
+    }
 }

@@ -27,7 +27,10 @@
     <string name="checked_ago">Vérifié %1$s</string>
     <string name="wished">Souhaité</string>
     <string name="rating_short">%1$d %% positif</string>
-    <string name="status_owned">Déjà possédé</string>
+    <string name="stamp_owned">Déjà à toi</string>
+    <string name="stamp_skipped">Ignoré</string>
+    <string name="stamp_failed">Échec</string>
+    <string name="stamp_waiting">En attente</string>
     <string name="status_claimed">Récupéré</string>
     <string name="free">Gratuit</string>
     <string name="until">Jusqu\'au %1$s</string>
