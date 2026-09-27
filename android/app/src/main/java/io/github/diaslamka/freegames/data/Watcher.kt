@@ -107,6 +107,9 @@ object Watcher {
         }
 
         remindEnding(context, now)
+        // La derniere chance (1.5.0) : ce qui est deja dans la fenetre sonne, le reste est programme.
+        io.github.diaslamka.freegames.notify.LastChance.ring(context, now)
+        io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, now)
         refreshRatings(now)
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
         runCatching { RelayLink.alive(context, System.currentTimeMillis()) }

@@ -5,7 +5,7 @@ pourtant les regles que Google Play et Android imposent, point par point, pour
 deux raisons : ce sont de bonnes regles pour une appli qui touche a des comptes,
 et Play Protect juge un APK installe a la main sur les memes signaux.
 
-Etat au 2026-09-27, appli 1.3.0.
+Etat au 2026-09-27, appli 1.5.0.
 
 ## Ce que l'appli demande
 
@@ -32,6 +32,15 @@ exemption d'optimisation de la batterie, installation d'autres applis.
   jeu a la fois, aucune activite lancee depuis l'arriere-plan, aucune fenetre
   par-dessus les autres applis. Une notification discrete est visible pendant
   qu'elle travaille.
+- **L'alarme de derniere chance** (1.5.0, coupee par defaut, activee avec
+  une explication) n'est PAS une alarme exacte : la permission qu'elle
+  demanderait (`SCHEDULE_EXACT_ALARM`) est reservee aux reveils et aux
+  agendas. C'est `setAndAllowWhileIdle`, sans permission, que le systeme sert
+  au plus une heure apres l'heure demandee ; d'ou une alarme trois heures
+  avant la fin, qui sonne entre trois et deux heures avant. Aucune fenetre
+  plein ecran (`USE_FULL_SCREEN_INTENT` n'est pas demandee) : une
+  notification sur un canal dont le son passe par le flux des alarmes, que
+  l'utilisateur regle ou coupe dans les reglages du canal.
 - Un **captcha** ou toute verification humaine n'est **jamais** resolu par
   l'appli : il part en notification, et l'humain le fait a l'ecran. Au fond,
   le jeu attend ensuite quatre heures avant d'etre retente. Quand c'est le PC

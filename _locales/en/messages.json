@@ -2290,5 +2290,8 @@
   },
   "phoneChallengeHere": {
     "message": "Tap to finish it on the phone."
+  },
+  "phoneLastChanceTitle": {
+    "message": "Last chance: $1"
   }
 }

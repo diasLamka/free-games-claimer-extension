@@ -121,6 +121,15 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="help_already">%1$s est déjà récupéré.</string>
     <string name="help_not_found">%1$s n\'est pas (ou plus) dans les jeux gratuits que l\'appli connaît.</string>
     <string name="help_looking">Recherche de %1$s…</string>
+    <string name="channel_last_chance">Dernière chance (alarme)</string>
+    <string name="channel_last_chance_hint">Un jeu souhaité finit dans moins de 3 h et n\'est pas encore à toi. Sonne sur le flux des alarmes, même en silencieux.</string>
+    <string name="notif_last_chance_title">Dernière chance : %1$s</string>
+    <string name="notif_last_chance_text">Un jeu souhaité, gratuit sur %1$s, pas encore récupéré : il reste %2$s.</string>
+    <string name="set_last_chance">Alarme de dernière chance</string>
+    <string name="set_last_chance_hint">Un jeu souhaité finit dans moins de 3 h sans être récupéré : le téléphone sonne comme un réveil.</string>
+    <string name="last_chance_title">Alarme de dernière chance</string>
+    <string name="last_chance_text">Quand un jeu de ta liste de souhaits est gratuit et finit dans moins de 3 h sans être à toi (un captcha, une session perdue, un magasin que l\'appli ne sait pas prendre), le téléphone sonne comme un réveil, même en silencieux, jusqu\'à ce que tu la touches ou l\'écartes. Elle sonne entre 3 h et 2 h avant la fin : Android ne garantit pas la minute aux applis qui ne sont pas des réveils. Ouvrir l\'appli la fait taire. Son son et le passage en « Ne pas déranger » se règlent dans les réglages du canal.</string>
+    <string name="last_chance_ok">Activer</string>
     <string name="relay_intro">L\'appli et l\'extension du navigateur se disent ce qu\'elles récupèrent : celui qui est allumé prend le jeu, l\'autre ne le retente pas. Chiffré de bout en bout par ntfy ; aucun cookie, aucun code, aucun compte n\'y passe.</string>
     <string name="relay_scan">Scanner le QR code</string>
     <string name="relay_paste">Coller le code</string>

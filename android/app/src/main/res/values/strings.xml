@@ -122,6 +122,15 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="help_already">%1$s is already claimed.</string>
     <string name="help_not_found">%1$s is not (or no longer) among the free games the app knows.</string>
     <string name="help_looking">Looking for %1$s…</string>
+    <string name="channel_last_chance">Last chance (alarm)</string>
+    <string name="channel_last_chance_hint">A wished game ends in under 3 hours and is not yours yet. Rings on the alarm stream, even in silent mode.</string>
+    <string name="notif_last_chance_title">Last chance: %1$s</string>
+    <string name="notif_last_chance_text">A wished game, free on %1$s, not claimed yet: %2$s left.</string>
+    <string name="set_last_chance">Last-chance alarm</string>
+    <string name="set_last_chance_hint">A wished game ends in under 3 h unclaimed: the phone rings like an alarm clock.</string>
+    <string name="last_chance_title">Last-chance alarm</string>
+    <string name="last_chance_text">When a game from your wishlist is free and ends in under 3 hours without being yours (a captcha, a lost session, a store the app cannot claim), the phone rings like an alarm clock, even in silent mode, until you tap or dismiss it. It rings between 3 and 2 hours before the end: Android does not guarantee the minute to apps that are not alarm clocks. Opening the app silences it. You can change its sound or let it through Do Not Disturb in the channel settings.</string>
+    <string name="last_chance_ok">Turn on</string>
     <string name="relay_intro">The app and the browser extension tell each other what they claim: whichever is on takes the game, the other never retries it. End-to-end encrypted through ntfy; no cookie, no code, no account ever goes through.</string>
     <string name="relay_scan">Scan the QR code</string>
     <string name="relay_paste">Paste the code</string>

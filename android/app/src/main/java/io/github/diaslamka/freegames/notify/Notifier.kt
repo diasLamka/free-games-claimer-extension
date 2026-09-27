@@ -35,6 +35,8 @@ object Notifier {
     const val CH_CLAIMS = "recuperations"
     const val CH_ACCOUNT = "comptes"
     const val CH_HELP = "aide"
+    const val CH_LAST_CHANCE = "derniere-chance"
+    private const val TAG_LAST_CHANCE = "derniere-chance"
 
     fun createChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
@@ -45,6 +47,21 @@ object Notifier {
                 NotificationChannel(CH_CLAIMS, context.getString(R.string.channel_claims), NotificationManager.IMPORTANCE_LOW),
                 NotificationChannel(CH_ACCOUNT, context.getString(R.string.channel_account), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(CH_HELP, context.getString(R.string.channel_help), NotificationManager.IMPORTANCE_HIGH),
+                // Le son des alarmes, sur le flux des alarmes : il sonne meme en mode silencieux.
+                NotificationChannel(CH_LAST_CHANCE, context.getString(R.string.channel_last_chance), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = context.getString(R.string.channel_last_chance_hint)
+                    val son = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                        ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                    setSound(
+                        son,
+                        android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 600, 300, 600, 300, 600)
+                },
             ),
         )
     }
@@ -210,6 +227,40 @@ object Notifier {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setContentIntent(PendingIntent.getActivity(context, id, link, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         post(context, id, b.build())
+    }
+
+    /**
+     * La derniere chance (1.5.0) : elle sonne en boucle, comme un reveil,
+     * jusqu'a ce qu'on la touche ou l'ecarte -- ou qu'on ouvre l'appli.
+     */
+    suspend fun lastChance(context: Context, o: Offer, s: AppState) {
+        val now = System.currentTimeMillis()
+        val id = ("derniere:" + o.key).hashCode()
+        val text = context.getString(R.string.notif_last_chance_text, Stores.label(o.store), Fmt.left(context, o.end ?: now, now))
+        val b = NotificationCompat.Builder(context, CH_LAST_CHANCE)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_last_chance_title, o.shownTitle))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, id, claimKey = if (Rules.claimable(o, s.settings)) o.key else null))
+        cover(o.image)?.let { b.setLargeIcon(it) }
+        if (Rules.claimable(o, s.settings)) b.addAction(0, context.getString(R.string.action_claim), openApp(context, id + 1, claimKey = o.key))
+        Titles.webUrl(o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
+        val n = b.build().apply { flags = flags or android.app.Notification.FLAG_INSISTENT }
+        if (!allowed(context)) return
+        try {
+            NotificationManagerCompat.from(context).notify(TAG_LAST_CHANCE, id, n)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    /** L'appli est ouverte : les alarmes de derniere chance ont ete vues, elles se taisent. */
+    fun silenceLastChance(context: Context) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        runCatching { nm.activeNotifications.filter { it.tag == TAG_LAST_CHANCE }.forEach { nm.cancel(it.tag, it.id) } }
     }
 
     fun login(context: Context, store: String) {

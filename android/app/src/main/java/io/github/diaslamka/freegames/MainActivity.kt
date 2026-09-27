@@ -34,6 +34,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // L'appli est a l'ecran : l'alarme de derniere chance a ete entendue.
+        io.github.diaslamka.freegames.notify.Notifier.silenceLastChance(this)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intents.value = intent

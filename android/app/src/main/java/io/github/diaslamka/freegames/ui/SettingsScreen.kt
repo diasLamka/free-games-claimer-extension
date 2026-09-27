@@ -65,6 +65,7 @@ fun SettingsScreen(
     var steamWarning by remember { mutableStateOf(false) }
     var clearConfirm by remember { mutableStateOf(false) }
     var backgroundInfo by remember { mutableStateOf(false) }
+    var lastChanceInfo by remember { mutableStateOf(false) }
     val b = LocalBrut.current
     ReadableColumn {
         TopBlock(stringResource(R.string.tab_settings))
@@ -115,6 +116,9 @@ fun SettingsScreen(
                     ) { v -> onSettings { it.copy(country = v) } }
                     Toggle(stringResource(R.string.set_notify_new), null, s.notifyNew) { v -> onSettings { it.copy(notifyNew = v) } }
                     Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
+                    Toggle(stringResource(R.string.set_last_chance), stringResource(R.string.set_last_chance_hint), s.lastChance) { v ->
+                        if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
+                    }
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
@@ -180,6 +184,17 @@ fun SettingsScreen(
                 TextButton(onClick = { backgroundInfo = false; onSettings { it.copy(claimInBackground = true) } }) { Text(stringResource(R.string.background_ok)) }
             },
             dismissButton = { TextButton(onClick = { backgroundInfo = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    if (lastChanceInfo) {
+        AlertDialog(
+            onDismissRequest = { lastChanceInfo = false },
+            title = { Text(stringResource(R.string.last_chance_title)) },
+            text = { Text(stringResource(R.string.last_chance_text)) },
+            confirmButton = {
+                TextButton(onClick = { lastChanceInfo = false; onSettings { it.copy(lastChance = true) } }) { Text(stringResource(R.string.last_chance_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { lastChanceInfo = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
     if (clearConfirm) {

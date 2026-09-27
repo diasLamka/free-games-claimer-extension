@@ -37,7 +37,7 @@ import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
 import { split } from './filters.js';
 import {
-  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet,
+  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t } from '../lib/i18n.js';
@@ -617,6 +617,47 @@ export async function runCycle({
         catalogKey: closing[0].catalogKey,
         image: closing[0].image || null,
       });
+    }
+
+    /* ---- la derniere chance, au telephone (2.90.0) ----
+
+       Un jeu ATTENDU finit dans les trois heures et n'est toujours pas a nous :
+       une alerte urgente, une fois par offre. Avec l'option « jeux attendus »,
+       jamais en heures calmes -- c'est le choix de l'utilisateur, meme la. */
+    if (tel && tel.wished && fetchImpl && ctx.state.booted && !inQuietHours(effectiveQuiet(ctx.settings), now)) {
+      const possede = ownedKeys(ctx.library || {}, normaliseTitle);
+      const derniers = lastChanceOffers(
+        markWished(onlyWatched(openOffers(catalog, now), ctx.settings.watchedStores), ctx.wishlist, normaliseTitle, ctx.steamWishlist, ctx.gogWishlist),
+        {
+          now,
+          isFinal: (v) => FINAL_VERDICTS.includes(v),
+          owned: (o) => possede.has(ownedKeyFor(o.store, normaliseTitle(o.title || ''))),
+        },
+      );
+      if (derniers.length) {
+        const r = await pushToPhone({
+          chrome,
+          fetch: fetchImpl,
+          target: tel,
+          msg: {
+            title: t('phoneLastChanceTitle', derniers[0].title),
+            message: derniers.map((o) => `${o.title} -- ${STORE_LABELS[o.store] || o.store} -- ${t('notifyEndingBody', readableHours(o.end - now))}`).join('\n'),
+            priority: PRIORITY.URGENT,
+            tags: ['alarm_clock'],
+            click: derniers[0].url || derniers[0].resolveUrl || null,
+          },
+          now,
+          record,
+          why: 'derniere chance',
+        });
+        // Une alerte ratee repart au cycle suivant : on ne marque que ce qui est parti.
+        if (r.ok) {
+          const marque = { ...catalog };
+          for (const o of derniers) marque[o.catalogKey] = { ...marque[o.catalogKey], lastChanceAt: now };
+          catalog = marque;
+          await writeCycle(chrome, { catalog });
+        }
+      }
     }
 
     await updateBadge(badgeCount({

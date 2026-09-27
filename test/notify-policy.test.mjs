@@ -213,3 +213,25 @@ test('une liste de magasins vide ne filtre rien', () => {
   assert.equal(onlyWatched(offers, []).length, 2);
   assert.equal(onlyWatched(offers, undefined).length, 2);
 });
+
+/* La derniere chance (2.90.0). */
+import { lastChanceOffers, LAST_CHANCE_MS } from '../watch/notify-policy.js';
+
+test('derniere chance : attendu, dans les 3 dernieres heures, pas a nous, une fois', () => {
+  const now = Date.UTC(2026, 8, 27, 12);
+  const o = (title, endIn, extra = {}) => ({ title, store: 'epic', end: now + endIn, wished: true, ...extra });
+  const offres = [
+    o('Dedans', 2 * 3600000),
+    o('Trop tot', LAST_CHANCE_MS + 60000),
+    o('Trop tard', 5 * 60000),
+    o('Pas attendu', 3600000, { wished: false }),
+    o('Deja dit', 3600000, { lastChanceAt: now - 1 }),
+    o('Reclame', 3600000, { verdict: 'claimed' }),
+    o('Possede', 3600000, { alreadyOwned: true }),
+    o('Au registre', 3600000),
+  ];
+  const r = lastChanceOffers(offres, {
+    now, isFinal: (v) => v === 'claimed', owned: (x) => x.title === 'Au registre',
+  });
+  assert.deepEqual(r.map((x) => x.title), ['Dedans']);
+});

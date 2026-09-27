@@ -61,8 +61,13 @@ export const DEFAULT_PHONE = Object.freeze({
 /** Le serveur public, celui que « Nouveau sujet » propose. */
 export const DEFAULT_SERVER = 'https://ntfy.sh';
 
-/** Priorites ntfy : 3 ordinaire, 4 haute -- le telephone vibre plus fort. */
-export const PRIORITY = Object.freeze({ DEFAULT: 3, HIGH: 4 });
+/**
+ * Priorites ntfy : 3 ordinaire, 4 haute -- le telephone vibre plus fort --, 5
+ * urgente -- longues vibrations, fenetre par-dessus ; l'appli ntfy peut la
+ * laisser passer « Ne pas deranger ». L'urgente ne sert qu'a la derniere
+ * chance d'un jeu attendu (2.90.0).
+ */
+export const PRIORITY = Object.freeze({ DEFAULT: 3, HIGH: 4, URGENT: 5 });
 
 /** Au-dela, on abandonne : une alerte ne bloque pas un cycle. */
 export const TIMEOUT_MS = 10000;

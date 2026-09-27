@@ -148,6 +148,11 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             val before = Graph.store.value.settings
             val after = Graph.store.update { it.copy(settings = block(it.settings)) }.settings
             if (after.checkHours != before.checkHours) Scheduler.periodic(context, after.checkHours, replace = true)
+            if (after.lastChance && !before.lastChance) {
+                val t = System.currentTimeMillis()
+                io.github.diaslamka.freegames.notify.LastChance.ring(context, t)
+                io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, t)
+            }
             if (after.country != before.country || after.showMobile != before.showMobile) refresh()
         }
     }

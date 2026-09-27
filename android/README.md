@@ -14,6 +14,7 @@ web emballee.
 | **Recuperation** | Epic, GOG, Amazon Luna : **le moteur de l'extension**, au caractere pres, joue dans une vraie page du magasin. Steam en option, comme dans l'extension. |
 | **Ecran eteint** (1.2.0) | En option : pendant la veille de fond, la page du magasin s'ouvre sans s'afficher et le jeu est pris, sans ouvrir l'appli. Un captcha n'est jamais resolu : une notification t'appelle. |
 | **Relais avec le PC** (1.2.0) | Associe a l'extension par un QR code : celui qui est allume recupere, l'autre ne retente pas. Chiffre de bout en bout, par ntfy. |
+| **Derniere chance** (1.5.0) | En option : un jeu de tes souhaits finit dans moins de 3 h sans etre a toi, le telephone sonne comme un reveil, meme en silencieux, jusqu'a ce que tu le touches. |
 | **Le PC a besoin de toi** (1.4.0) | Un captcha arrete le PC pendant que tu es dehors : le telephone sonne, tu touches « Finir ici », tu fais la verification sur le telephone et le jeu est pris, avec la session du telephone. Dans l'autre sens, un captcha ecran eteint fait retenter le jeu au PC. |
 | **Comptes** | Connexion une fois dans l'appli ; les sessions restent sur le telephone. Google et Facebook refusent les connexions dans une appli : l'appli s'arrete avant et guide (mot de passe Epic). |
 | **Souhaits** | A la main, ou en **partageant** une fiche de jeu depuis n'importe quelle appli (Reddit, Discord, navigateur) : l'appli dit aussitot si le jeu est gratuit, deja attendu, ou deja a toi -- et sur quel magasin, y compris ce que le PC a pris. |

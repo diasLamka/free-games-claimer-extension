@@ -159,6 +159,12 @@ data class Settings(
     val claimSteam: Boolean = false,
     /** Recuperer aussi ecran eteint, sans ouvrir l'appli (1.2.0). Coupe par defaut. */
     val claimInBackground: Boolean = false,
+    /**
+     * L'alarme de derniere chance (1.5.0) : un jeu souhaite finit dans moins de
+     * trois heures sans etre a nous, le telephone sonne comme un reveil.
+     * Coupee par defaut.
+     */
+    val lastChance: Boolean = false,
     val showMobile: Boolean = true,
     val showOthers: Boolean = true,
     val steamRatings: Boolean = true,
@@ -222,4 +228,6 @@ data class AppState(
     val accounts: Map<String, AccountState> = emptyMap(),
     val importedAt: Long? = null,
     val relay: RelayState? = null,
+    /** Les offres pour lesquelles l'alarme de derniere chance a sonne (1.5.0). */
+    val alarmed: Map<String, Long> = emptyMap(),
 )

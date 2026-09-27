@@ -121,6 +121,15 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="help_already">%1$s ist schon geholt.</string>
     <string name="help_not_found">%1$s ist nicht (mehr) unter den Gratisspielen, die die App kennt.</string>
     <string name="help_looking">Suche %1$s…</string>
+    <string name="channel_last_chance">Letzte Chance (Wecker)</string>
+    <string name="channel_last_chance_hint">Ein Wunschspiel endet in unter 3 Stunden und ist noch nicht deins. Klingelt über den Wecker-Kanal, auch im Lautlos-Modus.</string>
+    <string name="notif_last_chance_title">Letzte Chance: %1$s</string>
+    <string name="notif_last_chance_text">Ein Wunschspiel, gratis bei %1$s, noch nicht geholt: noch %2$s.</string>
+    <string name="set_last_chance">Letzte-Chance-Wecker</string>
+    <string name="set_last_chance_hint">Ein Wunschspiel endet in unter 3 Std. ungeholt: Das Handy klingelt wie ein Wecker.</string>
+    <string name="last_chance_title">Letzte-Chance-Wecker</string>
+    <string name="last_chance_text">Wenn ein Spiel deiner Wunschliste gratis ist und in unter 3 Stunden endet, ohne dir zu gehören (ein Captcha, eine verlorene Sitzung, ein Shop, den die App nicht holen kann), klingelt das Handy wie ein Wecker, auch im Lautlos-Modus, bis du tippst oder wegwischst. Es klingelt 3 bis 2 Stunden vor dem Ende: Android garantiert Apps, die keine Wecker sind, nicht die Minute. Die App zu öffnen beendet es. Ton und „Nicht stören“ lassen sich in den Kanaleinstellungen ändern.</string>
+    <string name="last_chance_ok">Einschalten</string>
     <string name="relay_intro">App und Browser-Erweiterung sagen sich, was sie holen: Wer an ist, nimmt das Spiel, der andere versucht es nicht erneut. Ende-zu-Ende-verschlüsselt über ntfy; kein Cookie, kein Code, kein Konto geht darüber.</string>
     <string name="relay_scan">QR-Code scannen</string>
     <string name="relay_paste">Code einfügen</string>

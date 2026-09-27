@@ -165,6 +165,30 @@ export function endingSoon(offers, { now, hours = 6, isFinal = () => false }) {
   ));
 }
 
+/** La derniere chance (2.90.0) : les trois dernieres heures d'une offre. */
+export const LAST_CHANCE_MS = 3 * 3600000;
+/** A moins de dix minutes, il est trop tard pour faire quoi que ce soit. */
+export const LAST_CHANCE_MIN_MS = 10 * 60000;
+
+/**
+ * Les jeux ATTENDUS qui finissent dans les trois heures sans etre a nous
+ * (2.90.0) -- un defi, une session perdue, un magasin que l'extension ne sait
+ * pas prendre. Une fois par offre (`lastChanceAt`). `owned(o)` dit si le
+ * registre le possede deja. Pure.
+ */
+export function lastChanceOffers(offers, { now, isFinal = () => false, owned = () => false }) {
+  return (offers || []).filter((o) => (
+    o && o.wished === true
+    && typeof o.end === 'number'
+    && o.end - now > LAST_CHANCE_MIN_MS
+    && o.end - now <= LAST_CHANCE_MS
+    && !o.lastChanceAt
+    && o.alreadyOwned !== true
+    && !isFinal(o.verdict)
+    && !owned(o)
+  ));
+}
+
 /**
  * Le nombre a poser sur le badge.
  *

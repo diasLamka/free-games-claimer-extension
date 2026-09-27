@@ -4,6 +4,27 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.90.0 -- 2026-09-27
+
+**L'alarme de derniere chance**
+
+- **Appli Android 1.5.0, en option** (Reglages -> Veille -> Alarme de
+  derniere chance) : un jeu de ta liste de souhaits est gratuit, finit dans
+  moins de trois heures, et n'est toujours pas a toi -- un captcha, une
+  session perdue, un magasin que l'appli ne sait pas prendre. Le telephone
+  sonne comme un reveil, sur le flux des alarmes, meme en mode silencieux, en
+  boucle jusqu'a ce que tu la touches ; ouvrir l'appli la fait taire. Une fois
+  par jeu.
+- **Sans alarme exacte** : la permission est reservee aux reveils. L'appli
+  pose une alarme ordinaire qui traverse la veille profonde, servie au plus une
+  heure en retard par Android 12+ : elle sonne entre trois et deux heures avant
+  la fin. Chaque passage de la veille fait sonner ce qui est deja dans la
+  fenetre.
+- **Cote extension**, pour qui n'a que l'appli ntfy : avec l'alerte
+  « jeux attendus », la derniere chance part en priorite urgente (longues
+  vibrations, et l'appli ntfy peut la laisser passer « Ne pas deranger »).
+  Une fois par offre, jamais en heures calmes.
+
 ## 2.89.0 -- 2026-09-27
 
 **Le PC a besoin de toi : une verification finie sur le telephone**

@@ -54,5 +54,11 @@
             </intent-filter>
         </activity>
 
+        <!-- L'alarme de derniere chance (1.5.0) : posee par l'appli elle-meme,
+             jamais appelee du dehors. -->
+        <receiver
+            android:name=".notify.LastChanceReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>

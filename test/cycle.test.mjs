@@ -774,3 +774,29 @@ test('un defi de securite : demande d\'aide au relais, et l\'alerte ouvre l\'app
   assert.equal(new URL(lien).searchParams.get('t'), 'Hades');
   assert.match(alerte.init.body, /Hades/);
 });
+
+/* --------------------------- la derniere chance, au telephone (2.90.0) */
+
+test('derniere chance : un jeu attendu qui finit dans les 3 h part en urgent, une seule fois', async () => {
+  const src = sourceFactice('test', [response([
+    offer('Hollow Knight', { end: T + 2 * HOUR + 30 * 60000 }),
+    offer('Jeu B', { end: T + 2 * HOUR }),
+    offer('Jeu C', { end: T + 20 * HOUR }),
+  ])]);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'] },
+    [KEY_WISHLIST]: addWish(addWish([], 'Hollow Knight', normaliseTitle), 'Jeu C', normaliseTitle),
+    [KEY_PHONE]: { on: true, url: 'https://ntfy.sh/fgc-test' },
+  });
+  const f = fetchNtfy();
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  assert.equal(f.appels.length, 0, 'pas a l\'amorcage');
+  await c.cycle(T + 30 * 60000, { force: true, fetch: f, autonomousClaim: false });
+  const urgentes = f.appels.filter((a) => new URL(a.url).searchParams.get('priority') === '5');
+  assert.equal(urgentes.length, 1);
+  assert.match(new URL(urgentes[0].url).searchParams.get('title'), /Hollow Knight/);
+  assert.doesNotMatch(urgentes[0].init.body, /Jeu B|Jeu C/, 'seulement l\'attendu, seulement dans les 3 h');
+  await c.cycle(T + 40 * 60000, { force: true, fetch: f, autonomousClaim: false });
+  assert.equal(f.appels.filter((a) => new URL(a.url).searchParams.get('priority') === '5').length, 1, 'une fois');
+});
