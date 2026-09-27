@@ -20,6 +20,7 @@ celui-ci l'a autorise.
 | `notifications` | Annoncer une offre nouvelle, la fin proche d'une offre, et rendre la main a l'utilisateur quand un magasin presente un defi de securite. |
 | `clipboardWrite` | Copier un code de rachat Amazon Luna dans le presse-papiers, pour que l'utilisateur le colle sur la page d'echange du magasin. |
 | `scripting` | Executer l'etape de recuperation dans la page du magasin concerne, et rien d'autre. Bornee aux hotes declares ci-dessous. |
+| `activeTab` | Le bouton « Cette page » du popup : lire UNE fois, sur ce clic, la page ouverte (ses liens, ses titres, son texte) pour dire quels jeux elle cite et si l'utilisateur les possede, les attend, ou peut les recuperer gratuitement. Aucun acces permanent a un site ; rien de ce qui est lu ne quitte la machine ni n'est garde. |
 | `offscreen` | Lire une page HTML distante afin d'y reperer une offre. Un service worker MV3 n'a pas de `DOMParser` ; le document hors ecran est le seul moyen d'analyser du HTML. Le document est inerte, les scripts de la page lue ne s'executent jamais. |
 
 ## Permissions d'hote
@@ -55,7 +56,8 @@ A mentionner si un relecteur s'interroge sur l'etendue des acces.
 Aucune permission `tabs`, `cookies`, `webRequest`, `downloads`, `identity`,
 `history`, ni `<all_urls>` en permission obligatoire. L'extension ne peut pas
 lire l'URL des onglets de l'utilisateur, ni lire un cookie, ni intercepter une
-requete.
+requete. Seule exception, voulue : l'onglet ouvert, lu sur un clic du
+scanner de page (`activeTab`), et oublie aussitot.
 
 ## Code distant
 

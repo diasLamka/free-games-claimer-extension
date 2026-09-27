@@ -23,6 +23,9 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Le scanner de page** (2.91.0) : « Cette page » dans le popup dit quels jeux
+la page ouverte cite, et ce que vous en avez (`watch/page-scan.js`).
+
 **La signature** (2.88.0), commune a l'extension et a l'appli : le jeu offert
 en billet poinconne et perfore, le tampon « RECUPERE » de travers, la bande
 timecode de la prochaine fin d'offre (fin de `pages/brut.css`).

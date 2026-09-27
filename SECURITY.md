@@ -269,6 +269,7 @@ vous qui decidez.
 | `notifications` | Annoncer une offre, un defi de securite |
 | `clipboardWrite` | Copier un code. **C'est aussi par la qu'un code arrive dans le presse-papiers systeme** |
 | `scripting` | Le clic Steam, les sondes de diagnostic. Bornee aux hotes ci-dessous |
+| `activeTab` | Le scanner de page (2.91.0) : « Cette page » dans le popup lit l'onglet ouvert -- ses liens, ses titres, son texte -- UNE fois, sur ce clic, pour dire quels jeux il cite et ce que vous en avez. Aucun acces permanent a aucun site, aucune installation de script ; Chrome ne l'annonce pas. Rien de ce qui est lu ne quitte la machine ni n'est garde |
 | `offscreen` | Lire du HTML : un service worker MV3 n'a pas de `DOMParser`. Absente sur Firefox |
 | `alarms` | Se reveiller pour verifier |
 | `contextMenus` | Le clic droit « Me prevenir quand ce jeu sera gratuit » (2.79.0), sur les seules fiches Steam, Epic et GOG et les liens qui y menent. N'ouvre l'acces a rien -- Chrome ne l'annonce meme pas. Sur une fiche, le titre est lu par `scripting` sur un hote deja autorise ; sur un lien, rien n'est lu dans la page qui le porte : le nom vient de l'adresse |

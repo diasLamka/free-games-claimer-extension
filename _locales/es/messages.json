@@ -2289,9 +2289,48 @@
     "message": "Conseguido"
   },
   "phoneChallengeHere": {
-    "message": "Toca para terminarlo en el teléfono."
+    "message": "Toque para terminarlo en el teléfono."
   },
   "phoneLastChanceTitle": {
     "message": "Última oportunidad: $1"
+  },
+  "scanButton": {
+    "message": "Esta página"
+  },
+  "scanButtonTitle": {
+    "message": "Los juegos citados en la página abierta, y lo que tiene de ellos"
+  },
+  "scanTitle": {
+    "message": "En esta página"
+  },
+  "scanNone": {
+    "message": "Ningún juego reconocido en esta página."
+  },
+  "scanBlocked": {
+    "message": "Esta página no se puede leer: una página del navegador o la tienda de extensiones."
+  },
+  "scanFree": {
+    "message": "Gratis ahora"
+  },
+  "scanWished": {
+    "message": "Deseado"
+  },
+  "scanUnknown": {
+    "message": "No es suyo"
+  },
+  "scanOwned": {
+    "message": "Ya es suyo"
+  },
+  "scanWish": {
+    "message": "Desear"
+  },
+  "scanOpen": {
+    "message": "Ficha"
+  },
+  "scanClaim": {
+    "message": "Conseguir"
+  },
+  "scanFromText": {
+    "message": "citado en el texto"
   }
 }

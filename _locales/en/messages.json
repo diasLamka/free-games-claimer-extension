@@ -2293,5 +2293,44 @@
   },
   "phoneLastChanceTitle": {
     "message": "Last chance: $1"
+  },
+  "scanButton": {
+    "message": "This page"
+  },
+  "scanButtonTitle": {
+    "message": "The games named on the open page, and what you have of them"
+  },
+  "scanTitle": {
+    "message": "On this page"
+  },
+  "scanNone": {
+    "message": "No game recognised on this page."
+  },
+  "scanBlocked": {
+    "message": "This page can't be read: a browser page, or the extension store."
+  },
+  "scanFree": {
+    "message": "Free now"
+  },
+  "scanWished": {
+    "message": "Wished"
+  },
+  "scanUnknown": {
+    "message": "Not yours"
+  },
+  "scanOwned": {
+    "message": "Already yours"
+  },
+  "scanWish": {
+    "message": "Wish"
+  },
+  "scanOpen": {
+    "message": "Page"
+  },
+  "scanClaim": {
+    "message": "Claim"
+  },
+  "scanFromText": {
+    "message": "named in the text"
   }
 }

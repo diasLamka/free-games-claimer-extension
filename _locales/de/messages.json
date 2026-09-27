@@ -2293,5 +2293,44 @@
   },
   "phoneLastChanceTitle": {
     "message": "Letzte Chance: $1"
+  },
+  "scanButton": {
+    "message": "Diese Seite"
+  },
+  "scanButtonTitle": {
+    "message": "Die auf der offenen Seite genannten Spiele und was Sie davon haben"
+  },
+  "scanTitle": {
+    "message": "Auf dieser Seite"
+  },
+  "scanNone": {
+    "message": "Kein Spiel auf dieser Seite erkannt."
+  },
+  "scanBlocked": {
+    "message": "Diese Seite lässt sich nicht lesen: eine Browserseite oder der Erweiterungsshop."
+  },
+  "scanFree": {
+    "message": "Jetzt gratis"
+  },
+  "scanWished": {
+    "message": "Gewünscht"
+  },
+  "scanUnknown": {
+    "message": "Nicht Ihres"
+  },
+  "scanOwned": {
+    "message": "Schon Ihres"
+  },
+  "scanWish": {
+    "message": "Wünschen"
+  },
+  "scanOpen": {
+    "message": "Seite"
+  },
+  "scanClaim": {
+    "message": "Holen"
+  },
+  "scanFromText": {
+    "message": "im Text genannt"
   }
 }

@@ -31,6 +31,9 @@ import { DEFAULT_SETTINGS } from '../watch/storage.js';
 
 import { KEY_LIBRARY, ownedTitles, ownedKeys } from '../watch/library.js';
 import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from '../watch/collection.js';
+import { readPage, scanGames, classify, knownTitles } from '../watch/page-scan.js';
+import { factLines } from '../watch/lookup.js';
+import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from '../watch/calendar.js';
 import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
@@ -3667,6 +3670,112 @@ if (EN_ONGLET) {
     tell('fgc-mark-seen');
   });
 }
+
+/* ------------------------------------------------ le scanner de page (2.91.0) */
+
+/* Les jeux cites sur l'onglet ouvert, et ce que l'extension en sait. La page
+   est lue une fois, sur ce clic, grace a `activeTab` : aucun acces permanent,
+   et rien ne quitte la machine. Popup seulement (le bouton est cache dans le
+   tableau de bord, dont l'onglet actif est lui-meme). */
+const SCAN_LABELS = { free: 'scanFree', wished: 'scanWished', unknown: 'scanUnknown', owned: 'scanOwned' };
+
+async function scanThisPage() {
+  showTab('games');
+  const section = document.getElementById('scan-section');
+  const say = document.getElementById('scan-say');
+  const list = document.getElementById('scan-list');
+  const count = document.getElementById('scan-count');
+  section.hidden = false;
+  list.replaceChildren();
+  count.textContent = '';
+  const dire = (texte) => { say.textContent = texte; say.hidden = !texte; };
+  dire('');
+
+  let page = null;
+  try {
+    const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+    if (tab && typeof tab.id === 'number') {
+      const [r] = await api.scripting.executeScript({ target: { tabId: tab.id }, func: readPage });
+      page = r && r.result;
+    }
+  } catch { page = null; }
+  if (!page) { dire(t('scanBlocked')); return; }
+
+  const raw = await api.storage.local.get([
+    KEY_CATALOG, KEY_LIBRARY, KEY_COLLECTION, KEY_OUTCOMES, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST,
+  ]);
+  const donnees = {
+    catalog: raw[KEY_CATALOG] || {},
+    library: raw[KEY_LIBRARY] || {},
+    collection: (raw[KEY_COLLECTION] || {}).items || {},
+    outcomes: raw[KEY_OUTCOMES] || {},
+    wishlist: raw[KEY_WISHLIST] || [],
+    steamWishlist: raw[KEY_STEAM_WISHLIST] || null,
+    gogWishlist: raw[KEY_GOG_WISHLIST] || null,
+  };
+  const now = Date.now();
+  const jeux = scanGames(page, { known: knownTitles(donnees), normalise: normaliseTitle });
+  const lignes = classify(jeux, { ...donnees, normalise: normaliseTitle, now });
+  count.textContent = String(lignes.length);
+  if (!lignes.length) { dire(t('scanNone')); return; }
+
+  const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  const storeLabel = (s) => STORE_LABELS[s] || s;
+  for (const g of lignes) {
+    const li = document.createElement('li');
+    li.className = `scan-row s-${g.status}`;
+    const titre = document.createElement('span');
+    titre.className = 'scan-title';
+    titre.textContent = displayTitle(g.title);
+    const badge = document.createElement('span');
+    badge.className = 'scan-badge';
+    badge.textContent = t(SCAN_LABELS[g.status]);
+    li.append(titre, badge);
+
+    // Ce que l'extension sait ; a defaut, d'ou vient le jeu (le magasin du lien, ou le texte).
+    const faits = factLines(g.facts, { t, storeLabel, dateText });
+    const detail = faits.length ? faits.join(' ')
+      : (g.source === 'text' ? t('scanFromText') : (g.store ? storeLabel(g.store) : ''));
+    if (detail) {
+      const d = document.createElement('span');
+      d.className = 'scan-detail';
+      d.textContent = detail;
+      li.append(d);
+    }
+
+    const actions = document.createElement('span');
+    actions.className = 'scan-actions';
+    const bouton = (label, fn) => {
+      const b = document.createElement('button');
+      b.className = 'btn-sm';
+      b.textContent = label;
+      b.addEventListener('click', fn);
+      actions.append(b);
+      return b;
+    };
+    if (g.status === 'free' && g.catalogKey) {
+      bouton(t('scanClaim'), async (e) => {
+        e.currentTarget.disabled = true;
+        await withWorking(() => tell('fgc-claim-one', { catalogKey: g.catalogKey }), { immediate: true });
+      });
+    }
+    if (g.status === 'unknown') {
+      bouton(t('scanWish'), async (e) => {
+        e.currentTarget.disabled = true;
+        await tell('fgc-wish', { title: g.title, on: true });
+        li.className = 'scan-row s-wished';
+        badge.textContent = t('scanWished');
+        e.currentTarget.remove();
+      });
+    }
+    if (g.url) bouton(t('scanOpen'), () => openTab(g.url));
+    if (actions.childElementCount) li.append(actions);
+    list.append(li);
+  }
+}
+
+document.getElementById('scan-page').addEventListener('click', () => { scanThisPage().catch(() => {}); });
+document.getElementById('scan-close').addEventListener('click', () => { document.getElementById('scan-section').hidden = true; });
 
 /* --- boot */
 

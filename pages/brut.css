@@ -566,3 +566,45 @@ a.link:hover { background: var(--accent); color: #000; }
 @media (prefers-reduced-motion: reduce) { .timecode.hot .tc-digits { animation: none; } }
 :root[data-vue="onglet"] .timecode { margin-top: 14px; }
 :root[data-vue="onglet"] .tc-digits { font-size: 28px; }
+
+/* ------------------------------------------------ le scanner de page (2.91.0) */
+.scan-button { white-space: nowrap; flex: none; padding: 3px 7px; font-size: 10px; }
+header .wordmark { white-space: nowrap; }
+:root[data-vue="onglet"] .scan-button { display: none; }
+.scan {
+  margin: 12px 0 4px;
+  border: 3px solid var(--txt);
+  box-shadow: 5px 5px 0 var(--accent);
+  background: var(--base);
+  padding: 10px 12px 12px;
+}
+.scan[hidden] { display: none; }
+.scan-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.scan-head h2 { margin: 0; }
+.scan-say { margin: 8px 0 0; }
+.scan-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.scan-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 8px 0 0;
+  border-top: 2px solid var(--txt);
+}
+.scan-row:first-child { border-top: 0; padding-top: 0; }
+.scan-title { font-weight: 700; overflow-wrap: anywhere; }
+.scan-badge {
+  justify-self: end;
+  font-family: var(--display, inherit);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 2px solid var(--txt);
+  color: var(--txt);
+}
+.scan-row.s-free .scan-badge { background: var(--accent); color: #000; border-color: #000; }
+.scan-row.s-wished .scan-badge { background: var(--txt); color: var(--base); }
+.scan-row.s-owned .scan-badge { border-style: double; border-width: 3px; transform: rotate(-4deg); }
+.scan-detail { grid-column: 1 / -1; font-size: 12px; opacity: .85; }
+.scan-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }

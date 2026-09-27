@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.91.0 -- 2026-09-27
+
+**Le scanner de page**
+
+- **« Cette page »**, en haut du popup : sur un article, un fil Reddit, la
+  description d'une video, l'extension dit quels jeux la page cite, et pour
+  chacun ce que vous en avez -- gratuit maintenant (avec « Recuperer »), dans
+  vos souhaits, deja a vous (et depuis quand), ou pas a vous (avec
+  « Souhaiter »). Du plus utile au moins utile.
+- **Deux lectures.** Les liens vers une fiche Steam, Epic, GOG, Humble,
+  Fanatical, Green Man Gaming, IndieGala ou itch.io -- meme caches derriere
+  une redirection YouTube, Reddit ou Google -- et, dans le texte, les titres
+  que l'extension connait deja (registre, catalogue, collection, souhaits).
+  Un titre d'un seul mot (« Control ») ne compte que dans un titre de
+  section, un passage en gras ou un lien.
+- **Permission `activeTab`** : la page ouverte est lue une fois, sur ce clic,
+  et rien de ce qui est lu ne quitte la machine ni n'est garde. Aucun acces
+  permanent a aucun site ; Chrome ne l'annonce pas a l'installation.
+
 ## 2.90.0 -- 2026-09-27
 
 **L'alarme de derniere chance**

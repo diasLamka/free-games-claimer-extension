@@ -1298,6 +1298,9 @@
     <img src="../icons/icon128.png" alt="">
     <span class="wordmark">Free Games</span>
     <span class="version" id="version"></span>
+    <!-- Le scanner de page (2.91.0) : popup seulement -- dans le tableau de
+         bord, l'onglet actif, c'est lui-meme. -->
+    <button class="btn-sm scan-button" id="scan-page" data-i18n="scanButton" data-i18n-attr="title:scanButtonTitle"></button>
     <!-- Le tableau de bord (2.58.0) : ce meme popup, en grand, dans un onglet. -->
     <button class="icon-button" id="open-dashboard" data-i18n-attr="title:dashboardOpen,aria-label:dashboardOpen">
       <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 8.5 7.5M6.5 13.5h-4v-4M2.5 13.5l5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1350,6 +1353,17 @@
         <option value="store" data-i18n="sortStore"></option>
       </select>
     </div>
+
+    <!-- Les jeux cites sur l'onglet ouvert : lus sur un clic (activeTab), rien
+         ne quitte la machine. -->
+    <section class="scan" id="scan-section" hidden aria-live="polite">
+      <div class="scan-head">
+        <h2><span data-i18n="scanTitle"></span><span class="count" id="scan-count"></span></h2>
+        <button class="icon-button" id="scan-close" data-i18n-attr="title:sentinelClose,aria-label:sentinelClose">&#x2715;</button>
+      </div>
+      <p class="scan-say" id="scan-say" hidden></p>
+      <ul class="scan-list" id="scan-list"></ul>
+    </section>
     <!-- Les puces de magasin (2.61.0) : remplies par popup.js, cachees s'il n'y
          a qu'une boutique. -->
     <div class="chips" id="store-chips" role="group" data-i18n-attr="aria-label:chipsLabel" hidden></div>

@@ -2289,9 +2289,48 @@
     "message": "Récupéré"
   },
   "phoneChallengeHere": {
-    "message": "Touche pour le finir sur le téléphone."
+    "message": "Touchez pour le finir sur le téléphone."
   },
   "phoneLastChanceTitle": {
     "message": "Dernière chance : $1"
+  },
+  "scanButton": {
+    "message": "Cette page"
+  },
+  "scanButtonTitle": {
+    "message": "Les jeux cités sur la page ouverte, et ce que vous en avez"
+  },
+  "scanTitle": {
+    "message": "Sur cette page"
+  },
+  "scanNone": {
+    "message": "Aucun jeu reconnu sur cette page."
+  },
+  "scanBlocked": {
+    "message": "Cette page ne se lit pas : page du navigateur, ou boutique d'extensions."
+  },
+  "scanFree": {
+    "message": "Gratuit maintenant"
+  },
+  "scanWished": {
+    "message": "Souhaité"
+  },
+  "scanUnknown": {
+    "message": "Pas à vous"
+  },
+  "scanOwned": {
+    "message": "Déjà à vous"
+  },
+  "scanWish": {
+    "message": "Souhaiter"
+  },
+  "scanOpen": {
+    "message": "Fiche"
+  },
+  "scanClaim": {
+    "message": "Récupérer"
+  },
+  "scanFromText": {
+    "message": "cité dans le texte"
   }
 }
