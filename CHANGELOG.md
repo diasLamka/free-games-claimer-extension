@@ -22,6 +22,9 @@ genere : voir `build/build.mjs`.
   sous une autre cle que celle demandee (Hades sous celle d'un de ses DLC).
   Les DLC gratuits (2.92.0) et les chances la lisent desormais par
   `steam_appid`.
+- **Dans l'appli Android 1.7.0**, onglet Souhaits : les memes chances, les
+  memes raisons, et « Tes meilleures chances » en tete. Les editeurs sont
+  appris des offres Epic vues par la veille de fond du telephone.
 
 ## 2.93.0 -- 2026-09-27
 

@@ -24,9 +24,11 @@ object Fmt {
     /** « 26.09.26 » : court, et sans langue. */
     fun short(ms: Long): String = DateTimeFormatter.ofPattern("dd.MM.yy").format(Instant.ofEpochMilli(ms).atZone(zone))
 
-    fun month(ms: Long): String =
+    fun month(ms: Long): String = monthInText(ms).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+
+    /** Le mois au fil d'une phrase : « en mars 2026 » (la langue decide de la majuscule). */
+    fun monthInText(ms: Long): String =
         DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()).format(Instant.ofEpochMilli(ms).atZone(zone))
-            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
     /** « 3 j », « 5 h », « 12 min » : ce qu'il reste. */
     fun left(context: Context, until: Long, now: Long): String {

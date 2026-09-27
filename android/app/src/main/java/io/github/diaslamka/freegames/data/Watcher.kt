@@ -6,6 +6,7 @@ import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.SourceStatus
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.notify.Notifier
+import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.EpicMobileSource
 import io.github.diaslamka.freegames.sources.EpicSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
@@ -92,6 +93,9 @@ object Watcher {
                 },
                 sources = s.sources + results.associate { it.name to SourceStatus(now, it.ok, it.offers.size, it.errors.firstOrNull()) },
                 lastCheck = now,
+                // « Attends, il sera offert » (1.7.0) : qui offre, et ce qui a deja ete offert.
+                passes = Odds.recordPasses(s.passes, offers.values),
+                givers = Odds.recordGivers(s.givers, offers.values, now),
             )
             fresh = offers.values.filter { o ->
                 o.isOpen(now) && o.key !in s.announced && o.keepable != false &&
@@ -111,6 +115,7 @@ object Watcher {
         io.github.diaslamka.freegames.notify.LastChance.ring(context, now)
         io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, now)
         refreshRatings(now)
+        refreshOdds(now)
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
         runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
@@ -129,6 +134,15 @@ object Watcher {
         if (due.isEmpty()) return
         Graph.store.update { st -> st.copy(reminded = (st.reminded + due.associate { it.key to now }).filterValues { now - it < 30 * DAY_MS }) }
         due.forEach { Notifier.ending(context, it, s) }
+    }
+
+    /** Les fiches Steam des souhaits, huit au plus, une fois par heure au plus. */
+    suspend fun refreshOdds(now: Long) {
+        val s = Graph.store.value
+        if (s.oddsAt != null && now - s.oddsAt < Odds.PASS_EVERY_MS) return
+        if (Odds.targets(s).none { Odds.needsInfo(s, it, now) }) return
+        val next = Odds.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        Graph.store.update { st -> st.copy(odds = next, oddsAt = now) }
     }
 
     /** Huit notes au plus par passage : poli envers Steam. */

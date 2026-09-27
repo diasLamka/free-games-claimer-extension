@@ -64,6 +64,8 @@ data class Offer(
     val packageId: String? = null,
     val parentAppid: String? = null,
     val platforms: String? = null,
+    /** L'editeur, quand la source le nomme (Epic, 1.7.0) : voir data/Odds.kt. */
+    val publisher: String? = null,
     val firstSeen: Long = 0,
     val lastSeen: Long = 0,
 ) {
@@ -230,4 +232,34 @@ data class AppState(
     val relay: RelayState? = null,
     /** Les offres pour lesquelles l'alarme de derniere chance a sonne (1.5.0). */
     val alarmed: Map<String, Long> = emptyMap(),
+    /** « Attends, il sera offert » (1.7.0) : les passages vus, par titre normalise. */
+    val passes: Map<String, List<Seen>> = emptyMap(),
+    /** Les editeurs qui offrent, par nom normalise. */
+    val givers: Map<String, Giver> = emptyMap(),
+    /** La fiche Steam de chaque souhait, par « app:<id> » ou « t:<titre> ». */
+    val odds: Map<String, OddsInfo> = emptyMap(),
+    val oddsAt: Long? = null,
+)
+
+/** Un jeu vu offert : ou, et quand (1.7.0). */
+@Serializable
+data class Seen(val store: String, val ts: Long)
+
+/** Un editeur qui a offert des jeux, et lesquels (titres normalises). */
+@Serializable
+data class Giver(val name: String, val games: List<String> = emptyList(), val last: Long = 0)
+
+/** Ce que la fiche Steam d'un souhait dit de lui. */
+@Serializable
+data class OddsInfo(
+    val at: Long,
+    val notFound: Boolean = false,
+    val appid: String? = null,
+    val name: String? = null,
+    val isFree: Boolean = false,
+    val comingSoon: Boolean = false,
+    val released: Long? = null,
+    val basePrice: Double? = null,
+    val currency: String? = null,
+    val publishers: List<String> = emptyList(),
 )

@@ -156,6 +156,8 @@ object EpicSource {
                 worth = originalWorth(el),
                 keepable = isFreeToKeep(el),
                 category = category(el),
+                // Le vendeur (1.7.0) : « Attends, il sera offert » retient qui offre.
+                publisher = el["seller"]["name"].str,
                 firstSeen = now,
                 lastSeen = now,
             )

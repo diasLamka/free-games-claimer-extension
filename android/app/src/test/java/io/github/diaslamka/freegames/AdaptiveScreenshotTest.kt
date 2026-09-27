@@ -165,4 +165,23 @@ class AdaptiveScreenshotTest {
             GamesScreen(s, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
         }
     }
+
+    /** Attends, il sera offert (1.7.0) : les chances des souhaits. */
+    @Test
+    @Config(qualifiers = "fr-rFR-w411dp-h891dp-night-xxhdpi")
+    fun souhaitsChances() {
+        val y = (365.25 * 24 * 3_600_000L).toLong()
+        val s = live.copy(
+            wishlist = listOf("Hades", "Tunic", "Marvel 1943 Rise of Hydra"),
+            importedWishes = listOf(io.github.diaslamka.freegames.model.ImportedWish("Hollow Knight", Stores.STEAM, "367520")),
+            passes = mapOf("tunic" to listOf(io.github.diaslamka.freegames.model.Seen(Stores.EPIC, now - y / 2))),
+            odds = mapOf(
+                "t:hades" to io.github.diaslamka.freegames.model.OddsInfo(at = now, appid = "1145360", released = now - 6 * y, basePrice = 24.5, currency = "EUR", publishers = listOf("Supergiant Games")),
+                "t:tunic" to io.github.diaslamka.freegames.model.OddsInfo(at = now, appid = "553420", released = now - 4 * y, basePrice = 28.99, currency = "EUR", publishers = listOf("Finji")),
+                "app:367520" to io.github.diaslamka.freegames.model.OddsInfo(at = now, appid = "367520", released = now - 9 * y, basePrice = 14.79, currency = "EUR", publishers = listOf("Team Cherry")),
+                "t:marvel 1943 rise of hydra" to io.github.diaslamka.freegames.model.OddsInfo(at = now, notFound = true),
+            ),
+        )
+        shoot("D-10-souhaits-chances", 2, dark = true) { io.github.diaslamka.freegames.ui.WishlistScreen(s, now, onAdd = {}, onRemove = {}) }
+    }
 }
