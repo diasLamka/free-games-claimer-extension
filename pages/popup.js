@@ -34,6 +34,7 @@ import { KEY_COLLECTION, offerStoreKeys, ownedStoreKeys } from '../watch/collect
 import { readPage, scanGames, classify, knownTitles } from '../watch/page-scan.js';
 import { factLines } from '../watch/lookup.js';
 import { KEY_OUTCOMES } from '../watch/outcomes.js';
+import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
 import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from '../watch/calendar.js';
 import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
@@ -230,6 +231,7 @@ const KEYS_READ = [
   KEY_RATINGS,
   KEY_COVERS,
   KEY_RELAY,
+  KEY_STEAM_DLC,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -442,7 +444,7 @@ function foldSay(id, texte) {
  * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
  * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
  * de fermer. Le compte de chaque section reste dans son titre. */
-const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-dlc', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
 const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
@@ -1166,6 +1168,47 @@ function renderWeekends(all, behaviour) {
     reste.title = t('weekendsUntil', shortDateTime(w.end));
     row.append(reste);
     row.append(el('span', 'soon-go', '↗'));
+    host.append(row);
+  }
+}
+
+/* Les DLC gratuits de vos jeux Steam (2.92.0). Trouves par le service worker
+   (watch/steam-dlc.js), ajoutes par Steam lui-meme : la fiche propose
+   « Telecharger », qui passe par l'application Steam. « Masquer » est une
+   preference d'affichage : elle vit dans les reglages du popup. */
+function renderDlc(all) {
+  const section = document.getElementById('dlc-section');
+  const host = document.getElementById('dlc-list');
+  if (!section || !host) return;
+  host.textContent = '';
+  const masques = Array.isArray(ui.hiddenDlc) ? ui.hiddenDlc : [];
+  const etat = get(all, KEY_STEAM_DLC, null);
+  const liste = pendingFreeDlc(etat ? { ...etat, hidden: [...(etat.hidden || []), ...masques] } : null, (get(all, KEY_COLLECTION, {}) || {}).items || {});
+  section.hidden = !liste.length;
+  document.getElementById('dlc-count').textContent = liste.length ? String(liste.length) : '';
+  for (const d of liste) {
+    const row = el('div', 'row dlc-row');
+    const art = el('span', 'soon-art');
+    if (d.image) art.append(thumb(d.image));
+    else art.append(el('span', 'letter', (d.name || '?').trim().charAt(0).toUpperCase()));
+    row.append(art);
+    const body = el('span', 'soon-body');
+    body.append(el('span', 'label', displayTitle(d.short || d.name)));
+    if (d.parentName) body.append(el('span', 'soon-price', t('dlcFor', d.parentName)));
+    body.title = d.name;
+    row.append(body);
+    const ouvrir = el('button', 'btn-sm', t('dlcOpen'));
+    ouvrir.title = t('dlcOpenTitle');
+    ouvrir.addEventListener('click', () => openTab(d.url));
+    const masquer = el('button', 'icon-button dlc-hide', '\u2715');
+    masquer.title = t('dlcHide');
+    masquer.setAttribute('aria-label', `${t('dlcHide')} : ${d.name}`);
+    masquer.addEventListener('click', () => {
+      ui = { ...ui, hiddenDlc: [...masques, d.id].slice(-2000) };
+      setValue(KEY_UI, ui);
+      renderDlc(all);
+    });
+    row.append(ouvrir, masquer);
     host.append(row);
   }
 }
@@ -2364,6 +2407,7 @@ function renderNotifications(behaviour) {
   document.getElementById('reminder-value').textContent = hours > 0 ? String(hours) : t('reminderOff');
   // Les week-ends gratuits de Steam (2.75.0) : actifs sauf refus explicite.
   document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
+  document.getElementById('steam-dlc').checked = behaviour.steamDlc !== false;
   // La note Steam (2.78.0) : active sauf refus explicite.
   document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
@@ -2458,6 +2502,7 @@ async function render() {
   renderGames(all, behaviourCache);
   renderUpcoming(all);
   renderWeekends(all, behaviourCache);
+  renderDlc(all);
   renderLog(all);
   renderCodes(get(all, KEY_CODES, []));
   renderTally(all);
@@ -2735,6 +2780,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
+document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('steam-ratings').addEventListener('change', (e) => writeBehaviour({ steamRatings: e.target.checked }));
 
 /* The slider writes the floor; the daily cap follows from it on the scheduler

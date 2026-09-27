@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.92.0 -- 2026-09-27
+
+**Les DLC gratuits de vos jeux Steam**
+
+- **Trouves tout seuls.** A partir des jeux Steam de Ma collection,
+  l'extension cherche leurs DLC gratuits -- camions, bandes-son, packs --
+  que vous n'avez pas encore : huit jeux par passage, chacun relu une fois
+  par mois, chaque candidat verifie (gratuit ET deja sorti : un DLC sans
+  prix n'est pas forcement gratuit). Une notification quand il en arrive,
+  une section « DLC gratuits de vos jeux Steam » dans le popup, avec le jeu,
+  « Ouvrir » et une croix pour masquer.
+- **Ajoutes par Steam lui-meme.** Un DLC gratuit n'a pas de paquet que le
+  web puisse ajouter : sa fiche propose « Telecharger », qui passe par
+  l'application Steam. L'extension ne se fait pas passer pour le client
+  Steam ; elle trouve, vous ajoutez d'un clic sur la fiche.
+- Mesure sur Steam le 2026-09-27 : Euro Truck Simulator 2 a sept DLC
+  gratuits (des camions), trouves en un passage. Coupable dans Reglages ->
+  Magasins.
+
 ## 2.91.0 -- 2026-09-27
 
 **Le scanner de page**

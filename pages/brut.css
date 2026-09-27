@@ -608,3 +608,10 @@ header .wordmark { white-space: nowrap; }
 .scan-row.s-owned .scan-badge { border-style: double; border-width: 3px; transform: rotate(-4deg); }
 .scan-detail { grid-column: 1 / -1; font-size: 12px; opacity: .85; }
 .scan-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ------------------------------------------ les DLC gratuits Steam (2.92.0) */
+.dlc-hint { margin: 0 0 8px; }
+.dlc-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 2px solid var(--txt); }
+.dlc-row .soon-body { flex: 1; min-width: 0; }
+.dlc-row .label { white-space: normal; overflow-wrap: anywhere; }
+.dlc-row .btn-sm, .dlc-row .dlc-hide { flex: none; }

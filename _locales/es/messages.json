@@ -2332,5 +2332,38 @@
   },
   "scanFromText": {
     "message": "citado en el texto"
+  },
+  "dlcTitle": {
+    "message": "DLC gratis de sus juegos de Steam"
+  },
+  "dlcHint": {
+    "message": "Encontrados en Mi colección. Steam solo los añade desde su aplicación: en la ficha, «Descargar»."
+  },
+  "dlcFor": {
+    "message": "para $1"
+  },
+  "dlcOpen": {
+    "message": "Abrir"
+  },
+  "dlcOpenTitle": {
+    "message": "La ficha de Steam: «Descargar» lo añade con la aplicación de Steam"
+  },
+  "dlcHide": {
+    "message": "Ocultar"
+  },
+  "dlcFoundOne": {
+    "message": "Un DLC gratis para $1"
+  },
+  "dlcFoundMany": {
+    "message": "$1 DLC gratis para sus juegos de Steam"
+  },
+  "dlcFoundBody": {
+    "message": "$1 -- en la ventana, «DLC gratis de sus juegos de Steam»."
+  },
+  "dlcLabel": {
+    "message": "DLC gratis de mis juegos de Steam"
+  },
+  "dlcToggleHint": {
+    "message": "Buscados con calma entre los juegos de Steam de Mi colección; Steam los añade desde su aplicación."
   }
 }

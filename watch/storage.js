@@ -255,6 +255,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    */
   steamWeekends: true,
   /**
+   * Les DLC gratuits de vos jeux Steam (2.92.0) : cherches doucement dans
+   * Ma collection, montres dans le popup, ajoutes par Steam lui-meme. Sans
+   * effet sans jeux Steam importes. Voir watch/steam-dlc.js.
+   */
+  steamDlc: true,
+  /**
    * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
    * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
    * cookie. Voir watch/steam-ratings.js.

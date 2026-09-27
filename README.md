@@ -23,6 +23,10 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Les DLC gratuits de vos jeux Steam** (2.92.0) : trouves parmi les jeux de
+Ma collection, montres dans le popup ; Steam les ajoute depuis son application
+(`watch/steam-dlc.js`).
+
 **Le scanner de page** (2.91.0) : « Cette page » dans le popup dit quels jeux
 la page ouverte cite, et ce que vous en avez (`watch/page-scan.js`).
 

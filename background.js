@@ -73,6 +73,7 @@ import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
+import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { runAutoBackup } from './watch/auto-backup.js';
 import {
   KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, ratingLine, refreshRatings,
@@ -427,6 +428,7 @@ async function startCycle(origine, options = {}) {
         await maybeRecap(Date.now());
         await maybeCodeReminders(Date.now());
         await maybeWeekends(Date.now());
+        await maybeSteamDlc(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
       }
@@ -540,6 +542,47 @@ function maybeWeekends(now = Date.now()) {
     .catch((e) => record('warn', 'week-ends Steam impossibles', e))
     .finally(() => { weekendsRunning = null; });
   return weekendsRunning;
+}
+
+/**
+ * Les DLC gratuits de vos jeux Steam (2.92.0), un passage par heure au plus,
+ * si Steam est suivi et que Ma collection connait vos jeux Steam. Voir
+ * watch/steam-dlc.js. Une notification pour ceux qui viennent d'etre trouves.
+ */
+let dlcRunning = null;
+
+function maybeSteamDlc(now = Date.now()) {
+  if (dlcRunning) return dlcRunning;
+  dlcRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.steamDlc === false || !(settings.watchedStores || []).includes('steam')) return null;
+    const raw = await readKeys(api, [KEY_STEAM_DLC, KEY_COLLECTION_LOOKUP, KEY_COUNTRY]);
+    const collection = (raw[KEY_COLLECTION_LOOKUP] || {}).items || {};
+    if (!Object.values(collection).some((i) => i && i.store === 'steam')) return null;
+    if (!dlcPassDue(raw[KEY_STEAM_DLC], now)) return null;
+    const r = await runDlcPass({
+      fetch: (u, i) => fetch(u, i), now, collection, state: raw[KEY_STEAM_DLC],
+      country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR',
+    });
+    const dejaDit = new Set(r.state.notified);
+    const nouveaux = r.found.filter((id) => !dejaDit.has(id)).map((id) => ({ id, ...r.state.dlc[id] }));
+    r.state.notified = [...dejaDit, ...nouveaux.map((d) => d.id)].slice(-3000);
+    await write(api, { [KEY_STEAM_DLC]: r.state });
+    record(r.errors.length ? 'warn' : 'info', `DLC Steam gratuits : ${r.found.length} trouve(s) ce passage${r.errors.length ? ` -- ${r.errors.slice(0, 3).join(' ; ')}` : ''}`);
+    if (nouveaux.length && settings.notifyMode !== 'off' && !inQuietHours(effectiveQuiet(settings), now)) {
+      const jeu = (r.state.games[nouveaux[0].parent] || {}).name || '';
+      await showNotice({
+        id: `dlc-${now}`,
+        title: nouveaux.length === 1 ? t('dlcFoundOne', jeu) : t('dlcFoundMany', String(nouveaux.length)),
+        message: t('dlcFoundBody', nouveaux.slice(0, 4).map((d) => d.name).join(', ')),
+        url: nouveaux.length === 1 ? `https://store.steampowered.com/app/${nouveaux[0].id}/` : null,
+      });
+    }
+    return r;
+  })()
+    .catch((e) => record('warn', 'DLC Steam gratuits impossibles', e))
+    .finally(() => { dlcRunning = null; });
+  return dlcRunning;
 }
 
 /* ------------------------------------------------- sauvegarde automatique */

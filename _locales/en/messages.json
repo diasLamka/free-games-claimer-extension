@@ -2332,5 +2332,38 @@
   },
   "scanFromText": {
     "message": "named in the text"
+  },
+  "dlcTitle": {
+    "message": "Free DLC for your Steam games"
+  },
+  "dlcHint": {
+    "message": "Found in My collection. Steam only adds them from its app: on the page, \"Download\"."
+  },
+  "dlcFor": {
+    "message": "for $1"
+  },
+  "dlcOpen": {
+    "message": "Open"
+  },
+  "dlcOpenTitle": {
+    "message": "The Steam page: \"Download\" adds it through the Steam app"
+  },
+  "dlcHide": {
+    "message": "Hide"
+  },
+  "dlcFoundOne": {
+    "message": "A free DLC for $1"
+  },
+  "dlcFoundMany": {
+    "message": "$1 free DLC for your Steam games"
+  },
+  "dlcFoundBody": {
+    "message": "$1 -- in the popup, \"Free DLC for your Steam games\"."
+  },
+  "dlcLabel": {
+    "message": "Free DLC for my Steam games"
+  },
+  "dlcToggleHint": {
+    "message": "Searched gently among the Steam games in My collection; Steam adds them from its app."
   }
 }

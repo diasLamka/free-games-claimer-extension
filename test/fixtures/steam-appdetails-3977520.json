@@ -1,0 +1,21 @@
+{
+  "3977520": {
+    "success": true,
+    "data": {
+      "type": "dlc",
+      "name": "Euro Truck Simulator 2 - DAF XF Electric",
+      "steam_appid": 3977520,
+      "is_free": true,
+      "fullgame": {
+        "appid": "227300",
+        "name": "Euro Truck Simulator 2"
+      },
+      "release_date": {
+        "coming_soon": false,
+        "date": "14 Oct, 2025"
+      },
+      "package_groups": [],
+      "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3977520/d6a13ade06f8ab49177d84e5e842036a315acfb6/header.jpg?t=1760463782"
+    }
+  }
+}
