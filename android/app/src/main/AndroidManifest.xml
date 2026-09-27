@@ -54,6 +54,18 @@
             </intent-filter>
         </activity>
 
+        <!-- L'image de l'annee (1.6.0), partagee depuis le cache de l'appli :
+             un fichier, lu par l'appli choisie, et rien d'autre. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.partage"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/partage" />
+        </provider>
+
         <!-- L'alarme de derniere chance (1.5.0) : posee par l'appli elle-meme,
              jamais appelee du dehors. -->
         <receiver

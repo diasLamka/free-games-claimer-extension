@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le seul dossier que l'appli partage (1.6.0) : l'image de l'annee, dans son
+     cache, le temps de l'envoyer. Rien d'autre n'est expose. -->
+<paths>
+    <cache-path name="partage" path="partage/" />
+</paths>

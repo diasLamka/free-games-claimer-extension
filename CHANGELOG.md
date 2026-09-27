@@ -4,6 +4,24 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.93.0 -- 2026-09-27
+
+**Votre annee en jeux gratuits, en image**
+
+- **« Mon annee en image »** (Resume, dans le popup et le tableau de bord ;
+  l'onglet Recuperes de l'appli Android 1.6.0) : une image de 1080 x 1350,
+  le format que les reseaux prennent tel quel, aux couleurs de l'extension --
+  la valeur recuperee dans l'annee, le nombre de jeux en tampon, les
+  magasins, les trois plus chers sur un billet poinconne, le mois record, le
+  mieux note sur Steam (cinquante avis au moins), ce que le telephone ou le
+  PC a pris.
+- **Telecharger, copier, partager.** Dans l'extension : un fichier PNG, ou
+  l'image dans le presse-papiers, a coller dans Discord. Dans l'appli : le
+  partage d'Android, depuis le cache de l'appli seulement (FileProvider).
+  Rien ne part tant qu'on ne l'a pas envoye soi-meme.
+- La source est le registre, jamais purge : ce qui a ete PRIS cette annee-la,
+  pas ce qu'on avait deja.
+
 ## 2.92.0 -- 2026-09-27
 
 **Les DLC gratuits de vos jeux Steam**

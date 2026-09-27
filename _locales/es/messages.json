@@ -2365,5 +2365,56 @@
   },
   "dlcToggleHint": {
     "message": "Buscados con calma entre los juegos de Steam de Mi colección; Steam los añade desde su aplicación."
+  },
+  "yearButton": {
+    "message": "Mi año en imagen"
+  },
+  "yearPick": {
+    "message": "Año"
+  },
+  "yearTitle": {
+    "message": "Mi año $1"
+  },
+  "yearSubtitle": {
+    "message": "en juegos gratis"
+  },
+  "yearValueLabel": {
+    "message": "Valor conseguido"
+  },
+  "yearGamesOne": {
+    "message": "1 juego"
+  },
+  "yearGamesMany": {
+    "message": "$1 juegos"
+  },
+  "yearTop": {
+    "message": "Los más caros"
+  },
+  "yearBestMonth": {
+    "message": "Mes récord: $1, $2 juegos"
+  },
+  "yearBestRated": {
+    "message": "El mejor valorado: $1, $2 % en Steam"
+  },
+  "yearPhone": {
+    "message": "$1 conseguidos por el teléfono"
+  },
+  "yearFooter": {
+    "message": "Conseguidos con Free Games Auto-Claimer"
+  },
+  "yearDownload": {
+    "message": "Descargar"
+  },
+  "yearCopy": {
+    "message": "Copiar imagen"
+  },
+  "yearCopied": {
+    "message": "Imagen copiada"
+  },
+  "yearCopyFailed": {
+    "message": "No se puede copiar: descárguela"
+  },
+  "yearEmpty": {
+    "message": "Ningún juego conseguido ese año."
   }
 }

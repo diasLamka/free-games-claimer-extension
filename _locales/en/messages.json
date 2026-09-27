@@ -2365,5 +2365,56 @@
   },
   "dlcToggleHint": {
     "message": "Searched gently among the Steam games in My collection; Steam adds them from its app."
+  },
+  "yearButton": {
+    "message": "My year as an image"
+  },
+  "yearPick": {
+    "message": "Year"
+  },
+  "yearTitle": {
+    "message": "My $1"
+  },
+  "yearSubtitle": {
+    "message": "in free games"
+  },
+  "yearValueLabel": {
+    "message": "Value claimed"
+  },
+  "yearGamesOne": {
+    "message": "1 game"
+  },
+  "yearGamesMany": {
+    "message": "$1 games"
+  },
+  "yearTop": {
+    "message": "The most expensive"
+  },
+  "yearBestMonth": {
+    "message": "Best month: $1, $2 games"
+  },
+  "yearBestRated": {
+    "message": "Best rated: $1, $2 % on Steam"
+  },
+  "yearPhone": {
+    "message": "$1 taken by the phone"
+  },
+  "yearFooter": {
+    "message": "Claimed with Free Games Auto-Claimer"
+  },
+  "yearDownload": {
+    "message": "Download"
+  },
+  "yearCopy": {
+    "message": "Copy image"
+  },
+  "yearCopied": {
+    "message": "Image copied"
+  },
+  "yearCopyFailed": {
+    "message": "Can't copy: download it instead"
+  },
+  "yearEmpty": {
+    "message": "No game taken that year."
   }
 }

@@ -131,6 +131,17 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="last_chance_title">Last-chance alarm</string>
     <string name="last_chance_text">When a game from your wishlist is free and ends in under 3 hours without being yours (a captcha, a lost session, a store the app cannot claim), the phone rings like an alarm clock, even in silent mode, until you tap or dismiss it. It rings between 3 and 2 hours before the end: Android does not guarantee the minute to apps that are not alarm clocks. Opening the app silences it. You can change its sound or let it through Do Not Disturb in the channel settings.</string>
     <string name="last_chance_ok">Turn on</string>
+    <string name="year_button">My year as an image</string>
+    <string name="year_title">My %1$d</string>
+    <string name="year_subtitle">in free games</string>
+    <string name="year_value">Value claimed</string>
+    <string name="year_top">The most expensive</string>
+    <string name="year_best_month">Best month: %1$s, %2$d games</string>
+    <string name="year_best_rated">Best rated: %1$s, %2$d %% on Steam</string>
+    <string name="year_by_pc">%1$d taken by the PC</string>
+    <string name="year_footer">Claimed with Free Games Claimer</string>
+    <string name="year_share">Share</string>
+    <string name="year_empty">No game taken that year.</string>
     <string name="relay_intro">The app and the browser extension tell each other what they claim: whichever is on takes the game, the other never retries it. End-to-end encrypted through ntfy; no cookie, no code, no account ever goes through.</string>
     <string name="relay_scan">Scan the QR code</string>
     <string name="relay_paste">Paste the code</string>

@@ -23,6 +23,9 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Votre annee en image** (2.93.0) : la valeur, les jeux, les magasins, les
+plus chers, en une image a partager (`watch/year.js`, `lib/year-card.js`).
+
 **Les DLC gratuits de vos jeux Steam** (2.92.0) : trouves parmi les jeux de
 Ma collection, montres dans le popup ; Steam les ajoute depuis son application
 (`watch/steam-dlc.js`).

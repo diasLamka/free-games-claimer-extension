@@ -87,6 +87,9 @@ exemption d'optimisation de la batterie, installation d'autres applis.
   memes origines. Pas d'`addJavascriptInterface`.
 - Pas d'acces aux fichiers ni aux fournisseurs de contenu ; navigation
   securisee (Safe Browsing) active ; trafic en clair interdit.
+- Le partage de l'image de l'annee (1.6.0) passe par un `FileProvider` borne
+  au dossier `partage/` du cache de l'appli, non exporte, avec une
+  permission de lecture accordee au seul destinataire choisi.
 - Les liens ouverts au-dehors sont limites a `http(s)` : une adresse venue
   d'une source ne lance jamais une autre appli.
 - `PendingIntent` immuables ; seule l'activite principale est exportee

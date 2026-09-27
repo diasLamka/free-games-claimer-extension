@@ -615,3 +615,21 @@ header .wordmark { white-space: nowrap; }
 .dlc-row .soon-body { flex: 1; min-width: 0; }
 .dlc-row .label { white-space: normal; overflow-wrap: anywhere; }
 .dlc-row .btn-sm, .dlc-row .dlc-hide { flex: none; }
+
+/* ---------------------------------------- votre annee en image (2.93.0) */
+.year-button { margin-top: 10px; }
+.year-dialog {
+  width: min(520px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 12px;
+  border: 3px solid var(--txt);
+  box-shadow: 8px 8px 0 var(--accent);
+  background: var(--base);
+  color: var(--txt);
+  border-radius: 0;
+}
+.year-dialog::backdrop { background: rgba(0, 0, 0, .7); }
+.year-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.year-canvas { display: block; width: 100%; height: auto; border: 3px solid var(--txt); }
+.year-canvas[hidden], .year-empty[hidden] { display: none; }
+.year-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }

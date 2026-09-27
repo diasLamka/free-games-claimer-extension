@@ -130,6 +130,17 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="last_chance_title">Alarma de última oportunidad</string>
     <string name="last_chance_text">Cuando un juego de tu lista de deseados está gratis y termina en menos de 3 horas sin ser tuyo (un captcha, una sesión perdida, una tienda que la app no sabe conseguir), el teléfono suena como un despertador, incluso en silencio, hasta que la toques o la descartes. Suena entre 3 y 2 horas antes del final: Android no garantiza el minuto a las apps que no son despertadores. Abrir la app la silencia. Su sonido y el paso por «No molestar» se ajustan en los ajustes del canal.</string>
     <string name="last_chance_ok">Activar</string>
+    <string name="year_button">Mi año en imagen</string>
+    <string name="year_title">Mi año %1$d</string>
+    <string name="year_subtitle">en juegos gratis</string>
+    <string name="year_value">Valor conseguido</string>
+    <string name="year_top">Los más caros</string>
+    <string name="year_best_month">Mes récord: %1$s, %2$d juegos</string>
+    <string name="year_best_rated">El mejor valorado: %1$s, %2$d %% en Steam</string>
+    <string name="year_by_pc">%1$d conseguidos por el PC</string>
+    <string name="year_footer">Conseguidos con Free Games Claimer</string>
+    <string name="year_share">Compartir</string>
+    <string name="year_empty">Ningún juego conseguido ese año.</string>
     <string name="relay_intro">La app y la extensión del navegador se dicen lo que consiguen: el que está encendido se queda el juego y el otro no lo reintenta. Cifrado de extremo a extremo por ntfy; ningún cookie, código ni cuenta pasa por ahí.</string>
     <string name="relay_scan">Escanear el código QR</string>
     <string name="relay_paste">Pegar el código</string>

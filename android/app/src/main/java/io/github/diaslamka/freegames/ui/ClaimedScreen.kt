@@ -1,5 +1,10 @@
 package io.github.diaslamka.freegames.ui
 
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,8 +45,15 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit) {
     val b = LocalBrut.current
     val entries = state.library.values.sortedByDescending { it.ts ?: 0 }
     val groups = entries.groupBy { e -> e.ts?.let { Fmt.month(it) } ?: "—" }
+    var yearOpen by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(b.base)) {
-        TopBlock(stringResource(R.string.tab_claimed))
+        TopBlock(stringResource(R.string.tab_claimed)) {
+            // Mon annee en image (1.6.0) : a partager.
+            if (entries.any { it.ts != null }) {
+                SquareButton(androidx.compose.material.icons.Icons.Rounded.Image, stringResource(R.string.year_button), { yearOpen = true })
+            }
+        }
+        if (yearOpen) YearDialog(state, onDismiss = { yearOpen = false })
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val cols = columnsFor(maxWidth)
             val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }

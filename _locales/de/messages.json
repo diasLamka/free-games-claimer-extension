@@ -2365,5 +2365,56 @@
   },
   "dlcToggleHint": {
     "message": "Behutsam unter den Steam-Spielen in Meine Sammlung gesucht; Steam fügt sie über seine App hinzu."
+  },
+  "yearButton": {
+    "message": "Mein Jahr als Bild"
+  },
+  "yearPick": {
+    "message": "Jahr"
+  },
+  "yearTitle": {
+    "message": "Mein Jahr $1"
+  },
+  "yearSubtitle": {
+    "message": "in Gratisspielen"
+  },
+  "yearValueLabel": {
+    "message": "Geholter Wert"
+  },
+  "yearGamesOne": {
+    "message": "1 Spiel"
+  },
+  "yearGamesMany": {
+    "message": "$1 Spiele"
+  },
+  "yearTop": {
+    "message": "Die teuersten"
+  },
+  "yearBestMonth": {
+    "message": "Rekordmonat: $1, $2 Spiele"
+  },
+  "yearBestRated": {
+    "message": "Am besten bewertet: $1, $2 % auf Steam"
+  },
+  "yearPhone": {
+    "message": "$1 vom Handy geholt"
+  },
+  "yearFooter": {
+    "message": "Geholt mit Free Games Auto-Claimer"
+  },
+  "yearDownload": {
+    "message": "Herunterladen"
+  },
+  "yearCopy": {
+    "message": "Bild kopieren"
+  },
+  "yearCopied": {
+    "message": "Bild kopiert"
+  },
+  "yearCopyFailed": {
+    "message": "Kopieren nicht möglich: bitte herunterladen"
+  },
+  "yearEmpty": {
+    "message": "In diesem Jahr kein Spiel geholt."
   }
 }

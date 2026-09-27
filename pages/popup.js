@@ -35,6 +35,9 @@ import { readPage, scanGames, classify, knownTitles } from '../watch/page-scan.j
 import { factLines } from '../watch/lookup.js';
 import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
+import { yearRecap, yearsOf, yearFileName } from '../watch/year.js';
+import { drawYearCard, loadFonts, cardBlob } from '../lib/year-card.js';
+import { sumWorths } from '../lib/money.js';
 import { buildCalendar, calendarFileName, codeEvents, endingEvents, upcomingEvents } from '../watch/calendar.js';
 import { KEY_CANARY, alerts as canaryAlerts } from '../watch/canary.js';
 import { KEY_INCIDENTS, KINDS as INCIDENT_KINDS, openIncidents } from '../watch/incidents.js';
@@ -2183,6 +2186,7 @@ function renderTally(all) {
   zone.textContent = '';
   renderMonthChart(rows);
   renderHero(rows, b);
+  document.getElementById('year-open').hidden = !yearsOf(get(all, KEY_LIBRARY, {})).length;
 
   foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))
     : b.already ? t('foldTallyAlready', String(b.already)) : '');
@@ -3716,6 +3720,81 @@ if (EN_ONGLET) {
     tell('fgc-mark-seen');
   });
 }
+
+/* ------------------------------------------ votre annee en image (2.93.0) */
+
+/* Le bilan de l'annee (watch/year.js), dessine en 1080 x 1350
+   (lib/year-card.js) : de quoi le poster tel quel. Tout se passe ici, dans la
+   page : rien ne part nulle part tant qu'on ne l'a pas telecharge ou copie. */
+let yearBlob = null;
+
+async function drawYear(year) {
+  const all = await readAll();
+  const now = Date.now();
+  const recap = yearRecap({ library: get(all, KEY_LIBRARY, {}), ratings: get(all, KEY_RATINGS, {}), year, rates: ratesCache, now });
+  const canvas = document.getElementById('year-canvas');
+  const vide = !recap.count;
+  document.getElementById('year-empty').hidden = !vide;
+  canvas.hidden = vide;
+  document.getElementById('year-download').disabled = vide;
+  document.getElementById('year-copy').disabled = vide;
+  yearBlob = null;
+  if (vide) return;
+  const loc = intlLocale();
+  const lignes = [];
+  if (recap.bestMonth) {
+    const [a, m] = recap.bestMonth.month.split('-').map(Number);
+    const nom = new Date(Date.UTC(a, m - 1, 15)).toLocaleDateString(loc, { month: 'long', timeZone: 'UTC' });
+    lignes.push(t('yearBestMonth', nom, String(recap.bestMonth.count)));
+  }
+  if (recap.bestRated) lignes.push(t('yearBestRated', displayTitle(recap.bestRated.title), String(recap.bestRated.percent)));
+  if (recap.viaPhone) lignes.push(t('yearPhone', String(recap.viaPhone)));
+  await loadFonts();
+  drawYearCard(canvas, {
+    kicker: 'Free Games',
+    title: t('yearTitle', String(year)),
+    subtitle: t('yearSubtitle'),
+    valueLabel: t('yearValueLabel'),
+    value: recap.priced ? sumWorths(recap.worths, ratesCache, now) : '—',
+    gamesStamp: t(recap.count === 1 ? 'yearGamesOne' : 'yearGamesMany', String(recap.count)),
+    stores: recap.stores.map((s) => `${STORE_LABELS[s.store] || s.store} ${s.count}`),
+    topLabel: t('yearTop'),
+    top: recap.top.map((g) => ({ title: displayTitle(g.title), worth: worthLabel(g.worth, now).text })),
+    lines: lignes,
+    footer: t('yearFooter'),
+    stamp: t('stampClaimed'),
+  });
+  yearBlob = await cardBlob(canvas);
+}
+
+document.getElementById('year-open').addEventListener('click', async () => {
+  const all = await readAll();
+  const ans = yearsOf(get(all, KEY_LIBRARY, {}));
+  const select = document.getElementById('year-select');
+  select.replaceChildren(...ans.map((a) => { const o = document.createElement('option'); o.value = String(a); o.textContent = String(a); return o; }));
+  document.getElementById('year-say').textContent = '';
+  document.getElementById('year-dialog').showModal();
+  await drawYear(ans[0] || new Date().getUTCFullYear());
+});
+document.getElementById('year-select').addEventListener('change', (e) => { drawYear(Number(e.target.value)); });
+document.getElementById('year-close').addEventListener('click', () => document.getElementById('year-dialog').close());
+document.getElementById('year-download').addEventListener('click', () => {
+  if (!yearBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(yearBlob);
+  a.download = yearFileName(document.getElementById('year-select').value);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+});
+document.getElementById('year-copy').addEventListener('click', async () => {
+  const dire = document.getElementById('year-say');
+  try {
+    await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': yearBlob })]);
+    dire.textContent = t('yearCopied');
+  } catch {
+    dire.textContent = t('yearCopyFailed');
+  }
+});
 
 /* ------------------------------------------------ le scanner de page (2.91.0) */
 

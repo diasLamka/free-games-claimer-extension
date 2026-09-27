@@ -1339,6 +1339,21 @@
     <p class="hero-sub"><span id="hero-games"></span><span class="hero-delta" id="hero-delta"></span></p>
   </section>
 
+  <!-- L'image de l'annee (2.93.0) : apercu, telecharger, copier. -->
+  <dialog class="year-dialog" id="year-dialog" data-i18n-attr="aria-label:yearButton">
+    <div class="year-head">
+      <label class="year-pick"><span data-i18n="yearPick"></span> <select id="year-select"></select></label>
+      <button class="icon-button" id="year-close" data-i18n-attr="title:sentinelClose,aria-label:sentinelClose">&#x2715;</button>
+    </div>
+    <canvas class="year-canvas" id="year-canvas" width="1080" height="1350"></canvas>
+    <p class="year-empty" id="year-empty" data-i18n="yearEmpty" hidden></p>
+    <div class="year-actions">
+      <button class="btn-sm" id="year-download" data-i18n="yearDownload"></button>
+      <button class="btn-sm" id="year-copy" data-i18n="yearCopy"></button>
+      <span class="aside" id="year-say" role="status"></span>
+    </div>
+  </dialog>
+
   <main class="panes" id="panes">
 
   <!-- ------------------------------------------------------------ games -->
@@ -1480,6 +1495,8 @@
           </details>
         </figure>
         <div id="tally-stores"></div>
+        <!-- Votre annee en jeux gratuits (2.93.0) : une image a partager. -->
+        <button class="btn-sm year-button" id="year-open" data-i18n="yearButton" hidden></button>
       </details>
     </section>
 

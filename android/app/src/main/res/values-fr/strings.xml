@@ -130,6 +130,17 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="last_chance_title">Alarme de dernière chance</string>
     <string name="last_chance_text">Quand un jeu de ta liste de souhaits est gratuit et finit dans moins de 3 h sans être à toi (un captcha, une session perdue, un magasin que l\'appli ne sait pas prendre), le téléphone sonne comme un réveil, même en silencieux, jusqu\'à ce que tu la touches ou l\'écartes. Elle sonne entre 3 h et 2 h avant la fin : Android ne garantit pas la minute aux applis qui ne sont pas des réveils. Ouvrir l\'appli la fait taire. Son son et le passage en « Ne pas déranger » se règlent dans les réglages du canal.</string>
     <string name="last_chance_ok">Activer</string>
+    <string name="year_button">Mon année en image</string>
+    <string name="year_title">Mon année %1$d</string>
+    <string name="year_subtitle">en jeux gratuits</string>
+    <string name="year_value">Valeur récupérée</string>
+    <string name="year_top">Les plus chers</string>
+    <string name="year_best_month">Mois record : %1$s, %2$d jeux</string>
+    <string name="year_best_rated">Le mieux noté : %1$s, %2$d %% sur Steam</string>
+    <string name="year_by_pc">%1$d pris par le PC</string>
+    <string name="year_footer">Pris avec Free Games Claimer</string>
+    <string name="year_share">Partager</string>
+    <string name="year_empty">Aucun jeu pris cette année-là.</string>
     <string name="relay_intro">L\'appli et l\'extension du navigateur se disent ce qu\'elles récupèrent : celui qui est allumé prend le jeu, l\'autre ne le retente pas. Chiffré de bout en bout par ntfy ; aucun cookie, aucun code, aucun compte n\'y passe.</string>
     <string name="relay_scan">Scanner le QR code</string>
     <string name="relay_paste">Coller le code</string>
