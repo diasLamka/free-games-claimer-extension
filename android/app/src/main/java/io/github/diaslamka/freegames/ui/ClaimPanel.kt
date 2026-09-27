@@ -92,12 +92,12 @@ fun ClaimPanelContent(
                 )
                 Text(
                     "■ " + stringResource(R.string.stop).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White,
-                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).clickableNoRipple(onStop).padding(8.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).clickableNoRipple(onClick = onStop).padding(8.dp),
                 )
             } else {
                 Text(
                     "✕", style = MaterialTheme.typography.titleMedium, color = Color.White,
-                    modifier = Modifier.background(Color.Black).clickableNoRipple(onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.background(Color.Black).clickableNoRipple(onClick = onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }

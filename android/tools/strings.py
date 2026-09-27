@@ -131,6 +131,8 @@ S = {
  'privacy_5': ('“Sign out of all stores” erases what the stores left in the app (cookies and site storage); uninstalling erases everything else.', "« Se déconnecter de tous les magasins » efface ce que les magasins ont laissé dans l'appli (cookies et stockage des pages) ; désinstaller efface tout le reste.", '„Von allen Shops abmelden“ löscht, was die Shops in der App hinterlassen haben (Cookies und Seitenspeicher); Deinstallieren löscht alles Übrige.', '«Cerrar sesión en todas las tiendas» borra lo que las tiendas dejaron en la app (cookies y almacenamiento de las páginas); desinstalar borra todo lo demás.'),
  'fact_owned_on': ('Already yours on %1$s — since %2$s', 'Déjà à toi sur %1$s — depuis le %2$s', 'Gehört dir schon bei %1$s — seit %2$s', 'Ya es tuyo en %1$s — desde el %2$s'),
  'fact_owned_by_pc': ('Already yours on %1$s — claimed by the PC on %2$s', 'Déjà à toi sur %1$s — récupéré par le PC le %2$s', 'Gehört dir schon bei %1$s — vom PC geholt am %2$s', 'Ya es tuyo en %1$s — conseguido por el PC el %2$s'),
+ 'timecode_label': ('Next end', 'Prochaine fin', 'Nächstes Ende', 'Próximo fin'),
+ 'timecode_days': ('%1$dD', '%1$dJ', '%1$dT', '%1$dD'),
  'login_set_password': ('Create my Epic password', 'Créer mon mot de passe Epic', 'Mein Epic-Passwort erstellen', 'Crear mi contraseña de Epic'),
  'login_back': ('Back to sign-in', 'Revenir à la connexion', 'Zurück zur Anmeldung', 'Volver al inicio de sesión'),
  'login_refused_title': ('%1$s refuses sign-in inside apps', '%1$s refuse les connexions dans une appli', '%1$s verweigert Anmeldungen in Apps', '%1$s rechaza el inicio de sesión en apps'),

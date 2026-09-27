@@ -15,8 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
@@ -43,6 +49,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Accounts
@@ -82,11 +89,13 @@ fun GamesScreen(
     onAccounts: () -> Unit,
 ) {
     val b = LocalBrut.current
+    val context = LocalContext.current
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    var openUpcoming by rememberSaveable { mutableStateOf(true) }
-    var openMobile by rememberSaveable { mutableStateOf(true) }
+    // Repliees par defaut, comme dans le popup (1.3.0) : leur compte reste dans le titre.
+    var openUpcoming by rememberSaveable { mutableStateOf(false) }
+    var openMobile by rememberSaveable { mutableStateOf(false) }
     var openOthers by rememberSaveable { mutableStateOf(false) }
 
     val q = Titles.normalise(query)
@@ -110,28 +119,38 @@ fun GamesScreen(
         }
         if (searching) BrutField(query, { query = it }, stringResource(R.string.search_hint), Modifier.padding(horizontal = 14.dp).padding(bottom = 8.dp))
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
+          BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Une colonne au telephone, deux sur un pliable ou en paysage, trois sur une tablette.
+            val cols = columnsFor(maxWidth)
+            val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(cols),
                 contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item("hero") {
+                item("hero", span = full) {
                     val cur = Countries.of(state.settings.country).currency
                     val total = Money.total(state.library.values.map { it.worth }, cur)
                     Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
                 }
-                if (pending.isNotEmpty() && !claiming) item("claim") {
+                val next = pc.filter { it.end != null && it.end > now && it.end - now < 8 * 86_400_000L }.minByOrNull { it.end!! }
+                if (next != null) item("timecode", span = full) {
+                    Timecode(next.end!!, next.shownTitle, stringResource(R.string.timecode_label), { d -> context.getString(R.string.timecode_days, d.toInt()) })
+                }
+                if (pending.isNotEmpty() && !claiming) item("claim", span = full) {
                     Notice(pluralStringResource(R.plurals.pending_claims, pending.size, pending.size), b.accent, Modifier.padding(start = 22.dp)) {
                         BrutButton(stringResource(R.string.claim_all) + " →", { onClaim(emptySet()) }, primary = false, icon = Icons.Rounded.Download)
                     }
                 }
-                if (needLogin.isNotEmpty()) item("login") {
+                if (needLogin.isNotEmpty()) item("login", span = full) {
                     Notice(
                         stringResource(R.string.need_login, needLogin.joinToString(", ") { Stores.label(it) }),
                         b.ink, Modifier.padding(end = 22.dp), inverted = true,
                     ) { BrutButton(stringResource(R.string.accounts), onAccounts) }
                 }
-                item("filters") {
+                item("filters", span = full) {
                     Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FILTERS.forEach { f ->
                             val on = filter == f
@@ -147,8 +166,8 @@ fun GamesScreen(
                         }
                     }
                 }
-                item("free-h") { SectionHeader(stringResource(R.string.section_free), pc.size) }
-                if (pc.isEmpty()) item("free-empty") {
+                item("free-h", span = full) { SectionHeader(stringResource(R.string.section_free), pc.size) }
+                if (pc.isEmpty()) item("free-empty", span = full) {
                     Text(
                         stringResource(if (state.lastCheck == null) R.string.first_check else R.string.nothing_free),
                         style = MaterialTheme.typography.bodyMedium, color = b.ink,
@@ -158,25 +177,34 @@ fun GamesScreen(
                     // L'asymetrie voulue : une carte sur deux decalee de l'autre cote.
                     OfferCard(
                         o, state, now, claiming, onClaim = { onClaim(setOf(o.key)) }, onOpen = onOpen,
-                        modifier = if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
+                        // En colonne unique, une carte sur deux decalee ; en grille, les colonnes font l'asymetrie.
+                        modifier = if (cols > 1) Modifier else if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
                     )
                 }
                 if (soon.isNotEmpty()) {
-                    item("soon-h") { SectionHeader(stringResource(R.string.section_soon), soon.size, openUpcoming, { openUpcoming = !openUpcoming }) }
-                    if (openUpcoming) itemsIndexed(soon, key = { _, w -> "u:" + w.title + w.start }) { i, w -> UpcomingRow(w, onOpen, Modifier.padding(start = if (i % 2 == 0) 0.dp else 26.dp)) }
+                    item("soon-h", span = full) { SectionHeader(stringResource(R.string.section_soon), soon.size, openUpcoming, { openUpcoming = !openUpcoming }) }
+                    if (openUpcoming) itemsIndexed(soon, key = { _, w -> "u:" + w.title + w.start }) { i, w -> UpcomingRow(w, onOpen, Modifier.padding(start = if (cols > 1 || i % 2 == 0) 0.dp else 26.dp)) }
                 }
                 if (mobile.isNotEmpty()) {
-                    item("mob-h") { SectionHeader(stringResource(R.string.section_mobile), mobile.size, openMobile, { openMobile = !openMobile }) }
+                    item("mob-h", span = full) { SectionHeader(stringResource(R.string.section_mobile), mobile.size, openMobile, { openMobile = !openMobile }) }
                     if (openMobile) itemsIndexed(mobile, key = { _, o -> "m:" + o.key }) { _, o -> CompactRow(o, now, stringResource(R.string.mobile_hint), onOpen) }
                 }
                 if (others.isNotEmpty()) {
-                    item("oth-h") { SectionHeader(stringResource(R.string.section_others), others.size, openOthers, { openOthers = !openOthers }) }
+                    item("oth-h", span = full) { SectionHeader(stringResource(R.string.section_others), others.size, openOthers, { openOthers = !openOthers }) }
                     if (openOthers) itemsIndexed(others, key = { _, o -> "g:" + o.key }) { _, o -> CompactRow(o, now, Stores.LABELS[o.store] ?: o.platforms.orEmpty(), onOpen) }
                 }
-                item("status") { SourcesLine(state, now) }
+                item("status", span = full) { SourcesLine(state, now) }
             }
+          }
         }
     }
+}
+
+/** Le nombre de colonnes pour une largeur : les seuils des classes de taille d'Android (600, 840 dp). */
+fun columnsFor(width: Dp): Int = when {
+    width >= 1000.dp -> 3
+    width >= 600.dp -> 2
+    else -> 1
 }
 
 @Composable
@@ -193,6 +221,7 @@ private fun SourcesLine(state: AppState, now: Long) {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: () -> Unit, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -205,7 +234,7 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
     val claimable = Rules.claimable(o, state.settings) && claimed == null && !owned
     val urgent = o.end != null && o.end - now < 24 * 3_600_000L
 
-    Column(modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp)) {
+    Column(modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).ticket(coverTicket(), Color.White, b.shadow, 6.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
             Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 64)
             Row(Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -223,14 +252,14 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
                 )
             }
             if (claimed != null || owned) {
-                Text(
-                    "✓ " + stringResource(if (owned && claimed == null) R.string.status_owned else R.string.status_claimed).uppercase(),
-                    style = MaterialTheme.typography.labelLarge, color = b.accent,
-                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color.Black).padding(horizontal = 12.dp, vertical = 6.dp),
+                // Le tampon (1.3.0) : pris, ou deja a toi -- de travers, sur la jaquette.
+                Stamp(
+                    stringResource(if (owned && claimed == null) R.string.status_owned else R.string.status_claimed),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 )
             }
         }
-        Box(Modifier.fillMaxWidth().height(3.dp).background(Color.Black))
+        Perforation()
         Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleLarge, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -254,7 +283,8 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
             } else if (!Rules.claimable(o, state.settings) && o.store == Stores.STEAM && claimed == null && !owned) {
                 Text("> " + stringResource(R.string.steam_manual), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 4.dp)) {
+            // FlowRow : en grande police, le second bouton passe a la ligne au lieu de deborder.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
                 if (claimable) BrutButton(stringResource(R.string.action_claim), onClaim, enabled = !claiming, icon = Icons.Rounded.Download)
                 (o.url ?: o.resolveUrl)?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false, icon = Icons.AutoMirrored.Rounded.OpenInNew) }
             }

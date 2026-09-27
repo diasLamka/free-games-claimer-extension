@@ -8,6 +8,22 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
@@ -16,6 +32,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Settings
@@ -215,12 +232,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         return
     }
 
-    Scaffold(
-        bottomBar = { BrutTabs(tab) { tab = it } },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            ClaimPanel(session)
+    val screen: @Composable () -> Unit = {
             when (tab) {
                 0 -> GamesScreen(
                     state = state, now = now, refreshing = refreshing, claiming = claim.running,
@@ -267,8 +279,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onRelayUnpair = { scope.launch { RelayLink.unpair(context) } },
                 )
             }
-        }
     }
+
+    AdaptiveFrame(tab, { tab = it }, top = { ClaimPanel(session) }) { screen() }
 
     shared?.let { t ->
         ShareDialog(
@@ -284,18 +297,89 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
 }
 
 /**
+ * Le cadre, pour toutes les tailles (1.3.0). Sous 600 dp -- un telephone en
+ * portrait --, les onglets en bas ; au-dela -- pliable ouvert, tablette,
+ * telephone en paysage --, un rail sur le cote, comme le veulent les classes
+ * de taille de fenetre d'Android. La largeur est celle de la FENETRE : en
+ * ecran partage, l'appli suit sa moitie. Les barres du systeme et les
+ * encoches de camera sont laissees libres.
+ */
+@Composable
+fun AdaptiveFrame(tab: Int, onTab: (Int) -> Unit, top: @Composable () -> Unit = {}, content: @Composable () -> Unit) {
+    val wide = LocalConfiguration.current.screenWidthDp >= 600
+    if (wide) {
+        Row(
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.safeDrawing),
+        ) {
+            BrutRail(tab, onTab)
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                top()
+                content()
+            }
+        }
+    } else {
+        Scaffold(
+            bottomBar = { BrutTabs(tab, onTab) },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
+                    .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)),
+            ) {
+                top()
+                content()
+            }
+        }
+    }
+}
+
+private val TABS = listOf(
+    Triple(Icons.Rounded.SportsEsports, R.string.tab_games_short, 0),
+    Triple(Icons.Rounded.Inventory2, R.string.tab_claimed, 1),
+    Triple(Icons.Rounded.Star, R.string.tab_wishlist, 2),
+    Triple(Icons.Rounded.Settings, R.string.tab_settings, 3),
+)
+
+/**
+ * Le rail, sur un ecran large : les memes quatre cases, empilees sur le cote,
+ * l'active en aplat d'accent et decalee vers la droite.
+ */
+@Composable
+fun BrutRail(selected: Int, onSelect: (Int) -> Unit) {
+    val b = io.github.diaslamka.freegames.ui.theme.LocalBrut.current
+    Column(
+        Modifier.fillMaxHeight().width(104.dp).background(b.base)
+            .drawBehind { drawRect(androidx.compose.ui.graphics.Color.Black, topLeft = androidx.compose.ui.geometry.Offset(size.width - 3.dp.toPx(), 0f), size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
+            .verticalScroll(rememberScrollState())
+            .padding(start = 10.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    ) {
+        TABS.forEach { (icon, label, i) ->
+            val on = selected == i
+            Column(
+                Modifier.fillMaxWidth().offset(x = if (on) 4.dp else 0.dp)
+                    .padding(end = 4.dp, bottom = 4.dp)
+                    .brut(if (on) b.accent else androidx.compose.ui.graphics.Color.White, shadow = if (on) (if (b.dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black) else null, offset = 4.dp)
+                    .selectable(selected = on, role = Role.Tab) { onSelect(i) }
+                    .padding(vertical = 10.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) {
+                Icon(icon, null, tint = androidx.compose.ui.graphics.Color.Black, modifier = Modifier.size(22.dp))
+                TabLabel(stringResource(label))
+            }
+        }
+    }
+}
+
+/**
  * Les onglets du bas : quatre cases cernees de noir, l'active en aplat
  * d'accent et decalee vers le haut. Pas de pastille Material.
  */
 @Composable
 fun BrutTabs(selected: Int, onSelect: (Int) -> Unit) {
     val b = io.github.diaslamka.freegames.ui.theme.LocalBrut.current
-    val tabs = listOf(
-        Triple(Icons.Rounded.SportsEsports, R.string.tab_games_short, 0),
-        Triple(Icons.Rounded.Inventory2, R.string.tab_claimed, 1),
-        Triple(Icons.Rounded.Star, R.string.tab_wishlist, 2),
-        Triple(Icons.Rounded.Settings, R.string.tab_settings, 3),
-    )
+    val tabs = TABS
     androidx.compose.foundation.layout.Row(
         Modifier.background(b.base).navigationBarsPadding()
             .drawBehind { drawRect(androidx.compose.ui.graphics.Color.Black, size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx())) }
@@ -308,17 +392,32 @@ fun BrutTabs(selected: Int, onSelect: (Int) -> Unit) {
                 Modifier.weight(1f).offset(y = if (on) (-4).dp else 0.dp)
                     .padding(end = 4.dp, bottom = 4.dp)
                     .brut(if (on) b.accent else androidx.compose.ui.graphics.Color.White, shadow = if (on) (if (b.dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black) else null, offset = 4.dp)
-                    .clickableNoRipple { onSelect(i) }
+                    .selectable(selected = on, role = Role.Tab) { onSelect(i) }
                     .padding(vertical = 7.dp),
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
             ) {
                 Icon(icon, null, tint = androidx.compose.ui.graphics.Color.Black, modifier = Modifier.size(20.dp))
-                Text(
-                    stringResource(label).uppercase(), style = MaterialTheme.typography.labelSmall,
-                    color = androidx.compose.ui.graphics.Color.Black, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
+                TabLabel(stringResource(label))
             }
         }
     }
+}
+
+/**
+ * Le libelle d'un onglet, sur une ligne : en grande police, il retrecit pour
+ * tenir dans sa case, jamais en dessous de sa taille normale (11 sp a
+ * l'echelle 1). Le nom entier reste celui que lit TalkBack.
+ */
+@Composable
+private fun TabLabel(text: String) {
+    val style = MaterialTheme.typography.labelSmall
+    val min = with(androidx.compose.ui.platform.LocalDensity.current) { 10.dp.toSp() }
+    androidx.compose.foundation.text.BasicText(
+        text.uppercase(),
+        style = style.copy(color = androidx.compose.ui.graphics.Color.Black),
+        maxLines = 1,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        autoSize = if (min < style.fontSize) androidx.compose.foundation.text.TextAutoSize.StepBased(min, style.fontSize, 0.5.sp) else null,
+        modifier = Modifier.padding(horizontal = 3.dp),
+    )
 }

@@ -10,8 +10,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,23 +42,32 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit) {
     val groups = entries.groupBy { e -> e.ts?.let { Fmt.month(it) } ?: "—" }
     Column(Modifier.fillMaxSize().background(b.base)) {
         TopBlock(stringResource(R.string.tab_claimed))
-        LazyColumn(
-            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            item("hero") {
-                val cur = Countries.of(state.settings.country).currency
-                val total = Money.total(state.library.values.map { it.worth }, cur)
-                Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
-            }
-            if (entries.isEmpty()) item("empty") {
-                Text(stringResource(R.string.claimed_empty), style = MaterialTheme.typography.bodyMedium, color = b.ink)
-            }
-            groups.forEach { (month, list) ->
-                item("m:$month") { SectionHeader(month, list.size) }
-                itemsIndexed(list, key = { _, e -> "e:" + e.store + ":" + e.id }) { i, e ->
-                    ClaimedRow(state, e, onOpen, Modifier.padding(start = if (i % 3 == 1) 18.dp else 0.dp, end = if (i % 3 == 1) 0.dp else 8.dp))
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val cols = columnsFor(maxWidth)
+            val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(cols),
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                item("hero", span = full) {
+                    val cur = Countries.of(state.settings.country).currency
+                    val total = Money.total(state.library.values.map { it.worth }, cur)
+                    Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
+                }
+                if (entries.isEmpty()) item("empty", span = full) {
+                    Text(stringResource(R.string.claimed_empty), style = MaterialTheme.typography.bodyMedium, color = b.ink)
+                }
+                groups.forEach { (month, list) ->
+                    item("m:$month", span = full) { SectionHeader(month, list.size) }
+                    itemsIndexed(list, key = { _, e -> "e:" + e.store + ":" + e.id }) { i, e ->
+                        ClaimedRow(
+                            state, e, onOpen,
+                            if (cols > 1) Modifier else Modifier.padding(start = if (i % 3 == 1) 18.dp else 0.dp, end = if (i % 3 == 1) 0.dp else 8.dp),
+                        )
+                    }
                 }
             }
         }
@@ -70,7 +84,13 @@ private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Uni
             .then(if (e.url != null) Modifier.clickableNoRipple { onOpen(e.url) } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Cover(image, title, e.store, Modifier.width(96.dp).height(64.dp), letterSize = 26)
+        Box {
+            Cover(image, title, e.store, Modifier.width(96.dp).height(64.dp), letterSize = 26)
+            // Le tampon (1.3.0), a cheval sur la jaquette.
+            if (e.status == "claimed" || e.status == "redeemed") {
+                Stamp(stringResource(R.string.status_claimed), Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), small = true)
+            }
+        }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

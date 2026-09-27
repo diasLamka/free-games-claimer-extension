@@ -8,10 +8,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,9 +32,18 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -119,7 +133,7 @@ fun SectionHeader(title: String, count: Int?, open: Boolean? = null, onToggle: (
     val b = LocalBrut.current
     Row(
         modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)
-            .then(if (onToggle != null) Modifier.clickableNoRipple(onToggle) else Modifier),
+            .then(if (onToggle != null) Modifier.heightIn(min = 48.dp).clickableNoRipple(onClick = onToggle) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -175,7 +189,14 @@ fun Hero(value: String?, count: Int, caption: String, modifier: Modifier = Modif
             Modifier.fillMaxWidth().brut(fill, shadow = if (b.dark) Color.White else b.accent, offset = 7.dp).padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 22.dp),
         ) {
             Text(caption.uppercase(), style = MaterialTheme.typography.labelSmall, color = ink)
-            Text(value ?: "0", style = MaterialTheme.typography.displayMedium, color = if (b.dark) Color.Black else b.accent, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
+            // Taille ajustee : en grande police (accessibilite), le chiffre retrecit au lieu d'etre coupe.
+            BasicText(
+                value ?: "0",
+                style = MaterialTheme.typography.displayMedium.copy(color = if (b.dark) Color.Black else b.accent),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = MaterialTheme.typography.displayMedium.fontSize),
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
         Text(
             pluralStringResource(R.plurals.games_count, count, count).uppercase(),
@@ -205,8 +226,9 @@ fun BrutButton(
     }
     Row(
         modifier.padding(end = 4.dp, bottom = 4.dp)
+            .heightIn(min = 48.dp)
             .brut(fill, shadow = if (enabled) (if (b.dark) Color.White else Color.Black) else null, offset = 4.dp)
-            .then(if (enabled) Modifier.clickableNoRipple(onClick) else Modifier)
+            .then(if (enabled) Modifier.clickableNoRipple(onClick = onClick) else Modifier)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -221,11 +243,35 @@ fun BrutButton(
 fun SquareButton(icon: ImageVector, description: String, onClick: () -> Unit, enabled: Boolean = true) {
     val b = LocalBrut.current
     Box(
-        Modifier.padding(end = 4.dp, bottom = 4.dp).size(42.dp)
+        Modifier.padding(end = 4.dp, bottom = 4.dp).size(48.dp)
             .brut(Color.White, shadow = if (b.dark) b.accent else Color.Black, offset = 4.dp)
-            .then(if (enabled) Modifier.clickableNoRipple(onClick) else Modifier),
+            .then(if (enabled) Modifier.clickableNoRipple(onClick = onClick) else Modifier)
+            .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, description, tint = if (enabled) Color.Black else Color(0xFF9A9A9A), modifier = Modifier.size(22.dp)) }
+    ) { Icon(icon, null, tint = if (enabled) Color.Black else Color(0xFF9A9A9A), modifier = Modifier.size(24.dp)) }
+}
+
+/**
+ * Un titre qui retrecit plutot que de couper un mot en deux : la plus grande
+ * taille, de `max` a `min`, ou chaque ligne finit a la fin d'un mot et ou le
+ * tout tient dans les lignes permises. Si meme `min` ne suffit pas (un mot
+ * immense, une police enorme), on garde `min` et le mot se coupe.
+ */
+data class WholeWords(val min: TextUnit, val max: TextUnit, val step: TextUnit = 1.sp) : TextAutoSize {
+    override fun TextAutoSizeLayoutScope.getFontSize(constraints: Constraints, text: AnnotatedString): TextUnit {
+        var v = max.value
+        while (v > min.value) {
+            val r = performLayout(constraints, text, v.sp)
+            if (!r.hasVisualOverflow && entiers(r, text.text)) return v.sp
+            v -= step.value
+        }
+        return min
+    }
+
+    private fun entiers(r: TextLayoutResult, s: String): Boolean = (0 until r.lineCount).all { i ->
+        val end = r.getLineEnd(i)
+        end >= s.length || s[end - 1].isWhitespace() || s[end - 1] == '-' || s[end].isWhitespace()
+    }
 }
 
 /** Le haut d'un ecran : un titre massif, a gauche, sur deux lignes au besoin. */
@@ -233,7 +279,14 @@ fun SquareButton(icon: ImageVector, description: String, onClick: () -> Unit, en
 fun TopBlock(title: String, modifier: Modifier = Modifier, actions: @Composable () -> Unit = {}) {
     val b = LocalBrut.current
     Row(modifier.fillMaxWidth().padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 10.dp), verticalAlignment = Alignment.Top) {
-        Text(title.uppercase(), style = MaterialTheme.typography.displaySmall, color = b.ink, modifier = Modifier.weight(1f))
+        val style = MaterialTheme.typography.displaySmall
+        BasicText(
+            title.uppercase(),
+            style = style.copy(color = b.ink),
+            maxLines = 2,
+            autoSize = WholeWords(min = 20.sp, max = style.fontSize),
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) { actions() }
     }
 }
@@ -250,7 +303,8 @@ fun BrutToggle(checked: Boolean, onChange: (Boolean) -> Unit) {
                 style = MaterialTheme.typography.labelMedium,
                 color = if (on) (if (v) b.onAccent else Color.White) else Color(0xFF8A8A8A),
                 modifier = Modifier.background(if (on) (if (v) b.accent else Color.Black) else Color.White)
-                    .clickableNoRipple { onChange(v) }.padding(horizontal = 9.dp, vertical = 6.dp),
+                    .clickableNoRipple(role = Role.RadioButton) { onChange(v) }
+                    .heightIn(min = 44.dp).wrapContentHeight().padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }
@@ -269,5 +323,19 @@ fun BrutField(value: String, onChange: (String) -> Unit, placeholder: String, mo
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone?.invoke() }),
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/**
+ * Une colonne a la largeur de lecture : pleine sur un telephone, centree et
+ * bornee a 760 dp sur une tablette -- des lignes de 200 caracteres ne se
+ * lisent pas, et des interrupteurs a l'autre bout de l'ecran non plus.
+ */
+@Composable
+fun ReadableColumn(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val b = LocalBrut.current
+    Box(Modifier.fillMaxSize().background(b.base), contentAlignment = Alignment.TopCenter) {
+        // La borne d'abord : remplir ensuite s'arrete a 760 dp.
+        Column(Modifier.widthIn(max = 760.dp).fillMaxSize(), content = content)
     }
 }

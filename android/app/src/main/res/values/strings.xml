@@ -133,6 +133,8 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="privacy_5">“Sign out of all stores” erases what the stores left in the app (cookies and site storage); uninstalling erases everything else.</string>
     <string name="fact_owned_on">Already yours on %1$s — since %2$s</string>
     <string name="fact_owned_by_pc">Already yours on %1$s — claimed by the PC on %2$s</string>
+    <string name="timecode_label">Next end</string>
+    <string name="timecode_days">%1$dD</string>
     <string name="login_set_password">Create my Epic password</string>
     <string name="login_back">Back to sign-in</string>
     <string name="login_refused_title">%1$s refuses sign-in inside apps</string>

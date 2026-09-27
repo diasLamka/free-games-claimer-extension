@@ -4,12 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -63,7 +66,7 @@ fun SettingsScreen(
     var clearConfirm by remember { mutableStateOf(false) }
     var backgroundInfo by remember { mutableStateOf(false) }
     val b = LocalBrut.current
-    Column(Modifier.fillMaxSize().background(b.base)) {
+    ReadableColumn {
         TopBlock(stringResource(R.string.tab_settings))
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
@@ -246,6 +249,7 @@ private fun Group(content: @Composable () -> Unit) {
     ) { content() }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccountRow(store: String, state: AppState, now: Long, onLogin: (String) -> Unit) {
     val b = LocalBrut.current
@@ -256,8 +260,14 @@ private fun AccountRow(store: String, state: AppState, now: Long, onLogin: (Stri
         Accounts.LOGGED_OUT -> stringResource(R.string.account_logged_out) to false
         else -> stringResource(R.string.account_unknown) to null
     }
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(Modifier.weight(1f).padding(end = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // Le bouton passe sous le nom quand la place manque (petit ecran, grande police).
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.widthIn(min = 150.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 (if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)).uppercase(),
                 style = MaterialTheme.typography.titleSmall, color = Color.Black,

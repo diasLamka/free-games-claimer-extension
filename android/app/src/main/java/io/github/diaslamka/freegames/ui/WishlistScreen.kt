@@ -43,7 +43,7 @@ fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove
     var text by rememberSaveable { mutableStateOf("") }
     val free = state.offers.values.filter { it.isOpen(now) }.groupBy { it.normalisedTitle }
     fun add() { if (text.isNotBlank()) { onAdd(text.trim()); text = "" } }
-    Column(Modifier.fillMaxSize().background(b.base)) {
+    ReadableColumn {
         TopBlock(stringResource(R.string.tab_wishlist))
         LazyColumn(
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
