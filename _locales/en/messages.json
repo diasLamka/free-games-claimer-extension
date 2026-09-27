@@ -2476,5 +2476,107 @@
   },
   "oddsNotOnSteam": {
     "message": "not found on Steam under this name"
+  },
+  "backlogNotForMe": {
+    "message": "Not for me"
+  },
+  "tonightTitle": {
+    "message": "Tonight I'm playing…"
+  },
+  "tonightHint": {
+    "message": "One game from your never-launched pile, for the time you have: picked by Steam rating, the format Steam players give it and, if you ask, the Steam Deck."
+  },
+  "tonightTimeLabel": {
+    "message": "Tonight I have"
+  },
+  "tonightHour": {
+    "message": "1 hour"
+  },
+  "tonightEvening": {
+    "message": "An evening"
+  },
+  "tonightWeekend": {
+    "message": "A weekend"
+  },
+  "tonightAny": {
+    "message": "Any"
+  },
+  "tonightDeckOnly": {
+    "message": "On Steam Deck"
+  },
+  "tonightKicker": {
+    "message": "Tonight"
+  },
+  "tonightLaunch": {
+    "message": "Launch in Steam"
+  },
+  "tonightOpen": {
+    "message": "View page"
+  },
+  "tonightPlaying": {
+    "message": "I'm playing it"
+  },
+  "tonightPlayingTitle": {
+    "message": "Marks it “Playing” in My collection."
+  },
+  "tonightAnother": {
+    "message": "Another"
+  },
+  "tonightOther": {
+    "message": "Pick another game"
+  },
+  "tonightNotForMe": {
+    "message": "Not for me"
+  },
+  "tonightNotForMeTitle": {
+    "message": "It won't be suggested again. Reversible in My collection."
+  },
+  "tonightStarted": {
+    "message": "Have fun! It's “Playing” in My collection."
+  },
+  "tonightDropped": {
+    "message": "“$1” won't be suggested again."
+  },
+  "tonightWrapped": {
+    "message": "You've seen them all: starting over."
+  },
+  "tonightEmptyFilter": {
+    "message": "Nothing in your pile fits: try another time, or without Steam Deck."
+  },
+  "tonightReading": {
+    "message": "Its Steam page is read on the next pass: rating, format, Steam Deck."
+  },
+  "tonightToTry": {
+    "message": "You set it “to try”"
+  },
+  "tonightNever": {
+    "message": "Never launched, says Steam"
+  },
+  "tonightShort": {
+    "message": "Short, say Steam players"
+  },
+  "tonightSessions": {
+    "message": "Short runs"
+  },
+  "tonightLong": {
+    "message": "A long haul"
+  },
+  "tonightRating": {
+    "message": "$1% positive on Steam"
+  },
+  "tonightDeckVerified": {
+    "message": "Steam Deck Verified"
+  },
+  "tonightDeckPlayable": {
+    "message": "Playable on Steam Deck"
+  },
+  "tonightClaimed": {
+    "message": "Claimed for free in $1"
+  },
+  "tonightLabel": {
+    "message": "Tonight I'm playing…"
+  },
+  "tonightToggleHint": {
+    "message": "Reads, without cookies, the rating, format and Steam Deck status of the games in your pile."
   }
 }

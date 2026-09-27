@@ -75,6 +75,9 @@ import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
+import { KEY_TONIGHT, buildPile, refreshTonight, tonightPassDue } from './watch/tonight.js';
+import { KEY_PLAYTIME } from './watch/playtime.js';
+import { KEY_ANNOTATIONS } from './watch/annotations.js';
 import { runAutoBackup } from './watch/auto-backup.js';
 import {
   KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, ratingLine, refreshRatings,
@@ -431,6 +434,7 @@ async function startCycle(origine, options = {}) {
         await maybeWeekends(Date.now());
         await maybeSteamDlc(Date.now());
         await maybeOdds(Date.now());
+        await maybeTonight(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
       }
@@ -615,6 +619,40 @@ function maybeOdds(now = Date.now()) {
     .catch((e) => record('warn', 'chances des souhaits impossibles', e))
     .finally(() => { oddsRunning = null; });
   return oddsRunning;
+}
+
+/**
+ * « Ce soir je joue a... » (2.95.0) : une fois par heure au plus, les
+ * etiquettes, la note et la categorie Steam Deck des jeux de la pile, cent
+ * par passage, et huit titres hors Steam cherches. Sans cookie. Voir
+ * watch/tonight.js.
+ */
+let tonightRunning = null;
+
+function maybeTonight(now = Date.now()) {
+  if (tonightRunning) return tonightRunning;
+  tonightRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.tonight === false) return null;
+    const raw = await readKeys(api, [KEY_TONIGHT, KEY_COLLECTION_LOOKUP, KEY_LIBRARY, KEY_PLAYTIME, KEY_ANNOTATIONS, KEY_COUNTRY]);
+    if (!tonightPassDue(raw[KEY_TONIGHT], now)) return null;
+    const pile = buildPile({
+      collection: raw[KEY_COLLECTION_LOOKUP] || null,
+      library: raw[KEY_LIBRARY] || {},
+      playtime: (raw[KEY_PLAYTIME] || {}).games || null,
+      annotations: raw[KEY_ANNOTATIONS] || {},
+      state: raw[KEY_TONIGHT],
+    });
+    if (!pile.length) return null;
+    const next = await refreshTonight({
+      fetch: (u, i) => fetch(u, i), pile, state: raw[KEY_TONIGHT], now, country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR',
+    });
+    await write(api, { [KEY_TONIGHT]: next });
+    return next;
+  })()
+    .catch((e) => record('warn', 'ce soir je joue a : lecture Steam impossible', e))
+    .finally(() => { tonightRunning = null; });
+  return tonightRunning;
 }
 
 /* ------------------------------------------------- sauvegarde automatique */

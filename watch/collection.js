@@ -22,6 +22,7 @@
 import { deckAtLeast, readDeck } from './deck.js';
 import { normaliseTitle, webUrl } from './offer.js';
 import { ACQUIRED } from './library.js';
+import { annotationKey } from './annotations.js';
 
 /** Cle de stockage. Espace de la veille, jamais l'espace FGC_* du moteur. */
 export const KEY_COLLECTION = 'veille:collection';
@@ -331,6 +332,23 @@ export function buildRows({ collection, library }) {
   }
 
   return [...rows.values()];
+}
+
+/**
+ * La cle d'annotation d'une ligne.
+ *
+ * Le PREMIER magasin de la ligne, dans l'ordre fixe de COLLECTION_STORES. Une
+ * ligne regroupe le meme titre sur plusieurs magasins ; annoter separement
+ * chacun d'eux demanderait a l'utilisateur de choisir ou poser son avis, alors
+ * qu'il parle du jeu. L'ordre fixe garantit que la meme ligne rend toujours la
+ * meme cle, quel que soit l'ordre d'importation. Partagee avec le popup
+ * (2.95.0) : les deux ecrivent la meme cle pour le meme jeu.
+ */
+export function rowKey(r) {
+  for (const store of COLLECTION_STORES) {
+    if (r.stores[store]) return annotationKey(store, r.stores[store].id);
+  }
+  return annotationKey('?', r.title || '');
 }
 
 export function storeCount(row) {

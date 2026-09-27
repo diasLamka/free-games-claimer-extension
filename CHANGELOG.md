@@ -4,6 +4,34 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.95.0 -- 2026-09-27
+
+**« Ce soir je joue a... »**
+
+- **Une section du popup** (et du tableau de bord) : UN jeu de votre pile
+  jamais lancee, pour le temps que vous avez -- une heure, une soiree, un
+  week-end, peu importe --, et, si vous le demandez, jouable sur Steam Deck.
+  Avec ses raisons : jamais lance d'apres Steam, mis « a essayer », court ou
+  par parties courtes, la note Steam, recupere gratuitement tel mois.
+  « Lancer dans Steam », « J'y joue », « Un autre », « Pas pour moi ». Le
+  choix tient la soiree : rouvrir le popup ne le change pas.
+- **La pile** : Ma collection et ce que l'extension a recupere, moins ce que
+  le miroir Steam dit lance (plus d'une demi-heure), moins ce que vous avez
+  dit en cours, fini, abandonne ou pas pour vous.
+- **Mesure du 2026-09-27** : personne ne publie la duree d'un jeu sans cle
+  (HowLongToBeat refuse, SteamSpy rend zero heure). Les etiquettes des
+  joueurs Steam, elles, disent le format -- « Short », les rogue-likes et
+  l'arcade, les mondes ouverts et les RPG -- et arrivent avec la note et le
+  Steam Deck dans une seule requete GetItems, sans cookie, pour cinquante
+  jeux. Verifie sur douze jeux connus ; aucune duree n'est inventee.
+- **Ma collection** : la colonne Backlog montre enfin l'etat de chaque jeu, a
+  changer ligne a ligne. La page ne relisait jamais les etats enregistres :
+  le filtre par etat et le tirage « a essayer » ne trouvaient rien. Un etat
+  de plus, « Pas pour moi ».
+- **La sauvegarde complete emporte ces etats** (et leurs notes) : c'est la
+  seule donnee ecrite a la main, et elle ne suivait pas d'un ordinateur a
+  l'autre. A la restauration, un etat pose ici gagne.
+
 ## 2.94.0 -- 2026-09-27
 
 **« Attendez, il sera offert » : les chances de vos souhaits**

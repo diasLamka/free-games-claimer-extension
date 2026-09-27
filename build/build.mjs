@@ -415,7 +415,10 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   /* La barre d'adresse (2.85.0) compose ses suggestions. */
   'watch/omnibox.js',
   /* L'anti-doublon (2.87.0) compose les lignes de son bandeau. */
-  'watch/owned-guard.js']);
+  'watch/owned-guard.js',
+  /* Les chances des souhaits (2.94.0) et « Ce soir je joue a... » (2.95.0)
+     rendent leurs raisons par cle, que le popup traduit. */
+  'watch/odds.js', 'watch/tonight.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -462,7 +465,10 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   /* La barre d'adresse (2.85.0) compose ses suggestions. */
   'watch/omnibox.js',
   /* L'anti-doublon (2.87.0) compose les lignes de son bandeau. */
-  'watch/owned-guard.js'].map((f) => {
+  'watch/owned-guard.js',
+  /* Les chances des souhaits (2.94.0) et « Ce soir je joue a... » (2.95.0)
+     rendent leurs raisons par cle, que le popup traduit. */
+  'watch/odds.js', 'watch/tonight.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

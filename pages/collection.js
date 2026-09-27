@@ -12,7 +12,7 @@ import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
 import { STORE_LABELS } from '../watch/offer.js';
 import { KEY_LIBRARY } from '../watch/library.js';
 import {
-  KEY_ANNOTATIONS, STATUS, annotationKey, pickToTry, readAnnotation, setStatus,
+  KEY_ANNOTATIONS, STATUS, pickToTry, readAnnotation, setStatus,
 } from '../watch/annotations.js';
 import { GAMES_ORIGIN, KEY_PLAYTIME, mirror } from '../watch/playtime.js';
 import { BRIDGE_PERMISSION } from '../watch/bridge.js';
@@ -29,6 +29,7 @@ import {
   effectiveStatus,
   storePageUrl,
   launchUrl,
+  rowKey,
 } from '../watch/collection.js';
 import { DECK, deckAtLeast } from '../watch/deck.js';
 
@@ -182,27 +183,40 @@ function badge(store, copy) {
   return wrap;
 }
 
-/**
- * La cle d'annotation d'une ligne.
- *
- * Le PREMIER magasin de la ligne, dans l'ordre fixe de COLLECTION_STORES. Une
- * ligne regroupe le meme titre sur plusieurs magasins ; annoter separement
- * chacun d'eux demanderait a l'utilisateur de choisir ou poser son avis, alors
- * qu'il parle du jeu. L'ordre fixe garantit que la meme ligne rend toujours la
- * meme cle, quel que soit l'ordre d'importation.
- */
-function rowKey(r) {
-  for (const store of COLLECTION_STORES) {
-    if (r.stores[store]) return annotationKey(store, r.stores[store].id);
-  }
-  return annotationKey('?', r.title || '');
-}
-
-/** Ecrit, puis redessine. La page est seule ecrivaine de cette cle. */
-async function writeAnnotations(next) {
-  annotations = next;
+/** Ecrit, puis redessine. Le popup ecrit aussi cette cle (2.95.0) : on la relit juste avant. */
+async function writeAnnotations(change) {
+  const brut = await api.storage.local.get(KEY_ANNOTATIONS);
+  annotations = change(brut[KEY_ANNOTATIONS] || {});
   await api.storage.local.set({ [KEY_ANNOTATIONS]: annotations });
   renderRows();
+}
+
+/* L'etat de chaque jeu. Il n'etait jamais relu du stockage ni propose ligne a
+   ligne : la colonne Backlog restait vide, le filtre ne trouvait rien et le
+   tirage « a essayer » non plus. Corrige en 2.95.0. */
+const STATUS_OPTIONS = Object.freeze([
+  [STATUS.NONE, 'backlogUntouched'],
+  [STATUS.TO_TRY, 'backlogToTry'],
+  [STATUS.PLAYING, 'backlogPlaying'],
+  [STATUS.DONE, 'backlogDone'],
+  [STATUS.DROPPED, 'backlogDropped'],
+  [STATUS.NOT_FOR_ME, 'backlogNotForMe'],
+]);
+
+function statusCell(r) {
+  const td = el('td', 'status');
+  const choix = el('select');
+  choix.setAttribute('aria-label', `${t('backlogColStatus')} : ${r.title || ''}`);
+  for (const [valeur, cle] of STATUS_OPTIONS) {
+    const o = el('option', null, t(cle));
+    o.value = valeur;
+    choix.append(o);
+  }
+  const key = rowKey(r);
+  choix.value = readAnnotation(annotations, key).status;
+  choix.addEventListener('change', () => writeAnnotations((a) => setStatus(a, key, choix.value)));
+  td.append(choix);
+  return td;
 }
 
 function renderRows() {
@@ -255,6 +269,7 @@ function renderRows() {
     tr.append(stores);
 
     tr.append(el('td', 'since', r.since ? dateText(r.since) : '—'));
+    tr.append(statusCell(r));
     lot.append(tr);
   }
 
@@ -279,9 +294,10 @@ function render() {
 }
 
 async function load() {
-  const brut = await api.storage.local.get([KEY_COLLECTION, KEY_LIBRARY]);
+  const brut = await api.storage.local.get([KEY_COLLECTION, KEY_LIBRARY, KEY_ANNOTATIONS]);
   collection = sanitiseCollection(brut[KEY_COLLECTION]);
   library = brut[KEY_LIBRARY] || {};
+  annotations = brut[KEY_ANNOTATIONS] || {};
   rows = buildRows({ collection, library });
   render();
 }
@@ -395,7 +411,7 @@ document.getElementById('playtime').addEventListener('click', async () => {
 });
 
 api.storage.onChanged.addListener((changes, zone) => {
-  if (zone === 'local' && (changes[KEY_COLLECTION] || changes[KEY_LIBRARY])) load();
+  if (zone === 'local' && (changes[KEY_COLLECTION] || changes[KEY_LIBRARY] || changes[KEY_ANNOTATIONS])) load();
 });
 
 boot();

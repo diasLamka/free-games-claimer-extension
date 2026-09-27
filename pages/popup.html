@@ -1426,6 +1426,25 @@
 
     <!-- Les DLC gratuits de vos jeux Steam (2.92.0) : trouves tout seuls,
          ajoutes par Steam lui-meme (« Telecharger » sur la fiche). -->
+    <!-- Ce soir je joue a... (2.95.0) : un jeu de la pile, pour le temps qu'on a. -->
+    <section id="tonight-section" hidden>
+      <details class="fold" id="fold-tonight">
+      <summary><h2><span data-i18n="tonightTitle"></span><span class="count" id="tonight-count"></span></h2></summary>
+      <p class="hint" data-i18n="tonightHint"></p>
+      <div class="tonight-controls">
+        <div class="tonight-times" role="group" data-i18n-attr="aria-label:tonightTimeLabel">
+          <button type="button" class="chip" data-time="hour" data-i18n="tonightHour"></button>
+          <button type="button" class="chip" data-time="evening" data-i18n="tonightEvening"></button>
+          <button type="button" class="chip" data-time="weekend" data-i18n="tonightWeekend"></button>
+          <button type="button" class="chip" data-time="any" data-i18n="tonightAny"></button>
+        </div>
+        <label class="tonight-deck"><input type="checkbox" id="tonight-deck"> <span data-i18n="tonightDeckOnly"></span></label>
+      </div>
+      <p class="hint tonight-note" id="tonight-note" aria-live="polite"></p>
+      <div id="tonight-card"></div>
+      </details>
+    </section>
+
     <section id="dlc-section" hidden>
       <details class="fold" id="fold-dlc">
       <summary><h2><span data-i18n="dlcTitle"></span><span class="count" id="dlc-count"></span></h2></summary>
@@ -1570,6 +1589,11 @@
           <input type="checkbox" id="steam-dlc">
           <span class="switch"></span>
           <span class="toggle-label"><span data-i18n="dlcLabel"></span><small data-i18n="dlcToggleHint"></small></span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="tonight-ratings">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="tonightLabel"></span><small data-i18n="tonightToggleHint"></small></span>
         </label>
         <label class="toggle">
           <input type="checkbox" id="steam-ratings">

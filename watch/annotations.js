@@ -12,8 +12,9 @@
  * jugement sur une partie jouee, pas une consigne d'acquisition. Le seul
  * endroit qui refuse une offre reste le filtre, et il ne lit pas d'ici.
  *
- * Module PUR. Ecrit par la page Ma collection, qui en est seule ecrivaine --
- * le service worker n'y touche jamais, donc aucune transaction n'est en jeu.
+ * Module PUR. Ecrit par les pages -- Ma collection, et depuis la 2.95.0 le
+ * popup (« Ce soir je joue a... ») -- chacune relisant la cle juste avant
+ * d'ecrire. Le service worker n'y touche jamais.
  */
 
 /** Cle de stockage. Espace de la veille, jamais l'espace FGC_* du moteur. */
@@ -30,6 +31,8 @@ export const STATUS = Object.freeze({
   PLAYING: 'playing',
   DONE: 'done',
   DROPPED: 'dropped',
+  /** Ecarte sans y avoir joue (« Ce soir je joue a... », 2.95.0) : ne revient plus dans la pile. */
+  NOT_FOR_ME: 'notForMe',
 });
 
 const VALIDES = new Set(Object.values(STATUS));

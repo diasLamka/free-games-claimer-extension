@@ -653,3 +653,42 @@ header .wordmark { white-space: nowrap; }
 .o-medium .wish-odds { background: var(--txt); color: var(--base); }
 .o-low .wish-odds, .o-f2p .wish-odds { opacity: .7; }
 .o-unknown .wish-odds { border-style: dashed; opacity: .7; }
+
+/* ------------------------------------------ ce soir je joue a... (2.95.0) */
+.tonight-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0; }
+.tonight-times { display: flex; flex-wrap: wrap; gap: 6px; }
+.tonight-times .chip { padding: 4px 9px; cursor: pointer; }
+.tonight-deck { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.tonight-note:empty { display: none; }
+.tonight-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--accent);
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 6px 6px 0 var(--txt);
+  margin: 6px 6px 14px 0;
+}
+.tonight-art { flex: none; width: 120px; }
+.tonight-art img { display: block; width: 120px; height: auto; border: 2px solid #000; }
+.tonight-art .letter { display: grid; place-items: center; width: 120px; height: 56px; border: 2px solid #000; background: #fff; color: #000; font-weight: 700; }
+.tonight-body { flex: 1; min-width: 0; }
+.tonight-body .soon-price { color: #000; opacity: .8; }
+.tonight-kicker { margin: 0; font-family: var(--mono); font-weight: 700; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
+.tonight-name {
+  margin: 2px 0 4px;
+  font-family: var(--display, inherit);
+  font-size: 20px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.tonight-why { margin: 6px 0 0; padding-left: 16px; font-size: 12px; }
+.tonight-why li { margin: 1px 0; }
+.tonight-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+@media (max-width: 360px) {
+  .tonight-card { flex-direction: column; }
+  .tonight-art, .tonight-art img { width: 100%; }
+}

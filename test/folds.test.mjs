@@ -11,6 +11,7 @@ const PLIS = {
   'fold-waiting': ['waitingOnYou', 'waiting-count', false],
   'fold-free': ['freeNow', 'free-count', false],
   'fold-weekends': ['weekendsTitle', 'weekends-count', false],
+  'fold-tonight': ['tonightTitle', 'tonight-count', false],
   'fold-dlc': ['dlcTitle', 'dlc-count', false],
   'fold-wishes': ['wishesTitle', 'wishes-count', false],
   'fold-upcoming': ['comingUp', 'upcoming-count', false],

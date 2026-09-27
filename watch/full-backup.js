@@ -38,6 +38,7 @@ import { KEY_OUTCOMES, MAX_OUTCOMES } from './outcomes.js';
 import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, MAX_WISHES } from './wishlist.js';
 import { KEY_COLLECTION, sanitiseCollection } from './collection.js';
 import { KEY_TAUGHT, SURFACES, learn } from './teaching.js';
+import { KEY_ANNOTATIONS, STATUS, readAnnotation } from './annotations.js';
 import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale.js';
 
 export const BACKUP_FORMAT = 2;
@@ -59,6 +60,9 @@ export const BACKUP_KEYS = Object.freeze([
   KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEY_COLLECTION,
   KEY_TAUGHT, KEY_COUNTRY, KEY_LANG, ...ENGINE_SWITCHES,
   KEY_UI, KEYS.SETTINGS, KEYS.FILTERS,
+  /* L'etat de chaque jeu (a essayer, en cours, fini...) : la seule donnee
+     ecrite a la main par l'utilisateur. Absente jusqu'a la 2.95.0. */
+  KEY_ANNOTATIONS,
 ]);
 
 /** Au-dela, ce n'est pas une sauvegarde de cette extension. */
@@ -158,6 +162,25 @@ export function mergeTaught(local, fichier, now) {
   return { value: taught, added };
 }
 
+/**
+ * Les etats des jeux : ceux du fichier s'ajoutent, ceux d'ici gagnent -- un
+ * etat pose sur cet ordinateur est plus recent que la sauvegarde. Un etat
+ * illisible ne revient pas.
+ */
+export function mergeAnnotations(local, fichier) {
+  const avant = objet(local) ? local : {};
+  const out = { ...avant };
+  let added = 0;
+  for (const k of Object.keys(objet(fichier) ? fichier : {})) {
+    if (typeof k !== 'string' || k in avant) continue;
+    const a = readAnnotation(fichier, k);
+    if (a.status === STATUS.NONE && !a.note) continue;
+    out[k] = a;
+    added++;
+  }
+  return { value: out, added };
+}
+
 /** Les preferences d'affichage : celles du fichier, et les listes reunies. */
 export function mergeUi(local, fichier) {
   const avant = objet(texteJson(local)) ? texteJson(local) : {};
@@ -196,6 +219,7 @@ export function planRestore(local, fichier, { now, steamAutoClaim = false } = {}
   // Comme `teach` l'ecrit : un objet -- sauf si le stockage le tient deja en texte.
   if (KEY_TAUGHT in f) prendre(KEY_TAUGHT, mergeTaught(l[KEY_TAUGHT], f[KEY_TAUGHT], now), typeof l[KEY_TAUGHT] === 'string');
   if (KEY_UI in f) prendre(KEY_UI, mergeUi(l[KEY_UI], f[KEY_UI]));
+  if (KEY_ANNOTATIONS in f) prendre(KEY_ANNOTATIONS, mergeAnnotations(l[KEY_ANNOTATIONS], f[KEY_ANNOTATIONS]));
 
   /* Les photographies -- listes importees, collection -- ne se fusionnent
      pas : ce sont des etats complets. Elles ne reviennent que si rien ne les

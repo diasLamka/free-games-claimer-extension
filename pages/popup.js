@@ -37,6 +37,9 @@ import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, LEVELS as ODDS, rankWishes, wishTargets } from '../watch/odds.js';
 import { recurrenceIndex } from '../watch/recurrence.js';
+import { KEY_TONIGHT, TIMES, PICK_KEEP_MS, buildPile, pickTonight, playLinks, keptPick } from '../watch/tonight.js';
+import { KEY_PLAYTIME } from '../watch/playtime.js';
+import { KEY_ANNOTATIONS, STATUS as BACKLOG, setStatus } from '../watch/annotations.js';
 import { yearRecap, yearsOf, yearFileName } from '../watch/year.js';
 import { drawYearCard, loadFonts, cardBlob } from '../lib/year-card.js';
 import { sumWorths } from '../lib/money.js';
@@ -240,6 +243,9 @@ const KEYS_READ = [
   KEY_ODDS,
   KEY_GIVERS,
   KEY_OUTCOMES,
+  KEY_TONIGHT,
+  KEY_PLAYTIME,
+  KEY_ANNOTATIONS,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -452,7 +458,7 @@ function foldSay(id, texte) {
  * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
  * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
  * de fermer. Le compte de chaque section reste dans son titre. */
-const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-tonight', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
 const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
@@ -1184,6 +1190,187 @@ function renderWeekends(all, behaviour) {
    (watch/steam-dlc.js), ajoutes par Steam lui-meme : la fiche propose
    « Telecharger », qui passe par l'application Steam. « Masquer » est une
    preference d'affichage : elle vit dans les reglages du popup. */
+/* « Ce soir je joue a... » (2.95.0) : UN jeu de la pile jamais lancee, pour
+   le temps qu'on a (watch/tonight.js). Le choix tient la soiree : rouvrir le
+   popup ne le change pas ; « Un autre » si. Les reglages et le choix vivent
+   dans les preferences du popup ; « J'y joue » et « Pas pour moi » ecrivent
+   l'etat du jeu dans Ma collection. */
+const TONIGHT_TIMES = [[TIMES.HOUR, 'tonightHour'], [TIMES.EVENING, 'tonightEvening'], [TIMES.WEEKEND, 'tonightWeekend'], [TIMES.ANY, 'tonightAny']];
+let tonightNote = '';
+
+function tonightReason(r) {
+  if (r.key === 'tonightClaimed') {
+    const quand = typeof r.args[0] === 'number' ? new Date(r.args[0]).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' }) : '';
+    return quand ? t('tonightClaimed', quand) : '';
+  }
+  return t(r.key, ...(r.args || []).map((x) => String(x ?? '')));
+}
+
+function tonightPrefs() {
+  const p = ui.tonight && typeof ui.tonight === 'object' ? ui.tonight : {};
+  const time = TONIGHT_TIMES.some(([v]) => v === p.time) ? p.time : TIMES.EVENING;
+  const playing = p.playing && typeof p.playing === 'object' && typeof p.playing.at === 'number' && Date.now() - p.playing.at < PICK_KEEP_MS ? p.playing : null;
+  return { time, deckOnly: p.deckOnly === true, key: p.key || null, at: p.at || null, shown: Array.isArray(p.shown) ? p.shown : [], playing };
+}
+
+/* Sans recharger tout le popup : l'appelant redessine la section. */
+async function saveTonight(patch) {
+  ui = { ...ui, tonight: { ...tonightPrefs(), ...patch } };
+  await setValue(KEY_UI, ui);
+}
+
+/** Tire un jeu et le retient pour la soiree. */
+async function rerollTonight(all, { keepShown = true } = {}) {
+  const prefs = tonightPrefs();
+  const pile = tonightPile(all);
+  const exclude = keepShown ? [...prefs.shown, prefs.key].filter(Boolean) : [];
+  const r = pickTonight(pile, { apps: (get(all, KEY_TONIGHT, {}) || {}).apps || {}, time: prefs.time, deckOnly: prefs.deckOnly, exclude });
+  if (r.wrapped) tonightNote = t('tonightWrapped');
+  await saveTonight({ key: r.pick ? r.pick.key : null, at: Date.now(), shown: r.wrapped ? [] : exclude.slice(-200) });
+  renderTonight(await readAll());
+}
+
+function tonightPile(all) {
+  return buildPile({
+    collection: get(all, KEY_COLLECTION, null),
+    library: get(all, KEY_LIBRARY, {}),
+    playtime: (get(all, KEY_PLAYTIME, {}) || {}).games || null,
+    annotations: get(all, KEY_ANNOTATIONS, {}),
+    state: get(all, KEY_TONIGHT, null),
+  });
+}
+
+/** Pose l'etat du jeu dans Ma collection, en relisant la cle juste avant. */
+async function markTonight(key, status) {
+  const brut = await api.storage.local.get(KEY_ANNOTATIONS);
+  await setValue(KEY_ANNOTATIONS, setStatus(brut[KEY_ANNOTATIONS] || {}, key, status));
+}
+
+/* « Lancer dans Steam » : un bouton comme les autres, qui suit un lien
+   steam:// -- le navigateur demande alors s'il faut ouvrir Steam. */
+function launchButton(url) {
+  const b = el('button', 'btn-sm primary', t('tonightLaunch'));
+  b.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.click();
+  });
+  return b;
+}
+
+/** Le jeu choisi ce soir : bonne partie, et de quoi le lancer. */
+function renderTonightPlaying(host, p) {
+  const carte = el('div', 'tonight-card tonight-on');
+  const corps = el('div', 'tonight-body');
+  corps.append(el('p', 'tonight-kicker', t('tonightKicker')));
+  corps.append(el('p', 'tonight-name', displayTitle(p.title || '')));
+  corps.append(el('p', 'soon-price', t('tonightStarted')));
+  carte.append(corps);
+  host.append(carte);
+  const actions = el('div', 'tonight-actions');
+  if (typeof p.launch === 'string' && /^steam:\/\/run\/\d+$/.test(p.launch)) {
+    actions.append(launchButton(p.launch));
+  } else if (typeof p.page === 'string' && /^https:\/\//.test(p.page)) {
+    const b = el('button', 'btn-sm primary', t('tonightOpen'));
+    b.addEventListener('click', () => openTab(p.page));
+    actions.append(b);
+  }
+  const autre = el('button', 'btn-sm', t('tonightOther'));
+  autre.addEventListener('click', async () => {
+    autre.disabled = true;
+    await saveTonight({ playing: null, key: null, shown: [] });
+    renderTonight(await readAll());
+  });
+  actions.append(autre);
+  host.append(actions);
+}
+
+function renderTonight(all) {
+  const section = document.getElementById('tonight-section');
+  const host = document.getElementById('tonight-card');
+  if (!section || !host) return;
+  const prefs = tonightPrefs();
+  const pile = tonightPile(all);
+  section.hidden = !pile.length && !prefs.playing;
+  document.getElementById('tonight-count').textContent = pile.length ? String(pile.length) : '';
+  for (const b of document.querySelectorAll('#tonight-section [data-time]')) b.setAttribute('aria-pressed', String(b.dataset.time === prefs.time));
+  document.getElementById('tonight-deck').checked = prefs.deckOnly;
+  const note = document.getElementById('tonight-note');
+  note.textContent = tonightNote;
+  host.textContent = '';
+  if (prefs.playing) { renderTonightPlaying(host, prefs.playing); return; }
+  if (!pile.length) return;
+
+  const apps = (get(all, KEY_TONIGHT, {}) || {}).apps || {};
+  let jeu = keptPick(prefs, pile, prefs, Date.now());
+  let tire = null;
+  if (jeu) tire = pickTonight([jeu], { apps, time: prefs.time, deckOnly: prefs.deckOnly }).pick;
+  if (!tire) {
+    // Rien de retenu (ou plus valable) : un tirage, retenu lui aussi.
+    const r = pickTonight(pile, { apps, time: prefs.time, deckOnly: prefs.deckOnly, exclude: prefs.shown });
+    tire = r.pick;
+    jeu = tire;
+    if (tire && tire.key !== prefs.key) saveTonight({ key: tire.key, at: Date.now() });
+  }
+  if (!tire) {
+    host.append(el('p', 'hint', t('tonightEmptyFilter')));
+    return;
+  }
+
+  const carte = el('div', 'tonight-card');
+  const info = tire.info || {};
+  const art = el('div', 'tonight-art');
+  if (info.image) art.append(thumb(info.image));
+  else art.append(el('span', 'letter', tire.title.trim().charAt(0).toUpperCase()));
+  carte.append(art);
+  const corps = el('div', 'tonight-body');
+  corps.append(el('p', 'tonight-kicker', t('tonightKicker')));
+  corps.append(el('p', 'tonight-name', displayTitle(tire.title)));
+  const magasins = ['steam', 'gog', 'epic', 'amazon'].filter((m) => tire.stores && tire.stores[m]).map((m) => STORE_LABELS[m] || m);
+  if (magasins.length) corps.append(el('p', 'soon-price', magasins.join(' · ')));
+  const raisons = (tire.reasons || []).map(tonightReason).filter(Boolean);
+  if (raisons.length) {
+    const ul = el('ul', 'tonight-why');
+    for (const r of raisons) ul.append(el('li', null, r));
+    corps.append(ul);
+  }
+  carte.append(corps);
+  host.append(carte);
+
+  const actions = el('div', 'tonight-actions');
+  const liens = playLinks(tire);
+  if (liens.launch) {
+    actions.append(launchButton(liens.launch));
+  } else if (liens.page) {
+    const b = el('button', 'btn-sm primary', t('tonightOpen'));
+    b.addEventListener('click', () => openTab(liens.page));
+    actions.append(b);
+  }
+  const joue = el('button', 'btn-sm', t('tonightPlaying'));
+  joue.title = t('tonightPlayingTitle');
+  joue.addEventListener('click', async () => {
+    joue.disabled = true;
+    // Retenu d'abord : l'ecriture de l'etat redessine le popup, et le jeu n'est plus dans la pile.
+    await saveTonight({ key: null, playing: { key: tire.key, title: tire.title, at: Date.now(), ...liens } });
+    tonightNote = '';
+    await markTonight(tire.key, BACKLOG.PLAYING);
+    renderTonight(await readAll());
+  });
+  const autre = el('button', 'btn-sm', t('tonightAnother'));
+  autre.addEventListener('click', async () => { autre.disabled = true; tonightNote = ''; await rerollTonight(await readAll()); });
+  const non = el('button', 'btn-sm', t('tonightNotForMe'));
+  non.title = t('tonightNotForMeTitle');
+  non.addEventListener('click', async () => {
+    non.disabled = true;
+    await markTonight(tire.key, BACKLOG.NOT_FOR_ME);
+    tonightNote = t('tonightDropped', displayTitle(tire.title));
+    await rerollTonight(await readAll());
+  });
+  actions.append(joue, autre, non);
+  host.append(actions);
+  if (jeu && !tire.info && tire.appid) host.append(el('p', 'hint', t('tonightReading')));
+}
+
 function renderDlc(all) {
   const section = document.getElementById('dlc-section');
   const host = document.getElementById('dlc-list');
@@ -2474,6 +2661,7 @@ function renderNotifications(behaviour) {
   // Les week-ends gratuits de Steam (2.75.0) : actifs sauf refus explicite.
   document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
   document.getElementById('steam-dlc').checked = behaviour.steamDlc !== false;
+  document.getElementById('tonight-ratings').checked = behaviour.tonight !== false;
   // La note Steam (2.78.0) : active sauf refus explicite.
   document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
@@ -2568,6 +2756,7 @@ async function render() {
   renderGames(all, behaviourCache);
   renderUpcoming(all);
   renderWeekends(all, behaviourCache);
+  renderTonight(all);
   renderDlc(all);
   renderWishes(all);
   renderLog(all);
@@ -2848,6 +3037,15 @@ document.getElementById('reminder').addEventListener('change', (e) => writeBehav
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
+document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));
+for (const b of document.querySelectorAll('#tonight-section [data-time]')) {
+  b.addEventListener('click', async () => { tonightNote = ''; await saveTonight({ time: b.dataset.time, key: null, shown: [] }); renderTonight(await readAll()); });
+}
+document.getElementById('tonight-deck').addEventListener('change', async (e) => {
+  tonightNote = '';
+  await saveTonight({ deckOnly: e.target.checked, key: null, shown: [] });
+  renderTonight(await readAll());
+});
 document.getElementById('steam-ratings').addEventListener('change', (e) => writeBehaviour({ steamRatings: e.target.checked }));
 
 /* The slider writes the floor; the daily cap follows from it on the scheduler
@@ -3463,7 +3661,7 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
     const souhaits = (a['veille:souhaits'] || 0) + (a['veille:souhaits-steam'] || 0) + (a['veille:souhaits-gog'] || 0);
     // Apres le rendu : la langue restauree s'applique aussi a ce message.
     await load();
-    say(jeux || codes || souhaits || a['veille:issues'] || a['veille:collection']
+    say(jeux || codes || souhaits || a['veille:issues'] || a['veille:collection'] || a['veille:annotations']
       ? t('importRestoredAll', String(jeux), String(codes), String(souhaits))
       : t('importNoNew'));
   } catch (err) {

@@ -2476,5 +2476,107 @@
   },
   "oddsNotOnSteam": {
     "message": "unter diesem Namen nicht auf Steam gefunden"
+  },
+  "backlogNotForMe": {
+    "message": "Nichts für mich"
+  },
+  "tonightTitle": {
+    "message": "Heute Abend spiele ich…"
+  },
+  "tonightHint": {
+    "message": "Ein Spiel aus Ihrem nie gestarteten Stapel, passend zu Ihrer Zeit: ausgewählt nach Steam-Bewertung, dem Format, das Steam-Spieler ihm geben, und auf Wunsch nach Steam Deck."
+  },
+  "tonightTimeLabel": {
+    "message": "Heute Abend habe ich"
+  },
+  "tonightHour": {
+    "message": "1 Stunde"
+  },
+  "tonightEvening": {
+    "message": "Einen Abend"
+  },
+  "tonightWeekend": {
+    "message": "Ein Wochenende"
+  },
+  "tonightAny": {
+    "message": "Egal"
+  },
+  "tonightDeckOnly": {
+    "message": "Auf dem Steam Deck"
+  },
+  "tonightKicker": {
+    "message": "Heute Abend"
+  },
+  "tonightLaunch": {
+    "message": "In Steam starten"
+  },
+  "tonightOpen": {
+    "message": "Seite ansehen"
+  },
+  "tonightPlaying": {
+    "message": "Ich spiele es"
+  },
+  "tonightPlayingTitle": {
+    "message": "Setzt es in Meiner Sammlung auf „Läuft“."
+  },
+  "tonightAnother": {
+    "message": "Ein anderes"
+  },
+  "tonightOther": {
+    "message": "Anderes Spiel wählen"
+  },
+  "tonightNotForMe": {
+    "message": "Nichts für mich"
+  },
+  "tonightNotForMeTitle": {
+    "message": "Es wird nicht mehr vorgeschlagen. In Meiner Sammlung umkehrbar."
+  },
+  "tonightStarted": {
+    "message": "Viel Spaß! Es steht in Meiner Sammlung auf „Läuft“."
+  },
+  "tonightDropped": {
+    "message": "„$1“ wird nicht mehr vorgeschlagen."
+  },
+  "tonightWrapped": {
+    "message": "Alle gesehen: Es geht von vorne los."
+  },
+  "tonightEmptyFilter": {
+    "message": "Nichts in Ihrem Stapel passt: Versuchen Sie eine andere Zeit oder ohne Steam Deck."
+  },
+  "tonightReading": {
+    "message": "Seine Steam-Seite wird beim nächsten Durchlauf gelesen: Bewertung, Format, Steam Deck."
+  },
+  "tonightToTry": {
+    "message": "Sie hatten es auf „Ausprobieren“ gesetzt"
+  },
+  "tonightNever": {
+    "message": "Laut Steam nie gestartet"
+  },
+  "tonightShort": {
+    "message": "Kurz, sagen Steam-Spieler"
+  },
+  "tonightSessions": {
+    "message": "Kurze Partien"
+  },
+  "tonightLong": {
+    "message": "Ein langer Atem"
+  },
+  "tonightRating": {
+    "message": "$1 % positive Steam-Bewertungen"
+  },
+  "tonightDeckVerified": {
+    "message": "Steam Deck verifiziert"
+  },
+  "tonightDeckPlayable": {
+    "message": "Auf dem Steam Deck spielbar"
+  },
+  "tonightClaimed": {
+    "message": "Im $1 kostenlos geholt"
+  },
+  "tonightLabel": {
+    "message": "Heute Abend spiele ich…"
+  },
+  "tonightToggleHint": {
+    "message": "Liest ohne Cookies Bewertung, Format und Steam-Deck-Status der Spiele in Ihrem Stapel."
   }
 }

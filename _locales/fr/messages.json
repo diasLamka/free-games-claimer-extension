@@ -1644,10 +1644,10 @@
     "message": "Tous les états"
   },
   "backlogUntouched": {
-    "message": "Non renseigne"
+    "message": "Non renseigné"
   },
   "backlogToTry": {
-    "message": "A essayer"
+    "message": "À essayer"
   },
   "backlogPlaying": {
     "message": "En cours"
@@ -1656,7 +1656,7 @@
     "message": "Fini"
   },
   "backlogDropped": {
-    "message": "Abandonne"
+    "message": "Abandonné"
   },
   "backlogSurprise": {
     "message": "Tiré au sort"
@@ -2476,5 +2476,107 @@
   },
   "oddsNotOnSteam": {
     "message": "introuvable sur Steam sous ce nom"
+  },
+  "backlogNotForMe": {
+    "message": "Pas pour moi"
+  },
+  "tonightTitle": {
+    "message": "Ce soir je joue à…"
+  },
+  "tonightHint": {
+    "message": "Un jeu de votre pile jamais lancée, pour le temps que vous avez : choisi d'après la note Steam, le format que lui donnent les joueurs Steam et, si vous le demandez, le Steam Deck."
+  },
+  "tonightTimeLabel": {
+    "message": "Ce soir, j'ai"
+  },
+  "tonightHour": {
+    "message": "1 heure"
+  },
+  "tonightEvening": {
+    "message": "Une soirée"
+  },
+  "tonightWeekend": {
+    "message": "Un week-end"
+  },
+  "tonightAny": {
+    "message": "Peu importe"
+  },
+  "tonightDeckOnly": {
+    "message": "Sur Steam Deck"
+  },
+  "tonightKicker": {
+    "message": "Ce soir"
+  },
+  "tonightLaunch": {
+    "message": "Lancer dans Steam"
+  },
+  "tonightOpen": {
+    "message": "Voir la fiche"
+  },
+  "tonightPlaying": {
+    "message": "J'y joue"
+  },
+  "tonightPlayingTitle": {
+    "message": "Le passe « En cours » dans Ma collection."
+  },
+  "tonightAnother": {
+    "message": "Un autre"
+  },
+  "tonightOther": {
+    "message": "Choisir un autre jeu"
+  },
+  "tonightNotForMe": {
+    "message": "Pas pour moi"
+  },
+  "tonightNotForMeTitle": {
+    "message": "Il ne vous sera plus proposé. Réversible dans Ma collection."
+  },
+  "tonightStarted": {
+    "message": "Bonne partie ! Il est « En cours » dans Ma collection."
+  },
+  "tonightDropped": {
+    "message": "« $1 » ne vous sera plus proposé."
+  },
+  "tonightWrapped": {
+    "message": "Vous avez tout vu : on reprend depuis le début."
+  },
+  "tonightEmptyFilter": {
+    "message": "Rien dans votre pile ne convient : essayez un autre temps, ou sans Steam Deck."
+  },
+  "tonightReading": {
+    "message": "Sa fiche Steam est lue au prochain passage : note, format, Steam Deck."
+  },
+  "tonightToTry": {
+    "message": "Vous l'aviez mis « à essayer »"
+  },
+  "tonightNever": {
+    "message": "Jamais lancé, d'après Steam"
+  },
+  "tonightShort": {
+    "message": "Court, d'après les joueurs Steam"
+  },
+  "tonightSessions": {
+    "message": "Des parties courtes"
+  },
+  "tonightLong": {
+    "message": "Un long cours"
+  },
+  "tonightRating": {
+    "message": "$1 % d'avis positifs sur Steam"
+  },
+  "tonightDeckVerified": {
+    "message": "Vérifié Steam Deck"
+  },
+  "tonightDeckPlayable": {
+    "message": "Jouable sur Steam Deck"
+  },
+  "tonightClaimed": {
+    "message": "Récupéré gratuitement en $1"
+  },
+  "tonightLabel": {
+    "message": "Ce soir je joue à…"
+  },
+  "tonightToggleHint": {
+    "message": "Lit, sans cookie, la note, le format et le Steam Deck des jeux de votre pile."
   }
 }

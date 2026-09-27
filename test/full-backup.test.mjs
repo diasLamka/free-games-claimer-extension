@@ -5,8 +5,9 @@ import { readFileSync } from 'node:fs';
 
 import {
   BACKUP_KEYS, HISTORY_KEYS, backupBlock, mergeCodes, mergeHistory, mergeLibrary, mergeOutcomes, mergeTaught,
-  mergeUi, mergeWishes, planRestore, restoreBackup, snapshot,
+  mergeUi, mergeWishes, mergeAnnotations, planRestore, restoreBackup, snapshot,
 } from '../watch/full-backup.js';
+import { KEY_ANNOTATIONS } from '../watch/annotations.js';
 import { KEY_PHONE } from '../watch/phone.js';
 import { UI_COMMANDS, messageAllowed } from '../watch/messaging.js';
 import { EXPORT_FORMAT, buildExport } from '../watch/tally.js';
@@ -71,6 +72,17 @@ test('les preferences : celles du fichier, les listes reunies', () => {
   assert.equal(u.value.theme, 'light');
   assert.deepEqual(u.value.pinned, ['a', 'b']);
   assert.deepEqual(u.value.dismissed, ['x']);
+});
+
+test('les etats des jeux (2.95.0) : ceux du fichier s\'ajoutent, ceux d\'ici gagnent', () => {
+  assert.ok(BACKUP_KEYS.includes(KEY_ANNOTATIONS));
+  const r = mergeAnnotations(
+    { 'steam:1': { status: 'playing', note: '' } },
+    { 'steam:1': { status: 'done', note: '' }, 'gog:2': { status: 'notForMe', note: '' }, 'epic:3': { status: 'nimporte', note: '' }, 'epic:4': 'x' },
+  );
+  assert.deepEqual(r.value, { 'steam:1': { status: 'playing', note: '' }, 'gog:2': { status: 'notForMe', note: '' } });
+  assert.equal(r.added, 1);
+  assert.equal(planRestore({}, { [KEY_ANNOTATIONS]: { 'steam:9': { status: 'toTry' } } }, { now: NOW }).added[KEY_ANNOTATIONS], 1);
 });
 
 test('le plan : la recuperation Steam ne se rallume jamais, les photographies ne remplacent rien', () => {

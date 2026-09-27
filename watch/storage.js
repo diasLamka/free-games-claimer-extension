@@ -261,6 +261,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    */
   steamDlc: true,
   /**
+   * « Ce soir je joue a... » (2.95.0) : les etiquettes, la note et la
+   * categorie Steam Deck des jeux de votre pile, lues sans cookie, cent par
+   * heure au plus. Coupe, le choix se fait sans elles. Voir watch/tonight.js.
+   */
+  tonight: true,
+  /**
    * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
    * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
    * cookie. Voir watch/steam-ratings.js.

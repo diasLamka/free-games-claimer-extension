@@ -23,6 +23,11 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Ce soir je joue a...** (2.95.0) : UN jeu de votre pile jamais lancee,
+pour le temps que vous avez -- une heure, une soiree, un week-end --, d'apres
+la note Steam, le format que lui donnent les joueurs et le Steam Deck
+(`watch/tonight.js`).
+
 **Attendez, il sera offert** (2.94.0) : dans « Vos souhaits », les chances
 de chaque jeu attendu de passer gratuit, et pourquoi (`watch/odds.js`).
 
