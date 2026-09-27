@@ -10,7 +10,8 @@ Ce qui n'est pas encore fait, et pourquoi, est dans `ROADMAP.md`.
 
 **L'appli Android** vit dans `android/` : une vraie appli (Kotlin, Jetpack
 Compose), qui embarque le moteur de recuperation de l'extension au caractere
-pres. Voir `android/README.md`.
+pres. Voir `android/README.md`. **L'APK se telecharge dans les releases du
+depot** (tag `app-vX.Y.Z`), publie par `.github/workflows/android.yml`.
 
 **L'interface** (2.86.0) suit la meme charte que l'appli : noir ou blanc, un
 seul accent jaune cyber, traits epais et ombres dures, Archivo Black et Space
@@ -21,6 +22,10 @@ les polices sont dans `pages/fonts/`, avec leur licence.
 allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
+
+**La signature** (2.88.0), commune a l'extension et a l'appli : le jeu offert
+en billet poinconne et perfore, le tampon « RECUPERE » de travers, la bande
+timecode de la prochaine fin d'offre (fin de `pages/brut.css`).
 
 ## Le moteur est genere
 

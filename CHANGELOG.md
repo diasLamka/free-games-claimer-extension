@@ -4,6 +4,30 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.88.0 -- 2026-09-27
+
+**La signature, des survols lisibles, et l'appli sur tous les ecrans**
+
+- **La signature.** Trois gestes qui n'appartiennent qu'a ce projet, dans
+  l'extension comme dans l'appli : chaque jeu offert est un **billet**,
+  poinconne sur les deux bords et perfore sous la jaquette ; un **tampon**
+  « RECUPERE », de travers, sur ce qui a ete pris ; une bande **timecode** qui
+  egrene la prochaine fin d'offre, en chiffres jaunes sur noir. Le bandeau de
+  l'anti-doublon prend son titre en tampon.
+- **Survols lisibles.** Le texte blanc ou jaune qui disparaissait sur le vert
+  clair au passage de la souris : boutons, filtres, onglets et liens gardent
+  un texte noir (ou un aplat noir) au survol, partout.
+- **Sections repliees dans le popup.** Elles s'ouvrent a la demande et le
+  popup se souvient de chacune ; le tableau de bord garde les siennes
+  ouvertes, avec sa propre memoire.
+- **Appli Android 1.3.0.** La meme signature ; et tous les ecrans : rail de
+  navigation sur le cote des 600 dp (paysage, pliable ouvert, tablette), jeux
+  en 2 ou 3 colonnes, reglages dans une colonne lisible ; en grande police,
+  les titres retrecissent au lieu de couper un mot et les boutons passent a
+  la ligne ; cibles tactiles de 48 dp, roles TalkBack, encoches respectees.
+  L'APK est publie sur les releases GitHub du depot (tag `app-v1.3.0`) et
+  s'installe par-dessus la 1.2.0.
+
 ## 2.87.0 -- 2026-09-26
 
 **Le relais avec le telephone, et l'anti-doublon au moment de payer**

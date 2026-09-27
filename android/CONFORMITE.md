@@ -5,7 +5,7 @@ pourtant les regles que Google Play et Android imposent, point par point, pour
 deux raisons : ce sont de bonnes regles pour une appli qui touche a des comptes,
 et Play Protect juge un APK installe a la main sur les memes signaux.
 
-Etat au 2026-09-26, appli 1.2.0.
+Etat au 2026-09-27, appli 1.3.0.
 
 ## Ce que l'appli demande
 
@@ -84,7 +84,16 @@ exemption d'optimisation de la batterie, installation d'autres applis.
 ## La plateforme
 
 - Cible Android 16 (API 36), minimum Android 8 (API 26).
-- Bord a bord, geste retour predictif.
+- Bord a bord, geste retour predictif ; les barres systeme et les encoches
+  (`WindowInsets.safeDrawing`) ne cachent jamais un bouton.
+- **Tous les ecrans** (qualite des applis pour grand ecran) : aucune
+  orientation imposee, fenetre redimensionnable (ecran partage, fenetres de
+  bureau) ; rotation, pliage et changement de taille sans perdre l'etat.
+  La navigation passe des onglets du bas a un **rail** des 600 dp de large,
+  les listes en 2 ou 3 colonnes, le texte long dans une colonne de 760 dp.
+- **Accessibilite** : cibles tactiles de 48 dp ; roles TalkBack (onglets,
+  choix, en-tetes), boutons-icones decrits ; police du telephone suivie
+  jusqu'a 200 %, sans mot coupe ni bouton ecrase (verifie par captures).
 - Une seule bibliotheque native, celle de Compose (`androidx.graphics.path`),
   alignee sur 16 Ko (verifie par `zipalign -c -P 16`) : compatible avec les
   pages memoire de 16 Ko.

@@ -18,6 +18,7 @@ web emballee.
 | **Souhaits** | A la main, ou en **partageant** une fiche de jeu depuis n'importe quelle appli (Reddit, Discord, navigateur) : l'appli dit aussitot si le jeu est gratuit, deja attendu, ou deja a toi -- et sur quel magasin, y compris ce que le PC a pris. |
 | **Avec l'extension** | Import de sa sauvegarde (historique, souhaits, listes Steam/GOG) ; export d'un fichier que « Restaurer » de l'extension fusionne. |
 | **Langues** | Francais, anglais, allemand, espagnol -- celle du telephone. |
+| **Tous les ecrans** (1.3.0) | Petit telephone, grande police, paysage, pliable, tablette : la mise en page suit la fenetre (voir plus bas). |
 
 ## L'interface
 
@@ -29,6 +30,11 @@ en Space Mono, embarquees dans l'APK (licence OFL, `assets/licences/`). La
 mise en page est asymetrique a dessein : une carte sur deux decalee, le
 compte des jeux en etiquette de travers, la note Steam en autocollant.
 
+**La signature** (1.3.0), la meme que dans l'extension : chaque jeu offert
+est un **billet**, poinconne sur les deux bords et perfore sous la jaquette ;
+un **tampon** « RECUPERE », de travers, sur ce qui a ete pris ; une bande
+**timecode** qui egrene la prochaine fin d'offre. C'est dans `ui/Signature.kt`.
+
 Les composants de la charte sont dans `ui/Components.kt` (`brut`, `Tag`,
 `BrutButton`, `BrutToggle`, `BrutField`, `SectionHeader`) et la palette dans
 `ui/theme/Theme.kt`. Les ecrans se regardent sans telephone :
@@ -38,7 +44,30 @@ Les composants de la charte sont dans `ui/Components.kt` (`brut`, `Tag`,
 ```
 
 rend chaque ecran, clair et sombre, sur les offres du moment, dans
-`app/build/screenshots/`.
+`app/build/screenshots/` -- dont huit formats d'ecran (captures `D-*`).
+
+### Tous les ecrans
+
+La mise en page suit la **largeur de la fenetre**, pas le type d'appareil --
+une appli en ecran partage est une fenetre etroite sur une tablette :
+
+| Fenetre | Navigation | Jeux |
+|---|---|---|
+| moins de 600 dp (telephone en portrait) | onglets en bas | une colonne |
+| 600 a 1000 dp (paysage, pliable ouvert) | **rail** sur le cote | deux colonnes |
+| 1000 dp et plus (tablette) | rail | trois colonnes |
+
+Les reglages et les souhaits tiennent dans une colonne de 760 dp au plus,
+centree : une ligne de texte reste lisible. L'appli n'impose aucune
+orientation et suit la rotation, le pliage et l'ecran partage sans perdre ce
+qui est a l'ecran.
+
+**Grande police** (jusqu'a 200 %) : les titres retrecissent plutot que de
+couper un mot, le bouton d'un compte passe sous son nom, les libelles
+d'onglet tiennent sur une ligne. **Accessibilite** : cibles tactiles de
+48 dp, onglets et choix annonces comme tels par TalkBack, titres d'ecran
+marques comme en-tetes, boutons-icones decrits. Bord a bord : les barres
+systeme et les encoches ne cachent rien.
 
 ## Le moteur est celui de l'extension
 
@@ -97,9 +126,11 @@ peut signer une « mise a jour » de l'appli.
 
 ## Installer
 
-1. Telecharger l'APK (release `app-v...` du depot, ou l'artefact du workflow).
-   Chrome previent qu'un APK « peut etre dangereux » : c'est vrai de tout APK,
-   il suffit de le conserver.
+1. Telecharger l'APK sur le telephone : **github.com/diasLamka/free-games-claimer-extension/releases**,
+   la derniere release `app-v...`, section *Assets*, le fichier `.apk`. Le
+   depot est prive : il faut etre connecte a GitHub dans le navigateur du
+   telephone. Chrome previent qu'un APK « peut etre dangereux » : c'est vrai
+   de tout APK, il suffit de le conserver.
 2. L'ouvrir sur le telephone ; Android demande d'autoriser l'installation
    depuis cette source, la premiere fois. **Play Protect** peut dire qu'il ne
    connait pas l'appli et proposer de l'analyser : accepter l'analyse, puis
@@ -113,6 +144,12 @@ peut signer une « mise a jour » de l'appli.
    le telephone connaisse ce que le PC a deja pris.
 5. Facultatif : **Reglages → Relais avec le PC → Scanner le QR code** que le
    popup de l'extension affiche (Reglages → Relais avec le telephone).
+
+### Mettre a jour
+
+Meme chemin : la nouvelle release, son APK, l'installer. Il est signe de la
+meme cle, il s'installe donc **par-dessus** l'ancien, sans rien perdre
+(sessions, historique, reglages).
 
 ## Les regles
 
