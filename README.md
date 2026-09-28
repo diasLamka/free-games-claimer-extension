@@ -23,6 +23,12 @@ allume recupere, l'autre ne retente pas (`watch/relay.js`, chiffre de bout en
 bout, par ntfy). **L'anti-doublon** previent, sur la fiche d'un jeu payant,
 qu'il est deja a vous ailleurs (`watch/owned-guard.js`).
 
+**Vos gouts** (2.99.0) : ce que vous jouez, finissez ou ecartez fait un profil
+(les etiquettes des joueurs Steam qui reviennent dans vos jeux) ; les offres
+qui lui ressemblent portent **Pour vous**, la notification dit de quoi elles se
+rapprochent, et « Ce soir je joue a... » les met devant (`watch/taste.js`).
+Lu sans cookie : des numeros de jeux, jamais un titre.
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 

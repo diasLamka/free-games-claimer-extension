@@ -132,7 +132,7 @@ export function toNotify(catalog, now) {
  * Compose le message. Une notification par offre au-dela de trois, c'est un
  * harcelement : au-dela on resume.
  */
-export function composeAnnouncement(offers, storeLabel, now = null, rating = null) {
+export function composeAnnouncement(offers, storeLabel, now = null, rating = null, taste = null) {
   if (offers.length === 1) {
     const o = offers[0];
     // Le libelle du magasin, pas son identifiant : « Epic Games Store » plutot
@@ -149,6 +149,8 @@ export function composeAnnouncement(offers, storeLabel, now = null, rating = nul
       const ou = storeLabel ? storeLabel(chance.store) : (STORE_LABELS[chance.store] || chance.store);
       texte += `\n${t('notifySecondChanceLine', quand, ou)}`;
     }
+    /* Vos gouts (2.99.0) : de quoi le jeu se rapproche, en mots. */
+    if (Array.isArray(taste)) texte += `\n${taste.length ? t('tasteLine', taste.join(', ')) : t('tasteLineBare')}`;
     /* La note Steam (2.78.0), sur sa propre ligne : « Steam : Tres positives
        (84 %) ». C'est ce qui dit s'il vaut ses 20 Go. */
     return {
@@ -216,6 +218,11 @@ export async function runCycle({
    * un seul jeu, juste avant de la faire ; le worker borne l'attente.
    */
   rateOffer = null,
+  /**
+   * Les noms des etiquettes qui rapprochent une offre de vos gouts (2.99.0), ou
+   * null quand elle n'y est pas. Demandee apres la note, pour la meme annonce.
+   */
+  tasteOffer = null,
   /** Faux en test, ou quand l'utilisateur coupe la reclamation autonome. */
   autonomousClaim = true,
   maxReclamations = MAX_CLAIMS_PER_CYCLE,
@@ -536,9 +543,13 @@ export async function runCycle({
       if (!decision.digest && watched.length === 1 && typeof rateOffer === 'function') {
         try { note = await rateOffer(first); } catch { note = null; }
       }
+      let gout = null;
+      if (!decision.digest && watched.length === 1 && typeof tasteOffer === 'function') {
+        try { gout = await tasteOffer(first); } catch { gout = null; }
+      }
       const { title, text } = decision.digest
         ? { title: t('notifyDigestTitle', String(watched.length)), text: watched.map((o) => o.title).join(', ') }
-        : composeAnnouncement(watched, null, now, note);
+        : composeAnnouncement(watched, null, now, note, gout);
       // Le lien de la premiere offre annoncee : cliquer la notification doit
       // mener a l'offre, pas a une page d'accueil.
       await notify({

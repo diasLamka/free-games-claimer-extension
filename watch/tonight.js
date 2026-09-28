@@ -33,6 +33,7 @@ import { normaliseTitle } from './offer.js';
 import { searchUrl, matchSearch } from './steam-ratings.js';
 import { ITEMS_URL, steamImage } from './sources/steam.js';
 import { coverFor } from './covers.js';
+import { compactTags, scoreGame, tasteNames, FOR_YOU } from './taste.js';
 
 export const KEY_TONIGHT = 'veille:ce-soir';
 
@@ -128,7 +129,7 @@ export const TOP = 5;
  * la 2.98.0 (le jeu se joue-t-il a plusieurs ?). Une fiche d'une forme plus
  * ancienne est relue, sans attendre ses soixante jours.
  */
-export const INFO_VERSION = 3;
+export const INFO_VERSION = 4;
 /** La description montree sur la carte : une phrase ou deux, pas la fiche. */
 export const MAX_DESCRIPTION = 300;
 
@@ -196,6 +197,8 @@ export function readItem(item) {
     description: cleanDescription(item.basic_info && item.basic_info.short_description),
     format: formatFromTags(item.tags),
     coop: coopFromTags(item.tags),
+    /* Les dix etiquettes les plus fortes (2.99.0) : « Vos gouts » les compare au profil. */
+    tags: compactTags(item.tags),
     deck: deckFromItem(item),
     percent: pct !== null && pct >= 0 && pct <= 100 ? pct : null,
     reviews: n,
@@ -296,7 +299,7 @@ const RAISON_FORMAT = Object.freeze({
  * convient pas (pas sur Steam Deck quand on le demande, un long cours pour une
  * heure). Pur.
  */
-export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false, coop = false } = {}) {
+export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false, coop = false, taste = null } = {}) {
   const deck = (info && info.deck) || c.deck || null;
   if (deckOnly && !deckAtLeast(deck, DECK.PLAYABLE)) return null;
   // « A plusieurs » : comme Steam Deck, un jeu dont on ne sait rien ne passe pas -- on ne promet pas une partie a deux sur une inconnue.
@@ -318,6 +321,15 @@ export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false, coop
     reasons.push({ key: 'tonightRating', args: [String(info.percent)] });
   }
   if (coop) { score += 1; reasons.push({ key: 'tonightCoop', args: [] }); }
+  /* Vos gouts (2.99.0) : un jeu qui ressemble a ce que vous aimez passe devant. */
+  if (taste && taste.profile && info && info.tags) {
+    const r = scoreGame(taste.profile, info.tags);
+    if (r && r.score >= FOR_YOU) {
+      score += 1.5;
+      const noms = tasteNames(taste, r.top);
+      reasons.push(noms.length ? { key: 'tonightTaste', args: [noms.join(', ')] } : { key: 'tonightTasteBare', args: [] });
+    }
+  }
   if (deckOnly) {
     if (deck === DECK.VERIFIED) score += 1;
     reasons.push({ key: deck === DECK.VERIFIED ? 'tonightDeckVerified' : 'tonightDeckPlayable', args: [] });
@@ -335,11 +347,11 @@ export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false, coop
  *
  * Rend { pick, count, wrapped } -- `pick` null quand rien ne convient.
  */
-export function pickTonight(pile, { apps = {}, time = TIMES.ANY, deckOnly = false, coop = false, exclude = [], random = Math.random } = {}) {
+export function pickTonight(pile, { apps = {}, time = TIMES.ANY, deckOnly = false, coop = false, taste = null, exclude = [], random = Math.random } = {}) {
   const notes = [];
   for (const c of pile || []) {
     const info = c.appid ? apps[c.appid] || null : null;
-    const s = scoreTonight(c, info && !info.none ? info : null, { time, deckOnly, coop });
+    const s = scoreTonight(c, info && !info.none ? info : null, { time, deckOnly, coop, taste });
     if (s) notes.push({ ...c, info: info && !info.none ? info : null, ...s });
   }
   notes.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));

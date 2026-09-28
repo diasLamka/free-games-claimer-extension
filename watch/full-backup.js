@@ -40,6 +40,7 @@ import { KEY_COLLECTION, sanitiseCollection } from './collection.js';
 import { KEY_TAUGHT, SURFACES, learn } from './teaching.js';
 import { KEY_ANNOTATIONS, STATUS, readAnnotation } from './annotations.js';
 import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale.js';
+import { KEY_TASTE, readTasteState } from './taste.js';
 
 export const BACKUP_FORMAT = 2;
 
@@ -63,6 +64,10 @@ export const BACKUP_KEYS = Object.freeze([
   /* L'etat de chaque jeu (a essayer, en cours, fini...) : la seule donnee
      ecrite a la main par l'utilisateur. Absente jusqu'a la 2.95.0. */
   KEY_ANNOTATIONS,
+  /* Le profil de « Vos gouts » (2.99.0) -- des numeros d'etiquettes et leurs
+     poids, jamais un titre : l'appli le lit pour faire la meme chose. Sans le
+     cache des jeux, que chaque appareil relit lui-meme. */
+  KEY_TASTE,
 ]);
 
 /** Au-dela, ce n'est pas une sauvegarde de cette extension. */
@@ -80,6 +85,11 @@ function texteJson(v) {
 export function snapshot(raw) {
   const out = {};
   for (const k of BACKUP_KEYS) if (raw && raw[k] !== undefined) out[k] = raw[k];
+  if (out[KEY_TASTE] !== undefined) {
+    const t = readTasteState(out[KEY_TASTE]);
+    if (t.profile) out[KEY_TASTE] = { at: t.at, profile: t.profile, names: t.names, namesAt: t.namesAt, namesLang: t.namesLang };
+    else delete out[KEY_TASTE];
+  }
   return out;
 }
 
@@ -226,6 +236,15 @@ export function planRestore(local, fichier, { now, steamAutoClaim = false } = {}
      remplace encore ; le prochain « Tout importer » les rafraichira. */
   for (const k of [KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST]) {
     if (k in f && !objet(l[k]) && objet(f[k]) && Array.isArray(f[k].wishes)) { ecrire[k] = f[k]; compte[k] = f[k].wishes.length; }
+  }
+  /* Le profil de gouts : une photographie aussi. Il ne revient que si cet appareil
+     n'en a pas encore, et sans toucher au cache des jeux qu'il a lu. */
+  if (KEY_TASTE in f) {
+    const recu = readTasteState(f[KEY_TASTE]);
+    if (recu.profile && !readTasteState(l[KEY_TASTE]).profile) {
+      ecrire[KEY_TASTE] = { ...readTasteState(l[KEY_TASTE]), at: recu.at, profile: recu.profile, names: recu.names, namesAt: recu.namesAt, namesLang: recu.namesLang };
+      compte[KEY_TASTE] = Object.keys(recu.profile.tags).length;
+    }
   }
   if (KEY_COLLECTION in f && !objet(l[KEY_COLLECTION]) && objet(f[KEY_COLLECTION])) {
     const c = sanitiseCollection(f[KEY_COLLECTION]);

@@ -281,7 +281,7 @@ test('a plusieurs : les etiquettes coop pesent au moins un quart de la plus fort
   assert.equal(coopFromTags([{ tagid: 19, weight: 900 }, { tagid: 1685, weight: 40 }]), false);
   assert.ok(COOP_TAGS.includes(3841) && COOP_TAGS.includes(3843));
   assert.equal(readItem(COOP_ITEMS.find((i) => i.name === 'It Takes Two')).coop, true);
-  assert.equal(INFO_VERSION, 3);
+  assert.equal(INFO_VERSION, 4);
 });
 
 test('a plusieurs : seulement les jeux qui se jouent ainsi, jamais une inconnue', () => {

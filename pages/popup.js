@@ -60,7 +60,8 @@ import { barHeight, labelledMonths, monthlySeries, worthDrawing } from '../lib/m
 import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch/dry-run.js';
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
-import { KEY_RATINGS, percent, ratingFor, scoreLabel, tone } from '../watch/steam-ratings.js';
+import { KEY_RATINGS, percent, ratingFor, scoreLabel, steamAppId, tone } from '../watch/steam-ratings.js';
+import { KEY_TASTE, readTasteState, tasteFor, tasteNames } from '../watch/taste.js';
 import { composeShareList } from '../watch/share-list.js';
 import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
 import { onVacation, readVacation } from '../watch/notify-policy.js';
@@ -245,6 +246,7 @@ const KEYS_READ = [
   KEY_TONIGHT,
   KEY_PLAYTIME,
   KEY_ANNOTATIONS,
+  KEY_TASTE,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -777,6 +779,17 @@ function gameCard({ key, offer }, ctx) {
     puce.title = t('notifySecondChanceLine', quand, ou);
     meta.append(puce);
   }
+  /* Vos gouts (2.99.0) : une offre qui ressemble a ce que vous aimez. */
+  if (ctx.taste && ctx.taste.profile) {
+    const appid = steamAppId(offer) || (ratingFor(ctx.ratings, offer) || {}).appid || null;
+    const gout = tasteFor(ctx.taste, appid);
+    if (gout) {
+      const noms = tasteNames(ctx.taste, gout.top);
+      const puce = el('span', 'kind-tag for-you', t('tagForYou'));
+      puce.title = noms.length ? t('tasteLine', noms.join(', ')) : t('tasteLineBare');
+      meta.append(puce);
+    }
+  }
   /* Verifie ou jouable sur Steam Deck : ce qui aide a choisir. « Non pris en
      charge » ne s'affiche pas ici -- a 328 px, une mauvaise nouvelle n'a pas
      la place d'un fait utile, et la fiche Steam le dit mieux. */
@@ -1052,7 +1065,10 @@ function renderGames(all, behaviour) {
     gogWishlist: get(all, KEY_GOG_WISHLIST, null),
     ratings: get(all, KEY_RATINGS, {}),
     ratingsOn: behaviour.steamRatings !== false,
+    // Vos gouts (2.99.0) : le profil et les etiquettes deja lues, ou rien quand c'est coupe.
+    taste: behaviour.taste !== false ? readTasteState(get(all, KEY_TASTE, null)) : null,
   };
+  if (behaviour.taste !== false && !tasteAsked) { tasteAsked = true; tell('fgc-taste'); }
 
   document.getElementById('n-games').textContent = rows.length || '';
 
@@ -1215,6 +1231,8 @@ function tonightReason(r) {
 /* Le jeu montre n'a pas encore sa fiche Steam : le worker la lit tout de
    suite, une fois par ouverture du popup. */
 let tonightAsked = false;
+/* Vos gouts (2.99.0) : une demande de passage par ouverture ; le worker, lui, borne le rythme. */
+let tasteAsked = false;
 
 function tonightPrefs() {
   const p = ui.tonight && typeof ui.tonight === 'object' ? ui.tonight : {};
@@ -1234,10 +1252,15 @@ async function rerollTonight(all, { keepShown = true } = {}) {
   const prefs = tonightPrefs();
   const pile = tonightPile(all);
   const exclude = keepShown ? [...prefs.shown, prefs.key].filter(Boolean) : [];
-  const r = pickTonight(pile, { apps: (get(all, KEY_TONIGHT, {}) || {}).apps || {}, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, exclude });
+  const r = pickTonight(pile, { apps: (get(all, KEY_TONIGHT, {}) || {}).apps || {}, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, taste: tonightTaste(all), exclude });
   if (r.wrapped) tonightNote = t('tonightWrapped');
   await saveTonight({ key: r.pick ? r.pick.key : null, at: Date.now(), shown: r.wrapped ? [] : exclude.slice(-200) });
   renderTonight(await readAll());
+}
+
+/** Le profil de vos gouts pour departager le soir, ou rien quand c'est coupe. */
+function tonightTaste(all) {
+  return behaviourCache.taste !== false ? readTasteState(get(all, KEY_TASTE, null)) : null;
 }
 
 function tonightPile(all) {
@@ -1316,10 +1339,11 @@ function renderTonight(all) {
   const apps = (get(all, KEY_TONIGHT, {}) || {}).apps || {};
   let jeu = keptPick(prefs, pile, prefs, Date.now());
   let tire = null;
-  if (jeu) tire = pickTonight([jeu], { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop }).pick;
+  const gouts = tonightTaste(all);
+  if (jeu) tire = pickTonight([jeu], { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, taste: gouts }).pick;
   if (!tire) {
     // Rien de retenu (ou plus valable) : un tirage, retenu lui aussi.
-    const r = pickTonight(pile, { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, exclude: prefs.shown });
+    const r = pickTonight(pile, { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, taste: gouts, exclude: prefs.shown });
     tire = r.pick;
     jeu = tire;
     if (tire && tire.key !== prefs.key) saveTonight({ key: tire.key, at: Date.now() });
@@ -2691,6 +2715,7 @@ function renderNotifications(behaviour) {
   document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
   document.getElementById('steam-dlc').checked = behaviour.steamDlc !== false;
   document.getElementById('tonight-ratings').checked = behaviour.tonight !== false;
+  document.getElementById('taste-toggle').checked = behaviour.taste !== false;
   // La note Steam (2.78.0) : active sauf refus explicite.
   document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
@@ -3067,6 +3092,7 @@ document.getElementById('weekly-recap').addEventListener('change', (e) => writeB
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));
+document.getElementById('taste-toggle').addEventListener('change', (e) => writeBehaviour({ taste: e.target.checked }));
 for (const b of document.querySelectorAll('#tonight-section [data-time]')) {
   b.addEventListener('click', async () => { tonightNote = ''; await saveTonight({ time: b.dataset.time, key: null, shown: [] }); renderTonight(await readAll()); });
 }

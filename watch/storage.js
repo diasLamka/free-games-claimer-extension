@@ -267,6 +267,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    */
   tonight: true,
   /**
+   * « Vos gouts » (2.99.0) : les etiquettes des jeux que vous aimez et des
+   * offres en cours, lues sans cookie sur Steam, pour dire quelle offre vous
+   * ressemble. Coupe, rien n'est lu. Voir watch/taste.js.
+   */
+  taste: true,
+  /**
    * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
    * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
    * cookie. Voir watch/steam-ratings.js.

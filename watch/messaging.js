@@ -98,6 +98,7 @@ export const UI_COMMANDS = Object.freeze([
   /* « Ce soir je joue a... » (2.96.0) : le jeu montre n'a pas encore sa
      fiche Steam ; le worker la lit tout de suite. Pages seulement. */
   'fgc-tonight',
+  'fgc-taste',
   /* « Je suis de retour » (2.84.0) : le resume part tout de suite. */
   'fgc-vacation-back',
 ]);

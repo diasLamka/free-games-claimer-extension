@@ -2608,5 +2608,26 @@
   },
   "tagSecondChance": {
     "message": "2ª vez"
+  },
+  "tagForYou": {
+    "message": "Para ti"
+  },
+  "tasteLine": {
+    "message": "Cerca de tus gustos: $1."
+  },
+  "tasteLineBare": {
+    "message": "Cerca de tus gustos."
+  },
+  "tonightTaste": {
+    "message": "Va con tus gustos: $1"
+  },
+  "tonightTasteBare": {
+    "message": "Va con tus gustos"
+  },
+  "tasteLabel": {
+    "message": "Tus gustos"
+  },
+  "tasteHint": {
+    "message": "Detecta las ofertas que se parecen a los juegos que te gustan (los más jugados, terminados, descartados), según las etiquetas de los jugadores de Steam. Se lee sin cookie: solo números de juego."
   }
 }

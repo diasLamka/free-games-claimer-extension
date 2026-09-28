@@ -4,6 +4,31 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.0 -- 2026-09-28
+
+**Vos gouts : ce qui vous ressemble, en tete**
+
+- **Un profil de vos gouts**, tire de ce que vous faites deja : les jeux que
+  vous avez beaucoup joues (le miroir Steam), finis ou commences, et ceux que
+  vous avez abandonnes ou ecartes (« Pas pour moi »). Il retient les
+  etiquettes des joueurs Steam qui reviennent (Roguelike, Metroidvania,
+  Simulation...), les plus larges (« Jeu solo », « Independant ») comptant
+  moins. Sous trois jeux aimes, pas de profil : trois jeux ne sont pas des
+  gouts.
+- **« Pour vous »** sur les offres qui lui ressemblent ; la bulle dit de quoi :
+  « Proche de vos gouts : 2D, Roguelike, Metroidvania. » Mesure sur de vrais
+  jeux : un profil de Hades, Celeste, Hollow Knight et Slay the Spire reconnait
+  Dead Cells et laisse de cote Planet Zoo.
+- **La notification** d'un jeu annonce seul ajoute la meme ligne.
+- **« Ce soir je joue a... »** met devant un jeu de votre pile qui vous
+  ressemble, avec la raison : « Dans vos gouts : Roguelike, 2D ».
+- **Sans cookie, sans titre** : seulement des numeros de jeux vers Steam (cent
+  au plus par passage, toutes les six heures ; dix minutes quand une offre
+  vient d'arriver), puis le nom des etiquettes, au plus tous les deux mois.
+  Un interrupteur dans Reglages -> Magasins ; coupe, rien n'est lu.
+- Le profil suit la sauvegarde complete (des numeros et des poids, sans le
+  cache des jeux) : l'appli Android 1.14.0 le lit et fait la meme chose.
+
 ## 2.98.0 -- 2026-09-28
 
 **Une deuxieme chance, un jeu a plusieurs, et de quoi remettre a plus tard**

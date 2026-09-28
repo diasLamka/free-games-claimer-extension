@@ -1,0 +1,1311 @@
+{
+ "response": {
+  "store_items": [
+   {
+    "appid": 1145360,
+    "name": "Hades",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 42804,
+      "weight": 1051
+     },
+     {
+      "tagid": 3959,
+      "weight": 766
+     },
+     {
+      "tagid": 1646,
+      "weight": 748
+     },
+     {
+      "tagid": 492,
+      "weight": 735
+     },
+     {
+      "tagid": 16094,
+      "weight": 730
+     },
+     {
+      "tagid": 19,
+      "weight": 636
+     },
+     {
+      "tagid": 1716,
+      "weight": 620
+     },
+     {
+      "tagid": 4182,
+      "weight": 579
+     },
+     {
+      "tagid": 1756,
+      "weight": 555
+     },
+     {
+      "tagid": 1742,
+      "weight": 545
+     },
+     {
+      "tagid": 1720,
+      "weight": 511
+     },
+     {
+      "tagid": 122,
+      "weight": 500
+     },
+     {
+      "tagid": 4711,
+      "weight": 462
+     },
+     {
+      "tagid": 5851,
+      "weight": 360
+     },
+     {
+      "tagid": 4026,
+      "weight": 328
+     },
+     {
+      "tagid": 6815,
+      "weight": 239
+     },
+     {
+      "tagid": 4231,
+      "weight": 235
+     },
+     {
+      "tagid": 4166,
+      "weight": 231
+     },
+     {
+      "tagid": 1759,
+      "weight": 80
+     },
+     {
+      "tagid": 44868,
+      "weight": 80
+     }
+    ]
+   },
+   {
+    "appid": 504230,
+    "name": "Celeste",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 3877,
+      "weight": 851
+     },
+     {
+      "tagid": 4026,
+      "weight": 838
+     },
+     {
+      "tagid": 3964,
+      "weight": 829
+     },
+     {
+      "tagid": 1756,
+      "weight": 828
+     },
+     {
+      "tagid": 492,
+      "weight": 803
+     },
+     {
+      "tagid": 1625,
+      "weight": 730
+     },
+     {
+      "tagid": 5379,
+      "weight": 672
+     },
+     {
+      "tagid": 7208,
+      "weight": 584
+     },
+     {
+      "tagid": 4182,
+      "weight": 500
+     },
+     {
+      "tagid": 3871,
+      "weight": 489
+     },
+     {
+      "tagid": 1742,
+      "weight": 453
+     },
+     {
+      "tagid": 21,
+      "weight": 362
+     },
+     {
+      "tagid": 4726,
+      "weight": 355
+     },
+     {
+      "tagid": 44868,
+      "weight": 295
+     },
+     {
+      "tagid": 5537,
+      "weight": 293
+     },
+     {
+      "tagid": 4166,
+      "weight": 286
+     },
+     {
+      "tagid": 19,
+      "weight": 226
+     },
+     {
+      "tagid": 4004,
+      "weight": 203
+     },
+     {
+      "tagid": 3798,
+      "weight": 202
+     },
+     {
+      "tagid": 3834,
+      "weight": 190
+     }
+    ]
+   },
+   {
+    "appid": 367520,
+    "name": "Hollow Knight",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 1628,
+      "weight": 935
+     },
+     {
+      "tagid": 1625,
+      "weight": 700
+     },
+     {
+      "tagid": 29482,
+      "weight": 694
+     },
+     {
+      "tagid": 4026,
+      "weight": 687
+     },
+     {
+      "tagid": 1756,
+      "weight": 684
+     },
+     {
+      "tagid": 3871,
+      "weight": 681
+     },
+     {
+      "tagid": 492,
+      "weight": 677
+     },
+     {
+      "tagid": 4182,
+      "weight": 555
+     },
+     {
+      "tagid": 3834,
+      "weight": 526
+     },
+     {
+      "tagid": 4166,
+      "weight": 521
+     },
+     {
+      "tagid": 21,
+      "weight": 477
+     },
+     {
+      "tagid": 1742,
+      "weight": 468
+     },
+     {
+      "tagid": 6815,
+      "weight": 358
+     },
+     {
+      "tagid": 6971,
+      "weight": 355
+     },
+     {
+      "tagid": 19,
+      "weight": 342
+     },
+     {
+      "tagid": 4604,
+      "weight": 319
+     },
+     {
+      "tagid": 1695,
+      "weight": 300
+     },
+     {
+      "tagid": 4726,
+      "weight": 273
+     },
+     {
+      "tagid": 7481,
+      "weight": 224
+     },
+     {
+      "tagid": 3798,
+      "weight": 211
+     }
+    ]
+   },
+   {
+    "appid": 588650,
+    "name": "Dead Cells",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 21,
+      "weight": 621
+     },
+     {
+      "tagid": 1716,
+      "weight": 591
+     },
+     {
+      "tagid": 1628,
+      "weight": 588
+     },
+     {
+      "tagid": 3964,
+      "weight": 588
+     },
+     {
+      "tagid": 42804,
+      "weight": 587
+     },
+     {
+      "tagid": 3871,
+      "weight": 582
+     },
+     {
+      "tagid": 3959,
+      "weight": 562
+     },
+     {
+      "tagid": 29482,
+      "weight": 560
+     },
+     {
+      "tagid": 1646,
+      "weight": 545
+     },
+     {
+      "tagid": 4711,
+      "weight": 543
+     },
+     {
+      "tagid": 1625,
+      "weight": 539
+     },
+     {
+      "tagid": 4182,
+      "weight": 538
+     },
+     {
+      "tagid": 19,
+      "weight": 528
+     },
+     {
+      "tagid": 4604,
+      "weight": 517
+     },
+     {
+      "tagid": 4166,
+      "weight": 514
+     },
+     {
+      "tagid": 5125,
+      "weight": 512
+     },
+     {
+      "tagid": 4136,
+      "weight": 505
+     },
+     {
+      "tagid": 4026,
+      "weight": 291
+     },
+     {
+      "tagid": 492,
+      "weight": 203
+     },
+     {
+      "tagid": 1756,
+      "weight": 76
+     }
+    ]
+   },
+   {
+    "appid": 646570,
+    "name": "Slay the Spire",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 1091588,
+      "weight": 1259
+     },
+     {
+      "tagid": 1666,
+      "weight": 1150
+     },
+     {
+      "tagid": 791774,
+      "weight": 1105
+     },
+     {
+      "tagid": 1716,
+      "weight": 1050
+     },
+     {
+      "tagid": 32322,
+      "weight": 826
+     },
+     {
+      "tagid": 1677,
+      "weight": 753
+     },
+     {
+      "tagid": 9,
+      "weight": 595
+     },
+     {
+      "tagid": 4182,
+      "weight": 520
+     },
+     {
+      "tagid": 3959,
+      "weight": 487
+     },
+     {
+      "tagid": 4711,
+      "weight": 413
+     },
+     {
+      "tagid": 492,
+      "weight": 392
+     },
+     {
+      "tagid": 4026,
+      "weight": 272
+     },
+     {
+      "tagid": 1720,
+      "weight": 250
+     },
+     {
+      "tagid": 11123,
+      "weight": 203
+     },
+     {
+      "tagid": 122,
+      "weight": 189
+     },
+     {
+      "tagid": 3871,
+      "weight": 125
+     },
+     {
+      "tagid": 1684,
+      "weight": 111
+     },
+     {
+      "tagid": 5125,
+      "weight": 110
+     },
+     {
+      "tagid": 1756,
+      "weight": 104
+     },
+     {
+      "tagid": 597,
+      "weight": 74
+     }
+    ]
+   },
+   {
+    "appid": 255710,
+    "name": "Cities: Skylines",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 4328,
+      "weight": 1539
+     },
+     {
+      "tagid": 599,
+      "weight": 1109
+     },
+     {
+      "tagid": 1643,
+      "weight": 939
+     },
+     {
+      "tagid": 12472,
+      "weight": 780
+     },
+     {
+      "tagid": 9,
+      "weight": 715
+     },
+     {
+      "tagid": 3810,
+      "weight": 664
+     },
+     {
+      "tagid": 4182,
+      "weight": 636
+     },
+     {
+      "tagid": 4695,
+      "weight": 551
+     },
+     {
+      "tagid": 1669,
+      "weight": 544
+     },
+     {
+      "tagid": 8945,
+      "weight": 434
+     },
+     {
+      "tagid": 5348,
+      "weight": 410
+     },
+     {
+      "tagid": 4175,
+      "weight": 316
+     },
+     {
+      "tagid": 4711,
+      "weight": 245
+     },
+     {
+      "tagid": 597,
+      "weight": 230
+     },
+     {
+      "tagid": 5673,
+      "weight": 201
+     },
+     {
+      "tagid": 7107,
+      "weight": 194
+     },
+     {
+      "tagid": 5350,
+      "weight": 183
+     },
+     {
+      "tagid": 1756,
+      "weight": 153
+     },
+     {
+      "tagid": 4136,
+      "weight": 102
+     },
+     {
+      "tagid": 19,
+      "weight": 44
+     }
+    ]
+   },
+   {
+    "appid": 227300,
+    "name": "Euro Truck Simulator 2",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 1644,
+      "weight": 694
+     },
+     {
+      "tagid": 10383,
+      "weight": 674
+     },
+     {
+      "tagid": 599,
+      "weight": 672
+     },
+     {
+      "tagid": 1695,
+      "weight": 669
+     },
+     {
+      "tagid": 1100687,
+      "weight": 658
+     },
+     {
+      "tagid": 4175,
+      "weight": 657
+     },
+     {
+      "tagid": 1669,
+      "weight": 649
+     },
+     {
+      "tagid": 1654,
+      "weight": 643
+     },
+     {
+      "tagid": 3834,
+      "weight": 632
+     },
+     {
+      "tagid": 4695,
+      "weight": 630
+     },
+     {
+      "tagid": 9204,
+      "weight": 627
+     },
+     {
+      "tagid": 12472,
+      "weight": 627
+     },
+     {
+      "tagid": 4166,
+      "weight": 625
+     },
+     {
+      "tagid": 3859,
+      "weight": 292
+     },
+     {
+      "tagid": 7481,
+      "weight": 216
+     },
+     {
+      "tagid": 5350,
+      "weight": 207
+     },
+     {
+      "tagid": 1697,
+      "weight": 206
+     },
+     {
+      "tagid": 21,
+      "weight": 205
+     },
+     {
+      "tagid": 597,
+      "weight": 204
+     },
+     {
+      "tagid": 492,
+      "weight": 202
+     }
+    ]
+   },
+   {
+    "appid": 413150,
+    "name": "Stardew Valley",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 87918,
+      "weight": 859
+     },
+     {
+      "tagid": 3964,
+      "weight": 788
+     },
+     {
+      "tagid": 3859,
+      "weight": 780
+     },
+     {
+      "tagid": 10235,
+      "weight": 768
+     },
+     {
+      "tagid": 122,
+      "weight": 685
+     },
+     {
+      "tagid": 1654,
+      "weight": 684
+     },
+     {
+      "tagid": 599,
+      "weight": 555
+     },
+     {
+      "tagid": 22602,
+      "weight": 549
+     },
+     {
+      "tagid": 1702,
+      "weight": 472
+     },
+     {
+      "tagid": 3810,
+      "weight": 471
+     },
+     {
+      "tagid": 492,
+      "weight": 471
+     },
+     {
+      "tagid": 1643,
+      "weight": 386
+     },
+     {
+      "tagid": 1695,
+      "weight": 364
+     },
+     {
+      "tagid": 597,
+      "weight": 364
+     },
+     {
+      "tagid": 4182,
+      "weight": 355
+     },
+     {
+      "tagid": 3871,
+      "weight": 317
+     },
+     {
+      "tagid": 9551,
+      "weight": 315
+     },
+     {
+      "tagid": 4726,
+      "weight": 300
+     },
+     {
+      "tagid": 1756,
+      "weight": 266
+     },
+     {
+      "tagid": 15564,
+      "weight": 240
+     }
+    ]
+   },
+   {
+    "appid": 289070,
+    "name": "Sid Meier’s Civilization® VI",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 9,
+      "weight": 1543
+     },
+     {
+      "tagid": 1741,
+      "weight": 1113
+     },
+     {
+      "tagid": 3859,
+      "weight": 761
+     },
+     {
+      "tagid": 3987,
+      "weight": 741
+     },
+     {
+      "tagid": 4364,
+      "weight": 616
+     },
+     {
+      "tagid": 4182,
+      "weight": 610
+     },
+     {
+      "tagid": 1677,
+      "weight": 580
+     },
+     {
+      "tagid": 1670,
+      "weight": 512
+     },
+     {
+      "tagid": 4328,
+      "weight": 501
+     },
+     {
+      "tagid": 1678,
+      "weight": 488
+     },
+     {
+      "tagid": 599,
+      "weight": 476
+     },
+     {
+      "tagid": 1708,
+      "weight": 360
+     },
+     {
+      "tagid": 12472,
+      "weight": 289
+     },
+     {
+      "tagid": 1643,
+      "weight": 284
+     },
+     {
+      "tagid": 3843,
+      "weight": 214
+     },
+     {
+      "tagid": 1669,
+      "weight": 213
+     },
+     {
+      "tagid": 1756,
+      "weight": 210
+     },
+     {
+      "tagid": 1685,
+      "weight": 204
+     },
+     {
+      "tagid": 1717,
+      "weight": 182
+     },
+     {
+      "tagid": 4166,
+      "weight": 92
+     }
+    ]
+   },
+   {
+    "appid": 1794680,
+    "name": "Vampire Survivors",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 42804,
+      "weight": 1133
+     },
+     {
+      "tagid": 4885,
+      "weight": 985
+     },
+     {
+      "tagid": 3959,
+      "weight": 807
+     },
+     {
+      "tagid": 3964,
+      "weight": 772
+     },
+     {
+      "tagid": 12686,
+      "weight": 673
+     },
+     {
+      "tagid": 3871,
+      "weight": 591
+     },
+     {
+      "tagid": 492,
+      "weight": 590
+     },
+     {
+      "tagid": 4182,
+      "weight": 537
+     },
+     {
+      "tagid": 597,
+      "weight": 432
+     },
+     {
+      "tagid": 1716,
+      "weight": 430
+     },
+     {
+      "tagid": 1773,
+      "weight": 428
+     },
+     {
+      "tagid": 19,
+      "weight": 388
+     },
+     {
+      "tagid": 3841,
+      "weight": 335
+     },
+     {
+      "tagid": 122,
+      "weight": 300
+     },
+     {
+      "tagid": 7481,
+      "weight": 297
+     },
+     {
+      "tagid": 5154,
+      "weight": 292
+     },
+     {
+      "tagid": 4004,
+      "weight": 291
+     },
+     {
+      "tagid": 4604,
+      "weight": 277
+     },
+     {
+      "tagid": 4231,
+      "weight": 244
+     },
+     {
+      "tagid": 1685,
+      "weight": 187
+     }
+    ]
+   },
+   {
+    "appid": 250900,
+    "name": "The Binding of Isaac: Rebirth",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 42804,
+      "weight": 1080
+     },
+     {
+      "tagid": 1716,
+      "weight": 978
+     },
+     {
+      "tagid": 492,
+      "weight": 838
+     },
+     {
+      "tagid": 4711,
+      "weight": 804
+     },
+     {
+      "tagid": 4026,
+      "weight": 721
+     },
+     {
+      "tagid": 3964,
+      "weight": 598
+     },
+     {
+      "tagid": 1720,
+      "weight": 513
+     },
+     {
+      "tagid": 1756,
+      "weight": 464
+     },
+     {
+      "tagid": 4182,
+      "weight": 454
+     },
+     {
+      "tagid": 4342,
+      "weight": 440
+     },
+     {
+      "tagid": 3871,
+      "weight": 378
+     },
+     {
+      "tagid": 3841,
+      "weight": 359
+     },
+     {
+      "tagid": 4345,
+      "weight": 349
+     },
+     {
+      "tagid": 5708,
+      "weight": 337
+     },
+     {
+      "tagid": 3959,
+      "weight": 322
+     },
+     {
+      "tagid": 5125,
+      "weight": 320
+     },
+     {
+      "tagid": 1685,
+      "weight": 279
+     },
+     {
+      "tagid": 4166,
+      "weight": 265
+     },
+     {
+      "tagid": 19,
+      "weight": 247
+     },
+     {
+      "tagid": 1667,
+      "weight": 243
+     }
+    ]
+   },
+   {
+    "appid": 782330,
+    "name": "DOOM Eternal",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 4345,
+      "weight": 884
+     },
+     {
+      "tagid": 1663,
+      "weight": 864
+     },
+     {
+      "tagid": 19,
+      "weight": 832
+     },
+     {
+      "tagid": 1756,
+      "weight": 784
+     },
+     {
+      "tagid": 1734,
+      "weight": 746
+     },
+     {
+      "tagid": 4667,
+      "weight": 665
+     },
+     {
+      "tagid": 9541,
+      "weight": 658
+     },
+     {
+      "tagid": 1774,
+      "weight": 617
+     },
+     {
+      "tagid": 3839,
+      "weight": 576
+     },
+     {
+      "tagid": 4182,
+      "weight": 541
+     },
+     {
+      "tagid": 3859,
+      "weight": 459
+     },
+     {
+      "tagid": 3942,
+      "weight": 364
+     },
+     {
+      "tagid": 3835,
+      "weight": 336
+     },
+     {
+      "tagid": 4166,
+      "weight": 331
+     },
+     {
+      "tagid": 4026,
+      "weight": 301
+     },
+     {
+      "tagid": 1742,
+      "weight": 296
+     },
+     {
+      "tagid": 21,
+      "weight": 257
+     },
+     {
+      "tagid": 1667,
+      "weight": 215
+     },
+     {
+      "tagid": 1023537,
+      "weight": 157
+     },
+     {
+      "tagid": 5350,
+      "weight": 109
+     }
+    ]
+   },
+   {
+    "appid": 1245620,
+    "name": "ELDEN RING",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 29482,
+      "weight": 1079
+     },
+     {
+      "tagid": 1695,
+      "weight": 790
+     },
+     {
+      "tagid": 4604,
+      "weight": 753
+     },
+     {
+      "tagid": 122,
+      "weight": 720
+     },
+     {
+      "tagid": 4026,
+      "weight": 705
+     },
+     {
+      "tagid": 4231,
+      "weight": 548
+     },
+     {
+      "tagid": 3859,
+      "weight": 523
+     },
+     {
+      "tagid": 1697,
+      "weight": 510
+     },
+     {
+      "tagid": 1684,
+      "weight": 489
+     },
+     {
+      "tagid": 4182,
+      "weight": 475
+     },
+     {
+      "tagid": 3843,
+      "weight": 456
+     },
+     {
+      "tagid": 19,
+      "weight": 429
+     },
+     {
+      "tagid": 1685,
+      "weight": 368
+     },
+     {
+      "tagid": 4166,
+      "weight": 363
+     },
+     {
+      "tagid": 1756,
+      "weight": 353
+     },
+     {
+      "tagid": 1775,
+      "weight": 348
+     },
+     {
+      "tagid": 4667,
+      "weight": 342
+     },
+     {
+      "tagid": 4191,
+      "weight": 308
+     },
+     {
+      "tagid": 4747,
+      "weight": 226
+     },
+     {
+      "tagid": 5350,
+      "weight": 204
+     }
+    ]
+   },
+   {
+    "appid": 620,
+    "name": "Portal 2",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 4182,
+      "weight": 603
+     },
+     {
+      "tagid": 1625,
+      "weight": 588
+     },
+     {
+      "tagid": 1664,
+      "weight": 586
+     },
+     {
+      "tagid": 3839,
+      "weight": 560
+     },
+     {
+      "tagid": 5923,
+      "weight": 558
+     },
+     {
+      "tagid": 1742,
+      "weight": 555
+     },
+     {
+      "tagid": 5537,
+      "weight": 549
+     },
+     {
+      "tagid": 4136,
+      "weight": 541
+     },
+     {
+      "tagid": 7208,
+      "weight": 538
+     },
+     {
+      "tagid": 5395,
+      "weight": 532
+     },
+     {
+      "tagid": 1685,
+      "weight": 517
+     },
+     {
+      "tagid": 4106,
+      "weight": 517
+     },
+     {
+      "tagid": 19,
+      "weight": 512
+     },
+     {
+      "tagid": 1663,
+      "weight": 512
+     },
+     {
+      "tagid": 3968,
+      "weight": 403
+     },
+     {
+      "tagid": 3942,
+      "weight": 392
+     },
+     {
+      "tagid": 8122,
+      "weight": 386
+     },
+     {
+      "tagid": 5794,
+      "weight": 382
+     },
+     {
+      "tagid": 1719,
+      "weight": 381
+     },
+     {
+      "tagid": 4166,
+      "weight": 378
+     }
+    ]
+   },
+   {
+    "appid": 703080,
+    "name": "Planet Zoo",
+    "success": 1,
+    "tags": [
+     {
+      "tagid": 12472,
+      "weight": 900
+     },
+     {
+      "tagid": 46348,
+      "weight": 896
+     },
+     {
+      "tagid": 599,
+      "weight": 847
+     },
+     {
+      "tagid": 1643,
+      "weight": 734
+     },
+     {
+      "tagid": 3810,
+      "weight": 650
+     },
+     {
+      "tagid": 30358,
+      "weight": 619
+     },
+     {
+      "tagid": 4328,
+      "weight": 534
+     },
+     {
+      "tagid": 4695,
+      "weight": 495
+     },
+     {
+      "tagid": 4182,
+      "weight": 468
+     },
+     {
+      "tagid": 4175,
+      "weight": 466
+     },
+     {
+      "tagid": 3859,
+      "weight": 428
+     },
+     {
+      "tagid": 5350,
+      "weight": 416
+     },
+     {
+      "tagid": 4726,
+      "weight": 403
+     },
+     {
+      "tagid": 8945,
+      "weight": 395
+     },
+     {
+      "tagid": 9,
+      "weight": 382
+     },
+     {
+      "tagid": 1756,
+      "weight": 355
+     },
+     {
+      "tagid": 1654,
+      "weight": 290
+     },
+     {
+      "tagid": 1695,
+      "weight": 254
+     },
+     {
+      "tagid": 9626,
+      "weight": 233
+     },
+     {
+      "tagid": 597,
+      "weight": 225
+     }
+    ]
+   }
+  ]
+ }
+}

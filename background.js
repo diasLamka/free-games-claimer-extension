@@ -45,7 +45,7 @@ import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
 } from './watch/session.js';
 import { senderKind, messageAllowed, isOurs, hostMatchers, relayRequest } from './watch/messaging.js';
-import { STORE_LABELS, webUrl } from './watch/offer.js';
+import { STORE_LABELS, STATES, isExpired, webUrl } from './watch/offer.js';
 import { KEY_JOURNAL, makeEntry, appendTo, clearJournal } from './watch/journal.js';
 import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
@@ -75,12 +75,13 @@ import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
+import { KEY_TASTE, MIN_LIKED as TASTE_MIN_LIKED, fetchGames as fetchTasteGames, readTasteState, refreshTaste, signalsFrom, tagLanguage, tastePassDue, tasteFor, tasteNames } from './watch/taste.js';
 import { KEY_TONIGHT, buildPile, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
 import { KEY_PLAYTIME } from './watch/playtime.js';
 import { KEY_ANNOTATIONS } from './watch/annotations.js';
 import { runAutoBackup } from './watch/auto-backup.js';
 import {
-  KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, ratingLine, refreshRatings,
+  KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, steamAppId, ratingLine, refreshRatings,
   tone as ratingTone,
 } from './watch/steam-ratings.js';
 import { openOffers } from './watch/catalog.js';
@@ -402,6 +403,8 @@ async function startCycle(origine, options = {}) {
         fetch: (url, init) => fetch(url, init),
         // La note Steam d'un jeu annonce seul (2.78.0), cinq secondes au plus.
         rateOffer: (offer) => rateOne(offer),
+        // Vos gouts (2.99.0) : de quoi un jeu annonce seul se rapproche de ce que vous aimez.
+        tasteOffer: (offer) => tasteOne(offer),
         notify: async ({ title, text, id, url, kind, catalogKey, image }) => {
           await showNotice({ id, title, message: text, url, kind, catalogKey, image });
         },
@@ -435,6 +438,7 @@ async function startCycle(origine, options = {}) {
         await maybeSteamDlc(Date.now());
         await maybeOdds(Date.now());
         await maybeTonight(Date.now());
+        await maybeTaste(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
       }
@@ -726,6 +730,74 @@ async function rateOne(offer) {
     const { [KEY_RATINGS]: notes } = await readKeys(api, KEY_RATINGS);
     return ratingFor(notes, offer);
   } catch { return null; }
+}
+
+/**
+ * Les noms des etiquettes qui rapprochent un jeu de vos gouts (2.99.0), ou
+ * null. Cinq secondes au plus : si le jeu n'a pas encore ses etiquettes, on
+ * les lit tout de suite -- une notification ne les attend pas plus longtemps.
+ */
+async function tasteOne(offer) {
+  try {
+    const settings = await readSettings(api);
+    if (settings.taste === false) return null;
+    const raw = await readKeys(api, [KEY_TASTE, KEY_RATINGS, KEY_COUNTRY]);
+    const etat = readTasteState(raw[KEY_TASTE]);
+    if (!etat.profile) return null;
+    const appid = steamAppId(offer) || (ratingFor(raw[KEY_RATINGS], offer) || {}).appid || null;
+    if (!appid) return null;
+    let courant = etat;
+    if (!etat.games[appid]) {
+      const lus = await Promise.race([
+        fetchTasteGames((u, i) => fetch(u, i), [appid], { now: Date.now(), country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR' }),
+        new Promise((fin) => setTimeout(() => fin(null), 5000)),
+      ]);
+      if (!lus) return null;
+      courant = { ...etat, games: { ...etat.games, ...lus } };
+      // Relu juste avant d'ecrire : le passage de fond a pu avancer entre-temps.
+      const frais = readTasteState((await readKeys(api, KEY_TASTE))[KEY_TASTE]);
+      await write(api, { [KEY_TASTE]: { ...frais, games: { ...frais.games, ...lus } } });
+    }
+    const r = tasteFor(courant, appid);
+    return r ? tasteNames(courant, r.top) : null;
+  } catch { return null; }
+}
+
+/**
+ * Vos gouts (2.99.0), apres chaque cycle : les etiquettes des jeux que vous
+ * aimez (ou ecartez) et des offres en cours, deux lots de cinquante au plus,
+ * une fois toutes les six heures. Sans cookie. Voir watch/taste.js.
+ */
+let tasteRunning = null;
+function maybeTaste(now = Date.now()) {
+  if (tasteRunning) return tasteRunning;
+  tasteRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.taste === false) return null;
+    const raw = await readKeys(api, [KEY_TASTE, KEY_COLLECTION_LOOKUP, KEY_LIBRARY, KEY_PLAYTIME, KEY_ANNOTATIONS, KEY_COUNTRY, KEYS.OFFERS, KEY_RATINGS]);
+    const signals = signalsFrom({
+      playtime: (raw[KEY_PLAYTIME] || {}).games || null,
+      annotations: raw[KEY_ANNOTATIONS] || {},
+      collection: raw[KEY_COLLECTION_LOOKUP] || null,
+      library: raw[KEY_LIBRARY] || {},
+    });
+    const wanted = Object.values(raw[KEYS.OFFERS] || {})
+      .filter((o) => o && o.state !== STATES.EXPIRED && !isExpired(o, now))
+      .map((o) => steamAppId(o) || (ratingFor(raw[KEY_RATINGS], o) || {}).appid || null)
+      .filter(Boolean);
+    if (!tastePassDue(raw[KEY_TASTE], now, wanted)) return null;
+    // Rien a comparer, et rien a apprendre : pas de requete.
+    if (signals.filter((x) => x.s > 0).length < TASTE_MIN_LIKED && !readTasteState(raw[KEY_TASTE]).profile) return null;
+    const next = await refreshTaste({
+      fetch: (u, i) => fetch(u, i), signals, wanted, state: raw[KEY_TASTE], now,
+      country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR', lang: tagLanguage(currentLocale()),
+    });
+    await write(api, { [KEY_TASTE]: next });
+    return next;
+  })()
+    .catch((e) => record('warn', 'vos gouts : lecture Steam impossible', e))
+    .finally(() => { tasteRunning = null; });
+  return tasteRunning;
 }
 
 /**
@@ -1892,6 +1964,13 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     ensureCovers(titres)
       .then(sendResponse)
       .catch((e) => { record('warn', 'jaquettes impossibles', e); sendResponse({ asked: 0, got: 0 }); });
+    return true;
+  }
+
+  if (msg.type === 'fgc-taste') {
+    maybeTaste(Date.now())
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
     return true;
   }
 

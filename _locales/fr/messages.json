@@ -2608,5 +2608,26 @@
   },
   "tagSecondChance": {
     "message": "2ᵉ chance"
+  },
+  "tagForYou": {
+    "message": "Pour vous"
+  },
+  "tasteLine": {
+    "message": "Proche de vos goûts : $1."
+  },
+  "tasteLineBare": {
+    "message": "Proche de vos goûts."
+  },
+  "tonightTaste": {
+    "message": "Dans vos goûts : $1"
+  },
+  "tonightTasteBare": {
+    "message": "Dans vos goûts"
+  },
+  "tasteLabel": {
+    "message": "Vos goûts"
+  },
+  "tasteHint": {
+    "message": "Repère les offres qui ressemblent aux jeux que vous aimez (les plus joués, finis, écartés), d'après les étiquettes des joueurs Steam. Lu sans cookie : seulement des numéros de jeux."
   }
 }

@@ -2608,5 +2608,26 @@
   },
   "tagSecondChance": {
     "message": "2nd chance"
+  },
+  "tagForYou": {
+    "message": "For you"
+  },
+  "tasteLine": {
+    "message": "Close to your taste: $1."
+  },
+  "tasteLineBare": {
+    "message": "Close to your taste."
+  },
+  "tonightTaste": {
+    "message": "Your kind of game: $1"
+  },
+  "tonightTasteBare": {
+    "message": "Your kind of game"
+  },
+  "tasteLabel": {
+    "message": "Your taste"
+  },
+  "tasteHint": {
+    "message": "Spots the offers that resemble the games you like (most played, finished, set aside), from Steam players' tags. Read without a cookie: only game numbers."
   }
 }
