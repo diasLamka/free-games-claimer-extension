@@ -5,6 +5,7 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.SourceStatus
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.notify.Digest
 import io.github.diaslamka.freegames.notify.Notifier
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.EpicMobileSource
@@ -20,6 +21,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.time.ZoneId
 import java.util.Locale
 
 /**
@@ -105,8 +107,11 @@ object Watcher {
         }
 
         if (after.settings.notifyNew && fresh.isNotEmpty()) {
+            // Resume du jour (1.13.0) : ce qui n'est ni souhaite ni une deuxieme chance attend l'heure du resume.
+            val plan = Digest.split(fresh, after, now, firstRun)
+            if (plan.held.isNotEmpty()) store.update { st -> st.copy(digestHeld = st.digestHeld + plan.held.associate { it.key to now }) }
             // Ce qu'on attendait d'abord, puis la deuxieme chance (1.12.0), puis le reste.
-            val ordered = fresh.sortedByDescending { (if (Rules.wished(it, after)) 2 else 0) + (if (Rules.secondChance(it, after, now) != null) 1 else 0) }
+            val ordered = plan.now.sortedByDescending { (if (Rules.wished(it, after)) 2 else 0) + (if (Rules.secondChance(it, after, now) != null) 1 else 0) }
             // Une deuxieme chance ne se noie pas dans « 5 jeux gratuits » : elle est annoncee a part, au premier lancement pres.
             val chances = if (firstRun) emptyList() else ordered.filter { Rules.secondChance(it, after, now) != null }.take(3)
             chances.forEach { Notifier.newGame(context, it, after) }
@@ -123,6 +128,11 @@ object Watcher {
         io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, now)
         // « Plus tard » (1.12.0) : ce dont le rappel est venu, meme si l'alarme n'a pas survecu a un redemarrage.
         io.github.diaslamka.freegames.notify.Snooze.ring(context, now)
+        // Le resume du jour (1.13.0) : envoye s'il est du, puis reprogramme pour la prochaine heure.
+        Digest.ring(context, now)
+        Graph.store.value.settings.digestHour.takeIf { Digest.enabled(it) }?.let {
+            Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
+        }
         refreshRatings(now)
         refreshOdds(now)
         refreshTonight(now)

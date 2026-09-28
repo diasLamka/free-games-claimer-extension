@@ -71,6 +71,10 @@
     <string name="set_steam">Steam (opción)</string>
     <string name="set_steam_hint">Desactivado por defecto: Steam prohíbe la automatización en su acuerdo de suscriptor.</string>
     <string name="set_frequency">Comprobar cada</string>
+    <string name="set_digest">Un solo resumen al día</string>
+    <string name="digest_off">No, según llegan</string>
+    <string name="every_hours_at">a las %1$d h</string>
+    <string name="set_digest_hint">Una sola notificación reúne los juegos nuevos del día. Los deseados y las segundas oportunidades suenan enseguida.</string>
     <string name="every_hours">%1$d h</string>
     <string name="set_country">País de la tienda</string>
     <string name="set_notify_new">Avisar de nuevos juegos gratis</string>
@@ -314,6 +318,11 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
         <item quantity="one">%d juego gratis ahora</item>
         <item quantity="other">%d juegos gratis ahora</item>
         <item quantity="many">%d juegos gratis ahora</item>
+    </plurals>
+    <plurals name="notif_digest_title">
+        <item quantity="one">Resumen del día: %d juego gratis</item>
+        <item quantity="other">Resumen del día: %d juegos gratis</item>
+        <item quantity="many">Resumen del día: %d juegos gratis</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d juego por conseguir</item>

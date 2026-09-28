@@ -172,6 +172,13 @@ data class Settings(
     val steamRatings: Boolean = true,
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */
     val tonight: Boolean = true,
+    /**
+     * « Resume du jour » (1.13.0) : l'heure (0 a 23) a laquelle arrive UNE
+     * notification qui rassemble les nouveaux jeux du jour, ou -1 pour les
+     * recevoir au fil de l'eau. Les souhaits et les deuxiemes chances, eux,
+     * passent tout de suite.
+     */
+    val digestHour: Int = -1,
     val onboarded: Boolean = false,
 )
 
@@ -236,6 +243,8 @@ data class AppState(
     val alarmed: Map<String, Long> = emptyMap(),
     /** « Plus tard » (1.12.0) : offre -> heure du rappel. L'etat, pas l'alarme : Android efface les alarmes au redemarrage. */
     val snoozed: Map<String, Long> = emptyMap(),
+    /** « Resume du jour » (1.13.0) : offre -> quand on l'a mise de cote pour le resume. */
+    val digestHeld: Map<String, Long> = emptyMap(),
     /** « Attends, il sera offert » (1.7.0) : les passages vus, par titre normalise. */
     val passes: Map<String, List<Seen>> = emptyMap(),
     /** Les editeurs qui offrent, par nom normalise. */

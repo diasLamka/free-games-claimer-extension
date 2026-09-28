@@ -34,6 +34,13 @@ genere : voir `build/build.mjs`.
   variable non declaree.
 - La ligne d'informations des cartes passe a la ligne au lieu de deborder :
   avec l'etiquette en plus, le compte a rebours sortait de la carte a 328 px.
+- **Appli Android 1.13.0 : un seul resume par jour.** Un reglage (8 h, 12 h,
+  18 h ou 20 h) rassemble les nouveaux jeux du jour dans UNE notification, a
+  l'heure choisie -- comme le mode resume de l'extension. Les jeux souhaites
+  et les deuxiemes chances sonnent tout de suite, comme le rappel du dernier
+  jour, la derniere chance et « Plus tard » : attendre les ferait rater. Un
+  jeu pris ou fini entre-temps ne figure pas au resume, et couper le reglage
+  ne perd rien : ce qui etait retenu part au passage suivant.
 
 ## 2.97.0 -- 2026-09-27
 

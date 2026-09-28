@@ -40,6 +40,7 @@ import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.notify.Digest
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
 import androidx.compose.ui.graphics.Color
@@ -117,6 +118,16 @@ fun SettingsScreen(
                         s.country,
                     ) { v -> onSettings { it.copy(country = v) } }
                     Toggle(stringResource(R.string.set_notify_new), null, s.notifyNew) { v -> onSettings { it.copy(notifyNew = v) } }
+                    if (s.notifyNew) {
+                        Choice(
+                            stringResource(R.string.set_digest),
+                            listOf(Digest.OFF to stringResource(R.string.digest_off)) + Digest.HOURS.map { it to stringResource(R.string.every_hours_at, it) },
+                            s.digestHour,
+                        ) { v -> onSettings { it.copy(digestHour = v) } }
+                        if (Digest.enabled(s.digestHour)) {
+                            Text(stringResource(R.string.set_digest_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), modifier = Modifier.padding(bottom = 6.dp))
+                        }
+                    }
                     Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
                     Toggle(stringResource(R.string.set_last_chance), stringResource(R.string.set_last_chance_hint), s.lastChance) { v ->
                         if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }

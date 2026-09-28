@@ -74,6 +74,10 @@ S = {
  'set_steam': ('Steam (option)', 'Steam (option)', 'Steam (Option)', 'Steam (opción)'),
  'set_steam_hint': ('Off by default: Steam forbids automation in its subscriber agreement.', "Coupé par défaut : Steam interdit l'automatisation dans son contrat d'abonné.", 'Standardmäßig aus: Steam verbietet Automatisierung in seinem Abonnementvertrag.', 'Desactivado por defecto: Steam prohíbe la automatización en su acuerdo de suscriptor.'),
  'set_frequency': ('Check every', 'Vérifier toutes les', 'Prüfen alle', 'Comprobar cada'),
+ 'set_digest': ('One daily summary', 'Un seul résumé par jour', 'Eine Tageszusammenfassung', 'Un solo resumen al día'),
+ 'digest_off': ('No, as they come', 'Non, au fil de l\'eau', 'Nein, sofort', 'No, según llegan'),
+ 'every_hours_at': ('at %1$d:00', 'à %1$d h', 'um %1$d Uhr', 'a las %1$d h'),
+ 'set_digest_hint': ('One notification gathers the day\'s new games. Wished games and second chances still ring right away.', 'Une seule notification rassemble les nouveaux jeux du jour. Les jeux souhaités et les deuxièmes chances sonnent tout de suite.', 'Eine Benachrichtigung fasst die neuen Spiele des Tages zusammen. Gewünschte Spiele und zweite Chancen kommen weiterhin sofort.', 'Una sola notificación reúne los juegos nuevos del día. Los deseados y las segundas oportunidades suenan enseguida.'),
  'every_hours': ('%1$d h', '%1$d h', '%1$d Std.', '%1$d h'),
  'set_country': ('Store country', 'Pays de la boutique', 'Shop-Land', 'País de la tienda'),
  'set_notify_new': ('Notify new free games', 'Prévenir des nouveaux jeux gratuits', 'Neue Gratisspiele melden', 'Avisar de nuevos juegos gratis'),
@@ -304,6 +308,7 @@ P = {
  'games_count': (('%d game', '%d games'), ('%d jeu', '%d jeux'), ('%d Spiel', '%d Spiele'), ('%d juego', '%d juegos')),
  'notif_claimed_title': (('%d game claimed', '%d games claimed'), ('%d jeu récupéré', '%d jeux récupérés'), ('%d Spiel geholt', '%d Spiele geholt'), ('%d juego conseguido', '%d juegos conseguidos')),
  'notif_summary_title': (('%d free game right now', '%d free games right now'), ('%d jeu gratuit en ce moment', '%d jeux gratuits en ce moment'), ('%d Gratisspiel gerade', '%d Gratisspiele gerade'), ('%d juego gratis ahora', '%d juegos gratis ahora')),
+ 'notif_digest_title': (('Today\'s summary: %d free game', 'Today\'s summary: %d free games'), ('Résumé du jour : %d jeu gratuit', 'Résumé du jour : %d jeux gratuits'), ('Tageszusammenfassung: %d Gratisspiel', 'Tageszusammenfassung: %d Gratisspiele'), ('Resumen del día: %d juego gratis', 'Resumen del día: %d juegos gratis')),
  'pending_claims': (('%d game to claim', '%d games to claim'), ('%d jeu à récupérer', '%d jeux à récupérer'), ('%d Spiel zu holen', '%d Spiele zu holen'), ('%d juego por conseguir', '%d juegos por conseguir')),
  'wish_imported': (('+ %d wish imported from the extension (Steam, GOG)', '+ %d wishes imported from the extension (Steam, GOG)'), ("+ %d souhait importé de l'extension (Steam, GOG)", "+ %d souhaits importés de l'extension (Steam, GOG)"), ('+ %d Wunsch aus der Erweiterung (Steam, GOG)', '+ %d Wünsche aus der Erweiterung (Steam, GOG)'), ('+ %d deseo importado de la extensión (Steam, GOG)', '+ %d deseos importados de la extensión (Steam, GOG)')),
 }

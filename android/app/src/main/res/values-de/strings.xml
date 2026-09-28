@@ -71,6 +71,10 @@
     <string name="set_steam">Steam (Option)</string>
     <string name="set_steam_hint">Standardmäßig aus: Steam verbietet Automatisierung in seinem Abonnementvertrag.</string>
     <string name="set_frequency">Prüfen alle</string>
+    <string name="set_digest">Eine Tageszusammenfassung</string>
+    <string name="digest_off">Nein, sofort</string>
+    <string name="every_hours_at">um %1$d Uhr</string>
+    <string name="set_digest_hint">Eine Benachrichtigung fasst die neuen Spiele des Tages zusammen. Gewünschte Spiele und zweite Chancen kommen weiterhin sofort.</string>
     <string name="every_hours">%1$d Std.</string>
     <string name="set_country">Shop-Land</string>
     <string name="set_notify_new">Neue Gratisspiele melden</string>
@@ -311,6 +315,10 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <plurals name="notif_summary_title">
         <item quantity="one">%d Gratisspiel gerade</item>
         <item quantity="other">%d Gratisspiele gerade</item>
+    </plurals>
+    <plurals name="notif_digest_title">
+        <item quantity="one">Tageszusammenfassung: %d Gratisspiel</item>
+        <item quantity="other">Tageszusammenfassung: %d Gratisspiele</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d Spiel zu holen</item>

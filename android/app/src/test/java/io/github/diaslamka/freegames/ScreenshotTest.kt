@@ -228,6 +228,12 @@ class ScreenshotTest {
     }
 
 
+    /** Le resume du jour (1.13.0) : le reglage, l'heure choisie et ce qui passe quand meme tout de suite. */
+    @Test
+    fun resume() = shoot("C-reglages-resume", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "un seul résumé") {
+        SettingsScreen(live.copy(settings = live.settings.copy(digestHour = 20)), now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
     /** Toute la famille (1.9.0) : la section des Reglages, et le panneau au nom d'un membre. */
     @Test
     fun famille() = shoot("C-reglages-famille", Accent.JAUNE, dark = true, tabs = 3) {

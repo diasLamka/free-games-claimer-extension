@@ -33,6 +33,7 @@ object Scheduler {
     private const val PERIODIC = "veille"
     private const val OPENING = "ouverture-epic"
     private const val FOLLOW_UP = "suite-recuperation"
+    private const val DIGEST = "resume-du-jour"
 
     /** Sans planificateur (environnement de test), l'appli s'ouvre quand meme : la veille manque, pas l'ecran. */
     private fun manager(context: Context): WorkManager? = try {
@@ -63,6 +64,27 @@ object Scheduler {
             .setConstraints(network)
             .build()
         manager(context)?.enqueueUniqueWork(FOLLOW_UP, ExistingWorkPolicy.KEEP, req)
+    }
+
+    /**
+     * Le resume du jour (1.13.0) : un passage de veille a l'heure choisie.
+     * `KEEP` depuis la veille elle-meme -- `REPLACE` annulerait le travail en
+     * cours, donc le passage qui vient justement d'envoyer le resume --, et
+     * `REPLACE` quand c'est l'utilisateur qui change l'heure.
+     */
+    fun digestAt(context: Context, whenMs: Long, replace: Boolean = false) {
+        val delay = whenMs - System.currentTimeMillis()
+        if (delay <= 0 || delay > 36L * 3_600_000) return
+        val req = OneTimeWorkRequestBuilder<WatchWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setConstraints(network)
+            .build()
+        manager(context)?.enqueueUniqueWork(DIGEST, if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, req)
+    }
+
+    /** Resume coupe : plus rien a reveiller. */
+    fun cancelDigest(context: Context) {
+        manager(context)?.cancelUniqueWork(DIGEST)
     }
 
     /**

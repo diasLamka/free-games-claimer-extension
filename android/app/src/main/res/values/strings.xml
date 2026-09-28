@@ -72,6 +72,10 @@
     <string name="set_steam">Steam (option)</string>
     <string name="set_steam_hint">Off by default: Steam forbids automation in its subscriber agreement.</string>
     <string name="set_frequency">Check every</string>
+    <string name="set_digest">One daily summary</string>
+    <string name="digest_off">No, as they come</string>
+    <string name="every_hours_at">at %1$d:00</string>
+    <string name="set_digest_hint">One notification gathers the day\'s new games. Wished games and second chances still ring right away.</string>
     <string name="every_hours">%1$d h</string>
     <string name="set_country">Store country</string>
     <string name="set_notify_new">Notify new free games</string>
@@ -312,6 +316,10 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <plurals name="notif_summary_title">
         <item quantity="one">%d free game right now</item>
         <item quantity="other">%d free games right now</item>
+    </plurals>
+    <plurals name="notif_digest_title">
+        <item quantity="one">Today\'s summary: %d free game</item>
+        <item quantity="other">Today\'s summary: %d free games</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d game to claim</item>

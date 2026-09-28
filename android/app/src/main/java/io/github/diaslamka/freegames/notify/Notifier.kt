@@ -157,6 +157,22 @@ object Notifier {
         post(context, 1000, b.build())
     }
 
+    /** Le resume du jour (1.13.0) : ce que le jour a apporte, en une seule notification. */
+    fun digest(context: Context, offers: List<Offer>, s: AppState) {
+        val style = NotificationCompat.InboxStyle()
+        offers.take(7).forEach { style.addLine("${it.shownTitle} — ${Stores.label(it.store)}") }
+        if (offers.size > 7) style.setSummaryText("+${offers.size - 7}")
+        val b = NotificationCompat.Builder(context, CH_NEW)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.resources.getQuantityString(R.plurals.notif_digest_title, offers.size, offers.size))
+            .setContentText(offers.take(3).joinToString(", ") { it.shownTitle })
+            .setStyle(style)
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 1011))
+        if (offers.any { Rules.claimable(it, s.settings) }) b.addAction(0, context.getString(R.string.action_claim_all), openApp(context, 1012, claimKey = "*"))
+        post(context, 1010, b.build())
+    }
+
     suspend fun ending(context: Context, o: Offer, s: AppState) {
         val now = System.currentTimeMillis()
         val id = ("fin:" + o.key).hashCode()
