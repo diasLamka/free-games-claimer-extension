@@ -39,6 +39,10 @@
     <string name="action_claim">Conseguir</string>
     <string name="action_claim_all">Conseguir todo</string>
     <string name="action_open">Abrir</string>
+    <string name="notif_second_chance_title">Segunda oportunidad: %1$s</string>
+    <string name="notif_second_chance_line">No lo conseguiste en %1$s (%2$s).</string>
+    <string name="tag_second_chance">2ª vez</string>
+    <string name="action_snooze">Más tarde</string>
     <string name="verdict_login">Hay que iniciar sesión</string>
     <string name="verdict_challenge">La tienda pidió una verificación humana</string>
     <string name="verdict_base">Necesita el juego base en Steam</string>
@@ -146,6 +150,14 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="year_empty">Ningún juego conseguido ese año.</string>
     <string name="tonight_title">Esta noche juego a…</string>
     <string name="tonight_hint">Un juego de tu pila, para el tiempo que tienes: según la nota de Steam, el formato que le dan los jugadores de Steam y, si quieres, la Steam Deck.</string>
+    <string name="tonight_coop_only">En compañía</string>
+    <string name="tonight_coop">Se juega en compañía</string>
+    <string name="shortcut_claim_short">Conseguir</string>
+    <string name="shortcut_claim_long">Conseguir ahora</string>
+    <string name="shortcut_tonight_short">Esta noche</string>
+    <string name="shortcut_tonight_long">Esta noche juego a…</string>
+    <string name="shortcut_wish_short">Deseo</string>
+    <string name="shortcut_wish_long">Añadir un deseo</string>
     <string name="tonight_hour">1 hora</string>
     <string name="tonight_evening">Una noche</string>
     <string name="tonight_weekend">Un fin de semana</string>
@@ -159,7 +171,7 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="tonight_not_for_me">No es para mí</string>
     <string name="tonight_started">¡Buena partida! Está «En curso» en Mi colección.</string>
     <string name="tonight_dropped">«%1$s» no se te volverá a proponer.</string>
-    <string name="tonight_empty_filter">Nada de tu pila encaja: prueba otro tiempo, o sin Steam Deck.</string>
+    <string name="tonight_empty_filter">Nada de tu pila encaja: prueba otro tiempo, o sin Steam Deck ni juego en compañía.</string>
     <string name="tonight_empty">Tu pila está vacía. Importa la copia de la extensión (Ajustes): Mi colección viene con ella.</string>
     <string name="tonight_reading">Su ficha de Steam se lee en la próxima comprobación: nota, formato, Steam Deck.</string>
     <string name="tonight_to_try">Lo marcaste «para probar»</string>

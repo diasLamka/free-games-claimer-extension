@@ -4,6 +4,37 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.98.0 -- 2026-09-28
+
+**Une deuxieme chance, un jeu a plusieurs, et de quoi remettre a plus tard**
+
+- **Deuxieme chance.** Un jeu qui vous avait echappe et qui revient (sur
+  n'importe quel magasin) porte l'etiquette **2e chance** dans la liste ; la
+  bulle dit quand et ou vous l'aviez rate. Il passe devant le tout-venant --
+  derriere les jeux que vous attendiez -- et sa notification a son propre
+  titre et une ligne de plus : « Vous ne l'aviez pas recupere en mars 2026
+  (Epic Games Store). » Jamais pour un jeu deja pris, jamais pour une offre
+  qui se retrouve elle-meme apres une coupure de sa source. Meme en mode
+  resume, elle est annoncee a part.
+- **Ce soir a plusieurs.** Une case « A plusieurs » dans « Ce soir je joue a... » :
+  ne garde que les jeux qui se jouent a deux ou plus (cooperatif en ligne ou
+  sur le canape, ecran partage, multijoueur) d'apres les categories Steam.
+  Un jeu dont on ne sait rien n'est pas propose, comme pour le Steam Deck.
+  La raison s'affiche : « Se joue a plusieurs ».
+- **Dans l'appli Android 1.12.0** : les memes trois choses, plus
+  - **Plus tard** sur chaque notification : le jeu revient dans trois
+    heures, au plus tard une heure avant la fin de l'offre ; pas de bouton
+    quand il reste moins de deux heures, et un jeu pris entre-temps ne sonne
+    pas ;
+  - **raccourcis sur l'icone** (appui long) : Recuperer maintenant, Ce soir je
+    joue a..., Ajouter un souhait.
+- **Correctif.** Un libelle ecrit `$1$2` faisait refuser toute l'extension par
+  Chrome (« Variable $1$ used but not defined ») : le service worker ne
+  demarrait plus. Un test lit maintenant les quatre langues et refuse toute
+  variable non declaree.
+- La ligne d'informations des cartes passe a la ligne au lieu de deborder :
+  avec l'etiquette en plus, le compte a rebours sortait de la carte a 328 px.
+
 ## 2.97.0 -- 2026-09-27
 
 **La page Historique tamponnee aussi**

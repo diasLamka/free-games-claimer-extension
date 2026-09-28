@@ -257,4 +257,57 @@ class TonightTest {
         v.draw(c)
         f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
+
+    /* « A plusieurs » (1.12.0) : la meme capture de dix jeux reels que test/tonight.test.mjs. */
+    private val coopItems = parseJson(File(System.getProperty("fixtures"), "steam-getitems-coop.json").readText())["response"]["store_items"].arr!!
+    private fun coopInfo(name: String) = Tonight.readItem(coopItems.first { it["name"].str!!.startsWith(name) }, now)!!
+
+    @Test
+    fun coopIsReadFromTheTagsAndNeverGuessed() {
+        for (n in listOf("It Takes Two", "Overcooked", "Portal 2", "HELLDIVERS", "Stardew Valley", "Terraria", "Cuphead")) assertEquals(n, true, coopInfo(n).coop)
+        for (n in listOf("Hades", "Balatro", "Hollow Knight")) assertEquals(n, false, coopInfo(n).coop)
+        assertNull(Tonight.coopFromTags(emptyList()))
+        assertEquals(false, Tonight.coopFromTags(listOf(19 to 900.0, 1685 to 40.0)))
+        assertEquals(Tonight.INFO_VERSION, 3)
+    }
+
+    @Test
+    fun withOthersOnlyKeepsGamesPlayedThatWay() {
+        val c = Tonight.Candidate("k", "X", emptyMap(), null, false, false, false, null, null)
+        assertNull(Tonight.score(c, coopInfo("Hades"), Tonight.ANY, false, coop = true))
+        assertNull(Tonight.score(c, null, Tonight.ANY, false, coop = true))
+        val r = Tonight.score(c, coopInfo("It Takes Two"), Tonight.ANY, false, coop = true)!!
+        assertTrue(r.reasons.any { it.key == "tonight_coop" })
+        assertTrue(Tonight.score(c, coopInfo("It Takes Two"), Tonight.ANY, false)!!.reasons.none { it.key == "tonight_coop" })
+        val pile = listOf(
+            c.copy(key = "a", title = "It Takes Two", appid = "1426210"),
+            c.copy(key = "b", title = "Hades", appid = "1145360"),
+            c.copy(key = "c", title = "Terraria", appid = "105600"),
+        )
+        val apps = coopItems.associate { it["appid"].text!! to Tonight.readItem(it, now)!! }
+        val p = Tonight.pick(pile, apps, Tonight.ANY, false, random = { 0.0 }, coop = true)
+        assertEquals(2, p.count)
+        assertNotEquals("Hades", p.pick!!.c.title)
+        assertEquals(3, Tonight.pick(pile, apps, Tonight.ANY, false, random = { 0.0 }).count)
+    }
+
+    @Test
+    fun oldCardsAreReadAgainToTakeTheirCoopFlag() = runBlocking {
+        val appels = mutableListOf<String>()
+        val fetcher = object : Fetcher {
+            override suspend fun get(url: String, withCookies: Boolean, accept: String): HttpResult {
+                appels += url
+                val ids = parseJson(URLDecoder.decode(url.substringAfter("input_json="), "UTF-8"))["ids"].arr!!.map { it["appid"].text!! }
+                return HttpResult(200, """{"response":{"store_items":[${coopItems.filter { it["appid"].text in ids }.joinToString(",")}]}}""")
+            }
+        }
+        val s = AppState(
+            owned = mapOf("steam:1426210" to OwnedGame("steam", "1426210", "It Takes Two")),
+            tonightApps = mapOf("1426210" to io.github.diaslamka.freegames.model.TonightInfo(at = now - 3_600_000L, v = 2, name = "It Takes Two")),
+        )
+        val (a, _) = Tonight.refresh(fetcher, s, now, "FR")
+        assertEquals(1, appels.count { "GetItems" in it })
+        assertEquals(true, a.getValue("1426210").coop)
+        assertEquals(Tonight.INFO_VERSION, a.getValue("1426210").v)
+    }
 }

@@ -539,7 +539,9 @@
 
   .game-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
   .game-title { font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .game-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  /* Qui passe a la ligne plutot que de deborder : avec « 2e chance » en plus,
+     le compte a rebours sortait de la carte a 328 px. */
+  .game-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; min-width: 0; }
 
   /* Ce que l'offre EST, et ce qu'on peut en FAIRE : deux natures, deux
      rangees. Les cinq actions vivaient dans la ligne ci-dessus, a cote du
@@ -1431,6 +1433,7 @@
           <button type="button" class="chip" data-time="any" data-i18n="tonightAny"></button>
         </div>
         <label class="tonight-deck"><input type="checkbox" id="tonight-deck"> <span data-i18n="tonightDeckOnly"></span></label>
+        <label class="tonight-deck"><input type="checkbox" id="tonight-coop"> <span data-i18n="tonightCoopOnly"></span></label>
       </div>
       <p class="hint tonight-note" id="tonight-note" aria-live="polite"></p>
       <div id="tonight-card"></div>

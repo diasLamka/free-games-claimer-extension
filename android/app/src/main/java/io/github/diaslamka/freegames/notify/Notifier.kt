@@ -113,8 +113,13 @@ object Notifier {
     suspend fun newGame(context: Context, o: Offer, s: AppState) {
         val now = System.currentTimeMillis()
         val wished = Rules.wished(o, s)
-        val title = if (wished) context.getString(R.string.notif_wished_title, o.shownTitle)
-        else context.getString(R.string.notif_new_title, o.shownTitle, Stores.label(o.store))
+        // « Deuxieme chance » (1.12.0) : un jeu deja vu passer sans l'avoir, a la fois d'avant en toutes lettres.
+        val second = Rules.secondChance(o, s, now)
+        val title = when {
+            wished -> context.getString(R.string.notif_wished_title, o.shownTitle)
+            second != null -> context.getString(R.string.notif_second_chance_title, o.shownTitle)
+            else -> context.getString(R.string.notif_new_title, o.shownTitle, Stores.label(o.store))
+        }
         val id = o.key.hashCode()
         val b = NotificationCompat.Builder(context, CH_NEW)
             .setSmallIcon(R.drawable.ic_stat_ticket)
@@ -122,10 +127,17 @@ object Notifier {
             .setContentText(details(context, o, now))
             .setAutoCancel(true)
             .setContentIntent(openApp(context, id))
-            .setPriority(if (wished) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(if (wished || second != null) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
+        if (second != null) {
+            val avant = context.getString(R.string.notif_second_chance_line, Fmt.monthInText(second.ts), Stores.label(second.store))
+            b.setContentText(details(context, o, now) + "\n" + avant)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(details(context, o, now) + "\n" + avant))
+        }
         cover(o.image)?.let { b.setLargeIcon(it).setStyle(NotificationCompat.BigPictureStyle().bigPicture(it).bigLargeIcon(null as Bitmap?)) }
         if (Rules.claimable(o, s.settings)) b.addAction(0, context.getString(R.string.action_claim), openApp(context, id + 1, claimKey = o.key))
         Titles.webUrl(o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
+        // « Plus tard » (1.12.0) : pas dans les deux dernieres heures -- reporter serait refuser.
+        if (Snooze.allowed(o, now)) b.addAction(0, context.getString(R.string.action_snooze), Snooze.button(context, o.key))
         post(context, id, b.build())
     }
 

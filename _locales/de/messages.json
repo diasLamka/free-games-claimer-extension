@@ -2541,7 +2541,7 @@
     "message": "Alle gesehen: Es geht von vorne los."
   },
   "tonightEmptyFilter": {
-    "message": "Nichts in Ihrem Stapel passt: Versuchen Sie eine andere Zeit oder ohne Steam Deck."
+    "message": "Nichts in Ihrem Stapel passt: Versuchen Sie eine andere Zeit oder ohne Steam Deck und Mehrspieler."
   },
   "tonightReading": {
     "message": "Seine Steam-Seite wird beim nächsten Durchlauf gelesen: Bewertung, Format, Steam Deck."
@@ -2593,5 +2593,20 @@
   },
   "stampUnknown": {
     "message": "Unklar"
+  },
+  "tonightCoopOnly": {
+    "message": "Zu mehreren"
+  },
+  "tonightCoop": {
+    "message": "Zu mehreren spielbar"
+  },
+  "notifySecondChanceTitle": {
+    "message": "Zweite Chance: $1"
+  },
+  "notifySecondChanceLine": {
+    "message": "Sie hatten es im $1 ($2) nicht bekommen."
+  },
+  "tagSecondChance": {
+    "message": "2. Chance"
   }
 }

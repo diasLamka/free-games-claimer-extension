@@ -249,6 +249,8 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
                 StoreChip(o.store)
                 if (o.isExtra) Tag("DLC", Color.White, Color.Black)
                 if (wished) Tag("★ " + stringResource(R.string.wished).uppercase(), b.accent, b.onAccent)
+                // Deuxieme chance (1.12.0) : deja vu passer, jamais eu.
+                if (Rules.secondChance(o, state, now) != null) Tag(stringResource(R.string.tag_second_chance).uppercase(), Color.White, Color.Black, bordered = true)
             }
             if (rating?.percent != null) {
                 Text(

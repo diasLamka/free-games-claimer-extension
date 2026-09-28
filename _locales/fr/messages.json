@@ -2541,7 +2541,7 @@
     "message": "Vous avez tout vu : on reprend depuis le début."
   },
   "tonightEmptyFilter": {
-    "message": "Rien dans votre pile ne convient : essayez un autre temps, ou sans Steam Deck."
+    "message": "Rien dans votre pile ne convient : essayez un autre temps, ou sans Steam Deck ni jeu à plusieurs."
   },
   "tonightReading": {
     "message": "Sa fiche Steam est lue au prochain passage : note, format, Steam Deck."
@@ -2593,5 +2593,20 @@
   },
   "stampUnknown": {
     "message": "Incertain"
+  },
+  "tonightCoopOnly": {
+    "message": "À plusieurs"
+  },
+  "tonightCoop": {
+    "message": "Se joue à plusieurs"
+  },
+  "notifySecondChanceTitle": {
+    "message": "Deuxième chance : $1"
+  },
+  "notifySecondChanceLine": {
+    "message": "Vous ne l'aviez pas récupéré en $1 ($2)."
+  },
+  "tagSecondChance": {
+    "message": "2ᵉ chance"
   }
 }

@@ -99,3 +99,47 @@ export function recurring(index, { min = RECURRENT_AFTER } = {}) {
     .sort((a, b) => b.count - a.count
       || (b.passes[0] ? b.passes[0].ts || 0 : 0) - (a.passes[0] ? a.passes[0].ts || 0 : 0));
 }
+
+/* ------------------------------------------------------- deuxieme chance */
+
+const JOUR_MS = 86400000;
+
+/**
+ * « Deuxieme chance » (2.98.0) : cette offre, EN COURS, porte un jeu qui avait
+ * deja ete offert sans que vous l'ayez eu. Alors seulement, l'extension le
+ * dit a part : c'est l'occasion qu'on regrette de rater deux fois.
+ *
+ * Trois regles, et elles evitent de crier au loup :
+ *   - il faut un passage RATE (ou incertain) : un jeu qu'on a deja pris, sur
+ *     n'importe quel magasin, n'a pas de deuxieme chance a saisir ;
+ *   - le passage doit finir avant le DEBUT de cette offre, d'un jour au
+ *     moins. Une offre qui revient apres une coupure de sa source aurait sinon
+ *     une deuxieme chance avec elle-meme. Sans debut connu : trois jours ;
+ *   - le magasin n'a aucune importance -- rate sur Epic, offert sur GOG, c'est
+ *     la meme occasion.
+ *
+ * Rend { ts, store, count } -- le passage manque le plus RECENT et leur
+ * nombre -- ou null. Pure.
+ */
+export function secondChance(index, offer, normalise, now) {
+  if (!index || !offer || typeof normalise !== 'function') return null;
+  const entree = index.get(normalise(offer.title));
+  if (!entree) return null;
+  if (entree.passes.some((p) => p.taken === true)) return null;
+  const limite = Number.isFinite(offer.start) ? offer.start - JOUR_MS : now - 3 * JOUR_MS;
+  const rates = entree.passes.filter((p) => Number.isFinite(p.ts) && p.ts <= limite);
+  if (!rates.length) return null;
+  return { ts: rates[0].ts, store: rates[0].store || null, count: rates.length };
+}
+
+/**
+ * Les offres, avec `secondChance` posee sur celles qui la meritent. Comme
+ * `wished`, le drapeau est DERIVE a chaque lecture et jamais persiste : il
+ * depend de l'historique, qui grandit.
+ */
+export function markSecondChance(offers, index, normalise, now) {
+  return (offers || []).map((o) => {
+    const c = secondChance(index, o, normalise, now);
+    return c ? { ...o, secondChance: c } : o;
+  });
+}

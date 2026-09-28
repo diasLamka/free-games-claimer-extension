@@ -2541,7 +2541,7 @@
     "message": "You've seen them all: starting over."
   },
   "tonightEmptyFilter": {
-    "message": "Nothing in your pile fits: try another time, or without Steam Deck."
+    "message": "Nothing in your pile fits: try another time, or without Steam Deck or multiplayer."
   },
   "tonightReading": {
     "message": "Its Steam page is read on the next pass: rating, format, Steam Deck."
@@ -2593,5 +2593,20 @@
   },
   "stampUnknown": {
     "message": "Unsure"
+  },
+  "tonightCoopOnly": {
+    "message": "With others"
+  },
+  "tonightCoop": {
+    "message": "Playable with others"
+  },
+  "notifySecondChanceTitle": {
+    "message": "Second chance: $1"
+  },
+  "notifySecondChanceLine": {
+    "message": "You didn't get it in $1 ($2)."
+  },
+  "tagSecondChance": {
+    "message": "2nd chance"
   }
 }

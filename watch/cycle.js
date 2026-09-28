@@ -19,6 +19,7 @@ import { integrate, purgeExpired, openOffers } from './catalog.js';
 import { noteOutcomesFromCatalog } from './outcomes.js';
 import { NOTICE } from './notify-actions.js';
 import { markWished } from './wishlist.js';
+import { recurrenceIndex, markSecondChance } from './recurrence.js';
 import { STATES, STORES, STORE_LABELS, isExpired, byUrgency, normaliseTitle } from './offer.js';
 import { claimableStoresFor, activeSourcesFor } from './sources/index.js';
 import { steamGate } from './steam-claim.js';
@@ -40,7 +41,7 @@ import {
   decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
-import { t } from '../lib/i18n.js';
+import { t, intlLocale } from '../lib/i18n.js';
 import { ratingLine } from './steam-ratings.js';
 import { delayText } from './lookup.js';
 import {
@@ -140,11 +141,18 @@ export function composeAnnouncement(offers, storeLabel, now = null, rating = nul
     /* Le temps qui reste (2.63.0) : « Gratuit sur Epic Games Store · encore
        7 h ». C'est ce qui decide s'il faut s'en occuper maintenant. */
     const reste = typeof now === 'number' && typeof o.end === 'number' && o.end > now ? o.end - now : null;
-    const texte = reste === null ? t('notifyOneStore', store) : t('notifyOneStoreLeft', store, readableHours(reste));
+    let texte = reste === null ? t('notifyOneStore', store) : t('notifyOneStoreLeft', store, readableHours(reste));
+    /* Deuxieme chance (2.98.0) : la fois d'avant, en mots. */
+    const chance = o.secondChance || null;
+    if (chance) {
+      const quand = Number.isFinite(chance.ts) ? new Date(chance.ts).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' }) : '';
+      const ou = storeLabel ? storeLabel(chance.store) : (STORE_LABELS[chance.store] || chance.store);
+      texte += `\n${t('notifySecondChanceLine', quand, ou)}`;
+    }
     /* La note Steam (2.78.0), sur sa propre ligne : « Steam : Tres positives
        (84 %) ». C'est ce qui dit s'il vaut ses 20 Go. */
     return {
-      title: t('notifyOneTitle', o.title),
+      title: chance ? t('notifySecondChanceTitle', o.title) : t('notifyOneTitle', o.title),
       text: rating ? `${texte}\n${ratingLine(rating)}` : texte,
     };
   }
@@ -441,7 +449,10 @@ export async function runCycle({
       /* Ce que l'utilisateur ATTENDAIT passe devant, et echappe au resume :
          un jeu guette depuis des mois ne se noie pas dans « 5 jeux gratuits ».
          Le drapeau est derive a la lecture, jamais persiste. */
-      announcements = byUrgency(markWished(pending, ctx.wishlist, normaliseTitle, ctx.steamWishlist, ctx.gogWishlist), now);
+      /* Deuxieme chance (2.98.0) : ce que l'histoire de l'utilisateur dit qu'il
+         avait rate. Derive ici, a chaque cycle, de ses issues et de son registre. */
+      const histoire = recurrenceIndex({ outcomes: ctx.outcomes || {}, library: ctx.library || {}, normalise: normaliseTitle });
+      announcements = byUrgency(markSecondChance(markWished(pending, ctx.wishlist, normaliseTitle, ctx.steamWishlist, ctx.gogWishlist), histoire, normaliseTitle, now), now);
     }
 
     const unseen = openOffers(catalog, now).filter((o) => !o.seen).length;
@@ -513,7 +524,7 @@ export async function runCycle({
      * le tout-venant ; il devient le mauvais des l'instant ou la liste porte
      * quelque chose que l'utilisateur guettait. `byUrgency` l'a deja mis en
      * tete, donc la notification individuelle parle bien de lui. */
-    const attendu = watched.some((o) => o.wished);
+    const attendu = watched.some((o) => o.wished || o.secondChance);
     if (attendu && decision.digest) {
       decision.digest = false;
       record('info', 'un jeu attendu est annonce a part');

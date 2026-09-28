@@ -38,7 +38,7 @@ import io.github.diaslamka.freegames.widget.TonightWidget
 /** Ce que la carte demande a l'appli ; rien par defaut (les apercus, les tests). */
 data class TonightActions(
     val onKeep: (TonightPick) -> Unit = {},
-    val onSettings: (time: String, deckOnly: Boolean) -> Unit = { _, _ -> },
+    val onSettings: (time: String, deckOnly: Boolean, coop: Boolean) -> Unit = { _, _, _ -> },
     val onAnother: () -> Unit = {},
     val onPlaying: (Tonight.Scored) -> Unit = {},
     val onNotForMe: (Tonight.Scored) -> Unit = {},
@@ -78,14 +78,18 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
                         .heightIn(min = 40.dp)
                         .brut(if (on) b.accent else Color.White, shadow = if (b.dark) Color.White else Color.Black, offset = 3.dp, border = 2.dp)
                         .semantics { selected = on }
-                        .clickableNoRipple(role = Role.RadioButton) { actions.onSettings(t, p.deckOnly) }
+                        .clickableNoRipple(role = Role.RadioButton) { actions.onSettings(t, p.deckOnly, p.coop) }
                         .padding(horizontal = 10.dp, vertical = 10.dp),
                 )
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 12.dp)) {
             Text(stringResource(R.string.tonight_deck), style = MaterialTheme.typography.bodyMedium, color = b.ink, modifier = Modifier.weight(1f))
-            BrutToggle(p.deckOnly) { actions.onSettings(p.time, it) }
+            BrutToggle(p.deckOnly) { actions.onSettings(p.time, it, p.coop) }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+            Text(stringResource(R.string.tonight_coop_only), style = MaterialTheme.typography.bodyMedium, color = b.ink, modifier = Modifier.weight(1f))
+            BrutToggle(p.coop) { actions.onSettings(p.time, p.deckOnly, it) }
         }
 
         when {

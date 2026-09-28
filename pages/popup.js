@@ -36,7 +36,7 @@ import { factLines } from '../watch/lookup.js';
 import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, LEVELS as ODDS, rankWishes, wishTargets } from '../watch/odds.js';
-import { recurrenceIndex } from '../watch/recurrence.js';
+import { recurrenceIndex, secondChance } from '../watch/recurrence.js';
 import { KEY_TONIGHT, TIMES, PICK_KEEP_MS, buildPile, pickTonight, playLinks, keptPick, tonightImage } from '../watch/tonight.js';
 import { KEY_PLAYTIME } from '../watch/playtime.js';
 import { KEY_ANNOTATIONS, STATUS as BACKLOG, setStatus } from '../watch/annotations.js';
@@ -768,6 +768,15 @@ function gameCard({ key, offer }, ctx) {
   /* Un DLC se dit (2.62.0) : sans l'etiquette, le pack d'armes de Dying Light
      se lisait comme un jeu, et se cherchait comme tel. */
   if (isExtraContent(offer)) meta.append(el('span', 'kind-tag', t('tagDlc')));
+  /* Deuxieme chance (2.98.0) : un jeu deja offert sans que vous l'ayez eu. */
+  const chance = ctx.recurrence ? secondChance(ctx.recurrence, offer, normaliseTitle, now) : null;
+  if (chance) {
+    const quand = new Date(chance.ts).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' });
+    const ou = STORE_LABELS[chance.store] || chance.store;
+    const puce = el('span', 'kind-tag second-chance', t('tagSecondChance'));
+    puce.title = t('notifySecondChanceLine', quand, ou);
+    meta.append(puce);
+  }
   /* Verifie ou jouable sur Steam Deck : ce qui aide a choisir. « Non pris en
      charge » ne s'affiche pas ici -- a 328 px, une mauvaise nouvelle n'a pas
      la place d'un fait utile, et la fiche Steam le dit mieux. */
@@ -1036,6 +1045,8 @@ function renderGames(all, behaviour) {
       ownedIds: ownedStoreKeys(get(all, KEY_COLLECTION, null)),
     },
     fresh: markFresh(rows),
+    // Ce que l'histoire de l'utilisateur sait de chaque titre (2.98.0) : la deuxieme chance s'en deduit.
+    recurrence: recurrenceIndex({ outcomes: get(all, KEY_OUTCOMES, {}), library, normalise: normaliseTitle }),
     wishlist: get(all, KEY_WISHLIST, []),
     steamWishlist: get(all, KEY_STEAM_WISHLIST, null),
     gogWishlist: get(all, KEY_GOG_WISHLIST, null),
@@ -1209,7 +1220,7 @@ function tonightPrefs() {
   const p = ui.tonight && typeof ui.tonight === 'object' ? ui.tonight : {};
   const time = TONIGHT_TIMES.some(([v]) => v === p.time) ? p.time : TIMES.EVENING;
   const playing = p.playing && typeof p.playing === 'object' && typeof p.playing.at === 'number' && Date.now() - p.playing.at < PICK_KEEP_MS ? p.playing : null;
-  return { time, deckOnly: p.deckOnly === true, key: p.key || null, at: p.at || null, shown: Array.isArray(p.shown) ? p.shown : [], playing };
+  return { time, deckOnly: p.deckOnly === true, coop: p.coop === true, key: p.key || null, at: p.at || null, shown: Array.isArray(p.shown) ? p.shown : [], playing };
 }
 
 /* Sans recharger tout le popup : l'appelant redessine la section. */
@@ -1223,7 +1234,7 @@ async function rerollTonight(all, { keepShown = true } = {}) {
   const prefs = tonightPrefs();
   const pile = tonightPile(all);
   const exclude = keepShown ? [...prefs.shown, prefs.key].filter(Boolean) : [];
-  const r = pickTonight(pile, { apps: (get(all, KEY_TONIGHT, {}) || {}).apps || {}, time: prefs.time, deckOnly: prefs.deckOnly, exclude });
+  const r = pickTonight(pile, { apps: (get(all, KEY_TONIGHT, {}) || {}).apps || {}, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, exclude });
   if (r.wrapped) tonightNote = t('tonightWrapped');
   await saveTonight({ key: r.pick ? r.pick.key : null, at: Date.now(), shown: r.wrapped ? [] : exclude.slice(-200) });
   renderTonight(await readAll());
@@ -1295,6 +1306,7 @@ function renderTonight(all) {
   document.getElementById('tonight-count').textContent = pile.length ? String(pile.length) : '';
   for (const b of document.querySelectorAll('#tonight-section [data-time]')) b.setAttribute('aria-pressed', String(b.dataset.time === prefs.time));
   document.getElementById('tonight-deck').checked = prefs.deckOnly;
+  document.getElementById('tonight-coop').checked = prefs.coop;
   const note = document.getElementById('tonight-note');
   note.textContent = tonightNote;
   host.textContent = '';
@@ -1304,10 +1316,10 @@ function renderTonight(all) {
   const apps = (get(all, KEY_TONIGHT, {}) || {}).apps || {};
   let jeu = keptPick(prefs, pile, prefs, Date.now());
   let tire = null;
-  if (jeu) tire = pickTonight([jeu], { apps, time: prefs.time, deckOnly: prefs.deckOnly }).pick;
+  if (jeu) tire = pickTonight([jeu], { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop }).pick;
   if (!tire) {
     // Rien de retenu (ou plus valable) : un tirage, retenu lui aussi.
-    const r = pickTonight(pile, { apps, time: prefs.time, deckOnly: prefs.deckOnly, exclude: prefs.shown });
+    const r = pickTonight(pile, { apps, time: prefs.time, deckOnly: prefs.deckOnly, coop: prefs.coop, exclude: prefs.shown });
     tire = r.pick;
     jeu = tire;
     if (tire && tire.key !== prefs.key) saveTonight({ key: tire.key, at: Date.now() });
@@ -3058,6 +3070,11 @@ document.getElementById('tonight-ratings').addEventListener('change', (e) => wri
 for (const b of document.querySelectorAll('#tonight-section [data-time]')) {
   b.addEventListener('click', async () => { tonightNote = ''; await saveTonight({ time: b.dataset.time, key: null, shown: [] }); renderTonight(await readAll()); });
 }
+document.getElementById('tonight-coop').addEventListener('change', async (e) => {
+  tonightNote = '';
+  await saveTonight({ coop: e.target.checked, key: null, shown: [] });
+  renderTonight(await readAll());
+});
 document.getElementById('tonight-deck').addEventListener('change', async (e) => {
   tonightNote = '';
   await saveTonight({ deckOnly: e.target.checked, key: null, shown: [] });

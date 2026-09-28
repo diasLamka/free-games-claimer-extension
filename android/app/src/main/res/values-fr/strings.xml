@@ -39,6 +39,10 @@
     <string name="action_claim">Récupérer</string>
     <string name="action_claim_all">Tout récupérer</string>
     <string name="action_open">Ouvrir</string>
+    <string name="notif_second_chance_title">Deuxième chance : %1$s</string>
+    <string name="notif_second_chance_line">Tu ne l\'avais pas récupéré en %1$s (%2$s).</string>
+    <string name="tag_second_chance">2ᵉ chance</string>
+    <string name="action_snooze">Plus tard</string>
     <string name="verdict_login">Connexion requise</string>
     <string name="verdict_challenge">Le magasin a demandé une vérification humaine</string>
     <string name="verdict_base">Il faut le jeu de base sur Steam</string>
@@ -146,6 +150,14 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="year_empty">Aucun jeu pris cette année-là.</string>
     <string name="tonight_title">Ce soir je joue à…</string>
     <string name="tonight_hint">Un jeu de ta pile, pour le temps que tu as : choisi d\'après la note Steam, le format que lui donnent les joueurs Steam et, si tu veux, le Steam Deck.</string>
+    <string name="tonight_coop_only">À plusieurs</string>
+    <string name="tonight_coop">Se joue à plusieurs</string>
+    <string name="shortcut_claim_short">Récupérer</string>
+    <string name="shortcut_claim_long">Récupérer maintenant</string>
+    <string name="shortcut_tonight_short">Ce soir</string>
+    <string name="shortcut_tonight_long">Ce soir je joue à…</string>
+    <string name="shortcut_wish_short">Souhait</string>
+    <string name="shortcut_wish_long">Ajouter un souhait</string>
     <string name="tonight_hour">1 heure</string>
     <string name="tonight_evening">Une soirée</string>
     <string name="tonight_weekend">Un week-end</string>
@@ -159,7 +171,7 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="tonight_not_for_me">Pas pour moi</string>
     <string name="tonight_started">Bonne partie ! Il est « En cours » dans Ma collection.</string>
     <string name="tonight_dropped">« %1$s » ne te sera plus proposé.</string>
-    <string name="tonight_empty_filter">Rien dans ta pile ne convient : essaie un autre temps, ou sans Steam Deck.</string>
+    <string name="tonight_empty_filter">Rien dans ta pile ne convient : essaie un autre temps, ou sans Steam Deck ni jeu à plusieurs.</string>
     <string name="tonight_empty">Ta pile est vide. Importe la sauvegarde de l\'extension (Réglages) : Ma collection vient avec.</string>
     <string name="tonight_reading">Sa fiche Steam est lue à la prochaine vérification : note, format, Steam Deck.</string>
     <string name="tonight_to_try">Tu l\'avais mis « à essayer »</string>

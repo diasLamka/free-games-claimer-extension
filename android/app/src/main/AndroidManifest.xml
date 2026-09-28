@@ -36,6 +36,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Appui long sur l'icone : recuperer, ce soir, ajouter un souhait (1.12.0). -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
             <!-- Le jeu que le PC n'a pas pu finir (1.4.0) : fgclaimer://finir?s=&i=&t=,
                  depuis l'alerte ntfy du PC ou la notification du relais. Le
                  lien designe un jeu, rien de plus : l'appli le cherche dans
@@ -70,6 +72,11 @@
              jamais appelee du dehors. -->
         <receiver
             android:name=".notify.LastChanceReceiver"
+            android:exported="false" />
+
+        <!-- « Plus tard » (1.12.0) : le bouton d'une notification et son alarme. -->
+        <receiver
+            android:name=".notify.SnoozeReceiver"
             android:exported="false" />
 
         <!-- « Ce soir je joue a... » (1.8.0) : le widget de l'ecran d'accueil. -->

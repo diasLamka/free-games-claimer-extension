@@ -234,6 +234,8 @@ data class AppState(
     val relay: RelayState? = null,
     /** Les offres pour lesquelles l'alarme de derniere chance a sonne (1.5.0). */
     val alarmed: Map<String, Long> = emptyMap(),
+    /** « Plus tard » (1.12.0) : offre -> heure du rappel. L'etat, pas l'alarme : Android efface les alarmes au redemarrage. */
+    val snoozed: Map<String, Long> = emptyMap(),
     /** « Attends, il sera offert » (1.7.0) : les passages vus, par titre normalise. */
     val passes: Map<String, List<Seen>> = emptyMap(),
     /** Les editeurs qui offrent, par nom normalise. */
@@ -301,6 +303,8 @@ data class TonightInfo(
     val percent: Int? = null,
     val reviews: Int = 0,
     val image: String? = null,
+    /** Le jeu se joue-t-il a plusieurs ? null : on ne sait pas (fiche d'avant la 1.12.0, ou sans etiquettes). */
+    val coop: Boolean? = null,
 )
 
 /** L'appid Steam d'un titre hors Steam, trouve par la recherche (ou non). */
@@ -315,6 +319,8 @@ data class TitleMatch(val at: Long, val appid: String? = null)
 data class TonightPick(
     val time: String = "evening",
     val deckOnly: Boolean = false,
+    /** « A plusieurs » (1.12.0) : ne proposer que les jeux etiquetes coop ou multijoueur. */
+    val coop: Boolean = false,
     val key: String? = null,
     val at: Long = 0,
     val shown: List<String> = emptyList(),

@@ -84,6 +84,29 @@ export const TAGS_LONG = Object.freeze([
 
 /** Une etiquette compte si elle pese au moins ce rapport de la plus forte. */
 const FORCE = 0.3;
+
+/**
+ * Les etiquettes qui disent qu'un jeu se joue a plusieurs (GetTagList,
+ * 2026-09-27) : Co-op, Local Co-Op, Online Co-Op, Co-op Campaign, Local
+ * Multiplayer, Split Screen, Party Game, Multiplayer.
+ *
+ * Mesure sur quatorze jeux connus : It Takes Two, Overcooked 2, Portal 2,
+ * Left 4 Dead 2, HELLDIVERS 2, Cuphead, Terraria et Stardew Valley portent
+ * une de ces etiquettes a 27 % au moins de la plus forte ; Hollow Knight,
+ * Hades, Balatro, Slay the Spire, Cyberpunk 2077 et Outer Wilds, aucune.
+ * Un quart du poids de la plus forte suffit donc, et ecarte le bruit d'une
+ * etiquette posee par trois joueurs.
+ */
+export const COOP_TAGS = Object.freeze([1685, 3841, 3843, 4508, 7368, 10816, 7178, 3859]);
+export const COOP_FORCE = 0.25;
+
+/** Le jeu se joue-t-il a plusieurs ? null quand on n'a pas d'etiquettes : on ne devine pas. */
+export function coopFromTags(tags) {
+  const list = (Array.isArray(tags) ? tags : []).filter((t) => t && Number.isFinite(Number(t.tagid)));
+  if (!list.length) return null;
+  const max = Math.max(...list.map((t) => Number(t.weight) || 0));
+  return list.some((t) => COOP_TAGS.includes(Number(t.tagid)) && (Number(t.weight) || 0) >= max * COOP_FORCE);
+}
 /** Lance plus d'une demi-heure : ce n'est plus la pile, c'est un jeu commence. */
 export const LAUNCHED_HOURS = 0.5;
 /** Assez d'avis pour qu'une note veuille dire quelque chose. */
@@ -101,11 +124,11 @@ export const PICK_KEEP_MS = 12 * 3600 * 1000;
 export const TOP = 5;
 
 /**
- * La forme des fiches : 2 depuis la 2.96.0, qui y ajoute la description
- * courte. Une fiche d'une forme plus ancienne est relue, sans attendre ses
- * soixante jours.
+ * La forme des fiches : 2 depuis la 2.96.0 (la description courte), 3 depuis
+ * la 2.98.0 (le jeu se joue-t-il a plusieurs ?). Une fiche d'une forme plus
+ * ancienne est relue, sans attendre ses soixante jours.
  */
-export const INFO_VERSION = 2;
+export const INFO_VERSION = 3;
 /** La description montree sur la carte : une phrase ou deux, pas la fiche. */
 export const MAX_DESCRIPTION = 300;
 
@@ -172,6 +195,7 @@ export function readItem(item) {
     name: String(item.name || '').slice(0, 160) || null,
     description: cleanDescription(item.basic_info && item.basic_info.short_description),
     format: formatFromTags(item.tags),
+    coop: coopFromTags(item.tags),
     deck: deckFromItem(item),
     percent: pct !== null && pct >= 0 && pct <= 100 ? pct : null,
     reviews: n,
@@ -272,9 +296,11 @@ const RAISON_FORMAT = Object.freeze({
  * convient pas (pas sur Steam Deck quand on le demande, un long cours pour une
  * heure). Pur.
  */
-export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false } = {}) {
+export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false, coop = false } = {}) {
   const deck = (info && info.deck) || c.deck || null;
   if (deckOnly && !deckAtLeast(deck, DECK.PLAYABLE)) return null;
+  // « A plusieurs » : comme Steam Deck, un jeu dont on ne sait rien ne passe pas -- on ne promet pas une partie a deux sur une inconnue.
+  if (coop && !(info && info.coop === true)) return null;
   const format = info ? info.format : null;
   const table = PAR_TEMPS[time] || PAR_TEMPS[TIMES.ANY];
   if (format && table[format] === null) return null;
@@ -291,6 +317,7 @@ export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false } = {
     score += (info.percent - 70) / 6;
     reasons.push({ key: 'tonightRating', args: [String(info.percent)] });
   }
+  if (coop) { score += 1; reasons.push({ key: 'tonightCoop', args: [] }); }
   if (deckOnly) {
     if (deck === DECK.VERIFIED) score += 1;
     reasons.push({ key: deck === DECK.VERIFIED ? 'tonightDeckVerified' : 'tonightDeckPlayable', args: [] });
@@ -308,11 +335,11 @@ export function scoreTonight(c, info, { time = TIMES.ANY, deckOnly = false } = {
  *
  * Rend { pick, count, wrapped } -- `pick` null quand rien ne convient.
  */
-export function pickTonight(pile, { apps = {}, time = TIMES.ANY, deckOnly = false, exclude = [], random = Math.random } = {}) {
+export function pickTonight(pile, { apps = {}, time = TIMES.ANY, deckOnly = false, coop = false, exclude = [], random = Math.random } = {}) {
   const notes = [];
   for (const c of pile || []) {
     const info = c.appid ? apps[c.appid] || null : null;
-    const s = scoreTonight(c, info && !info.none ? info : null, { time, deckOnly });
+    const s = scoreTonight(c, info && !info.none ? info : null, { time, deckOnly, coop });
     if (s) notes.push({ ...c, info: info && !info.none ? info : null, ...s });
   }
   notes.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
@@ -346,9 +373,10 @@ export function playLinks(c) {
 }
 
 /** Le choix garde tient-il encore ? Meme reglages, moins de douze heures, encore dans la pile. */
-export function keptPick(saved, pile, { time, deckOnly }, now) {
+export function keptPick(saved, pile, { time, deckOnly, coop }, now) {
   if (!saved || typeof saved !== 'object' || typeof saved.at !== 'number') return null;
-  if (now - saved.at >= PICK_KEEP_MS || saved.time !== time || Boolean(saved.deckOnly) !== Boolean(deckOnly)) return null;
+  if (now - saved.at >= PICK_KEEP_MS || saved.time !== time
+    || Boolean(saved.deckOnly) !== Boolean(deckOnly) || Boolean(saved.coop) !== Boolean(coop)) return null;
   return (pile || []).find((c) => c.key === saved.key) || null;
 }
 

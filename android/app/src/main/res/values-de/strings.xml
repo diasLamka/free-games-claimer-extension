@@ -39,6 +39,10 @@
     <string name="action_claim">Holen</string>
     <string name="action_claim_all">Alle holen</string>
     <string name="action_open">Öffnen</string>
+    <string name="notif_second_chance_title">Zweite Chance: %1$s</string>
+    <string name="notif_second_chance_line">Du hattest es im %1$s (%2$s) nicht bekommen.</string>
+    <string name="tag_second_chance">2. Chance</string>
+    <string name="action_snooze">Später</string>
     <string name="verdict_login">Anmeldung nötig</string>
     <string name="verdict_challenge">Der Shop wollte eine menschliche Prüfung</string>
     <string name="verdict_base">Braucht das Hauptspiel auf Steam</string>
@@ -146,6 +150,14 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="year_empty">In diesem Jahr kein Spiel geholt.</string>
     <string name="tonight_title">Heute Abend spiele ich…</string>
     <string name="tonight_hint">Ein Spiel aus deinem Stapel, passend zu deiner Zeit: nach Steam-Bewertung, dem Format, das Steam-Spieler ihm geben, und auf Wunsch nach Steam Deck.</string>
+    <string name="tonight_coop_only">Zu mehreren</string>
+    <string name="tonight_coop">Zu mehreren spielbar</string>
+    <string name="shortcut_claim_short">Holen</string>
+    <string name="shortcut_claim_long">Jetzt holen</string>
+    <string name="shortcut_tonight_short">Heute</string>
+    <string name="shortcut_tonight_long">Heute Abend spiele ich…</string>
+    <string name="shortcut_wish_short">Wunsch</string>
+    <string name="shortcut_wish_long">Wunsch hinzufügen</string>
     <string name="tonight_hour">1 Stunde</string>
     <string name="tonight_evening">Einen Abend</string>
     <string name="tonight_weekend">Ein Wochenende</string>
@@ -159,7 +171,7 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="tonight_not_for_me">Nichts für mich</string>
     <string name="tonight_started">Viel Spaß! Es steht in Meiner Sammlung auf „Läuft“.</string>
     <string name="tonight_dropped">„%1$s“ wird nicht mehr vorgeschlagen.</string>
-    <string name="tonight_empty_filter">Nichts in deinem Stapel passt: Versuch eine andere Zeit oder ohne Steam Deck.</string>
+    <string name="tonight_empty_filter">Nichts in deinem Stapel passt: Versuch eine andere Zeit oder ohne Steam Deck und Mehrspieler.</string>
     <string name="tonight_empty">Dein Stapel ist leer. Importiere die Sicherung der Erweiterung (Einstellungen): Meine Sammlung kommt mit.</string>
     <string name="tonight_reading">Seine Steam-Seite wird bei der nächsten Prüfung gelesen: Bewertung, Format, Steam Deck.</string>
     <string name="tonight_to_try">Du hattest es auf „Ausprobieren“ gesetzt</string>

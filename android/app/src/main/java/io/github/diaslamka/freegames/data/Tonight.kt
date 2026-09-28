@@ -60,7 +60,7 @@ object Tonight {
     const val PICK_KEEP_MS = 12L * 3600 * 1000
     const val TOP = 5
     /** La forme des fiches : 2 avec la description (1.10.0). */
-    const val INFO_VERSION = 2
+    const val INFO_VERSION = 3
     const val MAX_DESCRIPTION = 300
     private val STEAM_LANGS = mapOf("fr" to "french", "en" to "english", "de" to "german", "es" to "spanish")
 
@@ -113,6 +113,22 @@ object Tonight {
 
     /* ---------------------------------------------------------- le format */
 
+    /**
+     * Les etiquettes qui disent qu'un jeu se joue a plusieurs, les memes que
+     * watch/tonight.js (COOP_TAGS) : Co-op, Local Co-Op, Online Co-Op, Co-op
+     * Campaign, Local Multiplayer, Split Screen, Party Game, Multiplayer. Un
+     * quart du poids de la plus forte suffit (mesure sur quatorze jeux).
+     */
+    val COOP_TAGS = setOf(1685, 3841, 3843, 4508, 7368, 10816, 7178, 3859)
+    private const val COOP_FORCE = 0.25
+
+    /** null : sans etiquettes, on ne devine pas. */
+    fun coopFromTags(tags: List<Pair<Int, Double>>): Boolean? {
+        if (tags.isEmpty()) return null
+        val max = tags.maxOf { it.second }
+        return tags.any { it.first in COOP_TAGS && it.second >= max * COOP_FORCE }
+    }
+
     fun formatFromTags(tags: List<Pair<Int, Double>>): String? {
         if (tags.isEmpty()) return null
         if (tags.any { it.first == TAG_SHORT }) return SHORT
@@ -145,6 +161,7 @@ object Tonight {
             name = item["name"].str?.take(160),
             description = cleanDescription(item["basic_info"]["short_description"].str),
             format = formatFromTags(tags),
+            coop = coopFromTags(tags),
             deck = deckOf(item["platforms"]["steam_deck_compat_category"]),
             percent = pct,
             reviews = rev["review_count"].num?.toInt() ?: 0,
@@ -221,9 +238,11 @@ object Tonight {
 
     private fun deckAtLeastPlayable(d: String?) = d == "verified" || d == "playable"
 
-    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean): Scored? {
+    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean, coop: Boolean = false): Scored? {
         val deck = info?.deck ?: c.deck
         if (deckOnly && !deckAtLeastPlayable(deck)) return null
+        // « A plusieurs » : comme Steam Deck, une inconnue ne passe pas -- on ne promet pas une partie a deux sur un jeu qu'on n'a pas lu.
+        if (coop && info?.coop != true) return null
         val format = info?.format
         val table = PAR_TEMPS[time] ?: PAR_TEMPS.getValue(ANY)
         if (format != null && table.containsKey(format) && table[format] == null) return null
@@ -239,6 +258,7 @@ object Tonight {
             score += (pct - 70) / 6.0
             reasons += Reason("tonight_rating", listOf(pct))
         }
+        if (coop) { score += 1; reasons += Reason("tonight_coop") }
         if (deckOnly) {
             if (deck == "verified") score += 1
             reasons += Reason(if (deck == "verified") "tonight_deck_verified" else "tonight_deck_playable")
@@ -247,10 +267,10 @@ object Tonight {
     }
 
     /** Parmi les cinq meilleurs pas encore montres, les meilleurs plus souvent. */
-    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), random: () -> Double = Math::random): Pick {
+    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), coop: Boolean = false, random: () -> Double = Math::random): Pick {
         val notes = pile.mapNotNull { c ->
             val info = c.appid?.let { apps[it] }?.takeUnless { it.none }
-            score(c, info, time, deckOnly)
+            score(c, info, time, deckOnly, coop)
         }.sortedWith(compareByDescending<Scored> { it.score }.thenBy { it.c.title })
         if (notes.isEmpty()) return Pick(null, 0, false)
         val vus = exclude.toSet()
@@ -290,9 +310,9 @@ object Tonight {
         val pile = buildPile(s)
         kept(p, pile, now)?.let { c ->
             val info = c.appid?.let { s.tonightApps[it] }?.takeUnless { it.none }
-            score(c, info, p.time, p.deckOnly)?.let { return it to p }
+            score(c, info, p.time, p.deckOnly, p.coop)?.let { return it to p }
         }
-        val r = pick(pile, s.tonightApps, p.time, p.deckOnly, p.shown, random)
+        val r = pick(pile, s.tonightApps, p.time, p.deckOnly, p.shown, p.coop, random)
         return r.pick to p.copy(key = r.pick?.c?.key, at = now)
     }
 
@@ -300,7 +320,7 @@ object Tonight {
     fun reroll(s: AppState, now: Long, random: () -> Double = Math::random): AppState {
         val p = s.tonight
         val exclude = (p.shown + listOfNotNull(p.key)).distinct()
-        val r = pick(buildPile(s), s.tonightApps, p.time, p.deckOnly, exclude, random)
+        val r = pick(buildPile(s), s.tonightApps, p.time, p.deckOnly, exclude, p.coop, random)
         return s.copy(tonight = p.copy(
             key = r.pick?.c?.key, at = now, shown = if (r.wrapped) emptyList() else exclude.takeLast(200),
             // « Choisir un autre jeu » apres « J'y joue » : la soiree repart.

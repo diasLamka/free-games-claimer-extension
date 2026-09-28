@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import io.github.diaslamka.freegames.MainActivity
 import io.github.diaslamka.freegames.R
+import io.github.diaslamka.freegames.Raccourcis
 import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.BackupIO
@@ -232,6 +233,12 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 shared = t
                 tab = 2
             }
+            Raccourcis.destination(i.action) != null -> {
+                // Appui long sur l'icone (1.12.0) : l'onglet, et la recuperation pour le premier.
+                val d = Raccourcis.destination(i.action)!!
+                tab = d.tab
+                if (d.claim) claim(emptySet())
+            }
             i.hasExtra(MainActivity.EXTRA_CLAIM) -> {
                 val key = i.getStringExtra(MainActivity.EXTRA_CLAIM)
                 tab = 0
@@ -332,7 +339,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     state, onOpen = { ClaimSession.openExternally(context, it) }, now = now,
                     tonight = TonightActions(
                         onKeep = { pick -> tonightUpdate { it.copy(tonight = pick) } },
-                        onSettings = { time, deck -> tonightUpdate { it.copy(tonight = it.tonight.copy(time = time, deckOnly = deck, key = null, shown = emptyList())) } },
+                        onSettings = { time, deck, coop -> tonightUpdate { it.copy(tonight = it.tonight.copy(time = time, deckOnly = deck, coop = coop, key = null, shown = emptyList())) } },
                         onAnother = { tonightUpdate { Tonight.reroll(it, System.currentTimeMillis()) } },
                         onPlaying = { jeu ->
                             tonightUpdate {

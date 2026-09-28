@@ -105,15 +105,24 @@ object Watcher {
         }
 
         if (after.settings.notifyNew && fresh.isNotEmpty()) {
-            val ordered = fresh.sortedByDescending { Rules.wished(it, after) }
-            if (firstRun || ordered.size > 3) Notifier.summary(context, ordered, after)
-            else ordered.forEach { Notifier.newGame(context, it, after) }
+            // Ce qu'on attendait d'abord, puis la deuxieme chance (1.12.0), puis le reste.
+            val ordered = fresh.sortedByDescending { (if (Rules.wished(it, after)) 2 else 0) + (if (Rules.secondChance(it, after, now) != null) 1 else 0) }
+            // Une deuxieme chance ne se noie pas dans « 5 jeux gratuits » : elle est annoncee a part, au premier lancement pres.
+            val chances = if (firstRun) emptyList() else ordered.filter { Rules.secondChance(it, after, now) != null }.take(3)
+            chances.forEach { Notifier.newGame(context, it, after) }
+            val reste = ordered - chances.toSet()
+            if (reste.isNotEmpty()) {
+                if (firstRun || reste.size > 3) Notifier.summary(context, reste, after)
+                else reste.forEach { Notifier.newGame(context, it, after) }
+            }
         }
 
         remindEnding(context, now)
         // La derniere chance (1.5.0) : ce qui est deja dans la fenetre sonne, le reste est programme.
         io.github.diaslamka.freegames.notify.LastChance.ring(context, now)
         io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, now)
+        // « Plus tard » (1.12.0) : ce dont le rappel est venu, meme si l'alarme n'a pas survecu a un redemarrage.
+        io.github.diaslamka.freegames.notify.Snooze.ring(context, now)
         refreshRatings(now)
         refreshOdds(now)
         refreshTonight(now)

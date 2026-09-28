@@ -2541,7 +2541,7 @@
     "message": "Los has visto todos: volvemos a empezar."
   },
   "tonightEmptyFilter": {
-    "message": "Nada de tu pila encaja: prueba otro tiempo, o sin Steam Deck."
+    "message": "Nada de tu pila encaja: prueba otro tiempo, o sin Steam Deck ni juego en compañía."
   },
   "tonightReading": {
     "message": "Su ficha de Steam se lee en la próxima pasada: nota, formato, Steam Deck."
@@ -2593,5 +2593,20 @@
   },
   "stampUnknown": {
     "message": "Incierto"
+  },
+  "tonightCoopOnly": {
+    "message": "En compañía"
+  },
+  "tonightCoop": {
+    "message": "Se juega en compañía"
+  },
+  "notifySecondChanceTitle": {
+    "message": "Segunda oportunidad: $1"
+  },
+  "notifySecondChanceLine": {
+    "message": "No lo conseguiste en $1 ($2)."
+  },
+  "tagSecondChance": {
+    "message": "2ª vez"
   }
 }

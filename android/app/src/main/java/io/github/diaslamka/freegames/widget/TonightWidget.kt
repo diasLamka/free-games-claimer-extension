@@ -126,6 +126,7 @@ class TonightWidget : AppWidgetProvider() {
             "tonight_short" -> context.getString(R.string.tonight_short)
             "tonight_sessions" -> context.getString(R.string.tonight_sessions)
             "tonight_long" -> context.getString(R.string.tonight_long)
+            "tonight_coop" -> context.getString(R.string.tonight_coop)
             "tonight_deck_verified" -> context.getString(R.string.tonight_deck_verified)
             "tonight_deck_playable" -> context.getString(R.string.tonight_deck_playable)
             else -> ""

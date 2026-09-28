@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Appui long sur l'icone (1.12.0). Chaque raccourci est une ACTION de
+     l'appli, reconnue par Raccourcis.destination : rien d'autre ne passe par
+     ici, et aucun n'agit sans que l'appli s'ouvre. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="recuperer"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_claim"
+        android:shortcutShortLabel="@string/shortcut_claim_short"
+        android:shortcutLongLabel="@string/shortcut_claim_long">
+        <intent
+            android:action="io.github.diaslamka.freegames.RECUPERER_MAINTENANT"
+            android:targetPackage="io.github.diaslamka.freegames"
+            android:targetClass="io.github.diaslamka.freegames.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="ce_soir"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_tonight"
+        android:shortcutShortLabel="@string/shortcut_tonight_short"
+        android:shortcutLongLabel="@string/shortcut_tonight_long">
+        <intent
+            android:action="io.github.diaslamka.freegames.CE_SOIR"
+            android:targetPackage="io.github.diaslamka.freegames"
+            android:targetClass="io.github.diaslamka.freegames.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="souhait"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_wish"
+        android:shortcutShortLabel="@string/shortcut_wish_short"
+        android:shortcutLongLabel="@string/shortcut_wish_long">
+        <intent
+            android:action="io.github.diaslamka.freegames.AJOUTER_UN_SOUHAIT"
+            android:targetPackage="io.github.diaslamka.freegames"
+            android:targetClass="io.github.diaslamka.freegames.MainActivity" />
+    </shortcut>
+</shortcuts>

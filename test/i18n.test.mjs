@@ -132,3 +132,20 @@ test('les durees ont leur unite en allemand et en espagnol', () => {
   assert.equal(t('ago', '3 h 05'), 'hace 3 h 05');
   setLocale(null);
 });
+
+/* Chrome lit « $nom$ » comme une variable : « $1$2 » fait refuser
+ * l'extension entiere (« Variable $1$ used but not defined »), et le service
+ * worker ne demarre plus. Aucun test n'y voyait rien, puisque le harnais lit
+ * les tables sans passer par le chargeur de Chrome. */
+test('aucun libelle n\'utilise une variable $nom$ sans la declarer', async () => {
+  const { readFileSync } = await import('node:fs');
+  for (const l of ['en', 'fr', 'de', 'es']) {
+    const table = JSON.parse(readFileSync(new URL(`../_locales/${l}/messages.json`, import.meta.url), 'utf8'));
+    for (const [cle, entree] of Object.entries(table)) {
+      const declarees = new Set(Object.keys(entree.placeholders || {}).map((n) => n.toLowerCase()));
+      for (const [, nom] of String(entree.message).matchAll(/\$([A-Za-z0-9_@]+)\$/g)) {
+        assert.ok(declarees.has(nom.toLowerCase()), `${l} ${cle} : « $${nom}$ » n'est pas declaree (ecrivez « $1 ($2) », pas « $1$2 »)`);
+      }
+    }
+  }
+});

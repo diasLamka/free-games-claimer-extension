@@ -4,6 +4,7 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Attempt
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
+import io.github.diaslamka.freegames.model.Seen
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
@@ -54,6 +55,31 @@ object Rules {
         val t = o.normalisedTitle
         if (t.isEmpty()) return null
         return library.values.firstOrNull { it.store == o.store && Titles.normalise(it.title) == t }
+    }
+
+    /**
+     * « Deuxieme chance » (1.12.0) : cette offre, en cours, porte un jeu qu'on
+     * avait deja VU offert sans jamais l'avoir -- le meme calcul que
+     * secondChance (watch/recurrence.js). Rend le passage precedent le plus
+     * recent, ou null.
+     *
+     *   - un jeu deja a nous, sur n'importe quel magasin (registre ou Ma
+     *     collection), n'a pas de deuxieme chance a saisir ;
+     *   - le passage doit dater d'un jour au moins AVANT le debut de cette
+     *     offre : `passes` retient une entree par offre, donc l'offre en cours
+     *     se croiserait elle-meme sinon. Sans debut connu, trois jours.
+     */
+    private const val DAY_MS = 24 * 3_600_000L
+
+    fun secondChance(o: Offer, s: AppState, now: Long): Seen? {
+        val vus = s.passes[o.normalisedTitle].orEmpty()
+        if (vus.isEmpty()) return null
+        val n = o.normalisedTitle
+        if (s.library.values.any { it.status in Verdicts.ACQUIRED && Titles.normalise(it.title) == n }) return null
+        if (s.owned.values.any { Titles.normalise(it.title) == n }) return null
+        val debut = listOfNotNull(o.start, o.firstSeen.takeIf { it > 0 }).minOrNull()
+        val limite = if (debut != null) debut - DAY_MS else now - 3 * DAY_MS
+        return vus.filter { it.ts <= limite }.maxByOrNull { it.ts }
     }
 
     fun ownedOnSteam(o: Offer, s: AppState): Boolean =

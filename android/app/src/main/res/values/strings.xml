@@ -40,6 +40,10 @@
     <string name="action_claim">Claim</string>
     <string name="action_claim_all">Claim all</string>
     <string name="action_open">Open</string>
+    <string name="notif_second_chance_title">Second chance: %1$s</string>
+    <string name="notif_second_chance_line">You didn\'t get it in %1$s (%2$s).</string>
+    <string name="tag_second_chance">2nd chance</string>
+    <string name="action_snooze">Later</string>
     <string name="verdict_login">Sign-in needed</string>
     <string name="verdict_challenge">The store asked for a human check</string>
     <string name="verdict_base">Needs the base game on Steam</string>
@@ -147,6 +151,14 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="year_empty">No game taken that year.</string>
     <string name="tonight_title">Tonight I\'m playing…</string>
     <string name="tonight_hint">One game from your pile, for the time you have: picked by Steam rating, the format Steam players give it and, if you want, the Steam Deck.</string>
+    <string name="tonight_coop_only">With others</string>
+    <string name="tonight_coop">Playable with others</string>
+    <string name="shortcut_claim_short">Claim</string>
+    <string name="shortcut_claim_long">Claim now</string>
+    <string name="shortcut_tonight_short">Tonight</string>
+    <string name="shortcut_tonight_long">Tonight I\'m playing…</string>
+    <string name="shortcut_wish_short">Wish</string>
+    <string name="shortcut_wish_long">Add a wish</string>
     <string name="tonight_hour">1 hour</string>
     <string name="tonight_evening">An evening</string>
     <string name="tonight_weekend">A weekend</string>
@@ -160,7 +172,7 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="tonight_not_for_me">Not for me</string>
     <string name="tonight_started">Have fun! It\'s “Playing” in My collection.</string>
     <string name="tonight_dropped">“%1$s” won\'t be suggested again.</string>
-    <string name="tonight_empty_filter">Nothing in your pile fits: try another time, or without Steam Deck.</string>
+    <string name="tonight_empty_filter">Nothing in your pile fits: try another time, or without Steam Deck or multiplayer.</string>
     <string name="tonight_empty">Your pile is empty. Import the extension\'s backup (Settings): My collection comes with it.</string>
     <string name="tonight_reading">Its Steam page is read on the next check: rating, format, Steam Deck.</string>
     <string name="tonight_to_try">You set it “to try”</string>

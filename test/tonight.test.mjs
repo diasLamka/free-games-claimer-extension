@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import {
   formatFromTags, readItem, buildPile, scoreTonight, pickTonight, playLinks, keptPick, refreshTonight,
   tonightItemsUrl, tonightPassDue, readTonightState, tonightImage, steamHeader, steamLanguage, cleanDescription,
+  coopFromTags, COOP_TAGS,
   FORMATS, TIMES, TOP, PICK_KEEP_MS, PASS_EVERY_MS, LOT, INFO_VERSION, MAX_DESCRIPTION,
 } from '../watch/tonight.js';
 import { STATUS } from '../watch/annotations.js';
@@ -263,4 +264,80 @@ test('le popup et la page Ma collection ecrivent la meme cle d\'etat', () => {
   assert.match(popup, /setStatus\(brut\[KEY_ANNOTATIONS\] \|\| \{\}, key, status\)/);
   assert.match(page, /rowKey,\n\} from '\.\.\/watch\/collection\.js'/);
   assert.match(page, /annotations = brut\[KEY_ANNOTATIONS\] \|\| \{\};/, 'la page relit enfin les etats');
+});
+
+/* « Ce soir a plusieurs » (2.98.0), sur dix jeux reels (GetItems, 2026-09-27). */
+const COOP_ITEMS = JSON.parse(readFileSync(new URL('./fixtures/steam-getitems-coop.json', import.meta.url), 'utf8')).response.store_items;
+const coopDe = (nom) => coopFromTags(COOP_ITEMS.find((i) => i.name.startsWith(nom)).tags);
+
+test('a plusieurs : les etiquettes coop pesent au moins un quart de la plus forte', () => {
+  for (const nom of ['It Takes Two', 'Overcooked', 'Portal 2', 'HELLDIVERS', 'Stardew Valley', 'Terraria', 'Cuphead']) {
+    assert.equal(coopDe(nom), true, nom);
+  }
+  for (const nom of ['Hades', 'Balatro', 'Hollow Knight']) assert.equal(coopDe(nom), false, nom);
+  assert.equal(coopFromTags([]), null, 'sans etiquettes, on ne devine pas');
+  assert.equal(coopFromTags(null), null);
+  // Une etiquette posee par trois joueurs n'est pas un jeu a plusieurs.
+  assert.equal(coopFromTags([{ tagid: 19, weight: 900 }, { tagid: 1685, weight: 40 }]), false);
+  assert.ok(COOP_TAGS.includes(3841) && COOP_TAGS.includes(3843));
+  assert.equal(readItem(COOP_ITEMS.find((i) => i.name === 'It Takes Two')).coop, true);
+  assert.equal(INFO_VERSION, 3);
+});
+
+test('a plusieurs : seulement les jeux qui se jouent ainsi, jamais une inconnue', () => {
+  const c = { key: 'k', title: 'X', stores: {}, never: null, toTry: false };
+  const it = readItem(COOP_ITEMS.find((i) => i.name === 'It Takes Two'));
+  const hades = readItem(COOP_ITEMS.find((i) => i.name === 'Hades'));
+  assert.equal(scoreTonight(c, hades, { coop: true }), null);
+  assert.equal(scoreTonight(c, null, { coop: true }), null, 'inconnu : ne passe pas');
+  const r = scoreTonight(c, it, { coop: true });
+  assert.ok(r.reasons.some((x) => x.key === 'tonightCoop'));
+  assert.ok(scoreTonight(c, it, { coop: false }) !== null);
+  assert.ok(!scoreTonight(c, it, { coop: false }).reasons.some((x) => x.key === 'tonightCoop'), 'sans le reglage, pas de raison en plus');
+  const pile = [
+    { ...c, key: 'a', title: 'It Takes Two', appid: '1426210' },
+    { ...c, key: 'b', title: 'Hades', appid: '1145360' },
+    { ...c, key: 'c', title: 'Terraria', appid: '105600' },
+  ];
+  const apps = Object.fromEntries(COOP_ITEMS.map((i) => [String(i.appid), { ...readItem(i), at: 1 }]));
+  const r2 = pickTonight(pile, { apps, coop: true, time: TIMES.ANY, random: () => 0 });
+  assert.equal(r2.count, 2);
+  assert.notEqual(r2.pick.title, 'Hades');
+  assert.equal(pickTonight(pile, { apps, coop: false, time: TIMES.ANY, random: () => 0 }).count, 3);
+});
+
+test('a plusieurs : le choix garde ne survit pas a un changement de reglage', () => {
+  const pile = [{ key: 'a', title: 'A', stores: {} }];
+  const saved = { key: 'a', at: NOW, time: TIMES.EVENING, deckOnly: false, coop: false };
+  assert.equal(keptPick(saved, pile, { time: TIMES.EVENING, deckOnly: false, coop: false }, NOW).key, 'a');
+  assert.equal(keptPick(saved, pile, { time: TIMES.EVENING, deckOnly: false, coop: true }, NOW), null);
+  assert.equal(keptPick({ ...saved, coop: undefined }, pile, { time: TIMES.EVENING, deckOnly: false, coop: false }, NOW).key, 'a', 'un choix d\'avant la 2.98.0 tient encore');
+});
+
+test('a plusieurs : les fiches d\'avant la 2.98.0 sont relues pour prendre leur etiquette', async () => {
+  const appels = [];
+  const fetch = async (url) => {
+    appels.push(url);
+    const input = JSON.parse(new URL(url).searchParams.get('input_json'));
+    return { ok: true, json: async () => ({ response: { store_items: input.ids.map(({ appid }) => COOP_ITEMS.find((i) => i.appid === appid)).filter(Boolean) } }) };
+  };
+  const collection = { stores: {}, items: { 'steam:1426210': { store: 'steam', id: '1426210', title: 'It Takes Two', kind: 'game' } } };
+  const ancien = { at: NOW - 3600e3, apps: { 1426210: { v: 2, at: NOW - 3600e3, name: 'It Takes Two', format: null } }, titles: {} };
+  const pile = buildPile({ collection, state: ancien });
+  const next = await refreshTonight({ fetch, pile, state: ancien, now: NOW, pause: async () => {} });
+  assert.equal(appels.length, 1);
+  assert.equal(next.apps['1426210'].coop, true);
+  assert.equal(next.apps['1426210'].v, INFO_VERSION);
+});
+
+test('a plusieurs : la case existe dans le popup et compte dans le choix garde', () => {
+  const popup = readFileSync(new URL('../pages/popup.js', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../pages/popup.html', import.meta.url), 'utf8');
+  assert.match(html, /id="tonight-coop"/);
+  assert.match(popup, /coop: p\.coop === true/);
+  assert.match(popup, /saveTonight\(\{ coop: e\.target\.checked, key: null, shown: \[\] \}\)/);
+  for (const l of ['fr', 'en', 'de', 'es']) {
+    const t = JSON.parse(readFileSync(new URL(`../_locales/${l}/messages.json`, import.meta.url), 'utf8'));
+    for (const k of ['tonightCoopOnly', 'tonightCoop']) assert.ok(t[k] && t[k].message, `${l} ${k}`);
+  }
 });

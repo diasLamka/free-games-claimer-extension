@@ -576,6 +576,13 @@ export function byUrgency(offers, now) {
     const wb = b.wished === true ? 0 : 1;
     if (wa !== wb) return wa - wb;
 
+    /* Puis ce qu'il a DEJA RATE (2.98.0) : la deuxieme chance d'un jeu passe
+       devant le tout-venant, derriere ce qu'il attendait. Derive a la lecture,
+       comme `wished`. */
+    const sa = a.secondChance ? 0 : 1;
+    const sb = b.secondChance ? 0 : 1;
+    if (sa !== sb) return sa - sb;
+
     const ua = urgency(a, now);
     const ub = urgency(b, now);
     if (ua !== ub) return ua - ub;

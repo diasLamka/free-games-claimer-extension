@@ -739,3 +739,6 @@ header .wordmark { white-space: nowrap; }
 
 /* Les tampons de la page Historique (2.97.0) : un peu plus grands, la page l'est aussi. */
 .game .stamp { font-size: 10.5px; padding: 2px 7px; margin-right: 6px; }
+
+/* Deuxieme chance (2.98.0) : l'etiquette a l'encre d'accent, comme ce qu'on attendait. */
+.kind-tag.second-chance { background: var(--accent); color: #000; border-color: #000; }
