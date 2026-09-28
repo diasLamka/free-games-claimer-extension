@@ -17,6 +17,7 @@ import coil3.request.allowHardware
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.diaslamka.freegames.data.Http
 import io.github.diaslamka.freegames.data.Ratings
+import io.github.diaslamka.freegames.data.Taste
 import io.github.diaslamka.freegames.data.Watcher
 import io.github.diaslamka.freegames.model.AccountState
 import io.github.diaslamka.freegames.model.AppState
@@ -24,6 +25,14 @@ import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Rating
 import io.github.diaslamka.freegames.model.SourceStatus
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.TasteGame
+import io.github.diaslamka.freegames.model.TasteState
+import io.github.diaslamka.freegames.sources.arr
+import io.github.diaslamka.freegames.sources.get
+import io.github.diaslamka.freegames.sources.num
+import io.github.diaslamka.freegames.sources.parseJson
+import io.github.diaslamka.freegames.sources.str
+import io.github.diaslamka.freegames.sources.text
 import io.github.diaslamka.freegames.sources.EpicMobileSource
 import io.github.diaslamka.freegames.sources.EpicSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
@@ -227,6 +236,27 @@ class ScreenshotTest {
         }
     }
 
+
+    /** Tes gouts (1.14.0) : « Pour toi » sur la carte d'une offre qui ressemble a ce que tu aimes. */
+    @Test
+    fun pourToi() = shoot("C-pour-toi", Accent.JAUNE, dark = true, tabs = 0) {
+        val dossier = System.getProperty("fixtures")
+        val items = parseJson(java.io.File(dossier, "steam-getitems-taste.json").readText())["response"]["store_items"].arr!!
+        val noms = parseJson(java.io.File(dossier, "steam-taglist-fr.json").readText())["response"]["tags"].arr!!
+            .associate { it["tagid"].num!!.toInt().toString() to it["name"].str!! }
+        val jeux = items.associate { it ->
+            it["appid"].text!! to TasteGame(now, tags = Taste.compact(it["tags"].arr!!.map { t -> t["tagid"].num!!.toInt() to t["weight"].num!! }))
+        }
+        fun id(n: String) = items.first { it["name"].str!!.startsWith(n) }["appid"].text!!
+        val profil = Taste.buildProfile(listOf("Hades", "Celeste", "Hollow Knight", "Slay the Spire").map { Taste.Signal(id(it), 1.0) }, jeux)
+        val o = live.offers.values.first { Ratings.eligible(it) }.let { it.copy(end = now + 2 * 3_600_000L) }
+        val s = live.copy(
+            offers = live.offers + (o.key to o),
+            ratings = live.ratings + (Ratings.key(o) to Rating(now, percent = 96, total = 900, score = 9, appid = id("Dead Cells"))),
+            taste = TasteState(at = now, imported = profil, games = jeux, names = noms),
+        )
+        GamesScreen(s, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
+    }
 
     /** Le resume du jour (1.13.0) : le reglage, l'heure choisie et ce qui passe quand meme tout de suite. */
     @Test

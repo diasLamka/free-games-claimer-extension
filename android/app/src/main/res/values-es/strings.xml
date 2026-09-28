@@ -186,6 +186,13 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="tonight_deck_verified">Verificado para Steam Deck</string>
     <string name="tonight_deck_playable">Jugable en Steam Deck</string>
     <string name="set_tonight">«Esta noche juego a…»: leer la ficha de Steam de los juegos de tu pila</string>
+    <string name="set_taste">Tus gustos: detectar las ofertas que se parecen a tus juegos</string>
+    <string name="set_taste_hint">Lee las etiquetas de Steam, sin cookie: solo números de juego.</string>
+    <string name="tag_for_you">Para ti</string>
+    <string name="notif_taste_line">Cerca de tus gustos: %1$s.</string>
+    <string name="notif_taste_line_bare">Cerca de tus gustos.</string>
+    <string name="tonight_taste">Va con tus gustos: %1$s</string>
+    <string name="tonight_taste_bare">Va con tus gustos</string>
     <string name="widget_description">Un juego de tu pila para esta noche</string>
     <string name="widget_empty_title">Pila vacía</string>
     <string name="widget_empty">Importa la copia de la extensión en la app.</string>

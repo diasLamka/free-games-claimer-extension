@@ -1,6 +1,7 @@
 package io.github.diaslamka.freegames.data
 
 import io.github.diaslamka.freegames.model.AppState
+import io.github.diaslamka.freegames.model.TasteProfile
 import io.github.diaslamka.freegames.model.TitleMatch
 import io.github.diaslamka.freegames.model.TonightInfo
 import io.github.diaslamka.freegames.model.TonightPick
@@ -59,8 +60,8 @@ object Tonight {
     const val SEARCHES_PER_RUN = 8
     const val PICK_KEEP_MS = 12L * 3600 * 1000
     const val TOP = 5
-    /** La forme des fiches : 2 avec la description (1.10.0). */
-    const val INFO_VERSION = 3
+    /** La forme des fiches : 2 avec la description (1.10.0), 4 avec les etiquettes (1.14.0). */
+    const val INFO_VERSION = 4
     const val MAX_DESCRIPTION = 300
     private val STEAM_LANGS = mapOf("fr" to "french", "en" to "english", "de" to "german", "es" to "spanish")
 
@@ -85,7 +86,7 @@ object Tonight {
     /** L'image de la carte : la fiche, l'en-tete deduit de l'appid, la jaquette du registre. */
     fun image(c: Candidate, info: TonightInfo?): String? = info?.image ?: steamHeader(c.appid) ?: c.image
 
-    private const val ITEMS_URL = "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/"
+    const val ITEMS_URL = "https://api.steampowered.com/IStoreBrowseService/GetItems/v1/"
     private val ORDRE = listOf("steam", "gog", "epic", "amazon")
 
     data class Copy(val id: String, val url: String?)
@@ -166,6 +167,7 @@ object Tonight {
             percent = pct,
             reviews = rev["review_count"].num?.toInt() ?: 0,
             image = SteamSource.image(item["assets"]),
+            tags = Taste.compact(tags),
         )
     }
 
@@ -238,7 +240,12 @@ object Tonight {
 
     private fun deckAtLeastPlayable(d: String?) = d == "verified" || d == "playable"
 
-    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean, coop: Boolean = false): Scored? {
+    /** Ce qu'il faut pour departager par les gouts : le profil, et les noms de ses etiquettes. */
+    data class TasteView(val profile: TasteProfile, val names: Map<String, String>)
+
+    fun tasteView(s: AppState): TasteView? = Taste.effective(s)?.let { TasteView(it, s.taste.names) }
+
+    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean, coop: Boolean = false, taste: TasteView? = null): Scored? {
         val deck = info?.deck ?: c.deck
         if (deckOnly && !deckAtLeastPlayable(deck)) return null
         // « A plusieurs » : comme Steam Deck, une inconnue ne passe pas -- on ne promet pas une partie a deux sur un jeu qu'on n'a pas lu.
@@ -259,6 +266,15 @@ object Tonight {
             reasons += Reason("tonight_rating", listOf(pct))
         }
         if (coop) { score += 1; reasons += Reason("tonight_coop") }
+        // Tes gouts (1.14.0) : un jeu qui ressemble a ce que tu aimes passe devant.
+        if (taste != null && info != null && info.tags.isNotEmpty()) {
+            val m = Taste.score(taste.profile, info.tags)
+            if (m != null && m.score >= Taste.FOR_YOU) {
+                score += 1.5
+                val noms = m.top.mapNotNull { taste.names[it.toString()] }
+                reasons += if (noms.isEmpty()) Reason("tonight_taste_bare") else Reason("tonight_taste", listOf(noms.joinToString(", ")))
+            }
+        }
         if (deckOnly) {
             if (deck == "verified") score += 1
             reasons += Reason(if (deck == "verified") "tonight_deck_verified" else "tonight_deck_playable")
@@ -267,10 +283,10 @@ object Tonight {
     }
 
     /** Parmi les cinq meilleurs pas encore montres, les meilleurs plus souvent. */
-    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), coop: Boolean = false, random: () -> Double = Math::random): Pick {
+    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), coop: Boolean = false, taste: TasteView? = null, random: () -> Double = Math::random): Pick {
         val notes = pile.mapNotNull { c ->
             val info = c.appid?.let { apps[it] }?.takeUnless { it.none }
-            score(c, info, time, deckOnly, coop)
+            score(c, info, time, deckOnly, coop, taste)
         }.sortedWith(compareByDescending<Scored> { it.score }.thenBy { it.c.title })
         if (notes.isEmpty()) return Pick(null, 0, false)
         val vus = exclude.toSet()
@@ -310,9 +326,9 @@ object Tonight {
         val pile = buildPile(s)
         kept(p, pile, now)?.let { c ->
             val info = c.appid?.let { s.tonightApps[it] }?.takeUnless { it.none }
-            score(c, info, p.time, p.deckOnly, p.coop)?.let { return it to p }
+            score(c, info, p.time, p.deckOnly, p.coop, tasteView(s))?.let { return it to p }
         }
-        val r = pick(pile, s.tonightApps, p.time, p.deckOnly, p.shown, p.coop, random)
+        val r = pick(pile, s.tonightApps, p.time, p.deckOnly, p.shown, p.coop, tasteView(s), random)
         return r.pick to p.copy(key = r.pick?.c?.key, at = now)
     }
 
@@ -320,7 +336,7 @@ object Tonight {
     fun reroll(s: AppState, now: Long, random: () -> Double = Math::random): AppState {
         val p = s.tonight
         val exclude = (p.shown + listOfNotNull(p.key)).distinct()
-        val r = pick(buildPile(s), s.tonightApps, p.time, p.deckOnly, exclude, p.coop, random)
+        val r = pick(buildPile(s), s.tonightApps, p.time, p.deckOnly, exclude, p.coop, tasteView(s), random)
         return s.copy(tonight = p.copy(
             key = r.pick?.c?.key, at = now, shown = if (r.wrapped) emptyList() else exclude.takeLast(200),
             // « Choisir un autre jeu » apres « J'y joue » : la soiree repart.

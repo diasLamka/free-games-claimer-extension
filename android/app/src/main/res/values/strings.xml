@@ -187,6 +187,13 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="tonight_deck_verified">Steam Deck Verified</string>
     <string name="tonight_deck_playable">Playable on Steam Deck</string>
     <string name="set_tonight">“Tonight I\'m playing…”: read the Steam page of games in your pile</string>
+    <string name="set_taste">Your taste: spot offers that resemble your games</string>
+    <string name="set_taste_hint">Reads Steam tags, without a cookie: only game numbers.</string>
+    <string name="tag_for_you">For you</string>
+    <string name="notif_taste_line">Close to your taste: %1$s.</string>
+    <string name="notif_taste_line_bare">Close to your taste.</string>
+    <string name="tonight_taste">Your kind of game: %1$s</string>
+    <string name="tonight_taste_bare">Your kind of game</string>
     <string name="widget_description">One game from your pile for tonight</string>
     <string name="widget_empty_title">Empty pile</string>
     <string name="widget_empty">Import the extension\'s backup in the app.</string>

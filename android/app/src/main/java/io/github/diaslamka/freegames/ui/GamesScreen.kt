@@ -58,6 +58,7 @@ import io.github.diaslamka.freegames.data.Money
 import io.github.diaslamka.freegames.data.Ratings
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.Rules
+import io.github.diaslamka.freegames.data.Taste
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
@@ -251,6 +252,8 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
                 if (wished) Tag("★ " + stringResource(R.string.wished).uppercase(), b.accent, b.onAccent)
                 // Deuxieme chance (1.12.0) : deja vu passer, jamais eu.
                 if (Rules.secondChance(o, state, now) != null) Tag(stringResource(R.string.tag_second_chance).uppercase(), Color.White, Color.Black, bordered = true)
+                // Tes gouts (1.14.0) : une offre qui ressemble a ce que tu aimes.
+                if (Taste.matchFor(state, Taste.appidOf(o, state)) != null) Tag(stringResource(R.string.tag_for_you).uppercase(), Color.Black, b.accent)
             }
             if (rating?.percent != null) {
                 Text(

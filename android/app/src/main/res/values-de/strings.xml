@@ -186,6 +186,13 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="tonight_deck_verified">Steam Deck verifiziert</string>
     <string name="tonight_deck_playable">Auf dem Steam Deck spielbar</string>
     <string name="set_tonight">„Heute Abend spiele ich…“: Steam-Seite der Spiele im Stapel lesen</string>
+    <string name="set_taste">Dein Geschmack: Angebote erkennen, die deinen Spielen ähneln</string>
+    <string name="set_taste_hint">Liest Steam-Tags, ohne Cookie: nur Spielnummern.</string>
+    <string name="tag_for_you">Für dich</string>
+    <string name="notif_taste_line">Nah an deinem Geschmack: %1$s.</string>
+    <string name="notif_taste_line_bare">Nah an deinem Geschmack.</string>
+    <string name="tonight_taste">Ganz nach deinem Geschmack: %1$s</string>
+    <string name="tonight_taste_bare">Ganz nach deinem Geschmack</string>
     <string name="widget_description">Ein Spiel aus deinem Stapel für heute Abend</string>
     <string name="widget_empty_title">Leerer Stapel</string>
     <string name="widget_empty">Importiere die Sicherung der Erweiterung in der App.</string>

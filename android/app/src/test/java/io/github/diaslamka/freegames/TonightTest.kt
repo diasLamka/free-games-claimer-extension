@@ -268,7 +268,7 @@ class TonightTest {
         for (n in listOf("Hades", "Balatro", "Hollow Knight")) assertEquals(n, false, coopInfo(n).coop)
         assertNull(Tonight.coopFromTags(emptyList()))
         assertEquals(false, Tonight.coopFromTags(listOf(19 to 900.0, 1685 to 40.0)))
-        assertEquals(Tonight.INFO_VERSION, 3)
+        assertEquals(Tonight.INFO_VERSION, 4)
     }
 
     @Test

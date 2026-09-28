@@ -186,6 +186,13 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="tonight_deck_verified">Vérifié Steam Deck</string>
     <string name="tonight_deck_playable">Jouable sur Steam Deck</string>
     <string name="set_tonight">« Ce soir je joue à… » : lire la fiche Steam des jeux de ta pile</string>
+    <string name="set_taste">Tes goûts : repérer les offres qui ressemblent à tes jeux</string>
+    <string name="set_taste_hint">Lit les étiquettes Steam, sans cookie : seulement des numéros de jeux.</string>
+    <string name="tag_for_you">Pour toi</string>
+    <string name="notif_taste_line">Proche de tes goûts : %1$s.</string>
+    <string name="notif_taste_line_bare">Proche de tes goûts.</string>
+    <string name="tonight_taste">Dans tes goûts : %1$s</string>
+    <string name="tonight_taste_bare">Dans tes goûts</string>
     <string name="widget_description">Un jeu de ta pile pour ce soir</string>
     <string name="widget_empty_title">Pile vide</string>
     <string name="widget_empty">Importe la sauvegarde de l\'extension dans l\'appli.</string>

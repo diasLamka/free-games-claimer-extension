@@ -28,6 +28,15 @@ genere : voir `build/build.mjs`.
   Un interrupteur dans Reglages -> Magasins ; coupe, rien n'est lu.
 - Le profil suit la sauvegarde complete (des numeros et des poids, sans le
   cache des jeux) : l'appli Android 1.14.0 le lit et fait la meme chose.
+- **Appli Android 1.14.0 : tes gouts.** Le meme calcul, verifie contre
+  l'extension sur les memes fiches Steam (a trois decimales pres). Le
+  telephone prend le profil de l'extension quand sa sauvegarde le porte -- elle
+  sait combien tu as joue --, sinon il en tire un de tes etats (fini,
+  commence, abandonne, pas pour moi ; il faut trois jeux aimes). **Pour toi**
+  sur la jaquette, une ligne dans la notification, et « Ce soir je joue a... »
+  met devant ce qui te ressemble. Un interrupteur dans Reglages ; coupe, rien
+  n'est lu. Les notes Steam sont maintenant lues avant d'annoncer, pour que la
+  notification puisse dire de quoi le jeu se rapproche.
 
 ## 2.98.0 -- 2026-09-28
 

@@ -106,6 +106,11 @@ object Watcher {
             base.copy(announced = (s.announced + fresh.associate { it.key to now }).filterValues { now - it < 90 * DAY_MS })
         }
 
+        // Les notes Steam, puis « Tes gouts » (1.14.0), AVANT d'annoncer : la notification d'un jeu dit de quoi il se rapproche.
+        refreshRatings(now)
+        refreshTaste(now)
+        val ann = Graph.store.value
+
         if (after.settings.notifyNew && fresh.isNotEmpty()) {
             // Resume du jour (1.13.0) : ce qui n'est ni souhaite ni une deuxieme chance attend l'heure du resume.
             val plan = Digest.split(fresh, after, now, firstRun)
@@ -114,11 +119,11 @@ object Watcher {
             val ordered = plan.now.sortedByDescending { (if (Rules.wished(it, after)) 2 else 0) + (if (Rules.secondChance(it, after, now) != null) 1 else 0) }
             // Une deuxieme chance ne se noie pas dans « 5 jeux gratuits » : elle est annoncee a part, au premier lancement pres.
             val chances = if (firstRun) emptyList() else ordered.filter { Rules.secondChance(it, after, now) != null }.take(3)
-            chances.forEach { Notifier.newGame(context, it, after) }
+            chances.forEach { Notifier.newGame(context, it, ann) }
             val reste = ordered - chances.toSet()
             if (reste.isNotEmpty()) {
-                if (firstRun || reste.size > 3) Notifier.summary(context, reste, after)
-                else reste.forEach { Notifier.newGame(context, it, after) }
+                if (firstRun || reste.size > 3) Notifier.summary(context, reste, ann)
+                else reste.forEach { Notifier.newGame(context, it, ann) }
             }
         }
 
@@ -133,7 +138,6 @@ object Watcher {
         Graph.store.value.settings.digestHour.takeIf { Digest.enabled(it) }?.let {
             Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
         }
-        refreshRatings(now)
         refreshOdds(now)
         refreshTonight(now)
         runCatching { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
@@ -172,6 +176,15 @@ object Watcher {
         if (!Tonight.due(s, now) || Tonight.buildPile(s).isEmpty()) return
         val (apps, titles) = Tonight.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
         Graph.store.update { st -> st.copy(tonightApps = apps, tonightTitles = titles, tonightAt = now) }
+    }
+
+    /** « Tes gouts » (1.14.0) : les etiquettes des jeux que tu aimes et des offres en cours, deux lots de cinquante au plus, toutes les six heures. */
+    suspend fun refreshTaste(now: Long) {
+        val s = Graph.store.value
+        if (!Taste.due(s, now)) return
+        val next = Taste.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        // Le profil de l'extension a pu arriver pendant la lecture : on ne l'ecrase pas.
+        Graph.store.update { st -> st.copy(taste = next.copy(imported = st.taste.imported)) }
     }
 
     /** Huit notes au plus par passage : poli envers Steam. */

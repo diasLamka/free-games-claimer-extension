@@ -136,6 +136,7 @@ fun SettingsScreen(
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
                     Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
+                    Toggle(stringResource(R.string.set_taste), stringResource(R.string.set_taste_hint), s.taste) { v -> onSettings { it.copy(taste = v) } }
                     Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
                 }
             }

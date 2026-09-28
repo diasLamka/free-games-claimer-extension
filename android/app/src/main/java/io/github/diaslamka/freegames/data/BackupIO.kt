@@ -6,6 +6,7 @@ import io.github.diaslamka.freegames.model.ImportedWish
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Mark
 import io.github.diaslamka.freegames.model.OwnedGame
+import io.github.diaslamka.freegames.model.TasteProfile
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.arr
@@ -40,6 +41,8 @@ object BackupIO {
     /** Ma collection et l'etat de chaque jeu (1.8.0), pour « Ce soir je joue a... ». */
     const val KEY_COLLECTION = "veille:collection"
     const val KEY_ANNOTATIONS = "veille:annotations"
+    /** Le profil de « Vos gouts » de l'extension (2.99.0) : des numeros d'etiquettes et leurs poids. */
+    const val KEY_TASTE = "veille:gouts"
     private val STATUTS = setOf("toTry", "playing", "done", "dropped", "notForMe")
 
     /** Ce que le moteur garde et relit : l'historique par magasin, les libelles appris. */
@@ -115,6 +118,11 @@ object BackupIO {
             marksAdded++
         }
 
+        // Le profil de gouts de l'extension : il sait combien de temps tu as joue, le telephone non.
+        val gouts = lire(bloc[KEY_TASTE]).obj?.get("profile").obj?.let { p ->
+            val tags = p["tags"].obj?.mapNotNull { (k, v) -> v.num?.let { n -> k.takeIf { Regex("^\\d+$").matches(it) }?.let { it to n } } }?.toMap().orEmpty()
+            if (tags.isEmpty()) null else TasteProfile(tags, p["liked"].num?.toInt() ?: 0, p["disliked"].num?.toInt() ?: 0)
+        }
         val engine = bloc.filterKeys { ENGINE_KEYS.matches(it) }
         val country = bloc[KEY_COUNTRY].str?.let { Countries.of(it).code }
 
@@ -127,6 +135,7 @@ object BackupIO {
             importedAt = now,
             owned = if (owned.isNotEmpty()) owned else state.owned,
             marks = marks,
+            taste = if (gouts != null) state.taste.copy(imported = gouts) else state.taste,
         )
         return next to Report(libAdded, added.size, imported.size, engine.size, owned.size, marksAdded)
     }

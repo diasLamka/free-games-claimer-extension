@@ -19,6 +19,7 @@ import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Rules
+import io.github.diaslamka.freegames.data.Taste
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Stores
@@ -128,12 +129,22 @@ object Notifier {
             .setAutoCancel(true)
             .setContentIntent(openApp(context, id))
             .setPriority(if (wished || second != null) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
-        if (second != null) {
-            val avant = context.getString(R.string.notif_second_chance_line, Fmt.monthInText(second.ts), Stores.label(second.store))
-            b.setContentText(details(context, o, now) + "\n" + avant)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(details(context, o, now) + "\n" + avant))
+        // Ce que le jeu a de particulier, en mots : la fois d'avant (1.12.0), puis de quoi il se rapproche de tes gouts (1.14.0).
+        val lignes = mutableListOf<String>()
+        if (second != null) lignes += context.getString(R.string.notif_second_chance_line, Fmt.monthInText(second.ts), Stores.label(second.store))
+        Taste.matchFor(s, Taste.appidOf(o, s))?.let { m ->
+            val noms = Taste.names(s, m.top)
+            lignes += if (noms.isEmpty()) context.getString(R.string.notif_taste_line_bare) else context.getString(R.string.notif_taste_line, noms.joinToString(", "))
         }
-        cover(o.image)?.let { b.setLargeIcon(it).setStyle(NotificationCompat.BigPictureStyle().bigPicture(it).bigLargeIcon(null as Bitmap?)) }
+        val texte = (listOf(details(context, o, now)) + lignes).joinToString("\n")
+        if (lignes.isNotEmpty()) b.setContentText(texte).setStyle(NotificationCompat.BigTextStyle().bigText(texte))
+        // Avec une jaquette, le style change : les lignes de plus passent dans le sous-titre du grand format.
+        cover(o.image)?.let {
+            b.setLargeIcon(it).setStyle(
+                NotificationCompat.BigPictureStyle().bigPicture(it).bigLargeIcon(null as Bitmap?)
+                    .also { st -> if (lignes.isNotEmpty()) st.setSummaryText(lignes.joinToString("\n")) },
+            )
+        }
         if (Rules.claimable(o, s.settings)) b.addAction(0, context.getString(R.string.action_claim), openApp(context, id + 1, claimKey = o.key))
         Titles.webUrl(o.url ?: o.resolveUrl)?.let { b.addAction(0, context.getString(R.string.action_open), openUrl(context, id + 2, it)) }
         // « Plus tard » (1.12.0) : pas dans les deux dernieres heures -- reporter serait refuser.

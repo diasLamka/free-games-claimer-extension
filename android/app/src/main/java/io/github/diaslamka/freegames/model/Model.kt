@@ -179,6 +179,8 @@ data class Settings(
      * passent tout de suite.
      */
     val digestHour: Int = -1,
+    /** « Tes gouts » (1.14.0) : les etiquettes Steam des jeux que tu aimes et des offres en cours, lues sans cookie. */
+    val taste: Boolean = true,
     val onboarded: Boolean = false,
 )
 
@@ -245,6 +247,8 @@ data class AppState(
     val snoozed: Map<String, Long> = emptyMap(),
     /** « Resume du jour » (1.13.0) : offre -> quand on l'a mise de cote pour le resume. */
     val digestHeld: Map<String, Long> = emptyMap(),
+    /** « Tes gouts » (1.14.0). */
+    val taste: TasteState = TasteState(),
     /** « Attends, il sera offert » (1.7.0) : les passages vus, par titre normalise. */
     val passes: Map<String, List<Seen>> = emptyMap(),
     /** Les editeurs qui offrent, par nom normalise. */
@@ -314,6 +318,37 @@ data class TonightInfo(
     val image: String? = null,
     /** Le jeu se joue-t-il a plusieurs ? null : on ne sait pas (fiche d'avant la 1.12.0, ou sans etiquettes). */
     val coop: Boolean? = null,
+    /** Les dix etiquettes les plus fortes (1.14.0) : « Tes gouts » les compare au profil. */
+    val tags: List<TagW> = emptyList(),
+)
+
+/** Une etiquette Steam et son poids, de 1 a 100 (celui du jeu, ramene a sa plus forte). */
+@Serializable
+data class TagW(val i: Int, val w: Int)
+
+/** Les etiquettes d'un jeu lu pour « Tes gouts » (1.14.0). */
+@Serializable
+data class TasteGame(val at: Long, val none: Boolean = false, val tags: List<TagW> = emptyList())
+
+/** Ce que tu aimes : des etiquettes et leur poids, de -1 a 1. Jamais un titre. */
+@Serializable
+data class TasteProfile(val tags: Map<String, Double> = emptyMap(), val liked: Int = 0, val disliked: Int = 0)
+
+/**
+ * « Tes gouts » (1.14.0). `imported` est le profil de l'extension (sa
+ * sauvegarde le porte : elle sait combien de temps tu as joue) ; `profile`,
+ * celui que le telephone tire seul de tes etats (fini, abandonne, pas pour
+ * moi). L'importe l'emporte quand il est la.
+ */
+@Serializable
+data class TasteState(
+    val at: Long? = null,
+    val profile: TasteProfile? = null,
+    val imported: TasteProfile? = null,
+    val games: Map<String, TasteGame> = emptyMap(),
+    val names: Map<String, String> = emptyMap(),
+    val namesAt: Long? = null,
+    val namesLang: String? = null,
 )
 
 /** L'appid Steam d'un titre hors Steam, trouve par la recherche (ou non). */
