@@ -262,7 +262,10 @@ test('le lien de l\'appli : le vecteur commun, et seulement pour ntfy', () => {
   assert.equal(new URL(ntfy.url).searchParams.get('click'), FX.appLink.link);
   const discord = publishRequest({ service: 'discord', url: 'https://discord.com/api/webhooks/123456/abcdefghijklmnopqrstuvwxyz' },
     { title: 'Defi', message: 'Hades', click: FX.appLink.link });
-  assert.ok(!JSON.parse(discord.init.body).content.includes('fgclaimer:'));
+  assert.ok(!discord.init.body.includes('fgclaimer:'), 'ni dans la carte Discord (2.99.3)');
+  const telegram = publishRequest({ service: 'telegram', chat: '42', url: 'https://api.telegram.org/bot123456789:AAEhBOweik6ad7oXbqYCpTAShdSyRKcXgQ0/sendMessage' },
+    { title: 'Defi', message: 'Hades', click: FX.appLink.link });
+  assert.ok(!telegram.init.body.includes('fgclaimer:'), 'ni dans le message Telegram : un bouton n\'ouvre que du https');
   // Un autre schema ne passe pas.
   const autre = publishRequest({ url: 'https://ntfy.sh/fgc-x', token: '' }, { title: 'x', message: 'y', click: 'intent://evil#Intent;end' });
   assert.equal(new URL(autre.url).searchParams.get('click'), null);

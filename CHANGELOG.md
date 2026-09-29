@@ -4,6 +4,29 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.3 -- 2026-09-29
+
+**Discord en cartes, comme Telegram**
+
+- Une alerte Discord est maintenant une **carte** : un liseré de couleur selon
+  le genre (jaune pour un jeu attendu, orange pour la derniere chance, rouge
+  pour une panne, violet pour le recap...), un titre qui est le lien, la
+  **jaquette du jeu en grand**, les memes logos de magasin (🛡️ 🟣 ♨️ 🌙...) et
+  les memes lignes que sur Telegram, et un pied « 🕹️ Free Games Claimer ».
+  Un webhook ne peut pas porter de boutons : le lien est le titre, et une ligne
+  « 🎁 Voir le jeu » ferme la carte.
+- **Rien ne mentionne personne** : `allowed_mentions` est vide, l'arobase est
+  casse, et le Markdown d'un titre venu d'un magasin (`* _ ~ | > # [ ] ( )`)
+  est neutralise -- un jeu appele « [gratuit](http://...) » ne fabrique pas de
+  lien. Si Discord refuse la carte (image illisible), elle repart sans image.
+- **Une seule lecture des alertes** : `watch/alert-model.js` lit les lignes (une
+  carte de jeu, une panne, un jeu mobile, une etiquette) et les deux services
+  ne font plus que les habiller (HTML pour Telegram, Markdown pour Discord).
+  Un test verifie qu'ils disent la meme chose des memes alertes.
+- Pour la photo du webhook, envoyez `docs/logo/telegram-bot-logo.png` dans
+  Parametres du salon, Integrations, Webhooks : Discord ne la lit pas dans
+  l'alerte.
+
 ## 2.99.2 -- 2026-09-29
 
 **Un seul logo, partout**

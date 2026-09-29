@@ -31,65 +31,12 @@
  * Module pur : ni reseau, ni stockage. `t` vient de lib/i18n.js.
  */
 import { t } from '../lib/i18n.js';
+import { DEFAULT_ICON, DEFAULT_SPARK, KIND_ICON as ICONES, KIND_SPARK as ETINCELLES, kindOf, parseLine, parseMessage } from './alert-model.js';
 
-/** Le genre de l'alerte -> l'icone du titre. Les genres sont ceux de ntfy (`tags`). */
-export const KIND_ICON = Object.freeze({
-  warning: '🚨',
-  video_game: '🎮',
-  mobile_phone: '📱',
-  alarm_clock: '⏰',
-  lock: '🔐',
-  key: '🔑',
-  calendar: '🗓️',
-  palm_tree: '🏝️',
-  white_check_mark: '✅',
-});
+/* Les icones, les couleurs, les logos et la lecture des lignes vivent dans le
+   modele commun (watch/alert-model.js) : Discord les lit de la meme facon. */
+export { KIND_ICON, KIND_SPARK, STORE_ICON, storeIcon } from './alert-model.js';
 
-/** Le petit plus qui ferme le titre : une alerte importante se voit de loin. */
-export const KIND_SPARK = Object.freeze({
-  warning: '⚠️',
-  video_game: '✨',
-  mobile_phone: '✨',
-  alarm_clock: '🔥',
-  lock: '🛑',
-  key: '🗝️',
-  calendar: '📅',
-  palm_tree: '🌴',
-  white_check_mark: '🎉',
-});
-
-const DEFAULT_ICON = '🎁';
-const DEFAULT_SPARK = '✨';
-
-/** Le logo de chaque magasin, en emoji : Telegram n'en accepte pas d'autre dans un texte. */
-export const STORE_ICON = Object.freeze({
-  'epic games store': '🛡️',
-  'epic games (mobile)': '📱',
-  'gog.com': '🟣',
-  steam: '♨️',
-  'amazon games': '📦',
-  'amazon luna': '🌙',
-  'prime gaming': '👑',
-  'microsoft store': '🪟',
-  'ubisoft connect': '🌀',
-  'ea app': '🎯',
-  'battle.net': '❄️',
-  'itch.io': '🕹️',
-  indiegala: '🎲',
-  fanatical: '🔥',
-  'humble bundle': '💝',
-  'legacy games': '📜',
-});
-
-/** Le logo du magasin nomme par ce texte, ou null si ce n'est pas un magasin. */
-export function storeIcon(name) {
-  return STORE_ICON[String(name || '').trim().toLowerCase()] || null;
-}
-
-/** Ce qu'on sait dire des plateformes d'un jeu mobile. */
-const PLATFORM_ICON = Object.freeze({ android: '🤖', ios: '🍎', iphone: '🍎', ipad: '🍎' });
-
-/** La regle d'une ligne de pied : discrete, en italique. */
 const SEPARATOR = '▰▰▰▰▰▰▰▰▰▰';
 const SIGNATURE = '🕹️ Free Games Claimer';
 
@@ -117,18 +64,26 @@ function withMoney(escaped) {
   return escaped.replace(/(\d+(?:[.,]\d{1,2})?\s?€)/g, '💶 <b>$1</b>');
 }
 
-/** Un morceau de detail : un delai prend le sablier, le reste reste en italique. */
-function chip(part) {
-  const s = String(part).trim();
-  if (/\d/.test(s) && !storeIcon(s)) return `⏳ ${ital(s)}`;
-  return ital(s);
-}
-
-/** « Android, iOS » -> « 🤖 Android · 🍎 iOS ». */
-function platforms(text) {
-  const mots = String(text).split(/[,/·]|\bet\b|\band\b|\bund\b|\by\b/i).map((x) => x.trim()).filter(Boolean);
-  if (!mots.length || !mots.every((m) => PLATFORM_ICON[m.toLowerCase()])) return null;
-  return mots.map((m) => `${PLATFORM_ICON[m.toLowerCase()]} ${esc(m)}`).join(' · ');
+/** Un noeud du modele, habille en HTML Telegram. */
+export function renderNode(n) {
+  switch (n.type) {
+    case 'game': {
+      const detail = [ital(n.store), ...n.chips.map((c) => (c.time ? `⏳ ${ital(c.text)}` : ital(c.text)))].join('  ·  ');
+      return `${n.icon} ${gras(n.title)}\n└ ${detail}`;
+    }
+    case 'mobile':
+      return `📱 ${gras(n.title)}\n└ ${n.platforms.map((p) => `${p.icon} ${esc(p.name)}`).join(' · ')}`;
+    case 'incident':
+      return n.detail
+        ? `${n.icon} ${withMoney(esc(n.text))}\n└ <code>${esc(n.detail)}</code>`
+        : `${n.icon} ${withMoney(esc(n.text))}`;
+    case 'label':
+      return `${n.icon} ${gras(n.label)} : ${withMoney(esc(n.value))}`;
+    case 'icon':
+      return `${n.icon} ${withMoney(esc(n.text))}`;
+    default:
+      return `${n.icon} ${ital(n.text)}`;
+  }
 }
 
 /**
@@ -137,42 +92,9 @@ function platforms(text) {
  * `icon` : celle que le producteur a choisie pour cette ligne (`msg.icons`),
  * s'il en a choisi une. `kind` : le genre de l'alerte.
  */
-export function formatLine(line, { icon = null, kind = null } = {}) {
-  const parts = String(line).split(' -- ').map((p) => p.trim()).filter(Boolean);
-  if (!parts.length) return '';
-
-  // « Titre -- Magasin[ -- encore 2 h] » : une carte de jeu.
-  if (parts.length >= 2 && storeIcon(parts[1])) {
-    const detail = [ital(parts[1]), ...parts.slice(2).map(chip)].join('  ·  ');
-    return `${storeIcon(parts[1])} ${gras(parts[0])}\n└ ${detail}`;
-  }
-  // « Titre -- Android, iOS » : un jeu mobile.
-  if (parts.length === 2) {
-    const p = platforms(parts[1]);
-    if (p) return `📱 ${gras(parts[0])}\n└ ${p}`;
-  }
-
-  const un = parts.join(' — ');
-
-  // Une panne : « phrase (motif technique) » -- le motif, en monospace dessous.
-  if (kind === 'warning') {
-    const m = /^(.*?)\s+\((.+)\)$/.exec(un);
-    if (m) return `${icon || '⚠️'} ${withMoney(esc(m[1]))}\n└ <code>${esc(m[2])}</code>`;
-    return `${icon || '⚠️'} ${withMoney(esc(un))}`;
-  }
-
-  // « Recuperes : A, B » : l'etiquette en gras.
-  const etiquette = /^([^:]{2,40}?)\s:\s(.+)$/.exec(un);
-  if (etiquette) {
-    return `${icon || '▪️'} ${gras(etiquette[1])} : ${withMoney(esc(etiquette[2]))}`;
-  }
-  if (icon) return `${icon} ${withMoney(esc(un))}`;
-  return `💬 ${ital(un)}`;
-}
-
-/** Les lignes d'un message, sans les vides. */
-function bodyLines(msg) {
-  return String(msg.message || '').split('\n').map((l) => l.trim()).filter(Boolean);
+export function formatLine(line, opts = {}) {
+  const n = parseLine(line, opts);
+  return n ? renderNode(n) : '';
 }
 
 /** Coupe aux lignes entieres pour tenir dans `max` signes : jamais au milieu d'un balisage. */
@@ -190,14 +112,13 @@ function fit(blocs, max) {
 
 /** Le texte HTML d'une alerte. `max` : la limite du contenant (message ou legende). */
 export function telegramText(msg, max = MAX_TEXT) {
-  const kind = (msg.tags && msg.tags[0]) || null;
-  const icon = KIND_ICON[kind] || DEFAULT_ICON;
-  const spark = KIND_SPARK[kind] || DEFAULT_SPARK;
+  const kind = kindOf(msg);
+  const icon = ICONES[kind] || DEFAULT_ICON;
+  const spark = ETINCELLES[kind] || DEFAULT_SPARK;
   const titre = String(msg.title || '').trim();
-  const icons = Array.isArray(msg.icons) ? msg.icons : [];
 
   const tete = titre ? [`${icon} <b>${esc(titre)}</b> ${spark}`, SEPARATOR] : [];
-  const lignes = bodyLines(msg).map((l, i) => formatLine(l, { icon: icons[i] || null, kind }));
+  const lignes = parseMessage(msg).map(renderNode);
   // Le pied compte dans la limite : il est reserve avant de couper le reste.
   const pied = [SEPARATOR, `<i>${SIGNATURE}</i>`];
   const reserve = pied.join('\n').length + 1;
@@ -222,7 +143,7 @@ const HTTPS = /^https:\/\/[^\s]{1,1800}$/i;
  * `.../sendPhoto`, meme bot.
  */
 export function telegramRequests(target, msg) {
-  const kind = (msg.tags && msg.tags[0]) || null;
+  const kind = kindOf(msg);
   const bouton = typeof msg.click === 'string' && HTTPS.test(msg.click)
     ? { inline_keyboard: [[{ text: buttonLabel(kind), url: msg.click }]] }
     : null;

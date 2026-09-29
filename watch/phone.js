@@ -81,6 +81,7 @@ export const TIMEOUT_MS = 10000;
  */
 export const RETRY_MS = 60 * 60 * 1000;
 
+import { discordRequests } from './discord-format.js';
 import { telegramRequests } from './telegram-format.js';
 
 /** Le lien de l'appli Android, tel que watch/relay.js l'ecrit (appLink). */
@@ -285,32 +286,16 @@ export function publishRequest(target, msg) {
   const appli = typeof msg.click === 'string' && APP_LINK_RE.test(msg.click)
     && target.service !== SERVICES.DISCORD && target.service !== SERVICES.TELEGRAM;
   const click = msg.click && (/^https:\/\//i.test(msg.click) || appli) ? msg.click : null;
-  const corps = String(msg.message || '').trim();
-  const titre = String(msg.title || '').trim();
 
   /* Telegram (2.99.1) : mis en page -- gras, icones, logo du magasin, bouton
      pour le lien, jaquette en photo. Voir watch/telegram-format.js. */
   if (target.service === SERVICES.TELEGRAM) return telegramRequests(target, msg);
 
-  /* Discord (2.71.0) : du JSON, un seul champ de texte. Le titre en tete, le
-     lien a la fin. Ni mention ni mise en forme interpretee : un titre de jeu
-     ne doit pas pouvoir notifier tout un salon (@everyone) ni casser un
-     balisage. */
-  if (target.service === SERVICES.DISCORD) {
-    const lignes = [titre, corps, click].filter(Boolean);
-    const payload = { content: lignes.join('\n').slice(0, 2000), allowed_mentions: { parse: [] } };
-    return {
-      url: target.url,
-      init: {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'omit',
-        cache: 'no-store',
-        redirect: 'error',
-      },
-    };
-  }
+  /* Discord (2.99.3) : une carte -- liseré de couleur, titre qui est un lien,
+     jaquette --, avec les memes logos et icones que Telegram. Jamais de
+     mention : un titre de jeu ne doit pas pouvoir notifier tout un salon
+     (@everyone) ni casser le Markdown. Voir watch/discord-format.js. */
+  if (target.service === SERVICES.DISCORD) return discordRequests(target, msg);
 
   const q = new URLSearchParams();
   if (msg.title) q.set('title', String(msg.title).slice(0, 250));

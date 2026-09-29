@@ -225,7 +225,11 @@ test('Discord : du JSON, sans mention possible ; Telegram : sans mise en forme i
   assert.equal(d.init.headers['Content-Type'], 'application/json');
   assert.equal(d.init.credentials, 'omit');
   const corps = JSON.parse(d.init.body);
-  assert.equal(corps.content, 'Un jeu attendu est gratuit : @everyone\nHollow Knight -- Epic\nhttps://store.epicgames.com/p/x');
+  // 2.99.3 : une carte (embed), plus un texte brut. Le titre est le lien, et personne n'est mentionne.
+  assert.equal(corps.embeds.length, 1);
+  assert.equal(corps.embeds[0].url, 'https://store.epicgames.com/p/x');
+  assert.ok(corps.embeds[0].title.includes('@\u200beveryone'), 'l\'arobase est casse');
+  assert.ok(!('content' in corps));
   assert.deepEqual(corps.allowed_mentions, { parse: [] });
 
   const t = P.publishRequest(P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' }), { ...msg, message: 'x'.repeat(5000) });

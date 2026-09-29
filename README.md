@@ -173,6 +173,8 @@ est declare `"type": "module"`.
 | `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de ses listes Steam et GOG |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
+| `alert-model.js` | la lecture commune des alertes : cartes de jeu, pannes, jeux mobiles, etiquettes -- Telegram et Discord ne font que les habiller |
+| `discord-format.js` | les alertes Discord en cartes : liseré, titre-lien, jaquette, Markdown neutralise, aucune mention |
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
@@ -486,6 +488,10 @@ titre en gras, une carte par jeu avec le logo de son magasin en emoji, la
 jaquette en photo au-dessus, et le lien en vrai bouton dessous
 (`watch/telegram-format.js`). Si Telegram refuse l'image, le message part sans
 elle.
+
+**Discord en cartes** (2.99.3) : liseré de couleur, titre-lien, jaquette en grand,
+memes logos que Telegram (`watch/discord-format.js`, sur le modele commun
+`watch/alert-model.js`). Jamais de mention.
 
 **Le logo du bot Telegram** (`docs/logo/`) : le logo de l'extension et de l'appli. Dans
 Telegram : @BotFather, `/mybots`, votre bot, *Edit Bot*, *Edit Botpic*, puis
