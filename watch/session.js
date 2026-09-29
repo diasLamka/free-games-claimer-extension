@@ -92,18 +92,32 @@ export function readSession(state, store) {
     status: Object.values(SESSION).includes(entry.status) ? entry.status : SESSION.UNKNOWN,
     note: typeof entry.note === 'string' ? entry.note : null,
     at: Number.isFinite(entry.at) ? entry.at : null,
+    // Depuis quand la sonde dit « deconnecte » sans discontinuer (2.99.4). Une entree plus ancienne : sa date.
+    outSince: Number.isFinite(entry.outSince) ? entry.outSince : (entry.status === SESSION.OUT && Number.isFinite(entry.at) ? entry.at : null),
   };
 }
+
+/**
+ * Une sonde qui dit « deconnecte » une seule fois ne suffit pas a le dire a
+ * l'utilisateur (2.99.4) : un magasin en maintenance, une page d'accueil
+ * servie a la place, un portail captif au reveil rendent la meme reponse
+ * qu'une session perdue. Il faut qu'elle le redise une demi-heure plus tard.
+ */
+export const OUT_CONFIRM_MS = 30 * 60 * 1000;
 
 /** Enregistre une mesure. Rend un nouvel etat : rien n'est modifie en place. */
 export function recordSession(state, store, { status, note = null }, now) {
   if (typeof now !== 'number') throw new TypeError('recordSession : "maintenant" est obligatoire');
+  const statut = Object.values(SESSION).includes(status) ? status : SESSION.UNKNOWN;
+  const avant = readSession(state, store);
   return {
     ...(state || {}),
     [store]: {
-      status: Object.values(SESSION).includes(status) ? status : SESSION.UNKNOWN,
+      status: statut,
       note: note ? String(note).slice(0, 160) : null,
       at: now,
+      // La serie de « deconnecte » garde son debut ; toute autre mesure la casse.
+      ...(statut === SESSION.OUT ? { outSince: avant.status === SESSION.OUT && avant.outSince !== null ? avant.outSince : now } : {}),
     },
   };
 }

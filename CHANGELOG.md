@@ -4,6 +4,33 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.4 -- 2026-09-29
+
+**Passe anti-fausses-alertes : reseau coupe, reveil, maintenance**
+
+Les deux fausses alertes de la veille (« Steam a change sa page », « la veille
+ne tourne plus ») avaient la meme cause, un ordinateur qui se reveille sans
+reseau. Chaque detecteur a ete rejoue dans ce cas, et trois autres failles du
+meme genre sont fermees :
+
+- **Plusieurs sources qui echouent ensemble sur le reseau** (« Failed to
+  fetch », un delai depasse) : c'est une coupure, pas elles. Au reveil d'un
+  portable `navigator.onLine` est deja vrai alors que le wifi ne l'est pas ;
+  la garde « hors ligne » n'y voyait rien, et trois cycles de ce genre
+  ouvraient « la source X echoue depuis un moment ». Ces echecs ne sont plus
+  comptes -- et la source retente au cycle suivant, sans attendre son recul.
+  Un echec isole, ou mele a une reponse HTTP, reste compte comme avant.
+- **Une session « deconnectee » ne s'annonce plus sur une seule mesure.** Un
+  magasin en maintenance, un portail captif au reveil rendent la meme reponse
+  qu'une vraie deconnexion : la sonde doit le redire une demi-heure plus tard.
+  Une mesure « inconnue » entre deux interrompt la serie.
+- **Deux motifs d'echec qui ne sont pas ceux du magasin** ne comptent plus
+  comme un selecteur mort : « paquet Steam inconnu » (la source ne l'a pas
+  donne) et « controle d'age » (seul un humain le passe).
+- Rappel des deux corrections de la 2.99.1, maintenant couvertes par des
+  tests de bout en bout : une injection de script qui echoue, et le premier
+  tour d'inspection apres un long silence.
+
 ## 2.99.3 -- 2026-09-29
 
 **Discord en cartes, comme Telegram**

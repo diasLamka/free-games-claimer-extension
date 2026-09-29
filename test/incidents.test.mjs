@@ -198,10 +198,19 @@ test('une session perdue devient un incident, une session inconnue jamais', () =
      alerte fait passer « je ne sais pas » pour « c'est casse », et appelle un
      geste inutile. */
   const perdue = observe({
-    sessions: { gog: { status: SESSION.OUT, at: T } },
+    sessions: { gog: { status: SESSION.OUT, at: T, outSince: T - 40 * 60000 } },
     now: T,
   });
   assert.ok(perdue.some((v) => v.kind === KINDS.SESSION && v.key === 'gog'));
+
+  // 2.99.4 : une seule mesure « deconnecte » (maintenance, portail captif au reveil) ne suffit pas.
+  const unSeulCoup = observe({ sessions: { gog: { status: SESSION.OUT, at: T, outSince: T } }, now: T });
+  assert.deepEqual(unSeulCoup.filter((v) => v.kind === KINDS.SESSION), []);
+  const presque = observe({ sessions: { gog: { status: SESSION.OUT, at: T, outSince: T - 29 * 60000 } }, now: T });
+  assert.deepEqual(presque.filter((v) => v.kind === KINDS.SESSION), []);
+  // Une entree d'avant la 2.99.4 (sans outSince) : sa date de mesure fait foi.
+  const ancienne = observe({ sessions: { gog: { status: SESSION.OUT, at: T - 3600000 } }, now: T });
+  assert.ok(ancienne.some((v) => v.kind === KINDS.SESSION));
 
   const inconnue = observe({
     sessions: { gog: { status: SESSION.UNKNOWN, at: T } },

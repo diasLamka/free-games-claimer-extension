@@ -38,6 +38,21 @@
  * mensonge aurait remplace un mauvais diagnostic par une absence de
  * diagnostic -- deux tests l'ont refuse, et ils avaient raison.
  */
+/**
+ * Ce motif d'echec est-il celui d'un RESEAU qui ne repond pas (2.99.4) ?
+ *
+ * « Failed to fetch », un delai depasse, une page d'erreur de Chrome : rien de
+ * cela ne dit que la source a change. Au reveil d'un portable, le navigateur
+ * croit encore le reseau la (`navigator.onLine` est vrai) alors que le wifi
+ * n'est pas revenu -- toutes les sources echouent ensemble, de la meme facon,
+ * et c'est la coupure, pas elles. Un statut HTTP (« HTTP 503 ») n'en est pas
+ * un : le serveur a repondu.
+ */
+export function isNetworkFailure(message) {
+  return /failed to fetch|networkerror|network request failed|load failed|net::err_|delai depasse|requete abandonnee|timed out|econnreset|enotfound|dns/i
+    .test(String(message || ''));
+}
+
 export function describeFetchFailure(e, { timeoutMs, signal, label } = {}) {
   const aborted = Boolean((signal && signal.aborted) || (e && e.name === 'AbortError'));
   if (aborted) {

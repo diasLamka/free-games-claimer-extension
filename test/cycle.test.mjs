@@ -246,6 +246,50 @@ test('une coupure reseau ne compte pas comme un echec de la source', async () =>
   assert.ok(!sources.test.consecutiveFailures, 'un echec a ete compte alors qu\'on etait hors ligne');
 });
 
+test('plusieurs sources qui echouent ENSEMBLE sur le reseau : une coupure, pas comptee (2.99.4)', async () => {
+  // Au reveil d'un portable, navigator.onLine est deja vrai alors que le wifi ne l'est pas :
+  // la garde « hors ligne » n'y voit rien, et trois cycles ouvraient « la source X echoue ».
+  const coupure = { offers: [], dropped: [], errors: ['Failed to fetch'] };
+  const a = sourceFactice('a', [response([offer('Jeu A')]), coupure, coupure, coupure]);
+  const b = sourceFactice('b', [response([offer('Jeu B')]), coupure, coupure, coupure]);
+  const c = await contexteDeTest({ a, b });
+
+  await c.cycle(T);
+  for (let i = 1; i <= 3; i++) await c.cycle(T + i * DAY, { force: true });
+
+  const sources = c.faux.payload()[KEYS.SOURCES];
+  assert.ok(!sources.a.consecutiveFailures && !sources.b.consecutiveFailures, 'aucune serie ne doit s\'ouvrir');
+  assert.match(sources.a.lastError, /Failed to fetch/, 'le journal garde le motif');
+  assert.equal(Object.keys(c.faux.payload()[KEYS.OFFERS]).length, 2, 'le catalogue n\'a pas bouge');
+});
+
+test('un seul echec reseau, ou des echecs de natures differentes : comptes comme avant', async () => {
+  const coupure = { offers: [], dropped: [], errors: ['Failed to fetch'] };
+  const panne = { offers: [], dropped: [], errors: ['HTTP 503'] };
+  // Une seule source : on ne sait pas si c'est elle.
+  const seule = sourceFactice('seule', [response([offer('Jeu A')]), coupure]);
+  const c1 = await contexteDeTest({ seule });
+  await c1.cycle(T);
+  await c1.cycle(T + DAY, { force: true });
+  assert.equal(c1.faux.payload()[KEYS.SOURCES].seule.consecutiveFailures, 1);
+  // Deux sources, dont une qui a repondu 503 : le serveur, lui, a parle.
+  const a = sourceFactice('a', [response([offer('Jeu A')]), coupure]);
+  const b = sourceFactice('b', [response([offer('Jeu B')]), panne]);
+  const c2 = await contexteDeTest({ a, b });
+  await c2.cycle(T);
+  await c2.cycle(T + DAY, { force: true });
+  const s2 = c2.faux.payload()[KEYS.SOURCES];
+  assert.equal(s2.a.consecutiveFailures, 1);
+  assert.equal(s2.b.consecutiveFailures, 1);
+  // Deux sources dont UNE seule est interrogee ce cycle : pas de jugement de groupe.
+  const a3 = sourceFactice('a3', [response([offer('Jeu A')]), coupure]);
+  const b3 = sourceFactice('b3', [response([offer('Jeu B')]), response([offer('Jeu B')])]);
+  const c3 = await contexteDeTest({ a3, b3 });
+  await c3.cycle(T);
+  await c3.cycle(T + DAY, { force: true });
+  assert.equal(c3.faux.payload()[KEYS.SOURCES].a3.consecutiveFailures, 1, 'b3 a repondu : a3 est peut-etre la seule en panne');
+});
+
 test('une source qui jette n\'arrete pas le cycle', async () => {
   const casse = {
     name: 'casse',

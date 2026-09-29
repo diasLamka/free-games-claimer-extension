@@ -60,6 +60,9 @@ test('nos propres pannes n\'accusent pas le magasin', () => {
   assert.equal(classify('failed', 'la page n\'a pas fini de charger'), KINDS.OTHER);
   assert.equal(classify('failed', 'le moteur ne s\'est pas annonce'), KINDS.OTHER);
   assert.equal(classify('failed', 'ordre non transmis : port closed'), KINDS.OTHER);
+  // 2.99.4 : ni un paquet que la source n'a pas donne, ni un controle d'age a passer a la main.
+  assert.equal(classify('failed', 'paquet Steam inconnu : seule la source Steam le donne'), KINDS.OTHER);
+  assert.equal(classify('failed', 'controle d\'age Steam : a passer une fois a la main'), KINDS.OTHER);
   // 2.99.1 : la page d'erreur de Chrome n'est pas une page de Steam qui a change.
   assert.equal(classify('failed', 'injection impossible : Frame with ID 0 is showing error page'), KINDS.OTHER);
   assert.equal(classify('failed', 'injection impossible : Cannot access contents of the page'), KINDS.OTHER);

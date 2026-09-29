@@ -31,6 +31,7 @@ import {
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
+import { isNetworkFailure } from './net.js';
 import { ownedKeys, ownedKeyFor } from './library.js';
 import { TYPES as RELAY_TYPES, MAX_HELP_MS, ROLES as RELAY_ROLES, syncRelay, announce, maybeAlive, appLink } from './relay.js';
 import { ownedStoreKeys } from './collection.js';
@@ -305,6 +306,8 @@ export async function runCycle({
     const sourceStates = { ...ctx.sources };
     const stats = { ...ctx.stats };
     const anomalies = [];
+    // Les echecs de ce cycle, pour juger ensemble s'il s'agit d'une coupure reseau (2.99.4).
+    const echecs = [];
 
     for (const name of toQuery) {
       const source = sources[name];
@@ -345,7 +348,9 @@ export async function runCycle({
         if (offline()) {
           record('warn', `${name} : hors ligne, echec non compte`, { errors: r.errors });
         } else {
+          const avant = state;
           state = afterFailure(state, now, r.errors.join(' ; '));
+          echecs.push({ name, avant, reseau: r.errors.every(isNetworkFailure) });
           record('warn', `${name} : echec`, { errors: r.errors, failures: state.consecutiveFailures });
         }
         sourceStates[name] = { ...state, lastCycle: now, lastError: r.errors.join(' ; ') };
@@ -433,6 +438,17 @@ export async function runCycle({
         vanished: integration.vanished.length,
         expired: integration.expired.length,
       });
+    }
+
+    /* Plusieurs sources ont echoue ENSEMBLE, toutes de la meme facon reseau
+       (« Failed to fetch », un delai depasse) : c'est le reseau, pas elles.
+       Au reveil d'un portable, `navigator.onLine` est deja vrai alors que le wifi
+       ne l'est pas encore -- la garde `offline()` n'y voit rien, et trois
+       cycles de ce genre ouvraient « la source X echoue depuis un moment ».
+       Un seul echec, lui, reste compte : on ne sait pas s'il est la source. */
+    if (echecs.length >= 2 && echecs.length === toQuery.length && echecs.every((e) => e.reseau)) {
+      for (const e of echecs) sourceStates[e.name] = { ...e.avant, lastCycle: now, lastError: sourceStates[e.name].lastError };
+      record('warn', `${echecs.length} sources ont echoue ensemble, sur le reseau : coupure, echecs non comptes`);
     }
 
     const { catalog: purge } = purgeExpired(catalog, { now });

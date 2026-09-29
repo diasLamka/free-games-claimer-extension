@@ -19,7 +19,7 @@
  */
 import { alerts as canaryAlerts, alertLine } from './canary.js';
 import { failingSources } from './sentinel.js';
-import { PROBED_STORES, SESSION, readSession } from './session.js';
+import { OUT_CONFIRM_MS, PROBED_STORES, SESSION, readSession } from './session.js';
 
 /** Cle de stockage. Espace de la veille, jamais l'espace FGC_* du moteur. */
 export const KEY_INCIDENTS = 'veille:incidents';
@@ -165,6 +165,8 @@ export function observe({
   for (const store of suivis) {
     const lu = readSession(sessions, store);
     if (lu.status !== SESSION.OUT) continue;
+    // Une seule mesure ne suffit pas (2.99.4) : la sonde doit l'avoir redit une demi-heure apres.
+    if (!Number.isFinite(lu.outSince) || now - lu.outSince < OUT_CONFIRM_MS) continue;
     vus.push({ kind: KINDS.SESSION, key: store, detail: lu.note || 'session absente' });
   }
 

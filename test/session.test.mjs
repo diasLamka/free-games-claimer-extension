@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
   SESSION, PROBED_STORES, LOGIN_URLS, STALE_AFTER_MS,
-  fromImportStatus, readSession, recordSession, isStale, summarise,
+  fromImportStatus, readSession, recordSession, isStale, summarise, OUT_CONFIRM_MS,
 } from '../watch/session.js';
 import { IMPORT_STATUS } from '../watch/collection.js';
 import { probeSession } from '../watch/collection-import.js';
@@ -166,4 +166,20 @@ test('un magasin sans sonde le dit, il ne plante pas', async () => {
   const r = await probeSession('amazon', { fetch: async () => { throw new Error('jamais appele'); } });
   assert.equal(r.status, IMPORT_STATUS.ERROR);
   assert.match(r.note, /sans sonde/);
+});
+
+test('la serie de « deconnecte » garde son debut, et toute autre mesure la casse (2.99.4)', () => {
+  let e = recordSession({}, 'gog', { status: SESSION.OUT }, T);
+  assert.equal(e.gog.outSince, T);
+  e = recordSession(e, 'gog', { status: SESSION.OUT }, T + 40 * 60000);
+  assert.equal(e.gog.outSince, T, 'le debut ne bouge pas');
+  assert.equal(readSession(e, 'gog').outSince, T);
+  // Une mesure « inconnue » (reseau coupe) interrompt la serie : le doute n'est pas une confirmation.
+  e = recordSession(e, 'gog', { status: SESSION.UNKNOWN }, T + 50 * 60000);
+  assert.equal(e.gog.outSince, undefined);
+  e = recordSession(e, 'gog', { status: SESSION.OUT }, T + 60 * 60000);
+  assert.equal(e.gog.outSince, T + 60 * 60000, 'une nouvelle serie repart de zero');
+  e = recordSession(e, 'gog', { status: SESSION.OK }, T + 70 * 60000);
+  assert.equal(readSession(e, 'gog').outSince, null);
+  assert.equal(OUT_CONFIRM_MS, 30 * 60 * 1000);
 });
