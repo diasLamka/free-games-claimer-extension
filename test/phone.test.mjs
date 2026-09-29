@@ -231,9 +231,12 @@ test('Discord : du JSON, sans mention possible ; Telegram : sans mise en forme i
   const t = P.publishRequest(P.phoneTarget({ on: true, service: 'telegram', token: BOT, chat: '42' }), { ...msg, message: 'x'.repeat(5000) });
   const tc = JSON.parse(t.init.body);
   assert.equal(tc.chat_id, '42');
-  assert.equal(tc.text.length, 4096);
-  assert.equal(tc.parse_mode, undefined);
+  assert.ok(tc.text.length <= 4096, 'jamais plus que ce que Telegram accepte');
+  // 2.99.1 : mis en page en HTML, le lien devient un bouton et non plus une adresse au pied du texte.
+  assert.equal(tc.parse_mode, 'HTML');
   assert.equal(tc.disable_web_page_preview, true);
+  assert.equal(tc.reply_markup.inline_keyboard[0][0].url, 'https://store.epicgames.com/p/x');
+  assert.ok(!tc.text.includes('https://store.epicgames.com'), 'l\'adresse n\'est pas dans le texte');
   assert.ok(!('Authorization' in t.init.headers));
 });
 

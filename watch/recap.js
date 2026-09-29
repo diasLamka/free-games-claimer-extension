@@ -163,16 +163,20 @@ export function composeRecap(recap, { t, storeLabel = (s) => s, total = null }) 
   const nom = (x) => displayTitle(x || '');
   const title = n === 0 ? t('recapTitle') : t(n === 1 ? 'recapTitleOne' : 'recapTitleMany', String(n));
   const lines = [];
+  // Une icone par ligne, pour les services qui savent les montrer (Telegram, 2.99.1).
+  const icons = [];
   if (n) {
     const liste = titleList(recap.claimed.map((c) => nom(c.title)));
     lines.push(total ? t('recapClaimedWorth', liste, total) : t('recapClaimed', liste));
+    icons.push('✅');
   }
   if (recap.manual.length) {
     lines.push(t('recapManual', titleList(recap.manual.map((m) => `${nom(m.title)} (${storeLabel(m.store)})`), 3)));
+    icons.push('🖐️');
   }
-  if (recap.missed.length) lines.push(t('recapMissed', titleList(recap.missed.map((m) => nom(m.title)), 3)));
-  if (recap.upcoming.length) lines.push(t('recapNext', titleList(recap.upcoming.map((u) => nom(u.title)), 3)));
-  return { title, lines, text: lines.join('\n') };
+  if (recap.missed.length) { lines.push(t('recapMissed', titleList(recap.missed.map((m) => nom(m.title)), 3))); icons.push('❌'); }
+  if (recap.upcoming.length) { lines.push(t('recapNext', titleList(recap.upcoming.map((u) => nom(u.title)), 3))); icons.push('🔜'); }
+  return { title, lines, icons, text: lines.join('\n') };
 }
 
 /** La valeur recuperee, dans une seule devise ; plusieurs devises ne s'additionnent pas. */
@@ -235,9 +239,9 @@ export async function runRecap({
     record('info', 'recap du jeudi : rien a dire cette semaine');
     return { sent: false, why: 'empty', recap };
   }
-  const { title, text } = composeRecap(recap, { t, storeLabel, total: recapTotal(recap.claimed, format) });
+  const { title, text, icons } = composeRecap(recap, { t, storeLabel, total: recapTotal(recap.claimed, format) });
   if (ordinateur) await notify({ id: `recap-${now}`, title, message: text });
-  if (phone) await phone({ title, message: text, priority: 3, tags: ['calendar'] });
+  if (phone) await phone({ title, message: text, priority: 3, tags: ['calendar'], icons });
   record('info', `recap du jeudi : ${recap.claimed.length} recupere(s), ${recap.manual.length} a prendre, ${recap.missed.length} rate(s), ${recap.upcoming.length} annonce(s)`);
   return { sent: true, recap, title, text };
 }

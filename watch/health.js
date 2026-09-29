@@ -19,7 +19,7 @@
 import { KEY_CANARY } from './canary.js';
 import { KEY_SESSIONS } from './session.js';
 import {
-  KEY_INCIDENTS, KINDS, incidentLine, markNotified, markPhoned, observe, pendingNotices, phonePending, reconcile,
+  KEY_INCIDENTS, KINDS, WAKE_GAP_MS, incidentLine, markNotified, markPhoned, observe, pendingNotices, phonePending, reconcile,
 } from './incidents.js';
 import { KEY_PHONE, KEY_PHONE_STATE, incidentsMessage, mayRetry, phoneTarget, pushToPhone } from './phone.js';
 import { STORE_LABELS } from './offer.js';
@@ -27,6 +27,9 @@ import { ALERTS, badgeState, decideAlert, effectiveQuiet } from './notify-policy
 import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
 import { t } from '../lib/i18n.js';
+
+/** Le dernier tour d'inspection : `{ at }`. Sert a reconnaitre un reveil (2.99.1). */
+export const KEY_INSPECTION = 'veille:inspection';
 
 /**
  * Regarde, dit une fois, peint le badge.
@@ -49,10 +52,15 @@ export async function inspectHealth({
 
   const raw = await readKeys(chrome, [
     KEY_CANARY, KEYS.SOURCES, KEY_SESSIONS, KEYS.STATE, KEY_INCIDENTS, KEYS.OFFERS,
-    KEY_PHONE, KEY_PHONE_STATE,
+    KEY_PHONE, KEY_PHONE_STATE, KEY_INSPECTION,
   ]);
   const settings = await readSettings(chrome);
   const state = raw[KEYS.STATE] || {};
+
+  /* Un long silence depuis le tour d'AVANT : l'ordinateur dormait. Sans tour
+     precedent, on ne sait rien -- et on juge comme avant. */
+  const avant = raw[KEY_INSPECTION];
+  const justWoke = Boolean(avant) && Number.isFinite(avant.at) && now - avant.at > WAKE_GAP_MS;
 
   const vus = observe({
     canary: raw[KEY_CANARY] || {},
@@ -61,6 +69,7 @@ export async function inspectHealth({
     state,
     watchedStores: settings.watchedStores,
     permissionLevel,
+    justWoke,
     now,
   });
 
@@ -148,7 +157,7 @@ export async function inspectHealth({
     }
   }
 
-  await write(chrome, { [KEY_INCIDENTS]: suivant });
+  await write(chrome, { [KEY_INCIDENTS]: suivant, [KEY_INSPECTION]: { at: now } });
 
   /* Le badge, meme sans cycle : c'est le seul canal qui reste quand le systeme
      refuse nos notifications, et le peindre seulement en fin de cycle le

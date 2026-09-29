@@ -2629,5 +2629,14 @@
   },
   "tasteHint": {
     "message": "Erkennt Angebote, die Ihren Spielen ähneln (meistgespielt, beendet, aussortiert), anhand der Steam-Nutzer-Tags. Ohne Cookie gelesen: nur Spielnummern."
+  },
+  "tgBtnGame": {
+    "message": "Spiel ansehen"
+  },
+  "tgBtnRedeem": {
+    "message": "Code einlösen"
+  },
+  "tgBtnOpen": {
+    "message": "Seite öffnen"
   }
 }

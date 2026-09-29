@@ -2629,5 +2629,14 @@
   },
   "tasteHint": {
     "message": "Repère les offres qui ressemblent aux jeux que vous aimez (les plus joués, finis, écartés), d'après les étiquettes des joueurs Steam. Lu sans cookie : seulement des numéros de jeux."
+  },
+  "tgBtnGame": {
+    "message": "Voir le jeu"
+  },
+  "tgBtnRedeem": {
+    "message": "Échanger le code"
+  },
+  "tgBtnOpen": {
+    "message": "Ouvrir la page"
   }
 }

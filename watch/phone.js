@@ -81,6 +81,8 @@ export const TIMEOUT_MS = 10000;
  */
 export const RETRY_MS = 60 * 60 * 1000;
 
+import { telegramRequests } from './telegram-format.js';
+
 /** Le lien de l'appli Android, tel que watch/relay.js l'ecrit (appLink). */
 const APP_LINK_RE = /^fgclaimer:\/\/finir\?[A-Za-z0-9%+&=._~-]{1,600}$/;
 
@@ -224,8 +226,13 @@ export function incidentsMessage(incidents, { title, label }) {
     const phrase = label(i.kind, i.key);
     return i.detail ? `${phrase} (${i.detail})` : phrase;
   });
-  return { title, message: lignes.join('\n'), priority: PRIORITY.HIGH, tags: ['warning'] };
+  // Une icone par genre de panne, pour les services qui savent les montrer (Telegram).
+  const icons = (incidents || []).map((i) => INCIDENT_ICON[i.kind] || '⚠️');
+  return { title, message: lignes.join('\n'), priority: PRIORITY.HIGH, tags: ['warning'], icons };
 }
+
+/** Le genre d'une panne, en emoji (2.99.1). */
+const INCIDENT_ICON = Object.freeze({ selector: '🧩', source: '📡', session: '🔓', stalled: '💤', muted: '🔕' });
 
 /**
  * Des jeux attendus, en une alerte : le premier en titre, les autres dessous.
@@ -240,6 +247,8 @@ export function wishedMessage(offers, { title, line }) {
     priority: PRIORITY.HIGH,
     tags: ['video_game'],
     click: liste[0].url || liste[0].resolveUrl || null,
+    // La jaquette du premier : Telegram la montre en tete (2.99.1).
+    image: liste[0].image || null,
   };
 }
 
@@ -256,6 +265,7 @@ export function mobileMessage(offers, { title, line }) {
     priority: PRIORITY.DEFAULT,
     tags: ['mobile_phone'],
     click: liste[0].url || null,
+    image: liste[0].image || null,
   };
 }
 
@@ -278,16 +288,17 @@ export function publishRequest(target, msg) {
   const corps = String(msg.message || '').trim();
   const titre = String(msg.title || '').trim();
 
-  /* Discord et Telegram (2.71.0) : du JSON, un seul champ de texte. Le titre
-     en tete, le lien a la fin. Ni mention ni mise en forme interpretee : un
-     titre de jeu ne doit pas pouvoir notifier tout un salon (@everyone) ni
-     casser un balisage. */
-  if (target.service === SERVICES.DISCORD || target.service === SERVICES.TELEGRAM) {
+  /* Telegram (2.99.1) : mis en page -- gras, icones, logo du magasin, bouton
+     pour le lien, jaquette en photo. Voir watch/telegram-format.js. */
+  if (target.service === SERVICES.TELEGRAM) return telegramRequests(target, msg);
+
+  /* Discord (2.71.0) : du JSON, un seul champ de texte. Le titre en tete, le
+     lien a la fin. Ni mention ni mise en forme interpretee : un titre de jeu
+     ne doit pas pouvoir notifier tout un salon (@everyone) ni casser un
+     balisage. */
+  if (target.service === SERVICES.DISCORD) {
     const lignes = [titre, corps, click].filter(Boolean);
-    const discord = target.service === SERVICES.DISCORD;
-    const payload = discord
-      ? { content: lignes.join('\n').slice(0, 2000), allowed_mentions: { parse: [] } }
-      : { chat_id: target.chat, text: lignes.join('\n').slice(0, 4096), disable_web_page_preview: true };
+    const payload = { content: lignes.join('\n').slice(0, 2000), allowed_mentions: { parse: [] } };
     return {
       url: target.url,
       init: {
@@ -332,11 +343,16 @@ export function publishRequest(target, msg) {
  */
 export async function sendPhone({ fetch: fetchImpl, target, msg, timeoutMs = TIMEOUT_MS }) {
   if (!target || !msg) return { ok: false, status: 0, note: 'rien a envoyer' };
-  const { url, init } = publishRequest(target, msg);
+  const { url, init, fallback } = publishRequest(target, msg);
   const stopwatch = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = stopwatch ? setTimeout(() => stopwatch.abort(), timeoutMs) : null;
   try {
-    const r = await fetchImpl(url, { ...init, signal: stopwatch ? stopwatch.signal : undefined });
+    const signal = stopwatch ? stopwatch.signal : undefined;
+    let r = await fetchImpl(url, { ...init, signal });
+    /* Telegram refuse parfois l'image (adresse illisible pour lui, trop
+       lourde) : un 400. Le message part alors sans elle -- mieux vaut une
+       alerte sans jaquette que pas d'alerte. */
+    if (!r.ok && fallback && r.status === 400) r = await fetchImpl(fallback.url, { ...fallback.init, signal });
     if (r.ok) return { ok: true, status: r.status, note: null };
     const raison = target.service === SERVICES.TELEGRAM ? await telegramReason(r) : null;
     return { ok: false, status: r.status, note: describeStatus(r.status, target.service, raison) };

@@ -62,6 +62,33 @@ test('une veille arretee est vue et dite, sans qu\'aucun cycle n\'ait tourne', a
   assert.match(p.envoyees[0].message, /cycle/);
 });
 
+test('au reveil de l\'ordinateur, la veille en retard n\'est pas declaree morte avant d\'avoir rattrape', async () => {
+  /* 2026-09-28 : « La veille ne tourne plus (dernier cycle il y a 10 h) »,
+     recu au reveil d'un portable. Le tour d'inspection passe avant le
+     rattrapage du cycle : il voyait 10 h de retard, et la veille repartait
+     toute seule quelques secondes plus tard. */
+  const p = await poste({ state: { booted: true, lastCycle: T - 10 * HEURE, nextCycle: T - 7 * HEURE, unseen: 0 } });
+  // Le tour d'avant date de la veille au soir : l'ordinateur dormait.
+  await p.faux.chrome.storage.local.set({ 'veille:inspection': { at: T - 10 * HEURE } });
+
+  const reveil = await p.tour();
+  assert.equal(reveil.opened.length, 0, 'ce tour-la ne juge pas');
+  assert.equal(p.envoyees.length, 0);
+
+  // Le cycle n'a pas rattrape : une demi-heure plus tard, le tour juge sur pieces.
+  const suite = await p.tour(T + HEURE / 2);
+  assert.equal(suite.opened.length, 1);
+  assert.equal(suite.opened[0].kind, KINDS.STALLED);
+});
+
+test('un navigateur qui tourne et dont la veille s\'est tue est dit tout de suite', async () => {
+  const p = await poste({ state: { booted: true, lastCycle: T - 10 * HEURE, nextCycle: T - 7 * HEURE, unseen: 0 } });
+  await p.faux.chrome.storage.local.set({ 'veille:inspection': { at: T - 20 * 60 * 1000 } });
+  const r = await p.tour();
+  assert.equal(r.opened.length, 1, 'le tour precedent date de vingt minutes : ce n\'est pas un sommeil');
+  assert.equal(r.opened[0].kind, KINDS.STALLED);
+});
+
 test('une veille a l\'heure ne dit rien du tout', async () => {
   const p = await poste({
     state: { booted: true, lastCycle: T - HEURE, nextCycle: T + 7 * HEURE, unseen: 0 },

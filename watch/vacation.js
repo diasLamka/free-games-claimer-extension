@@ -58,9 +58,9 @@ export function composeReturn(recap, { t, storeLabel = (s) => s, total = null })
   const title = n
     ? t(n === 1 ? 'vacationBackTitleOne' : 'vacationBackTitleMany', String(n))
     : t('vacationBackTitle');
-  const { lines } = composeRecap(recap, { t, storeLabel, total });
-  if (!lines.length) lines.push(t('vacationBackNothing'));
-  return { title, text: lines.join('\n') };
+  const { lines, icons } = composeRecap(recap, { t, storeLabel, total });
+  if (!lines.length) { lines.push(t('vacationBackNothing')); icons.push('😌'); }
+  return { title, text: lines.join('\n'), icons };
 }
 
 /**
@@ -97,9 +97,9 @@ export async function runReturnSummary({
   });
 
   await chrome.storage.local.set({ [KEY_VACATION]: { summarizedFor: v.until, at: now }, [KEY_RECAP]: { at: now } });
-  const { title, text } = composeReturn(recap, { t, storeLabel, total: recapTotal(recap.claimed, format) });
+  const { title, text, icons } = composeReturn(recap, { t, storeLabel, total: recapTotal(recap.claimed, format) });
   if (settings.notifyMode !== 'off') await notify({ id: `retour-${now}`, title, message: text });
-  if (phone) await phone({ title, message: text, priority: 3, tags: ['palm_tree'] });
+  if (phone) await phone({ title, message: text, priority: 3, tags: ['palm_tree'], icons });
   record('info', `retour de vacances : ${recap.claimed.length} recupere(s), ${recap.manual.length} a prendre, ${recap.missed.length} rate(s)`);
   return { sent: true, recap, title, text };
 }

@@ -60,6 +60,11 @@ test('nos propres pannes n\'accusent pas le magasin', () => {
   assert.equal(classify('failed', 'la page n\'a pas fini de charger'), KINDS.OTHER);
   assert.equal(classify('failed', 'le moteur ne s\'est pas annonce'), KINDS.OTHER);
   assert.equal(classify('failed', 'ordre non transmis : port closed'), KINDS.OTHER);
+  // 2.99.1 : la page d'erreur de Chrome n'est pas une page de Steam qui a change.
+  assert.equal(classify('failed', 'injection impossible : Frame with ID 0 is showing error page'), KINDS.OTHER);
+  assert.equal(classify('failed', 'injection impossible : Cannot access contents of the page'), KINDS.OTHER);
+  assert.equal(classify('failed', 'injection impossible : No tab with id: 42.'), KINDS.OTHER);
+  assert.equal(classify('failed', 'net::ERR_INTERNET_DISCONNECTED'), KINDS.OTHER);
 });
 
 test('une reconnexion ne dit rien : le moteur s\'arrete avant de regarder', () => {

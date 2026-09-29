@@ -352,3 +352,9 @@ test('le badge crie meme quand le compte d\'offres est coupe', () => {
 
   assert.equal(b.text, '!');
 });
+
+test('observe : au reveil, la veille en retard n\'est pas jugee (2.99.1)', () => {
+  const state = { lastCycle: T - 10 * HEURE, nextCycle: T - 7 * HEURE };
+  assert.equal(observe({ state, now: T }).some((v) => v.kind === KINDS.STALLED), true);
+  assert.equal(observe({ state, now: T, justWoke: true }).some((v) => v.kind === KINDS.STALLED), false);
+});

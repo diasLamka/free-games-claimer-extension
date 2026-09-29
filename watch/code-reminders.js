@@ -97,9 +97,11 @@ export function composeReminder(due, { t, storeLabel = (s) => s }) {
     ? t('codeRemindTitleOne', storeLabel(premier.store), quand(premier))
     : t('codeRemindTitleMany', String(due.length));
   const lines = due.slice(0, 4).map((d) => t('codeRemindLine', nom(d), storeLabel(d.store), d.deadline));
-  if (due.length > 4) lines.push(`+${due.length - 4}`);
+  const icons = lines.map(() => '🔑');
+  if (due.length > 4) { lines.push(`+${due.length - 4}`); icons.push('➕'); }
   lines.push(t(due.length === 1 ? 'codeRemindWhere' : 'codeRemindWhereMany'));
-  return { title, text: lines.join('\n'), url: redeemUrlFor(premier.store) };
+  icons.push('💡');
+  return { title, text: lines.join('\n'), icons, url: redeemUrlFor(premier.store) };
 }
 
 /**
@@ -121,7 +123,7 @@ export async function runCodeReminders({
 
   const msg = composeReminder(due, { t, storeLabel });
   if (computer) await notify({ id: `code-${now}`, title: msg.title, message: msg.text, url: msg.url });
-  if (phone) await phone({ title: msg.title, message: msg.text, priority: 4, tags: ['key'], click: msg.url || null });
+  if (phone) await phone({ title: msg.title, message: msg.text, priority: 4, tags: ['key'], click: msg.url || null, icons: msg.icons });
   record('info', `rappel de code : ${due.length} code(s) bientot perime(s)`);
   return { sent: due.length, due };
 }

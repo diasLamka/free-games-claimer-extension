@@ -173,6 +173,7 @@ est declare `"type": "module"`.
 | `notify-image.js` | la jaquette du jeu dans la notification : telechargee sans cookies, recadree en 2:1, passee en `data:` -- ou rien |
 | `wishlist.js` | ce que l'utilisateur attend, par TITRE : il survit a l'absence d'offre -- saisi, ou importe de ses listes Steam et GOG |
 | `calendar.js` | l'agenda (.ics) : fins d'offres, offres annoncees, dernier jour des codes -- jamais le code |
+| `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
@@ -479,6 +480,12 @@ les heures calmes, et part aussi sur le telephone si l'alerte est active.
 Reglages -> Notifications -> Alertes -> Service : l'adresse d'un webhook de
 salon Discord, ou le jeton d'un bot Telegram et votre identifiant. Les memes
 alertes, aux memes moments.
+
+**Telegram en couleurs** (2.99.1) : chaque alerte a l'icone de son genre, un
+titre en gras, une carte par jeu avec le logo de son magasin en emoji, la
+jaquette en photo au-dessus, et le lien en vrai bouton dessous
+(`watch/telegram-format.js`). Si Telegram refuse l'image, le message part sans
+elle.
 
 **Tester la recuperation** (2.64.0), sous les sessions : pour chaque magasin
 que l'extension reclame, la page d'un jeu offert en ce moment s'ouvre dans une

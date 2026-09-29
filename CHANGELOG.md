@@ -4,6 +4,39 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.1 -- 2026-09-29
+
+**Telegram en couleurs, et deux fausses alertes en moins**
+
+- **Des messages Telegram mis en page.** Fini le texte brut. Chaque alerte a
+  l'icone de son genre (🎮 jeu attendu, ⏰ derniere chance, 🚨 panne, 🗓️
+  recap, 🔑 code a echanger, 🏝️ retour de vacances), un titre en gras, et une
+  carte par jeu avec le **logo du magasin** en emoji (🛡️ Epic, 🟣 GOG, ♨️
+  Steam, 🌙 Luna, 🪟 Microsoft...), le delai restant sous un ⏳ et les prix
+  sous une 💶. Un jeu mobile montre ses plateformes (🤖 Android · 🍎 iOS).
+  Une panne met son motif technique en monospace, le recap une icone par
+  ligne (✅ ❌ 🖐️ 🔜).
+- **La jaquette du jeu en photo** au-dessus du message (jeux attendus, jeux
+  mobiles, derniere chance), et le lien devient un **vrai bouton** sous le
+  message (« 🎁 Voir le jeu », « 🔑 Echanger le code »), dans la langue de
+  l'extension. Si Telegram refuse l'image, le message part quand meme, sans
+  elle.
+- Rien ne part de plus qu'avant : aucun code de rachat, aucun identifiant ;
+  une jaquette est l'adresse publique que le magasin sert a tout le monde.
+  Tout texte venu d'un magasin est echappe avant d'entrer dans le HTML de
+  Telegram, et l'arobase est casse : un jeu appele « @quelquun » ne mentionne
+  personne dans un groupe. Discord et ntfy ne changent pas.
+- **Fausse alerte « Steam a change sa page ».** Un onglet qui affichait la page
+  d'erreur de Chrome (le reseau n'etait pas revenu au reveil) faisait echouer
+  l'injection du script (« Frame with ID 0 is showing error page »), et le
+  canari y voyait un selecteur mort. Une injection qui echoue ne dit rien du
+  magasin : elle ne compte plus.
+- **Fausse alerte « La veille ne tourne plus ».** Au reveil d'un ordinateur
+  endormi la nuit, le tour d'inspection passait AVANT le rattrapage du cycle
+  en retard et disait « dernier cycle il y a 10 h » -- puis la veille repartait
+  toute seule. Ce premier tour apres un long silence ne juge plus ; le suivant,
+  une demi-heure plus tard, juge sur pieces.
+
 ## 2.99.0 -- 2026-09-28
 
 **Vos gouts : ce qui vous ressemble, en tete**

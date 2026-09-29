@@ -49,6 +49,20 @@ export const KINDS = Object.freeze({
 export const STALL_FLOOR_MS = 6 * 3600000;
 
 /**
+ * Un ecart entre deux tours d'inspection plus grand que cela, c'est un
+ * ordinateur qui dormait ou un navigateur ferme (2.99.1).
+ *
+ * L'alarme filet passe toutes les 30 minutes tant que le navigateur tourne :
+ * trois fois ce pas ne s'explique que par un sommeil. Au reveil, le tour
+ * d'inspection passe AVANT le rattrapage du cycle en retard -- et disait la
+ * veille morte, « dernier cycle il y a 10 h », quelques secondes avant qu'elle
+ * ne reparte toute seule. Ce tour-la ne juge donc pas la veille : le
+ * rattrapage lui laisse sa chance, et le tour suivant, une demi-heure plus
+ * tard, juge sur pieces.
+ */
+export const WAKE_GAP_MS = 90 * 60 * 1000;
+
+/**
  * Multiple du pas prevu au-dela duquel on conclut.
  *
  * Deux laisse passer UN cycle manque sans crier : un portable ferme une nuit
@@ -122,6 +136,8 @@ export function observe({
   state = {},
   watchedStores = [],
   permissionLevel = 'granted',
+  /** Vrai au premier tour apres un sommeil : la veille n'a pas encore pu rattraper son retard. */
+  justWoke = false,
   now,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('observe : "maintenant" est obligatoire');
@@ -152,7 +168,7 @@ export function observe({
     vus.push({ kind: KINDS.SESSION, key: store, detail: lu.note || 'session absente' });
   }
 
-  if (isStalled({ lastCycle: state.lastCycle, nextCycle: state.nextCycle, now })) {
+  if (!justWoke && isStalled({ lastCycle: state.lastCycle, nextCycle: state.nextCycle, now })) {
     const retard = now - state.lastCycle;
     vus.push({
       kind: KINDS.STALLED,

@@ -2629,5 +2629,14 @@
   },
   "tasteHint": {
     "message": "Spots the offers that resemble the games you like (most played, finished, set aside), from Steam players' tags. Read without a cookie: only game numbers."
+  },
+  "tgBtnGame": {
+    "message": "View the game"
+  },
+  "tgBtnRedeem": {
+    "message": "Redeem the code"
+  },
+  "tgBtnOpen": {
+    "message": "Open the page"
   }
 }

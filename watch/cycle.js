@@ -667,6 +667,7 @@ export async function runCycle({
             priority: PRIORITY.URGENT,
             tags: ['alarm_clock'],
             click: derniers[0].url || derniers[0].resolveUrl || null,
+            image: derniers[0].image || null,
           },
           now,
           record,
@@ -804,7 +805,8 @@ export async function runCycle({
            vous attend », rien n'est perdu a attendre le matin. Avec le relais,
            toucher l'alerte ouvre l'appli sur le jeu. */
         if (manual && tel && fetchImpl && !inQuietHours(effectiveQuiet(ctx.settings), now)) {
-          const titres = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).map((x) => x.title).join('\n');
+          const defis = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).map((x) => x.title);
+          const titres = defis.join('\n');
           const ici = relais && bloques.length;
           await pushToPhone({
             chrome,
@@ -813,6 +815,8 @@ export async function runCycle({
             msg: {
               title: t('notifyChallengeTitle'),
               message: ici ? `${titres}\n${t('phoneChallengeHere')}` : titres,
+              // Une icone par ligne pour Telegram : un jeu par titre, puis le geste a faire.
+              icons: [...defis.map(() => '🎮'), ...(ici ? ['📲'] : [])],
               priority: PRIORITY.HIGH,
               tags: ['lock'],
               click: ici ? appLink(bloques[0]) : null,

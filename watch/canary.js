@@ -80,8 +80,14 @@ const HUMAN_VERDICTS = Object.freeze(['needs_login', 'needs_link', 'challenge'])
  * Une page qui ne finit pas de charger, un content script qui ne s'annonce
  * pas, un ordre qui ne passe pas : ce sont nos pannes, pas celles d'Epic. Les
  * compter ferait crier le canari a chaque coupure reseau.
+ *
+ * 2.99.1 : « injection impossible : Frame with ID 0 is showing error page ».
+ * L'onglet affichait la page d'erreur de Chrome -- le reseau n'etait pas
+ * revenu au reveil de l'ordinateur --, et l'alerte accusait Steam d'avoir
+ * change sa page. Une injection qui echoue ne dit rien du magasin : le script
+ * n'est jamais arrive jusqu'a lui.
  */
-const NOT_STORE = /pas fini de charger|ne s'est pas annonce|d'atterrissage illisible|ordre non transmis|hors ligne|network|failed to fetch/i;
+const NOT_STORE = /pas fini de charger|ne s'est pas annonce|d'atterrissage illisible|ordre non transmis|hors ligne|network|failed to fetch|injection impossible|showing error page|frame with id|no tab with id|cannot access|net::err_/i;
 
 /**
  * Ce qu'un verdict dit de l'etat des selecteurs du magasin.
