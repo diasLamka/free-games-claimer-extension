@@ -201,6 +201,10 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="widget_nothing_title">Rien ne convient</string>
     <string name="widget_nothing">Change le temps ou le Steam Deck dans l\'appli.</string>
     <string name="widget_have_fun">Bonne partie !</string>
+    <string name="widget_free_description">Les jeux gratuits en ce moment et le temps qu\'il reste</string>
+    <string name="widget_free_none_title">Rien à prendre</string>
+    <string name="widget_free_none">Tu as déjà tout ce qui est gratuit en ce moment.</string>
+    <string name="widget_free_claim">Récupérer</string>
     <string name="section_family">Toute la famille</string>
     <string name="family_hint">Un seul téléphone récupère pour plusieurs comptes. Chaque personne a son espace à elle : ses sessions ne croisent jamais les tiennes. Epic, GOG et Amazon ; Steam et le relais avec le PC restent à ton compte.</string>
     <string name="family_unsupported">Ta version d\'« Android System WebView » ne sait pas séparer les sessions. Mets-la à jour dans le Play Store, puis reviens ici.</string>

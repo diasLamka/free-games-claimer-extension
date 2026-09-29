@@ -201,6 +201,10 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="widget_nothing_title">Nada encaja</string>
     <string name="widget_nothing">Cambia el tiempo o la Steam Deck en la app.</string>
     <string name="widget_have_fun">¡Buena partida!</string>
+    <string name="widget_free_description">Los juegos gratis ahora y el tiempo que queda</string>
+    <string name="widget_free_none_title">Nada que coger</string>
+    <string name="widget_free_none">Ya tienes todo lo que está gratis ahora.</string>
+    <string name="widget_free_claim">Conseguir</string>
     <string name="section_family">Toda la familia</string>
     <string name="family_hint">Un solo teléfono consigue juegos para varias cuentas. Cada persona tiene su propio espacio: sus sesiones nunca se mezclan con las tuyas. Epic, GOG y Amazon; Steam y el enlace con el PC siguen en tu cuenta.</string>
     <string name="family_unsupported">Tu versión de «Android System WebView» no sabe separar las sesiones. Actualízala en Play Store y vuelve aquí.</string>

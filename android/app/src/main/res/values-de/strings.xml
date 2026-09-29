@@ -201,6 +201,10 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="widget_nothing_title">Nichts passt</string>
     <string name="widget_nothing">Ändere Zeit oder Steam Deck in der App.</string>
     <string name="widget_have_fun">Viel Spaß!</string>
+    <string name="widget_free_description">Die aktuellen Gratisspiele und die Restzeit</string>
+    <string name="widget_free_none_title">Nichts zu holen</string>
+    <string name="widget_free_none">Du hast schon alles, was gerade gratis ist.</string>
+    <string name="widget_free_claim">Holen</string>
     <string name="section_family">Die ganze Familie</string>
     <string name="family_hint">Ein Telefon holt Spiele für mehrere Konten. Jede Person hat ihren eigenen Bereich: Ihre Sitzungen mischen sich nie mit deinen. Epic, GOG und Amazon; Steam und die Verbindung zum PC bleiben bei deinem Konto.</string>
     <string name="family_unsupported">Deine Version von „Android System WebView“ kann Sitzungen nicht trennen. Aktualisiere sie im Play Store und komm dann zurück.</string>

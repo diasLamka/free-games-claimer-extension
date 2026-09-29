@@ -202,6 +202,10 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="widget_nothing_title">Nothing fits</string>
     <string name="widget_nothing">Change the time or Steam Deck in the app.</string>
     <string name="widget_have_fun">Have fun!</string>
+    <string name="widget_free_description">The free games right now and the time left</string>
+    <string name="widget_free_none_title">Nothing to grab</string>
+    <string name="widget_free_none">You already have everything that is free right now.</string>
+    <string name="widget_free_claim">Claim</string>
     <string name="section_family">The whole family</string>
     <string name="family_hint">One phone claims for several accounts. Each person gets their own space: their sessions never mix with yours. Epic, GOG and Amazon; Steam and the link with the PC stay with your account.</string>
     <string name="family_unsupported">Your version of “Android System WebView” can\'t keep sessions apart. Update it in the Play Store, then come back here.</string>

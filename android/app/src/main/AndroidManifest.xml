@@ -91,5 +91,17 @@
                 android:resource="@xml/widget_tonight" />
         </receiver>
 
+        <!-- « Gratuit maintenant » (1.16.0) : les jeux gratuits en cours, le premier a finir en grand. -->
+        <receiver
+            android:name=".widget.FreeNowWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_free_now" />
+        </receiver>
+
     </application>
 </manifest>

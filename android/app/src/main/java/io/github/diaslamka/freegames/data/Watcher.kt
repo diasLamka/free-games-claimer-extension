@@ -141,6 +141,7 @@ object Watcher {
         refreshOdds(now)
         refreshTonight(now)
         runCatching { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
+        runCatching { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
         runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
