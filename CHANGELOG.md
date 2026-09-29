@@ -4,6 +4,24 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.2 -- 2026-09-29
+
+**Un seul logo, partout**
+
+- **Le ticket jaune remplace l'ancien coupon ambre**, dans l'extension (barre
+  d'outils, notifications, popup, page des extensions), sur le bouton flottant
+  des pages de magasin, dans l'**appli Android 1.14.1** (icone adaptative,
+  icone thematique d'Android 13+, petite icone des notifications) et sur le
+  **bot Telegram** : un ticket a encoches et pointille, une manette, « FREE » en
+  blocs et une fleche vers un bac -- recuperer --, sur fond noir avec l'ombre
+  blanche decalee des cartes de l'interface.
+- **Trois niveaux de detail**, parce que 16 pixels ne portent pas ce que 128
+  portent : complet (128, 48), sans etiquette ni fleche (32), ticket et
+  manette droits (16).
+- **Une seule source** : `tools/icons.mjs` ecrit le SVG, les PNG, les vecteurs
+  Android et l'avatar du bot ; un test garde la copie du bouton flottant
+  alignee sur elle et verifie que l'ancien logo n'est plus nulle part.
+
 ## 2.99.1 -- 2026-09-29
 
 **Telegram en couleurs, et deux fausses alertes en moins**

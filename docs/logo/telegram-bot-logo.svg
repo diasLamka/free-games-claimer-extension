@@ -2,46 +2,6 @@
   <title>Free Games Claimer — le ticket gratuit</title>
   <!-- Fond noir : Telegram le rogne en cercle, tout l'utile tient dans le disque central. -->
   <rect width="1024" height="1024" fill="#0A0A0A"/>
-  <!-- Etincelles jaunes, hors du ticket -->
-  <g fill="#E8FF00">
-    <path d="M210 196l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/>
-    <path d="M806 152l10 24 24 10-24 10-10 24-10-24-24-10 24-10z"/>
-    <path d="M222 800l10 24 24 10-24 10-10 24-10-24-24-10 24-10z"/>
-    <path d="M830 812l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/>
-  </g>
-  <g transform="translate(512 512) scale(.94) translate(-512 -512)"><g transform="rotate(-7 512 512)">
-    <!-- L'ombre decalee, comme les cartes de l'appli -->
-    <path transform="translate(24 24)" fill="#FFFFFF" d="M170 292H854A44 44 0 0 1 898 336V736H126V336A44 44 0 0 1 170 292Z"/>
-    <path transform="translate(24 24)" fill="#FFFFFF" d="M126 692A44 44 0 0 0 170 736H854A44 44 0 0 0 898 692V330H126Z"/>
-    <!-- Le ticket -->
-    <path fill="#E8FF00" d="M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z"/>
-    <!-- Les deux encoches, taillees dans le ticket ET dans son ombre -->
-    <circle cx="126" cy="514" r="58" fill="#0A0A0A"/>
-    <circle cx="898" cy="514" r="58" fill="#0A0A0A"/>
-    <line x1="694" y1="322" x2="694" y2="706" stroke="#0A0A0A" stroke-width="10" stroke-dasharray="26 18"/>
-
-    <!-- La manette -->
-    <g transform="translate(228 316) scale(.86)">
-      <path fill="#0A0A0A" d="M92 20H336A92 92 0 0 1 424 118L440 210A44 44 0 0 1 356 232L334 178H94L72 232A44 44 0 0 1 -12 210L4 118A92 92 0 0 1 92 20Z"/>
-      <g fill="#E8FF00">
-        <rect x="64" y="52" width="24" height="76" rx="4"/>
-        <rect x="38" y="78" width="76" height="24" rx="4"/>
-        <circle cx="290" cy="62" r="18"/>
-        <circle cx="332" cy="102" r="18"/>
-      </g>
-    </g>
-
-    <!-- FREE : des blocs jaunes sur une etiquette noire -->
-    <rect x="217" y="584" width="386" height="138" rx="10" fill="#0A0A0A"/>
-    <g transform="translate(249 604)"><rect x="0" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="0" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="0" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="0" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="126" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="168" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="168" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="84" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="252" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="84" width="70.6" height="14.6" fill="#E8FF00"/></g>
-
-    <!-- Le talon : recuperer (fleche vers le bas, dans un bac) -->
-    <g fill="#0A0A0A">
-      <rect x="778" y="392" width="36" height="96"/>
-      <path d="M750 480H842L796 556Z"/>
-      <rect x="742" y="586" width="108" height="26" rx="4"/>
-      <rect x="742" y="566" width="26" height="46" rx="4"/>
-      <rect x="824" y="566" width="26" height="46" rx="4"/>
-    </g>
-  </g></g>
+  <g fill="#E8FF00"><path d="M210 196l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/><path d="M806 152l10 24 24 10-24 10-10 24-10-24-24-10 24-10z"/><path d="M222 800l10 24 24 10-24 10-10 24-10-24-24-10 24-10z"/><path d="M830 812l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/></g>
+  <g transform="translate(512 512) scale(.94) translate(-512 -512)"><g transform="rotate(-7 512 512)"><path transform="translate(24 24)" fill="#FFFFFF" d="M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z"/><path fill="#E8FF00" d="M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z"/><circle cx="126" cy="514" r="58" fill="#0A0A0A"/><circle cx="898" cy="514" r="58" fill="#0A0A0A"/><line x1="694" y1="322" x2="694" y2="706" stroke="#0A0A0A" stroke-width="10" stroke-dasharray="26 18"/><g transform="translate(228 316) scale(0.86)"><path fill="#0A0A0A" d="M92 20H336A92 92 0 0 1 424 118L440 210A44 44 0 0 1 356 232L334 178H94L72 232A44 44 0 0 1 -12 210L4 118A92 92 0 0 1 92 20Z"/><rect x="64" y="52" width="24" height="76" fill="#E8FF00" rx="4"/><rect x="38" y="78" width="76" height="24" fill="#E8FF00" rx="4"/><circle cx="290" cy="62" r="18" fill="#E8FF00"/><circle cx="332" cy="102" r="18" fill="#E8FF00"/></g><rect x="217" y="584" width="386" height="138" rx="10" fill="#0A0A0A"/><g transform="translate(249 604)"><rect x="0" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="0" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="0" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="0" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="126" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="168" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="168" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="84" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="252" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="84" width="70.6" height="14.6" fill="#E8FF00"/></g><g fill="#0A0A0A"><rect x="778" y="392" width="36" height="96"/><path d="M750 480H842L796 556Z"/><rect x="742" y="586" width="108" height="26" rx="4"/><rect x="742" y="566" width="26" height="46" rx="4"/><rect x="824" y="566" width="26" height="46" rx="4"/></g></g></g>
 </svg>

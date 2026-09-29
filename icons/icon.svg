@@ -1,18 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <defs>
-    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFC06B"/>
-      <stop offset="1" stop-color="#FF8A3D"/>
-    </linearGradient>
-    <mask id="notch">
-      <rect width="128" height="128" fill="#000"/>
-      <rect x="23.7" y="39" width="80.6" height="49.9" rx="9.6" fill="#fff"/>
-      <circle cx="23.7" cy="64" r="10.9" fill="#000"/>
-      <circle cx="104.3" cy="64" r="10.9" fill="#000"/>
-    </mask>
-  </defs>
-  <rect x="2.5" y="2.5" width="123" height="123" rx="28.8" fill="url(#amber)"/>
-  <rect width="128" height="128" fill="#181128" mask="url(#notch)"/>
-  <line x1="77.4" y1="44" x2="77.4" y2="84" stroke="url(#amber)" stroke-width="5.1"
-        stroke-dasharray="7.2 5.3" stroke-linecap="butt"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="128" height="128">
+  <title>Free Games Claimer — le ticket gratuit</title>
+  <rect width="1024" height="1024" rx="226" fill="#0A0A0A"/>
+  <g transform="translate(512 512) scale(1.1) translate(-512 -512)"><g transform="rotate(-7 512 512)"><path transform="translate(24 24)" fill="#FFFFFF" d="M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z"/><path fill="#E8FF00" d="M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z"/><circle cx="126" cy="514" r="58" fill="#0A0A0A"/><circle cx="898" cy="514" r="58" fill="#0A0A0A"/><line x1="694" y1="322" x2="694" y2="706" stroke="#0A0A0A" stroke-width="10" stroke-dasharray="26 18"/><g transform="translate(228 316) scale(0.86)"><path fill="#0A0A0A" d="M92 20H336A92 92 0 0 1 424 118L440 210A44 44 0 0 1 356 232L334 178H94L72 232A44 44 0 0 1 -12 210L4 118A92 92 0 0 1 92 20Z"/><rect x="64" y="52" width="24" height="76" fill="#E8FF00" rx="4"/><rect x="38" y="78" width="76" height="24" fill="#E8FF00" rx="4"/><circle cx="290" cy="62" r="18" fill="#E8FF00"/><circle cx="332" cy="102" r="18" fill="#E8FF00"/></g><rect x="217" y="584" width="386" height="138" rx="10" fill="#0A0A0A"/><g transform="translate(249 604)"><rect x="0" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="0" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="0" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="0" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="0" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="84" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="126" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="84" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="140" y="84" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="168" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="168" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="168" y="84" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="0" width="70.6" height="14.6" fill="#E8FF00"/><rect x="252" y="14" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="28" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="42" width="56.6" height="14.6" fill="#E8FF00"/><rect x="252" y="56" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="70" width="14.6" height="14.6" fill="#E8FF00"/><rect x="252" y="84" width="70.6" height="14.6" fill="#E8FF00"/></g><g fill="#0A0A0A"><rect x="778" y="392" width="36" height="96"/><path d="M750 480H842L796 556Z"/><rect x="742" y="586" width="108" height="26" rx="4"/><rect x="742" y="566" width="26" height="46" rx="4"/><rect x="824" y="566" width="26" height="46" rx="4"/></g></g></g>
 </svg>

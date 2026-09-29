@@ -50,6 +50,9 @@ import io.github.diaslamka.freegames.ui.FamilyActions
 import io.github.diaslamka.freegames.ui.FamilyGroup
 import io.github.diaslamka.freegames.ui.SectionHeader
 import androidx.compose.foundation.layout.padding
+import io.github.diaslamka.freegames.R
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.ui.theme.Accent
@@ -236,6 +239,38 @@ class ScreenshotTest {
         }
     }
 
+
+    /** Le logo (1.14.1) : l'icone adaptative sous trois masques, la version thematique et l'icone de la barre d'etat. */
+    @Test
+    fun logo() = shoot("C-logo", Accent.JAUNE, dark = true) {
+        val fond = androidx.compose.ui.graphics.Color(0xFF3A3F47)
+        @Composable
+        fun icone(forme: androidx.compose.ui.graphics.Shape) {
+            Box(Modifier.size(132.dp).clip(forme)) {
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.ic_launcher_background), null, Modifier.fillMaxSize())
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.ic_launcher_foreground), null, Modifier.fillMaxSize())
+            }
+        }
+        Column(Modifier.background(fond).padding(20.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
+            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
+                icone(androidx.compose.foundation.shape.CircleShape)
+                icone(androidx.compose.foundation.shape.RoundedCornerShape(36.dp))
+                icone(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            }
+            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                // Themee : une couleur, sur un disque pastel.
+                Box(Modifier.size(132.dp).clip(androidx.compose.foundation.shape.CircleShape).background(androidx.compose.ui.graphics.Color(0xFFD7E3FF))) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(R.drawable.ic_launcher_monochrome), null, Modifier.fillMaxSize(),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.ui.graphics.Color(0xFF1B3A6B)),
+                    )
+                }
+                // La barre d'etat : 24 dp, montree a 4 fois sa taille.
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.ic_stat_ticket), null, Modifier.size(96.dp))
+                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.ic_stat_ticket), null, Modifier.size(24.dp))
+            }
+        }
+    }
 
     /** Tes gouts (1.14.0) : « Pour toi » sur la carte d'une offre qui ressemble a ce que tu aimes. */
     @Test

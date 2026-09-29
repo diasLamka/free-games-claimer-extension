@@ -81,7 +81,7 @@
 
   var SOMBRE = {
     fond: '#14101F', bord: '#2E2745', texte: '#EDE9F5', doux: '#9A90B8',
-    ambre: '#FFB454', ambreClair: '#FFC47A', icone: '#FFA554', encre: '#181128',
+    ambre: '#FFB454', ambreClair: '#FFC47A', encre: '#181128',
     eteint: '#3A3350', idle: '#9A90B8', running: '#F5A623', ok: '#4CC38A', error: '#E5484D',
     /* Le panneau redessine (2.62.0) : les cartes, et la couleur de chaque
        magasin -- les memes que dans le popup. */
@@ -99,7 +99,7 @@
      L'icone et le bouton plein gardent leurs couleurs : ce sont la marque. */
   var CLAIR = {
     fond: '#FBFAFE', bord: '#DCD5EC', texte: '#1B1528', doux: '#6E6488',
-    ambre: '#9E5A00', ambreClair: '#8A4E00', icone: '#FFA554', encre: '#181128',
+    ambre: '#9E5A00', ambreClair: '#8A4E00', encre: '#181128',
     eteint: '#CFC7E2', idle: '#6E6488', running: '#D98A00', ok: '#12805B', error: '#D62B47',
     carte: '#F2EFF9', carteSurvol: '#E8E3F3', rose: '#D62B47', jade: '#12805B',
     epic: '#3D3459', 'epic-mobile': '#3D3459', gog: '#7A32E0', steam: '#1872A6', amazon: '#00709C',
@@ -268,19 +268,38 @@
     return mesure(d && d.clientWidth, window.innerWidth, 800);
   }
 
-  /** L'icone de l'extension, en aplats : un degrade ou un masque passent par
-      des references #id, que les racines d'ombre resolvent mal selon le
-      navigateur. Les encoches sont peintes de la couleur du fond. */
+  /** L'icone de l'extension : le logo (tools/icons.mjs, niveau « simple »), en
+      aplats -- un degrade ou un masque passent par des references #id, que les
+      racines d'ombre resolvent mal selon le navigateur. Les encoches sont
+      peintes de la couleur du fond. La geometrie est celle de icons/icon.svg :
+      un test les compare. */
+  var LOGO = {
+    jaune: '#E8FF00', encre: '#0A0A0A', blanc: '#FFFFFF',
+    ticket: 'M170 292H854A44 44 0 0 1 898 336V692A44 44 0 0 1 854 736H170A44 44 0 0 1 126 692V336A44 44 0 0 1 170 292Z',
+    manette: 'M92 20H336A92 92 0 0 1 424 118L440 210A44 44 0 0 1 356 232L334 178H94L72 232A44 44 0 0 1 -12 210L4 118A92 92 0 0 1 92 20Z',
+  };
   function icone() {
-    var s = svg('svg', { viewBox: '0 0 128 128', width: TAILLE, height: TAILLE, 'aria-hidden': 'true', focusable: 'false' });
+    var s = svg('svg', { viewBox: '0 0 1024 1024', width: TAILLE, height: TAILLE, 'aria-hidden': 'true', focusable: 'false' });
     s.style.display = 'block';
-    s.appendChild(svg('rect', { x: 2.5, y: 2.5, width: 123, height: 123, rx: 28.8, fill: C.icone }));
-    s.appendChild(svg('rect', { x: 23.7, y: 39, width: 80.6, height: 49.9, rx: 9.6, fill: C.encre }));
-    s.appendChild(svg('circle', { cx: 23.7, cy: 64, r: 10.9, fill: C.icone }));
-    s.appendChild(svg('circle', { cx: 104.3, cy: 64, r: 10.9, fill: C.icone }));
-    s.appendChild(svg('line', {
-      x1: 77.4, y1: 44, x2: 77.4, y2: 84, stroke: C.icone, 'stroke-width': 5.1, 'stroke-dasharray': '7.2 5.3',
+    s.appendChild(svg('rect', { width: 1024, height: 1024, rx: 226, fill: LOGO.encre }));
+    var zoom = svg('g', { transform: 'translate(512 512) scale(1.16) translate(-512 -512)' });
+    var penche = svg('g', { transform: 'rotate(-5 512 512)' });
+    penche.appendChild(svg('path', { transform: 'translate(24 24)', fill: LOGO.blanc, d: LOGO.ticket }));
+    penche.appendChild(svg('path', { fill: LOGO.jaune, d: LOGO.ticket }));
+    penche.appendChild(svg('circle', { cx: 126, cy: 514, r: 58, fill: LOGO.encre }));
+    penche.appendChild(svg('circle', { cx: 898, cy: 514, r: 58, fill: LOGO.encre }));
+    penche.appendChild(svg('line', {
+      x1: 694, y1: 322, x2: 694, y2: 706, stroke: LOGO.encre, 'stroke-width': 10, 'stroke-dasharray': '26 18',
     }));
+    var manette = svg('g', { transform: 'translate(188 383) scale(1.04)' });
+    manette.appendChild(svg('path', { fill: LOGO.encre, d: LOGO.manette }));
+    manette.appendChild(svg('rect', { x: 64, y: 52, width: 24, height: 76, rx: 4, fill: LOGO.jaune }));
+    manette.appendChild(svg('rect', { x: 38, y: 78, width: 76, height: 24, rx: 4, fill: LOGO.jaune }));
+    manette.appendChild(svg('circle', { cx: 290, cy: 62, r: 18, fill: LOGO.jaune }));
+    manette.appendChild(svg('circle', { cx: 332, cy: 102, r: 18, fill: LOGO.jaune }));
+    penche.appendChild(manette);
+    zoom.appendChild(penche);
+    s.appendChild(zoom);
     return s;
   }
 

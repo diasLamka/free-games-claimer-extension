@@ -238,7 +238,7 @@ lib/                        partage par les pages, le worker et la veille
   i18n.js                     traduction
   i18n-tables.js              tables de traduction -- GENEREES depuis _locales
   money.js                    montants et devises
-icons/                      icon.svg (la source) et ses PNG 16/32/48/128
+icons/                      icon.svg et ses PNG 16/32/48/128, generes par tools/icons.mjs
 
 watch/                      la veille de fond, en ES modules (voir plus haut)
   schedule/                   quand regarder : horloge, prediction, ordonnanceur
@@ -487,8 +487,7 @@ jaquette en photo au-dessus, et le lien en vrai bouton dessous
 (`watch/telegram-format.js`). Si Telegram refuse l'image, le message part sans
 elle.
 
-**Le logo du bot Telegram** (`docs/logo/`) : un ticket jaune, une manette,
-« FREE » et la fleche de recuperation, dans le style de l'interface. Dans
+**Le logo du bot Telegram** (`docs/logo/`) : le logo de l'extension et de l'appli. Dans
 Telegram : @BotFather, `/mybots`, votre bot, *Edit Bot*, *Edit Botpic*, puis
 envoyez `telegram-bot-logo.png` (640 x 640). Le dessin source est le
 `telegram-bot-logo.svg`.
@@ -528,5 +527,12 @@ Le moteur a ete ecrit pour Tampermonkey et parle encore l'API `GM_*` :
 
 ## Icone
 
-`icons/icon.svg` est la source (coupon a echanger, ambre sur encre violette) ; les PNG
-16/32/48/128 en sont generes. Aucun logo tiers.
+Le logo est un ticket jaune a encoches et pointille (l'offre), une manette (les
+jeux), « FREE » en blocs (gratuit) et une fleche vers un bac (recuperer, le geste
+que l'extension fait pour vous), sur fond noir avec l'ombre blanche decalee des
+cartes de l'interface. Il n'existe qu'une source, `tools/icons.mjs`, qui ecrit
+`icons/icon.svg` et ses PNG 16/32/48/128 (trois niveaux de detail : a 16 px, il
+ne reste que le ticket et la manette), l'icone du lanceur sur les pages de
+magasin, les vecteurs de l'appli Android (icone adaptative, thematique et
+barre d'etat) et l'avatar du bot Telegram. `node tools/icons.mjs --png`
+regenere tout (il faut Playwright). Aucun logo tiers.
