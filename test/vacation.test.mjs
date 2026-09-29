@@ -144,7 +144,7 @@ test('branche partout ou l\'on previent, et seulement la', () => {
   assert.match(bg, /if \(onVacation\(settings\.vacation, Date\.now\(\)\)\) return null;/, 'le moteur se tait aussi');
   assert.match(bg, /await maybeReturn\(now\);\s*await maybeRecap\(now\);/, 'le retour avant le recap');
   const cycle = lire('watch/cycle.js');
-  assert.equal((cycle.match(/quiet: effectiveQuiet\(ctx\.settings\),/g) || []).length, 2, 'annonces et rappels avant la fin');
+  assert.equal((cycle.match(/quiet: effectiveQuiet\(ctx\.settings\),/g) || []).length, 3, 'annonces, resume des jeux mis de cote (2.99.5) et rappels avant la fin');
   assert.match(cycle, /!inQuietHours\(effectiveQuiet\(ctx\.settings\), now\)/, 'le telephone des reclamations manuelles');
   assert.doesNotMatch(cycle, /ctx\.settings\.quiet/);
   const sante = lire('watch/health.js');

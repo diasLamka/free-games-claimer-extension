@@ -8,7 +8,9 @@ import assert from 'node:assert/strict';
 
 import { fakeChrome } from './fake-chrome.mjs';
 import { runCycle, toNotify, composeAnnouncement, CREDIBLE_LIST_RATIO } from '../watch/cycle.js';
-import { KEYS, readState, checkSchema, SCHEMA, withLease } from '../watch/storage.js';
+import { KEYS, DEFAULT_SETTINGS, readState, checkSchema, SCHEMA, withLease } from '../watch/storage.js';
+import { KEY_WISHLIST as CLE_SOUHAITS, addWish as ajouterSouhait } from '../watch/wishlist.js';
+import { normaliseTitle as normaliser } from '../watch/offer.js';
 import { makeOffer, STORES } from '../watch/offer.js';
 import { reportVerdict as signalerReclamation } from '../watch/claim.js';
 
@@ -74,6 +76,72 @@ async function contexteDeTest(sourcesObj, opts = {}) {
     },
   };
 }
+
+/* ------------------------------------------------ silence intelligent (2.99.5) */
+
+test('silence intelligent : ce qui ne ressemble pas attend le resume, sans jamais etre perdu', async () => {
+  const H = 3600000;
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu Zoo'), offer('Jeu Dead')]),
+    response([offer('Jeu A'), offer('Jeu Zoo'), offer('Jeu Dead')]),
+    response([offer('Jeu A'), offer('Jeu Zoo'), offer('Jeu Dead')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+  const tri = async (offres) => offres.filter((o) => /Zoo/.test(o.title)).map((o) => o.catalogKey);
+
+  await c.cycle(T);
+  // Cycle 1 : deux nouveautes ; l'une ne ressemble pas. Seule l'autre sonne.
+  await c.cycle(T + H, { force: true, tasteDefer: tri });
+  assert.equal(c.notifications.length, 1);
+  assert.match(`${c.notifications[0].title} ${c.notifications[0].text}`, /Jeu Dead/);
+  assert.doesNotMatch(`${c.notifications[0].title} ${c.notifications[0].text}`, /Zoo/);
+  let catalog = c.faux.payload()[KEYS.OFFERS];
+  const zoo = Object.values(catalog).find((o) => /Zoo/.test(o.title));
+  assert.ok(!zoo.notifiedAt, 'mise de cote, pas marquee annoncee');
+
+  // Un peu plus tard, toujours avant douze heures : rien.
+  await c.cycle(T + 4 * H, { force: true, tasteDefer: tri });
+  assert.equal(c.notifications.length, 1);
+
+  // Douze heures apres l'avoir vue : le resume part, avec elle, une seule fois.
+  await c.cycle(T + 14 * H, { force: true, tasteDefer: tri });
+  assert.equal(c.notifications.length, 2);
+  assert.match(c.notifications[1].text, /Jeu Zoo/);
+  catalog = c.faux.payload()[KEYS.OFFERS];
+  assert.ok(Object.values(catalog).find((o) => /Zoo/.test(o.title)).notifiedAt, 'marquee une fois annoncee');
+  await c.cycle(T + 16 * H, { force: true, tasteDefer: tri });
+  assert.equal(c.notifications.length, 2, 'pas une deuxieme fois');
+});
+
+test('silence intelligent : un jeu attendu ne l\'est jamais, un tri en panne laisse tout sonner', async () => {
+  const src = sourceFactice('test', [
+    response([offer('Jeu A')]),
+    response([offer('Jeu A'), offer('Jeu Zoo')]),
+    response([offer('Jeu A'), offer('Jeu Zoo'), offer('Jeu Autre')]),
+  ]);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({ [CLE_SOUHAITS]: ajouterSouhait([], 'Jeu Zoo', normaliser) });
+  await c.cycle(T);
+  await c.cycle(T + 3600000, { force: true, tasteDefer: async (offres) => offres.map((o) => o.catalogKey) });
+  assert.equal(c.notifications.length, 1, 'le jeu souhaite sonne malgre le tri');
+  assert.match(`${c.notifications[0].title} ${c.notifications[0].text}`, /Zoo/);
+  // Le tri jette : on n'y perd rien, le jeu sonne.
+  await c.cycle(T + 7200000, { force: true, tasteDefer: async () => { throw new Error('boum'); } });
+  assert.equal(c.notifications.length, 2);
+  assert.match(`${c.notifications[1].title} ${c.notifications[1].text}`, /Autre/);
+});
+
+test('silence intelligent : sans notifications, rien n\'est mis de cote', async () => {
+  const src = sourceFactice('test', [response([offer('Jeu A')]), response([offer('Jeu A'), offer('Jeu Zoo')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({ [KEYS.SETTINGS]: { ...DEFAULT_SETTINGS, notifyMode: 'off' } });
+  let appele = false;
+  await c.cycle(T);
+  await c.cycle(T + 3600000, { force: true, tasteDefer: async () => { appele = true; return []; } });
+  assert.equal(appele, false);
+  assert.equal(c.notifications.length, 0);
+});
 
 /* ------------------------------------------------------------------ amorcage */
 

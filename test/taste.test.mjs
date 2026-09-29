@@ -291,3 +291,43 @@ test('la sauvegarde emporte le profil, jamais le cache des jeux, et ne remplace 
   // Un fichier abime n'ecrit rien.
   assert.equal(planRestore({}, { [KEY_TASTE]: { profile: { tags: 4 } } }, { now: NOW }).write[KEY_TASTE], undefined);
 });
+
+/* ---------------------------------------------- silence intelligent (2.99.5) */
+
+import { notForYou, deferredDue, DEFER_MAX_MS, DEFER_MARGIN_MS } from '../watch/taste.js';
+
+test('notForYou : seulement ce dont on est SUR qu\'il ne ressemble pas, le doute sonne', () => {
+  const p = buildProfile(aimes, jeux);
+  const etat = { profile: p, games: { ...jeux, 777: { none: true, at: NOW }, 888: { tags: [], at: NOW } }, names: NOMS };
+  const o = (cle, appid) => ({ catalogKey: cle, appid });
+  const appidOf = (x) => x.appid || null;
+  const offres = [
+    o('epic:deadcells', nom('Dead Cells')),      // ressemble : sonne
+    o('epic:zoo', nom('Planet Zoo')),            // ne ressemble pas : mis de cote
+    o('epic:truck', nom('Euro Truck Simulator 2')),
+    o('epic:inconnu', '424242'),                 // etiquettes jamais lues : sonne
+    o('epic:sansfiche', '777'),                  // Steam ne le connait pas : sonne
+    o('epic:sanstags', '888'),                   // fiche vide : sonne
+    o('epic:sansappid', null),                   // appid inconnu : sonne
+  ];
+  assert.deepEqual([...notForYou(offres, { state: etat, appidOf })].sort(), ['epic:truck', 'epic:zoo']);
+  // Sans profil (ou profil trop mince), rien n'est mis de cote.
+  assert.equal(notForYou(offres, { state: { games: jeux }, appidOf }).size, 0);
+  assert.equal(notForYou(offres, { state: null, appidOf }).size, 0);
+  assert.equal(notForYou(null, { state: etat, appidOf }).size, 0);
+  assert.equal(notForYou(offres, { state: etat }).size, 0, 'sans moyen de trouver l\'appid, rien');
+});
+
+test('le resume des jeux mis de cote : douze heures, ou six avant la fin', () => {
+  const H = 3600e3;
+  assert.equal(deferredDue([{ seenAt: NOW - 2 * H, end: NOW + 40 * H }], NOW), false, 'tout frais, loin de finir');
+  assert.equal(deferredDue([{ seenAt: NOW - DEFER_MAX_MS, end: NOW + 40 * H }], NOW), true, 'douze heures d\'attente');
+  assert.equal(deferredDue([{ seenAt: NOW - H, end: NOW + DEFER_MARGIN_MS }], NOW), true, 'plus que six heures');
+  assert.equal(deferredDue([{ seenAt: NOW - H, end: NOW + DEFER_MARGIN_MS + 1 }], NOW), false);
+  assert.equal(deferredDue([{ seenAt: NOW - H }], NOW), false, 'fin inconnue : seule l\'attente compte');
+  // Une seule offre pressee suffit a faire partir le resume de toutes.
+  assert.equal(deferredDue([{ seenAt: NOW - H, end: NOW + 40 * H }, { seenAt: NOW - H, end: NOW + 2 * H }], NOW), true);
+  assert.equal(deferredDue([], NOW), false);
+  assert.equal(deferredDue(null, NOW), false);
+  assert.equal(DEFAULT_SETTINGS.tasteQuiet, false, 'coupe par defaut');
+});

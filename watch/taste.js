@@ -232,6 +232,43 @@ export function tasteFor(state, appid) {
   return r && r.score >= FOR_YOU ? r : null;
 }
 
+/**
+ * Combien de temps une offre mise de cote peut attendre son resume : douze
+ * heures, ou moins quand elle va finir -- differer n'est pas perdre, et un jeu
+ * qui se termine dans six heures sonne avec le resume, pas apres lui.
+ */
+export const DEFER_MAX_MS = 12 * 3600 * 1000;
+export const DEFER_MARGIN_MS = 6 * 3600 * 1000;
+
+/** Le resume des jeux mis de cote est-il du ? Pur. */
+export function deferredDue(offers, now) {
+  return (offers || []).some((o) => now - (typeof o.seenAt === 'number' ? o.seenAt : now) >= DEFER_MAX_MS
+    || (typeof o.end === 'number' && o.end - now <= DEFER_MARGIN_MS));
+}
+
+/**
+ * Silence intelligent (2.99.5) : parmi ces offres, celles dont on est SUR
+ * qu'elles ne ressemblent pas a vos gouts -- les cles de catalogue.
+ *
+ * Douter, c'est annoncer : sans profil, sans appid, sans etiquettes lues ou
+ * avec une fiche que Steam ne connait pas, une offre n'est jamais mise de
+ * cote. Se tromper dans ce sens coute une notification de trop ; dans l'autre,
+ * un jeu manque. `appidOf(offer)` rend l'appid Steam de l'offre, ou null.
+ */
+export function notForYou(offers, { state, appidOf }) {
+  const s = readTasteState(state);
+  const out = new Set();
+  if (!s.profile) return out;
+  for (const o of offers || []) {
+    const appid = appidOf ? appidOf(o) : null;
+    const g = appid ? s.games[String(appid)] : null;
+    if (!g || g.none || !Array.isArray(g.tags) || !g.tags.length) continue;
+    const r = scoreGame(s.profile, g.tags);
+    if (r && r.score < FOR_YOU) out.add(o.catalogKey);
+  }
+  return out;
+}
+
 /** Les noms des etiquettes qui portent la ressemblance, dans la langue de l'etat. */
 export function tasteNames(state, ids) {
   const s = readTasteState(state);

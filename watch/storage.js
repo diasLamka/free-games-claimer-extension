@@ -273,6 +273,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
    */
   taste: true,
   /**
+   * Silence intelligent (2.99.5) : un nouveau jeu qui ne ressemble PAS a vos
+   * gouts attend le resume du jour au lieu de sonner ; vos souhaits, les
+   * deuxiemes chances et ce qui vous ressemble sonnent tout de suite. Coupe
+   * par defaut : il suppose le profil de « Vos gouts ». Voir watch/taste.js.
+   */
+  tasteQuiet: false,
+  /**
    * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
    * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
    * cookie. Voir watch/steam-ratings.js.

@@ -39,11 +39,12 @@ import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
 import { split } from './filters.js';
 import {
-  decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
+  MODES, decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
 import { t, intlLocale } from '../lib/i18n.js';
 import { ratingLine } from './steam-ratings.js';
+import { deferredDue } from './taste.js';
 import { delayText } from './lookup.js';
 import {
   claimOffer,
@@ -224,6 +225,12 @@ export async function runCycle({
    * null quand elle n'y est pas. Demandee apres la note, pour la meme annonce.
    */
   tasteOffer = null,
+  /**
+   * Silence intelligent (2.99.5) : rend les cles de catalogue des offres qui
+   * ne ressemblent PAS aux gouts de l'utilisateur -- celles-la attendent le
+   * resume au lieu de sonner. Absente ou en panne : tout sonne comme avant.
+   */
+  tasteDefer = null,
   /** Faux en test, ou quand l'utilisateur coupe la reclamation autonome. */
   autonomousClaim = true,
   maxReclamations = MAX_CLAIMS_PER_CYCLE,
@@ -530,7 +537,21 @@ export async function runCycle({
        declenchent rien. Les retirer du catalogue ferait qu'activer un magasin
        n'y montrerait rien avant le cycle suivant ; les annoncer quand meme
        reviendrait a ignorer le reglage. */
-    const watched = onlyWatched(announcements, ctx.settings.watchedStores);
+    const suivies = onlyWatched(announcements, ctx.settings.watchedStores);
+
+    /* Silence intelligent (2.99.5) : ce qui ne ressemble pas aux gouts attend le
+       resume. Un jeu attendu ou une deuxieme chance ne l'est JAMAIS, et sans
+       notifications il n'y a rien a differer. */
+    let differes = [];
+    if (typeof tasteDefer === 'function' && suivies.length && ctx.settings.notifyMode !== MODES.OFF) {
+      try {
+        const cles = new Set(await tasteDefer(suivies));
+        differes = suivies.filter((o) => cles.has(o.catalogKey) && !o.wished && !o.secondChance);
+      } catch (e) {
+        record('warn', 'silence intelligent : tri impossible, tout sonne', e);
+      }
+    }
+    const watched = differes.length ? suivies.filter((o) => !differes.includes(o)) : suivies;
 
     const decision = decideAnnouncement({
       mode: ctx.settings.notifyMode,
@@ -719,6 +740,38 @@ export async function runCycle({
     if (decision.digest && decision.notify) {
       nextState.lastDigestAt = now;
       await writeCycle(chrome, { state: nextState });
+    }
+
+    /* Le resume de ce qu'on a mis de cote (2.99.5) : quand la plus ancienne attend
+       depuis douze heures, ou qu'une va finir dans six -- et jamais en heures
+       calmes. Rien n'est marque tant qu'il n'est pas parti : differer n'est pas
+       perdre. */
+    if (differes.length) {
+      const d = decideAnnouncement({
+        mode: MODES.DIGEST,
+        quiet: effectiveQuiet(ctx.settings),
+        now,
+        count: deferredDue(differes, now) ? differes.length : 0,
+        lastDigestAt: null,
+      });
+      if (d.notify) {
+        await notify({
+          title: t('notifyDigestTitle', String(differes.length)),
+          text: differes.map((o) => o.title).join(', '),
+          id: `veille-tri-${now}`,
+          url: differes[0].url || differes[0].resolveUrl || null,
+          kind: NOTICE.OFFER,
+          catalogKey: differes[0].catalogKey,
+          image: null,
+        });
+        const marque = { ...catalog };
+        for (const o of differes) marque[o.catalogKey] = { ...marque[o.catalogKey], notifiedAt: now };
+        catalog = marque;
+        await writeCycle(chrome, { catalog });
+        record('info', `silence intelligent : ${differes.length} jeu(x) hors de vos gouts, annonces en resume`);
+      } else {
+        record('info', `silence intelligent : ${differes.length} jeu(x) hors de vos gouts attendent le resume`);
+      }
     }
 
     /* ---- reclamation autonome ---- */

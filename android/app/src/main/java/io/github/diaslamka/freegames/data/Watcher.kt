@@ -113,7 +113,7 @@ object Watcher {
 
         if (after.settings.notifyNew && fresh.isNotEmpty()) {
             // Resume du jour (1.13.0) : ce qui n'est ni souhaite ni une deuxieme chance attend l'heure du resume.
-            val plan = Digest.split(fresh, after, now, firstRun)
+            val plan = Digest.split(fresh, ann, now, firstRun)
             if (plan.held.isNotEmpty()) store.update { st -> st.copy(digestHeld = st.digestHeld + plan.held.associate { it.key to now }) }
             // Ce qu'on attendait d'abord, puis la deuxieme chance (1.12.0), puis le reste.
             val ordered = plan.now.sortedByDescending { (if (Rules.wished(it, after)) 2 else 0) + (if (Rules.secondChance(it, after, now) != null) 1 else 0) }
@@ -135,7 +135,7 @@ object Watcher {
         io.github.diaslamka.freegames.notify.Snooze.ring(context, now)
         // Le resume du jour (1.13.0) : envoye s'il est du, puis reprogramme pour la prochaine heure.
         Digest.ring(context, now)
-        Graph.store.value.settings.digestHour.takeIf { Digest.enabled(it) }?.let {
+        Digest.effectiveHour(Graph.store.value).takeIf { Digest.enabled(it) }?.let {
             Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
         }
         refreshOdds(now)

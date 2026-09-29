@@ -9,6 +9,7 @@ import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Rating
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.model.TagW
 import io.github.diaslamka.freegames.model.TasteGame
 import io.github.diaslamka.freegames.model.TasteProfile
@@ -281,5 +282,86 @@ class TasteTest {
         assertTrue(ancien.settings.taste)
         assertNull(ancien.taste.imported)
         assertTrue(ancien.taste.games.isEmpty())
+    }
+
+    /* ------------------------------------------------ silence intelligent (1.15.0) */
+
+    private fun offreSteam(nom: String, appid: String) =
+        Offer(key = "steam:$appid", source = "steam", store = Stores.STEAM, storeId = appid, title = nom, start = now - 3_600_000, end = now + 86_400_000)
+
+    private val morts = offreSteam("Dead Cells", id("Dead Cells"))
+    private val zoo = offreSteam("Planet Zoo", id("Planet Zoo"))
+    private val inconnu = offreSteam("Jeu Inconnu", "424242")
+
+    private fun avecGouts(quiet: Boolean, heure: Int = io.github.diaslamka.freegames.notify.Digest.OFF, profil: Boolean = true) = AppState(
+        settings = Settings(tasteQuiet = quiet, digestHour = heure),
+        offers = listOf(morts, zoo, inconnu).associateBy { it.key },
+        taste = TasteState(imported = if (profil) Taste.buildProfile(aimes, jeux) else null, games = jeux, names = noms),
+    )
+
+    @Test
+    fun smartQuietHoldsOnlyWhatSurelyDoesNotMatch() {
+        val D = io.github.diaslamka.freegames.notify.Digest
+        val s = avecGouts(quiet = true)
+        assertTrue(D.notForYou(zoo, s))
+        assertFalse("ce qui te ressemble sonne", D.notForYou(morts, s))
+        assertFalse("douter, c'est sonner : aucune etiquette lue", D.notForYou(inconnu, s))
+        // Le resume n'est pas choisi : le silence intelligent en demande un, a 20 h.
+        assertEquals(D.QUIET_HOUR, D.effectiveHour(s))
+        val plan = D.split(listOf(morts, zoo, inconnu), s, now, firstRun = false)
+        assertEquals(listOf("Dead Cells", "Jeu Inconnu"), plan.now.map { it.title })
+        assertEquals(listOf("Planet Zoo"), plan.held.map { it.title })
+    }
+
+    @Test
+    fun withAChosenDigestOnlyWhatMatchesEscapesIt() {
+        val D = io.github.diaslamka.freegames.notify.Digest
+        val s = avecGouts(quiet = true, heure = 8)
+        assertEquals(8, D.effectiveHour(s))
+        val plan = D.split(listOf(morts, zoo, inconnu), s, now, firstRun = false)
+        assertEquals(listOf("Dead Cells"), plan.now.map { it.title })
+        assertEquals(listOf("Planet Zoo", "Jeu Inconnu"), plan.held.map { it.title })
+        // Sans le silence intelligent, le resume garde tout, comme avant la 1.15.0.
+        val sans = D.split(listOf(morts, zoo, inconnu), avecGouts(quiet = false, heure = 8), now, firstRun = false)
+        assertTrue(sans.now.isEmpty())
+        assertEquals(3, sans.held.size)
+    }
+
+    @Test
+    fun withoutAProfileOrWithoutTheSwitchNothingIsHeld() {
+        val D = io.github.diaslamka.freegames.notify.Digest
+        val offres = listOf(morts, zoo, inconnu)
+        val sansProfil = avecGouts(quiet = true, profil = false)
+        assertFalse(D.quietOn(sansProfil))
+        assertEquals(D.OFF, D.effectiveHour(sansProfil))
+        assertEquals(3, D.split(offres, sansProfil, now, firstRun = false).now.size)
+        val coupe = avecGouts(quiet = false)
+        assertEquals(3, D.split(offres, coupe, now, firstRun = false).now.size)
+        // Le tout premier passage annonce tout, comme le resume.
+        assertEquals(3, D.split(offres, avecGouts(quiet = true), now, firstRun = true).now.size)
+        // Le reglage de gouts coupe le silence intelligent avec lui.
+        val sansGouts = avecGouts(quiet = true).let { it.copy(settings = it.settings.copy(taste = false)) }
+        assertFalse(D.quietOn(sansGouts))
+    }
+
+    @Test
+    fun aWishOrASecondChanceIsNeverHeldByTheQuiet() {
+        val D = io.github.diaslamka.freegames.notify.Digest
+        val s = avecGouts(quiet = true).copy(
+            wishlist = listOf("Planet Zoo"),
+            passes = mapOf(Titles.normalise("Jeu Inconnu") to listOf(io.github.diaslamka.freegames.model.Seen(Stores.STEAM, now - 40L * 86_400_000))),
+        )
+        val plan = D.split(listOf(morts, zoo, inconnu), s, now, firstRun = false)
+        assertTrue(plan.held.isEmpty())
+    }
+
+    @Test
+    fun theHeldGamesLeaveAtTheQuietHour() {
+        val D = io.github.diaslamka.freegames.notify.Digest
+        val paris = java.time.ZoneId.of("Europe/Paris")
+        fun at(h: Int, m: Int = 0) = java.time.ZonedDateTime.of(2026, 9, 28, h, m, 0, 0, paris).toInstant().toEpochMilli()
+        val s = avecGouts(quiet = true).copy(digestHeld = mapOf(zoo.key to at(9)))
+        assertTrue(D.releasable(s, at(19, 30), paris).isEmpty())
+        assertEquals(setOf(zoo.key), D.releasable(s, at(20, 5), paris))
     }
 }

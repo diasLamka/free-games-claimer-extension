@@ -189,6 +189,8 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="set_tonight">“Tonight I\'m playing…”: read the Steam page of games in your pile</string>
     <string name="set_taste">Your taste: spot offers that resemble your games</string>
     <string name="set_taste_hint">Reads Steam tags, without a cookie: only game numbers.</string>
+    <string name="set_taste_quiet">Smart quiet</string>
+    <string name="set_taste_quiet_hint">A new game that doesn\'t match your taste waits for the daily summary (8 pm unless you picked an hour). Your wishes, second chances and what matches ring right away; when in doubt, it rings.</string>
     <string name="tag_for_you">For you</string>
     <string name="notif_taste_line">Close to your taste: %1$s.</string>
     <string name="notif_taste_line_bare">Close to your taste.</string>

@@ -3,6 +3,7 @@ package io.github.diaslamka.freegames.notify
 import android.content.Context
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Rules
+import io.github.diaslamka.freegames.data.Taste
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import java.time.Instant
@@ -28,16 +29,51 @@ object Digest {
     const val OFF = -1
     /** Les heures proposees dans les reglages. */
     val HOURS = listOf(8, 12, 18, 20)
+    /** L'heure du resume quand seul le « silence intelligent » en demande un. */
+    const val QUIET_HOUR = 20
 
     fun enabled(hour: Int): Boolean = hour in 0..23
+
+    /** Le silence intelligent est-il en marche ? Il lui faut un profil de gouts. */
+    fun quietOn(s: AppState): Boolean = s.settings.tasteQuiet && Taste.effective(s) != null
+
+    /** L'heure du resume : celle qu'on a choisie, sinon 20 h si le silence intelligent en a besoin, sinon aucune. */
+    fun effectiveHour(s: AppState): Int = when {
+        enabled(s.settings.digestHour) -> s.settings.digestHour
+        quietOn(s) -> QUIET_HOUR
+        else -> OFF
+    }
+
+    /**
+     * Ce jeu ne ressemble-t-il PAS a tes gouts, a coup sur ? Douter, c'est
+     * sonner : sans profil, sans appid, sans etiquettes lues, l'offre n'est
+     * jamais mise de cote. Pure.
+     */
+    fun notForYou(o: Offer, s: AppState): Boolean {
+        val profil = Taste.effective(s) ?: return false
+        val tags = Taste.tagsOf(s, Taste.appidOf(o, s))
+        if (tags.isEmpty()) return false
+        val m = Taste.score(profil, tags) ?: return false
+        return m.score < Taste.FOR_YOU
+    }
 
     /** Ce qui part tout de suite, et ce qui attend l'heure du resume. */
     data class Split(val now: List<Offer>, val held: List<Offer>)
 
     /** Pure. Sans resume, ou au premier lancement (un seul « 5 jeux gratuits » de toute facon), tout part. */
     fun split(fresh: List<Offer>, s: AppState, now: Long, firstRun: Boolean): Split {
-        if (!enabled(s.settings.digestHour) || firstRun) return Split(fresh, emptyList())
-        val (tout, retenus) = fresh.partition { Rules.wished(it, s) || Rules.secondChance(it, s, now) != null }
+        if (!enabled(effectiveHour(s)) || firstRun) return Split(fresh, emptyList())
+        val resume = enabled(s.settings.digestHour)
+        val silence = quietOn(s)
+        val (tout, retenus) = fresh.partition { o ->
+            when {
+                Rules.wished(o, s) || Rules.secondChance(o, s, now) != null -> true
+                // Le resume est choisi : tout y attend, sauf ce qui te ressemble quand le silence intelligent est en marche.
+                resume -> silence && Taste.matchFor(s, Taste.appidOf(o, s)) != null
+                // Seul le silence intelligent demande un resume : n'attend que ce dont on est sur qu'il ne te ressemble pas.
+                else -> !notForYou(o, s)
+            }
+        }
         return Split(tout, retenus)
     }
 
@@ -64,7 +100,7 @@ object Digest {
      * ne doit pas rester dans un tiroir. Pure.
      */
     fun releasable(s: AppState, now: Long, zone: ZoneId): Set<String> {
-        val hour = s.settings.digestHour
+        val hour = effectiveHour(s)
         if (!enabled(hour)) return s.digestHeld.keys
         val slot = lastSlot(hour, now, zone)
         return s.digestHeld.filterValues { it < slot }.keys

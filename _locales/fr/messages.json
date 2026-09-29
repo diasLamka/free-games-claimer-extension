@@ -2638,5 +2638,11 @@
   },
   "tgBtnOpen": {
     "message": "Ouvrir la page"
+  },
+  "tasteQuietLabel": {
+    "message": "Silence intelligent"
+  },
+  "tasteQuietHint": {
+    "message": "Un nouveau jeu qui ne ressemble pas à vos goûts attend le résumé du jour au lieu de sonner. Vos souhaits, les deuxièmes chances et ce qui vous ressemble sonnent tout de suite ; au moindre doute, ça sonne. Suppose « Vos goûts »."
   }
 }

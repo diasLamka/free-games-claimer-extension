@@ -188,6 +188,8 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="set_tonight">« Ce soir je joue à… » : lire la fiche Steam des jeux de ta pile</string>
     <string name="set_taste">Tes goûts : repérer les offres qui ressemblent à tes jeux</string>
     <string name="set_taste_hint">Lit les étiquettes Steam, sans cookie : seulement des numéros de jeux.</string>
+    <string name="set_taste_quiet">Silence intelligent</string>
+    <string name="set_taste_quiet_hint">Un nouveau jeu qui ne ressemble pas à tes goûts attend le résumé du jour (20 h si tu n\'as pas choisi d\'heure). Tes souhaits, les deuxièmes chances et ce qui te ressemble sonnent tout de suite ; au moindre doute, ça sonne.</string>
     <string name="tag_for_you">Pour toi</string>
     <string name="notif_taste_line">Proche de tes goûts : %1$s.</string>
     <string name="notif_taste_line_bare">Proche de tes goûts.</string>

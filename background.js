@@ -75,7 +75,7 @@ import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
-import { KEY_TASTE, MIN_LIKED as TASTE_MIN_LIKED, fetchGames as fetchTasteGames, readTasteState, refreshTaste, signalsFrom, tagLanguage, tastePassDue, tasteFor, tasteNames } from './watch/taste.js';
+import { KEY_TASTE, MIN_LIKED as TASTE_MIN_LIKED, fetchGames as fetchTasteGames, notForYou, readTasteState, refreshTaste, signalsFrom, tagLanguage, tastePassDue, tasteFor, tasteNames } from './watch/taste.js';
 import { KEY_TONIGHT, buildPile, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
 import { KEY_PLAYTIME } from './watch/playtime.js';
 import { KEY_ANNOTATIONS } from './watch/annotations.js';
@@ -405,6 +405,8 @@ async function startCycle(origine, options = {}) {
         rateOffer: (offer) => rateOne(offer),
         // Vos gouts (2.99.0) : de quoi un jeu annonce seul se rapproche de ce que vous aimez.
         tasteOffer: (offer) => tasteOne(offer),
+        // Silence intelligent (2.99.5) : ce qui ne ressemble pas a vos gouts attend le resume.
+        tasteDefer: (offers) => tasteDefer(offers),
         notify: async ({ title, text, id, url, kind, catalogKey, image }) => {
           await showNotice({ id, title, message: text, url, kind, catalogKey, image });
         },
@@ -761,6 +763,36 @@ async function tasteOne(offer) {
     const r = tasteFor(courant, appid);
     return r ? tasteNames(courant, r.top) : null;
   } catch { return null; }
+}
+
+/**
+ * Silence intelligent (2.99.5) : parmi ces offres, les cles de celles qui ne
+ * ressemblent PAS aux gouts. Cinq secondes au plus pour lire les etiquettes
+ * qui manquent ; au moindre doute, l'offre sonne.
+ */
+async function tasteDefer(offers) {
+  try {
+    const settings = await readSettings(api);
+    if (settings.taste === false || settings.tasteQuiet !== true) return [];
+    const raw = await readKeys(api, [KEY_TASTE, KEY_RATINGS, KEY_COUNTRY]);
+    const etat = readTasteState(raw[KEY_TASTE]);
+    if (!etat.profile) return [];
+    const appidOf = (o) => steamAppId(o) || (ratingFor(raw[KEY_RATINGS], o) || {}).appid || null;
+    const manque = [...new Set(offers.map(appidOf).filter((id) => id && !etat.games[String(id)]))];
+    let games = etat.games;
+    if (manque.length) {
+      const lus = await Promise.race([
+        fetchTasteGames((u, i) => fetch(u, i), manque, { now: Date.now(), country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR' }),
+        new Promise((fin) => setTimeout(() => fin(null), 5000)),
+      ]);
+      if (lus) {
+        games = { ...games, ...lus };
+        const frais = readTasteState((await readKeys(api, KEY_TASTE))[KEY_TASTE]);
+        await write(api, { [KEY_TASTE]: { ...frais, games: { ...frais.games, ...lus } } });
+      }
+    }
+    return [...notForYou(offers, { state: { ...etat, games }, appidOf })];
+  } catch { return []; }
 }
 
 /**

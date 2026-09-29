@@ -2638,5 +2638,11 @@
   },
   "tgBtnOpen": {
     "message": "Abrir la página"
+  },
+  "tasteQuietLabel": {
+    "message": "Silencio inteligente"
+  },
+  "tasteQuietHint": {
+    "message": "Un juego nuevo que no encaja con tus gustos espera al resumen del día en vez de sonar. Tus deseos, las segundas oportunidades y lo que encaja suenan enseguida; ante la duda, suena. Requiere «Tus gustos»."
   }
 }

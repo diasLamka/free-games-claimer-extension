@@ -4,6 +4,27 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.5 -- 2026-09-29
+
+**Silence intelligent : seul ce qui vous ressemble sonne**
+
+- **Un interrupteur, coupe par defaut** (Reglages -> Magasins, sous « Vos
+  gouts ») : un nouveau jeu qui ne ressemble **pas** a votre profil n'a plus sa
+  notification ; il attend un **resume**, envoye quand le plus ancien attend
+  depuis douze heures ou quand l'un d'eux va finir dans six -- un jeu mis de
+  cote n'est jamais un jeu perdu. Jamais en heures calmes.
+- **Ce qui sonne quand meme, tout de suite** : vos souhaits, les deuxiemes
+  chances, ce qui ressemble a vos gouts -- et **au moindre doute** : sans
+  profil, sans identifiant Steam, sans etiquettes lues, ou pour un jeu que
+  Steam ne connait pas. Se tromper dans ce sens coute une notification de
+  trop ; dans l'autre, un jeu manque.
+- Sans notifications (mode « jamais »), rien n'est mis de cote ; si le tri
+  tombe en panne, tout sonne comme avant.
+- **Dans l'appli Android 1.15.0**, le meme reglage. Le resume est celui de la
+  1.13.0 : a l'heure que vous avez choisie, ou a 20 h si seul le silence
+  intelligent en a besoin. Avec un resume choisi, tout y attend comme avant,
+  sauf ce qui vous ressemble -- qui sonne maintenant tout de suite.
+
 ## 2.99.4 -- 2026-09-29
 
 **Passe anti-fausses-alertes : reseau coupe, reveil, maintenance**

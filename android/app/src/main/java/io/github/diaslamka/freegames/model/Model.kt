@@ -181,6 +181,12 @@ data class Settings(
     val digestHour: Int = -1,
     /** « Tes gouts » (1.14.0) : les etiquettes Steam des jeux que tu aimes et des offres en cours, lues sans cookie. */
     val taste: Boolean = true,
+    /**
+     * « Silence intelligent » (1.15.0) : ce qui ne ressemble pas a tes gouts
+     * attend le resume au lieu de sonner ; tes souhaits, les deuxiemes chances et
+     * ce qui te ressemble sonnent tout de suite. Coupe par defaut.
+     */
+    val tasteQuiet: Boolean = false,
     val onboarded: Boolean = false,
 )
 

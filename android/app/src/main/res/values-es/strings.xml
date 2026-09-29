@@ -188,6 +188,8 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="set_tonight">«Esta noche juego a…»: leer la ficha de Steam de los juegos de tu pila</string>
     <string name="set_taste">Tus gustos: detectar las ofertas que se parecen a tus juegos</string>
     <string name="set_taste_hint">Lee las etiquetas de Steam, sin cookie: solo números de juego.</string>
+    <string name="set_taste_quiet">Silencio inteligente</string>
+    <string name="set_taste_quiet_hint">Un juego nuevo que no encaja con tus gustos espera al resumen del día (a las 20 h si no elegiste hora). Tus deseos, las segundas oportunidades y lo que encaja suenan enseguida; ante la duda, suena.</string>
     <string name="tag_for_you">Para ti</string>
     <string name="notif_taste_line">Cerca de tus gustos: %1$s.</string>
     <string name="notif_taste_line_bare">Cerca de tus gustos.</string>

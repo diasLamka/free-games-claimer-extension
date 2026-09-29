@@ -188,6 +188,8 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="set_tonight">„Heute Abend spiele ich…“: Steam-Seite der Spiele im Stapel lesen</string>
     <string name="set_taste">Dein Geschmack: Angebote erkennen, die deinen Spielen ähneln</string>
     <string name="set_taste_hint">Liest Steam-Tags, ohne Cookie: nur Spielnummern.</string>
+    <string name="set_taste_quiet">Intelligente Ruhe</string>
+    <string name="set_taste_quiet_hint">Ein neues Spiel, das nicht zu deinem Geschmack passt, wartet auf die Tageszusammenfassung (20 Uhr, wenn du keine Zeit gewählt hast). Wünsche, zweite Chancen und Passendes melden sich sofort; im Zweifel klingelt es.</string>
     <string name="tag_for_you">Für dich</string>
     <string name="notif_taste_line">Nah an deinem Geschmack: %1$s.</string>
     <string name="notif_taste_line_bare">Nah an deinem Geschmack.</string>

@@ -489,6 +489,11 @@ jaquette en photo au-dessus, et le lien en vrai bouton dessous
 (`watch/telegram-format.js`). Si Telegram refuse l'image, le message part sans
 elle.
 
+**Silence intelligent** (2.99.5) : un nouveau jeu qui ne ressemble pas a vos
+gouts attend le resume au lieu de sonner ; vos souhaits, les deuxiemes chances
+et ce qui vous ressemble sonnent tout de suite, et au moindre doute aussi
+(`notForYou`, `deferredDue` dans `watch/taste.js`). Coupe par defaut.
+
 **Discord en cartes** (2.99.3) : liseré de couleur, titre-lien, jaquette en grand,
 memes logos que Telegram (`watch/discord-format.js`, sur le modele commun
 `watch/alert-model.js`). Jamais de mention.

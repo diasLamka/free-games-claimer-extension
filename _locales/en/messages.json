@@ -2638,5 +2638,11 @@
   },
   "tgBtnOpen": {
     "message": "Open the page"
+  },
+  "tasteQuietLabel": {
+    "message": "Smart quiet"
+  },
+  "tasteQuietHint": {
+    "message": "A new game that doesn't match your taste waits for the daily summary instead of ringing. Your wishes, second chances and what matches your taste ring right away; when in doubt, it rings. Needs “Your taste”."
   }
 }

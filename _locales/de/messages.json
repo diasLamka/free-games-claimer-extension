@@ -2638,5 +2638,11 @@
   },
   "tgBtnOpen": {
     "message": "Seite öffnen"
+  },
+  "tasteQuietLabel": {
+    "message": "Intelligente Ruhe"
+  },
+  "tasteQuietHint": {
+    "message": "Ein neues Spiel, das nicht zu Ihrem Geschmack passt, wartet auf die Tageszusammenfassung, statt zu klingeln. Ihre Wünsche, zweite Chancen und Passendes melden sich sofort; im Zweifel klingelt es. Setzt „Ihr Geschmack“ voraus."
   }
 }

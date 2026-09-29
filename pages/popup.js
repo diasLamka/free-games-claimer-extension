@@ -2716,6 +2716,8 @@ function renderNotifications(behaviour) {
   document.getElementById('steam-dlc').checked = behaviour.steamDlc !== false;
   document.getElementById('tonight-ratings').checked = behaviour.tonight !== false;
   document.getElementById('taste-toggle').checked = behaviour.taste !== false;
+  document.getElementById('taste-quiet').checked = behaviour.tasteQuiet === true;
+  document.getElementById('taste-quiet').disabled = behaviour.taste === false;
   // La note Steam (2.78.0) : active sauf refus explicite.
   document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
@@ -3093,6 +3095,7 @@ document.getElementById('steam-weekends').addEventListener('change', (e) => writ
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));
 document.getElementById('taste-toggle').addEventListener('change', (e) => writeBehaviour({ taste: e.target.checked }));
+document.getElementById('taste-quiet').addEventListener('change', (e) => writeBehaviour({ tasteQuiet: e.target.checked }));
 for (const b of document.querySelectorAll('#tonight-section [data-time]')) {
   b.addEventListener('click', async () => { tonightNote = ''; await saveTonight({ time: b.dataset.time, key: null, shown: [] }); renderTonight(await readAll()); });
 }

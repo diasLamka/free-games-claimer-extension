@@ -161,11 +161,13 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 io.github.diaslamka.freegames.notify.LastChance.ring(context, t)
                 io.github.diaslamka.freegames.notify.LastChance.schedule(context, Graph.store.value, t)
             }
-            if (after.digestHour != before.digestHour) {
+            if (after.digestHour != before.digestHour || after.tasteQuiet != before.tasteQuiet || after.taste != before.taste) {
                 // Le resume du jour (1.13.0) : la nouvelle heure remplace l'ancienne ; coupe, il n'y a plus rien a reveiller.
-                if (io.github.diaslamka.freegames.notify.Digest.enabled(after.digestHour)) {
+                // Le silence intelligent (1.15.0) en demande un aussi, a 20 h par defaut.
+                val heure = io.github.diaslamka.freegames.notify.Digest.effectiveHour(Graph.store.value)
+                if (io.github.diaslamka.freegames.notify.Digest.enabled(heure)) {
                     val t = System.currentTimeMillis()
-                    Scheduler.digestAt(context, io.github.diaslamka.freegames.notify.Digest.nextSlot(after.digestHour, t, java.time.ZoneId.systemDefault()) + 60_000, replace = true)
+                    Scheduler.digestAt(context, io.github.diaslamka.freegames.notify.Digest.nextSlot(heure, t, java.time.ZoneId.systemDefault()) + 60_000, replace = true)
                 } else Scheduler.cancelDigest(context)
             }
             if (after.country != before.country || after.showMobile != before.showMobile) refresh()
