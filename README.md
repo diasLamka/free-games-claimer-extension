@@ -487,6 +487,12 @@ jaquette en photo au-dessus, et le lien en vrai bouton dessous
 (`watch/telegram-format.js`). Si Telegram refuse l'image, le message part sans
 elle.
 
+**Le logo du bot Telegram** (`docs/logo/`) : un ticket jaune, une manette,
+« FREE » et la fleche de recuperation, dans le style de l'interface. Dans
+Telegram : @BotFather, `/mybots`, votre bot, *Edit Bot*, *Edit Botpic*, puis
+envoyez `telegram-bot-logo.png` (640 x 640). Le dessin source est le
+`telegram-bot-logo.svg`.
+
 **Tester la recuperation** (2.64.0), sous les sessions : pour chaque magasin
 que l'extension reclame, la page d'un jeu offert en ce moment s'ouvre dans une
 fenetre reduite, le moteur la lit comme juste avant son premier clic, et la
