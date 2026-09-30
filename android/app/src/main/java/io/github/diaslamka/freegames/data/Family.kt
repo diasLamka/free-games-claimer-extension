@@ -96,9 +96,9 @@ object Family {
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdict,
                 ))
-                acc = acc + (o.store to AccountState(Accounts.OK, now))
+                acc = acc + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))
             }
-            if (verdict == Verdicts.LOGIN) acc = acc + (o.store to AccountState(Accounts.LOGGED_OUT, now))
+            if (verdict == Verdicts.LOGIN) acc = acc + (o.store to AccountState(Accounts.LOGGED_OUT, now, via = Accounts.PAGE))
             m.copy(attempts = if (att != null) m.attempts + (o.key to att) else m.attempts, library = lib, accounts = acc)
         }
 

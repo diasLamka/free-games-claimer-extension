@@ -20,6 +20,9 @@ object Accounts {
     const val PRESENT = "present"
     const val UNKNOWN = "unknown"
 
+    /** `AccountState.via` : le verdict vient d'une vraie page du magasin, pas d'une lecture de cookies. */
+    const val PAGE = "page"
+
     val STORES = listOf(Stores.EPIC, Stores.GOG, Stores.AMAZON, Stores.STEAM)
 
     fun loginUrl(store: String, country: String?): String = when (store) {
@@ -60,6 +63,57 @@ object Accounts {
         Stores.AMAZON -> "https://${Countries.lunaHost(country)}/claims/home"
         Stores.STEAM -> "https://store.steampowered.com/"
         else -> "https://store.epicgames.com/"
+    }
+
+    /**
+     * La page qui tranche, quand la lecture des cookies dit « pas connecte » (1.17.0).
+     *
+     * Steam et Epic gardent la session dans des jetons qui expirent en quelques
+     * heures ; c'est la PAGE du magasin qui les renouvelle en se chargeant.
+     * Lire les cookies ou appeler l'API sans avoir charge de page voit donc un
+     * jeton expire et conclut « deconnecte » a quelqu'un qui est connecte --
+     * jusqu'au jour ou il ouvre le magasin lui-meme. Charger la page, c'est ce
+     * qu'il faisait a la main. Steam renvoie vers /login/ sans session (mesure) ;
+     * Epic vers /id/login.
+     */
+    fun pageUrl(store: String): String? = when (store) {
+        Stores.STEAM -> "https://store.steampowered.com/account/"
+        Stores.EPIC -> "https://www.epicgames.com/account/personal"
+        else -> null
+    }
+
+    /** Combien attendre, apres le chargement, qu'un routeur JS renvoie vers la connexion. */
+    fun pageVerdictSettle(store: String): Long = if (store == Stores.EPIC) 4_000L else 2_000L
+
+    private val CHALLENGE = Regex("just a moment|un instant|attention required|verify you are human|access denied|captcha")
+
+    /**
+     * Ce que dit l'adresse ou la page a fini par atterrir. Pure.
+     *
+     * Une redirection vers la connexion est sans ambiguite ; rester sur la page
+     * du compte dit « connecte » ; tout le reste (defi anti-robot, controle
+     * d'age, page inattendue) ne dit rien : `UNKNOWN`, jamais `LOGGED_OUT`.
+     */
+    fun pageVerdict(store: String, landed: String?, title: String?): String {
+        val u = runCatching { java.net.URI(landed ?: return UNKNOWN) }.getOrNull() ?: return UNKNOWN
+        val host = u.host?.lowercase() ?: return UNKNOWN
+        val path = u.path.orEmpty().lowercase()
+        if (CHALLENGE.containsMatchIn(title.orEmpty().lowercase())) return UNKNOWN
+        return when (store) {
+            Stores.STEAM -> when {
+                host == "login.steampowered.com" -> LOGGED_OUT
+                host == "store.steampowered.com" && path.startsWith("/login") -> LOGGED_OUT
+                host == "store.steampowered.com" && path.startsWith("/account") -> OK
+                else -> UNKNOWN
+            }
+            Stores.EPIC -> when {
+                !host.endsWith("epicgames.com") -> UNKNOWN
+                path.contains("/login") -> LOGGED_OUT
+                path.startsWith("/account") -> OK
+                else -> UNKNOWN
+            }
+            else -> UNKNOWN
+        }
     }
 
     private fun hasCookie(cookies: (String) -> String?, url: String, vararg names: String): Boolean {

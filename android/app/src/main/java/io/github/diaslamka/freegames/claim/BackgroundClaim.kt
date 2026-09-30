@@ -25,7 +25,8 @@ import kotlinx.coroutines.withContext
  * fond ordinaire, et rien de plus.
  *
  * Les garde-fous sont ceux de l'ecran, plus trois :
- *   - coupee par defaut, et seulement pour les magasins deja connectes ;
+ *   - coupee par defaut, et jamais pour un magasin dont une page a montre la
+ *     session perdue (un « inconnu » ne bloque plus : la recuperation elle-meme le tranchera) ;
  *   - un defi (captcha) n'est jamais resolu : une notification appelle
  *     l'humain, et le jeu attend quatre heures avant que le fond y revienne ;
  *   - dix minutes en tout : on n'entame plus de jeu apres trois minutes, le
@@ -37,7 +38,7 @@ object BackgroundClaim {
         if (!s.settings.claimInBackground) return emptyList()
         return Rules.pending(s, now).filter { o ->
             val a = s.accounts[o.store]?.status
-            (a == Accounts.OK || a == Accounts.PRESENT) && !Relay.held(s, o, now)
+            a != Accounts.LOGGED_OUT && !Relay.held(s, o, now)
         }
     }
 

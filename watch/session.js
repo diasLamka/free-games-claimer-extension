@@ -94,6 +94,8 @@ export function readSession(state, store) {
     at: Number.isFinite(entry.at) ? entry.at : null,
     // Depuis quand la sonde dit « deconnecte » sans discontinuer (2.99.4). Une entree plus ancienne : sa date.
     outSince: Number.isFinite(entry.outSince) ? entry.outSince : (entry.status === SESSION.OUT && Number.isFinite(entry.at) ? entry.at : null),
+    // D'ou vient la mesure (2.99.6) : `page` quand une vraie page du magasin l'a montre.
+    via: entry.via === VIA_PAGE ? VIA_PAGE : null,
   };
 }
 
@@ -106,7 +108,7 @@ export function readSession(state, store) {
 export const OUT_CONFIRM_MS = 30 * 60 * 1000;
 
 /** Enregistre une mesure. Rend un nouvel etat : rien n'est modifie en place. */
-export function recordSession(state, store, { status, note = null }, now) {
+export function recordSession(state, store, { status, note = null, via = null }, now) {
   if (typeof now !== 'number') throw new TypeError('recordSession : "maintenant" est obligatoire');
   const statut = Object.values(SESSION).includes(status) ? status : SESSION.UNKNOWN;
   const avant = readSession(state, store);
@@ -116,6 +118,7 @@ export function recordSession(state, store, { status, note = null }, now) {
       status: statut,
       note: note ? String(note).slice(0, 160) : null,
       at: now,
+      ...(via === VIA_PAGE ? { via: VIA_PAGE } : {}),
       // La serie de « deconnecte » garde son debut ; toute autre mesure la casse.
       ...(statut === SESSION.OUT ? { outSince: avant.status === SESSION.OUT && avant.outSince !== null ? avant.outSince : now } : {}),
     },
@@ -137,19 +140,129 @@ export function isStale(entry, now) {
   return now - entry.at > STALE_AFTER_MS;
 }
 
-/* CE QUI N'EST PAS ICI, ET POURQUOI.
+/* ------------------------------------------------- confirmer par la page */
+
+/** La mesure vient d'une vraie page du magasin, pas de la seule lecture d'une API. */
+export const VIA_PAGE = 'page';
+
+/**
+ * Les deux magasins dont la session se renouvelle au chargement de leur PAGE
+ * (2.99.6), et la page qui tranche.
  *
- * Il manque volontairement un `dueForProbe` -- la fonction qui dirait quels
- * magasins resonder d'eux-memes a chaque cycle. Elle avait ete ecrite, puis
- * retiree : sonder, c'est lire un compte AVEC la session de l'utilisateur,
- * et l'extension ne fait jamais cela toute seule. L'importation de
- * collection s'en tient a la meme regle depuis la 2.21.0, pour la meme
- * raison, et la livrer inutilisee aurait laisse dans le depot une fonction
- * qui contredit ce que `SECURITY.md` promet.
+ * Steam et Epic gardent la session dans des jetons qui expirent en quelques
+ * heures. Ce qui les renouvelle, c'est le script de la page quand elle se
+ * charge -- pas une requete de l'extension. Passe ce delai, la sonde rapide
+ * (une lecture avec les cookies) voit donc un jeton expire et conclut
+ * « deconnecte » ou « inconnu » a quelqu'un qui est connecte, jusqu'au jour ou
+ * il ouvre le magasin lui-meme : la page se charge, tout redevient vert. C'est
+ * ce que les utilisateurs faisaient « a la main ». L'extension le fait donc a
+ * leur place, dans une fenetre reduite, avant de croire un « non ».
  *
- * Le jour ou une sonde automatique se justifiera -- avant une reclamation,
- * par exemple, pour ne pas ouvrir un onglet vers un compte deconnecte -- elle
- * se reecrira en trois lignes a partir d'`isStale`. */
+ * Mesure (2026-09-30, sans session) : /account/ de Steam atterrit sur
+ * /login/?redir=account%2F&redir_ssl=1. Epic renvoie vers /id/login ; la page
+ * d'Epic est derriere un mur anti-robot pour un client sans navigateur, d'ou
+ * l'onglet plutot qu'un `fetch`.
+ */
+export const PAGE_URLS = Object.freeze({
+  steam: 'https://store.steampowered.com/account/',
+  epic: 'https://www.epicgames.com/account/personal',
+});
+
+/** GOG n'y est pas : sa page de compte s'ouvre sans rediriger, et sa sonde JSON est deja sans ambiguite. */
+export const PAGE_STORES = Object.freeze(Object.keys(PAGE_URLS));
+
+const CHALLENGE_TITLE = /just a moment|un instant|attention required|verify you are human|access denied|captcha/i;
+
+/**
+ * Ce que dit la page ou l'onglet a atterri. Pure.
+ *
+ * Une redirection vers la connexion est sans ambiguite. Rester sur la page du
+ * compte dit « connecte ». Tout le reste -- un defi anti-robot, un controle
+ * d'age, une page inattendue -- ne dit RIEN : `inconnu`, jamais `deconnecte`.
+ */
+export function judgePage(store, landed, title) {
+  let u;
+  try { u = new URL(String(landed || '')); } catch { return SESSION.UNKNOWN; }
+  const host = u.hostname.toLowerCase();
+  const path = u.pathname.toLowerCase();
+  if (CHALLENGE_TITLE.test(String(title || ''))) return SESSION.UNKNOWN;
+  if (store === 'steam') {
+    if (host === 'login.steampowered.com') return SESSION.OUT;
+    if (host !== 'store.steampowered.com') return SESSION.UNKNOWN;
+    if (path.startsWith('/login')) return SESSION.OUT;
+    return path.startsWith('/account') ? SESSION.OK : SESSION.UNKNOWN;
+  }
+  if (store === 'epic') {
+    if (!(host === 'epicgames.com' || host.endsWith('.epicgames.com'))) return SESSION.UNKNOWN;
+    if (path.includes('/login')) return SESSION.OUT;
+    return path.startsWith('/account') ? SESSION.OK : SESSION.UNKNOWN;
+  }
+  return SESSION.UNKNOWN;
+}
+
+/** Une session declaree perdue PAR UNE PAGE n'est pas re-verifiee avant : pas de fenetre pour un compte qui n'existe pas. */
+export const PAGE_RECHECK_MS = 6 * 3600000;
+
+/**
+ * Faut-il charger la page ? Seulement si la sonde rapide n'a pas dit « oui »,
+ * si le magasin s'y prete, et si une page n'a pas deja montre la perte il y a peu.
+ */
+export function needsPage(store, fastStatus, prev, now) {
+  if (!PAGE_STORES.includes(store)) return false;
+  if (fastStatus === SESSION.OK) return false;
+  if (prev && prev.status === SESSION.OUT && prev.via === VIA_PAGE && Number.isFinite(prev.at) && now - prev.at < PAGE_RECHECK_MS) return false;
+  return true;
+}
+
+/**
+ * Le verdict final d'un magasin : la sonde rapide, puis la page si elle a ete
+ * consultee (`page` : `{ url, title }`, ou `null` quand elle n'a rien donne,
+ * ou `undefined` quand elle n'a pas ete consultee).
+ *
+ * Trois regles. Un « oui » de la sonde se croit tel quel. Un « non » ne devient
+ * `deconnecte` que si la page l'a montre -- pour Steam et Epic, une sonde seule
+ * dit `inconnu`. Une page muette ne condamne personne.
+ */
+export function settle(store, fast, page, prev, now) {
+  const rapide = { status: fast.status, note: fast.note || null };
+  if (rapide.status === SESSION.OK) return { ...rapide, via: null };
+  if (!PAGE_STORES.includes(store)) return { ...rapide, via: null };
+
+  // Deja perdue, page a l'appui, il y a peu : on garde ce verdict tel quel.
+  if (page === undefined) {
+    if (prev && prev.status === SESSION.OUT && prev.via === VIA_PAGE && Number.isFinite(prev.at) && now - prev.at < PAGE_RECHECK_MS) {
+      return { status: SESSION.OUT, note: prev.note, via: VIA_PAGE, keep: true };
+    }
+    return rapide.status === SESSION.OUT
+      ? { status: SESSION.UNKNOWN, note: `non confirmee par la page (${rapide.note || 'sonde'})`, via: null }
+      : { ...rapide, via: null };
+  }
+
+  const verdict = page ? judgePage(store, page.url, page.title) : SESSION.UNKNOWN;
+  if (verdict === SESSION.OK) return { status: SESSION.OK, note: 'confirmee par la page du compte', via: VIA_PAGE };
+  if (verdict === SESSION.OUT) return { status: SESSION.OUT, note: 'la page du compte renvoie vers la connexion', via: VIA_PAGE };
+  const vu = page ? String(page.title || page.url || '').replace(/\s+/g, ' ').trim().slice(0, 60) : 'page non chargee';
+  return { status: SESSION.UNKNOWN, note: `la page n'a rien montre de net (${vu})`, via: null };
+}
+
+/* ------------------------------------------------------- sonde automatique */
+
+/**
+ * Quand une session doit etre resondee d'elle-meme (2.99.6).
+ *
+ * Une mesure « connecte » se renouvelle avant de vieillir (quatre heures : elle
+ * ne s'affiche jamais en ambre) ; une mesure qui n'est pas `connecte` se
+ * refait des qu'une demi-heure a passe, pour que la reconnexion soit vue vite.
+ * La decision de charger la page, elle, est `needsPage` : un compte perdu ne
+ * rouvre pas de fenetre avant six heures.
+ */
+export const REFRESH_AFTER_MS = 4 * 3600000;
+
+export function dueForProbe(entry, now) {
+  if (!entry || !Number.isFinite(entry.at)) return true;
+  if (entry.status === SESSION.OK) return now - entry.at > REFRESH_AFTER_MS;
+  return now - entry.at >= OUT_CONFIRM_MS;
+}
 
 /* ---------------------------------------------------------------- resume */
 

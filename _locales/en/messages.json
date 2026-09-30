@@ -2644,5 +2644,11 @@
   },
   "tasteQuietHint": {
     "message": "A new game that doesn't match your taste waits for the daily summary instead of ringing. Your wishes, second chances and what matches your taste ring right away; when in doubt, it rings. Needs “Your taste”."
+  },
+  "sessionAutoLabel": {
+    "message": "Check sign-ins automatically"
+  },
+  "sessionAutoHint": {
+    "message": "Every 4 h, in the background. For Steam and Epic, the account page opens briefly in a minimized window: nothing is clicked."
   }
 }

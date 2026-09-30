@@ -296,8 +296,6 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
                 Text("> " + stringResource(R.string.claimed_on, Fmt.date(claimed.ts)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             } else if (attempt?.verdict != null && attempt.verdict !in Verdicts.ACQUIRED) {
                 Text("! " + verdictText(attempt.verdict, attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            } else if (!Rules.claimable(o, state.settings) && o.store == Stores.STEAM && claimed == null && !owned) {
-                Text("> " + stringResource(R.string.steam_manual), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
             }
             // FlowRow : en grande police, le second bouton passe a la ligne au lieu de deborder.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {

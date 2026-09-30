@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -63,6 +65,8 @@ fun SettingsScreen(
     onRelayUnpair: () -> Unit = {},
     family: FamilyActions = FamilyActions(),
     familySupported: Boolean = io.github.diaslamka.freegames.data.Family.supported(),
+    /** Les sections ouvertes au depart (captures d'ecran, tests) ; sinon toutes pliees. */
+    open: List<String> = emptyList(),
 ) {
     val s = state.settings
     var steamWarning by remember { mutableStateOf(false) }
@@ -70,6 +74,20 @@ fun SettingsScreen(
     var backgroundInfo by remember { mutableStateOf(false) }
     var lastChanceInfo by remember { mutableStateOf(false) }
     val b = LocalBrut.current
+    /* Toutes les sections sont pliees : un ecran de reglages est un sommaire, pas
+       une page a lire. Une seule s'ouvre d'office -- les comptes, quand l'un d'eux
+       a perdu sa session --, parce que c'est la qu'il y a quelque chose a faire. */
+    val lost = Accounts.STORES.any { state.accounts[it]?.status == Accounts.LOGGED_OUT }
+    var opened by rememberSaveable { mutableStateOf(open.ifEmpty { if (lost) listOf(SECTION_ACCOUNTS) else emptyList() }) }
+    val title_accounts = stringResource(R.string.accounts)
+    val title_claiming = stringResource(R.string.section_claiming)
+    val title_watch = stringResource(R.string.section_watch)
+    val title_relay = stringResource(R.string.section_relay)
+    val title_family = stringResource(R.string.section_family)
+    val title_data = stringResource(R.string.section_data)
+    val title_about = stringResource(R.string.section_about)
+    fun isOpen(key: String) = key in opened
+    fun toggle(key: String) { opened = if (key in opened) opened - key else opened + key }
     ReadableColumn {
         TopBlock(stringResource(R.string.tab_settings))
         LazyColumn(
@@ -77,23 +95,15 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item { SectionHeader(stringResource(R.string.accounts), Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }) }
-            item {
+            fold(SECTION_ACCOUNTS, title_accounts, Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }, isOpen(SECTION_ACCOUNTS), ::toggle) {
                 Group {
                     Accounts.STORES.forEach { store -> AccountRow(store, state, now, onLogin) }
-                    Text(
-                        "> " + stringResource(R.string.login_tip),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF4A4A4A),
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
                 }
             }
-            item { SectionHeader(stringResource(R.string.section_claiming), null) }
-            item {
+            fold(SECTION_CLAIMING, title_claiming, null, isOpen(SECTION_CLAIMING), ::toggle) {
                 Group {
-                    Toggle(stringResource(R.string.set_claim_on_open), stringResource(R.string.set_claim_on_open_hint), s.claimOnOpen) { v -> onSettings { it.copy(claimOnOpen = v) } }
-                    Toggle(stringResource(R.string.set_background), stringResource(R.string.set_background_hint), s.claimInBackground) { v ->
+                    Toggle(stringResource(R.string.set_claim_on_open), null, s.claimOnOpen) { v -> onSettings { it.copy(claimOnOpen = v) } }
+                    Toggle(stringResource(R.string.set_background), null, s.claimInBackground) { v ->
                         if (v) backgroundInfo = true else onSettings { it.copy(claimInBackground = false) }
                     }
                     Toggle(Stores.label(Stores.EPIC), null, s.claimEpic) { v -> onSettings { it.copy(claimEpic = v) } }
@@ -104,8 +114,7 @@ fun SettingsScreen(
                     }
                 }
             }
-            item { SectionHeader(stringResource(R.string.section_watch), null) }
-            item {
+            fold(SECTION_WATCH, title_watch, null, isOpen(SECTION_WATCH), ::toggle) {
                 Group {
                     Choice(
                         stringResource(R.string.set_frequency),
@@ -124,32 +133,29 @@ fun SettingsScreen(
                             listOf(Digest.OFF to stringResource(R.string.digest_off)) + Digest.HOURS.map { it to stringResource(R.string.every_hours_at, it) },
                             s.digestHour,
                         ) { v -> onSettings { it.copy(digestHour = v) } }
-                        if (Digest.enabled(s.digestHour)) {
-                            Text(stringResource(R.string.set_digest_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), modifier = Modifier.padding(bottom = 6.dp))
-                        }
                     }
                     Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
-                    Toggle(stringResource(R.string.set_last_chance), stringResource(R.string.set_last_chance_hint), s.lastChance) { v ->
+                    Toggle(stringResource(R.string.set_last_chance), null, s.lastChance) { v ->
                         if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
                     }
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
                     Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
-                    Toggle(stringResource(R.string.set_taste), stringResource(R.string.set_taste_hint), s.taste) { v -> onSettings { it.copy(taste = v) } }
-                    if (s.taste) Toggle(stringResource(R.string.set_taste_quiet), stringResource(R.string.set_taste_quiet_hint), s.tasteQuiet) { v -> onSettings { it.copy(tasteQuiet = v) } }
+                    Toggle(stringResource(R.string.set_taste), null, s.taste) { v -> onSettings { it.copy(taste = v) } }
+                    if (s.taste) Toggle(stringResource(R.string.set_taste_quiet), null, s.tasteQuiet) { v -> onSettings { it.copy(tasteQuiet = v) } }
                     Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
                 }
             }
-            item { SectionHeader(stringResource(R.string.section_relay), null) }
-            item { RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair) }
-            item { SectionHeader(stringResource(R.string.section_family), state.family.size.takeIf { it > 0 }) }
-            item { FamilyGroup(state, familySupported, family) }
-            item { SectionHeader(stringResource(R.string.section_data), null) }
-            item {
+            fold(SECTION_RELAY, title_relay, null, isOpen(SECTION_RELAY), ::toggle) {
+                RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair)
+            }
+            fold(SECTION_FAMILY, title_family, state.family.size.takeIf { it > 0 }, isOpen(SECTION_FAMILY), ::toggle) {
+                FamilyGroup(state, familySupported, family)
+            }
+            fold(SECTION_DATA, title_data, null, isOpen(SECTION_DATA), ::toggle) {
                 Group {
-                    Text(stringResource(R.string.data_tip), style = MaterialTheme.typography.bodySmall, color = Color.Black)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         BrutButton(stringResource(R.string.import_backup), onImport)
                         BrutButton(stringResource(R.string.export_backup), onExport, primary = false)
                     }
@@ -163,21 +169,18 @@ fun SettingsScreen(
                     )
                 }
             }
-            item { SectionHeader(stringResource(R.string.section_privacy), null) }
-            item {
+            // Les versions et la confidentialite vivent ici, et nulle part ailleurs.
+            fold(SECTION_ABOUT, title_about, null, isOpen(SECTION_ABOUT), ::toggle) {
                 Group {
+                    Text(
+                        stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
+                        style = MaterialTheme.typography.titleSmall, color = Color.Black,
+                    )
+                    Text(stringResource(R.string.section_privacy).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
                     listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5).forEach { id ->
                         Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
                     }
                 }
-            }
-            item {
-                Text(
-                    "> " + stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = b.mute,
-                    modifier = Modifier.padding(start = 24.dp, top = 4.dp),
-                )
             }
         }
     }
@@ -244,7 +247,6 @@ private fun RelayGroup(
     var confirm by remember { mutableStateOf(false) }
     val r = state.relay
     Group {
-        Text(stringResource(R.string.relay_intro), style = MaterialTheme.typography.bodySmall, color = Color.Black)
         if (r == null) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 8.dp)) {
                 BrutButton(stringResource(R.string.relay_scan), onScan)
@@ -254,7 +256,6 @@ private fun RelayGroup(
                 BrutField(code, { code = it }, "FGC1-…", onDone = { onCode(code.trim()); code = ""; pasting = false })
                 BrutButton(stringResource(R.string.relay_pair), { onCode(code.trim()); code = ""; pasting = false })
             }
-            Text("> " + stringResource(R.string.relay_how), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
         } else {
             Tag(
                 (if (r.peerAt != null) stringResource(R.string.relay_heard, Fmt.ago(LocalContext.current, r.peerAt, now)) else stringResource(R.string.relay_not_heard)).uppercase(),
@@ -271,6 +272,20 @@ private fun RelayGroup(
             }
         }
     }
+}
+
+const val SECTION_ACCOUNTS = "accounts"
+const val SECTION_CLAIMING = "claiming"
+const val SECTION_WATCH = "watch"
+const val SECTION_RELAY = "relay"
+const val SECTION_FAMILY = "family"
+const val SECTION_DATA = "data"
+const val SECTION_ABOUT = "about"
+
+/** Une section pliable : l'en-tete se touche, le corps n'existe que si elle est ouverte. */
+private fun LazyListScope.fold(key: String, title: String, count: Int?, open: Boolean, onToggle: (String) -> Unit, body: @Composable () -> Unit) {
+    item(key = "h:$key") { SectionHeader(title, count, open, { onToggle(key) }) }
+    if (open) item(key = "b:$key") { body() }
 }
 
 @Composable

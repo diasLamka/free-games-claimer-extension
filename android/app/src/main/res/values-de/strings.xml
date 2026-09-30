@@ -35,7 +35,6 @@
     <string name="free">Gratis</string>
     <string name="until">Bis %1$s</string>
     <string name="claimed_on">Geholt am %1$s</string>
-    <string name="steam_manual">Steam: ein Tippen auf der Shopseite (automatisches Holen ist aus).</string>
     <string name="action_claim">Holen</string>
     <string name="action_claim_all">Alle holen</string>
     <string name="action_open">Öffnen</string>
@@ -56,7 +55,6 @@
     <string name="via_extension">durch die Erweiterung</string>
     <string name="wish_hint">Ein Spiel, auf das du wartest</string>
     <string name="wish_add">Zur Wunschliste</string>
-    <string name="wish_share_tip">Tipp: Aus jeder App (Reddit, Discord, Browser) eine Spielseite an diese App „teilen“, um sie zu prüfen oder zu wünschen.</string>
     <string name="wish_mine">Meine Wünsche</string>
     <string name="wish_free_now">Jetzt gratis bei %1$s!</string>
     <string name="wish_remove">Entfernen</string>
@@ -64,9 +62,7 @@
     <string name="section_claiming">Holen</string>
     <string name="section_watch">Beobachtung</string>
     <string name="section_data">Daten der Erweiterung</string>
-    <string name="login_tip">Einmal in der App anmelden: Die Sitzungen bleiben auf dem Handy und dienen nur zum Holen.</string>
     <string name="set_claim_on_open">Beim Öffnen der App holen</string>
-    <string name="set_claim_on_open_hint">Neue Gratisspiele werden beim Öffnen der App (oder Tippen auf eine Benachrichtigung) geholt.</string>
     <string name="set_amazon">Amazon Luna / Prime Gaming</string>
     <string name="set_steam">Steam (Option)</string>
     <string name="set_steam_hint">Standardmäßig aus: Steam verbietet Automatisierung in seinem Abonnementvertrag.</string>
@@ -74,7 +70,6 @@
     <string name="set_digest">Eine Tageszusammenfassung</string>
     <string name="digest_off">Nein, sofort</string>
     <string name="every_hours_at">um %1$d Uhr</string>
-    <string name="set_digest_hint">Eine Benachrichtigung fasst die neuen Spiele des Tages zusammen. Gewünschte Spiele und zweite Chancen kommen weiterhin sofort.</string>
     <string name="every_hours">%1$d Std.</string>
     <string name="set_country">Shop-Land</string>
     <string name="set_notify_new">Neue Gratisspiele melden</string>
@@ -83,7 +78,6 @@
     <string name="set_others">Andere Shops zeigen</string>
     <string name="set_ratings">Steam-Bewertung der Gratisspiele</string>
     <string name="check_now">Jetzt prüfen</string>
-    <string name="data_tip">Importiere die Sicherung der Erweiterung (Exportieren oder die wöchentliche in Downloads/free-games-claimer), um Verlauf und Wunschliste zu teilen. Exportieren schreibt eine Datei, die „Wiederherstellen“ der Erweiterung zusammenführt. Nie mit Geheimnissen.</string>
     <string name="import_backup">Importieren</string>
     <string name="export_backup">Exportieren</string>
     <string name="imported_on">Letzter Import: %1$s</string>
@@ -106,7 +100,6 @@
     <string name="login_hint">Wie gewohnt anmelden, dann auf Fertig tippen.</string>
     <string name="login_hint_epic">E-Mail und Epic-Passwort. Konto mit Google oder Facebook erstellt? Gib ihm zuerst ein Epic-Passwort: Epic schickt es per E-Mail, die Google-Anmeldung bleibt.</string>
     <string name="set_background">Auch bei ausgeschaltetem Bildschirm</string>
-    <string name="set_background_hint">Holt während der Hintergrundprüfung, ohne die App zu öffnen. Nur angemeldete Shops.</string>
     <string name="background_title">Bei ausgeschaltetem Bildschirm holen?</string>
     <string name="background_text">Bei jeder Hintergrundprüfung öffnet die App die Shopseite selbst, unsichtbar, und holt, was übrig ist — dieselbe Engine wie auf dem Bildschirm, ein Spiel nach dem anderen, höchstens zehn Minuten.
 
@@ -137,7 +130,6 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="notif_last_chance_title">Letzte Chance: %1$s</string>
     <string name="notif_last_chance_text">Ein Wunschspiel, gratis bei %1$s, noch nicht geholt: noch %2$s.</string>
     <string name="set_last_chance">Letzte-Chance-Wecker</string>
-    <string name="set_last_chance_hint">Ein Wunschspiel endet in unter 3 Std. ungeholt: Das Handy klingelt wie ein Wecker.</string>
     <string name="last_chance_title">Letzte-Chance-Wecker</string>
     <string name="last_chance_text">Wenn ein Spiel deiner Wunschliste gratis ist und in unter 3 Stunden endet, ohne dir zu gehören (ein Captcha, eine verlorene Sitzung, ein Shop, den die App nicht holen kann), klingelt das Handy wie ein Wecker, auch im Lautlos-Modus, bis du tippst oder wegwischst. Es klingelt 3 bis 2 Stunden vor dem Ende: Android garantiert Apps, die keine Wecker sind, nicht die Minute. Die App zu öffnen beendet es. Ton und „Nicht stören“ lassen sich in den Kanaleinstellungen ändern.</string>
     <string name="last_chance_ok">Einschalten</string>
@@ -153,7 +145,6 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="year_share">Teilen</string>
     <string name="year_empty">In diesem Jahr kein Spiel geholt.</string>
     <string name="tonight_title">Heute Abend spiele ich…</string>
-    <string name="tonight_hint">Ein Spiel aus deinem Stapel, passend zu deiner Zeit: nach Steam-Bewertung, dem Format, das Steam-Spieler ihm geben, und auf Wunsch nach Steam Deck.</string>
     <string name="tonight_coop_only">Zu mehreren</string>
     <string name="tonight_coop">Zu mehreren spielbar</string>
     <string name="shortcut_claim_short">Holen</string>
@@ -187,9 +178,7 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="tonight_deck_playable">Auf dem Steam Deck spielbar</string>
     <string name="set_tonight">„Heute Abend spiele ich…“: Steam-Seite der Spiele im Stapel lesen</string>
     <string name="set_taste">Dein Geschmack: Angebote erkennen, die deinen Spielen ähneln</string>
-    <string name="set_taste_hint">Liest Steam-Tags, ohne Cookie: nur Spielnummern.</string>
     <string name="set_taste_quiet">Intelligente Ruhe</string>
-    <string name="set_taste_quiet_hint">Ein neues Spiel, das nicht zu deinem Geschmack passt, wartet auf die Tageszusammenfassung (20 Uhr, wenn du keine Zeit gewählt hast). Wünsche, zweite Chancen und Passendes melden sich sofort; im Zweifel klingelt es.</string>
     <string name="tag_for_you">Für dich</string>
     <string name="notif_taste_line">Nah an deinem Geschmack: %1$s.</string>
     <string name="notif_taste_line_bare">Nah an deinem Geschmack.</string>
@@ -206,7 +195,7 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="widget_free_none">Du hast schon alles, was gerade gratis ist.</string>
     <string name="widget_free_claim">Holen</string>
     <string name="section_family">Die ganze Familie</string>
-    <string name="family_hint">Ein Telefon holt Spiele für mehrere Konten. Jede Person hat ihren eigenen Bereich: Ihre Sitzungen mischen sich nie mit deinen. Epic, GOG und Amazon; Steam und die Verbindung zum PC bleiben bei deinem Konto.</string>
+    <string name="family_hint">Ein Telefon, mehrere Konten: Jede Person hat ihren eigenen Bereich.</string>
     <string name="family_unsupported">Deine Version von „Android System WebView“ kann Sitzungen nicht trennen. Aktualisiere sie im Play Store und komm dann zurück.</string>
     <string name="family_name_hint">Vorname</string>
     <string name="family_add">Hinzufügen</string>
@@ -218,11 +207,10 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="family_games">Geholte Spiele: %1$d</string>
     <string name="family_for">Für %1$s</string>
     <string name="family_nothing">Nichts zu holen für %1$s: Melde die Shops an, oder alles ist schon geholt.</string>
-    <string name="family_login_tip">Tippe auf einen Shop, um dich für diese Person anzumelden.</string>
     <string name="notif_family_challenge_title">Überprüfung für %1$s</string>
     <string name="notif_family_challenge_text">„%1$s“: Öffne die App, Einstellungen, Die ganze Familie.</string>
     <string name="odds_best">Deine besten Chancen</string>
-    <string name="odds_hint">Die Chancen, dass es gratis wird: eine Schätzung aus dem, was die App gesehen hat, dem Publisher und der Steam-Seite. Kein Versprechen.</string>
+    <string name="odds_hint">Eine Schätzung, kein Versprechen.</string>
     <string name="odds_high">Gute Chancen</string>
     <string name="odds_medium">Mittlere Chancen</string>
     <string name="odds_low">Geringe Chancen</string>
@@ -238,11 +226,9 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="odds_free_to_play">es ist schon kostenlos spielbar</string>
     <string name="odds_pending">Steam-Seite noch nicht gelesen</string>
     <string name="odds_not_on_steam">unter diesem Namen nicht auf Steam gefunden</string>
-    <string name="relay_intro">App und Browser-Erweiterung sagen sich, was sie holen: Wer an ist, nimmt das Spiel, der andere versucht es nicht erneut. Ende-zu-Ende-verschlüsselt über ntfy; kein Cookie, kein Code, kein Konto geht darüber.</string>
     <string name="relay_scan">QR-Code scannen</string>
     <string name="relay_paste">Code einfügen</string>
     <string name="relay_pair">Koppeln</string>
-    <string name="relay_how">Am Rechner: Popup der Erweiterung → Einstellungen → Handy-Relais → Mein Handy koppeln.</string>
     <string name="relay_heard">PC gehört %1$s</string>
     <string name="relay_not_heard">Gekoppelt, der PC hat sich noch nicht gemeldet</string>
     <string name="relay_paired_on">Gekoppelt am %1$s</string>
@@ -254,6 +240,7 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="relay_paired">Mit dem PC gekoppelt: Sie sprechen jetzt miteinander.</string>
     <string name="relay_bad_code">Das ist kein Kopplungscode (er beginnt mit FGC1-).</string>
     <string name="relay_scan_failed">Der Scanner ist nicht verfügbar: Code stattdessen einfügen.</string>
+    <string name="section_about">Über die App</string>
     <string name="section_privacy">Datenschutz</string>
     <string name="privacy_1">Deine Shop-Sitzungen (Cookies) bleiben auf diesem Handy. Sie dienen nur zum Holen und gehen nur an den jeweiligen Shop. Die Sitzungen jedes Familienmitglieds liegen in einem eigenen, getrennten Bereich.</string>
     <string name="privacy_2">Kein Server von uns empfängt etwas: Es gibt keinen. Die Angebote kommen aus den öffentlichen APIs der Shops und von GamerPower, ohne deine Cookies; deine Wünsche und die Spiele deines Stapels werden genauso im öffentlichen Steam-Shop nachgeschlagen.</string>

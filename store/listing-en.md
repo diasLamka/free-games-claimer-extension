@@ -46,7 +46,8 @@ WHAT IT DOES NOT DO
 - No account, no sign-up, no server of ours. Everything stays in your browser.
 - No telemetry. No install identifier, no crash reports, no usage statistics.
 - It never reads your library on its own initiative. That happens on a click,
-  and only towards the store concerned.
+  and only towards the store concerned. Only the sign-in check runs by itself
+  (adjustable): it keeps nothing but "signed in / not".
 - It never works around a captcha or a rate limit. A security challenge hands
   control back to you and raises the tab.
 - Steam claiming is off by default and stays off until you turn it on, because

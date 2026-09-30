@@ -54,7 +54,8 @@ CE QU'ELLE NE FAIT PAS
 - Aucune télémétrie. Pas d'identifiant d'installation, pas de rapport
   d'erreur, pas de statistique d'usage.
 - Elle ne lit jamais votre bibliothèque de sa propre initiative. Cela se fait
-  sur un clic, et uniquement vers le magasin concerné.
+  sur un clic, et uniquement vers le magasin concerné. Seule la vérification
+  de connexion part seule (réglable) : elle ne garde que « connecté / non ».
 - Elle ne contourne jamais un captcha ni une limite de débit. Un défi de
   sécurité vous rend la main et remonte l'onglet.
 - La récupération sur Steam est coupée par défaut et le reste tant que vous

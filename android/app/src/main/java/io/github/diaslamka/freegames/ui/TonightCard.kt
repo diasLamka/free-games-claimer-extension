@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -65,7 +67,7 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
             Text(stringResource(R.string.tonight_empty), style = MaterialTheme.typography.bodyMedium, color = b.ink, modifier = Modifier.padding(top = 6.dp))
             return@Column
         }
-        Text(stringResource(R.string.tonight_hint), style = MaterialTheme.typography.bodySmall, color = b.mute, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
+        Spacer(Modifier.height(8.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             for (t in Tonight.TIMES) {
                 val on = t == p.time

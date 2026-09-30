@@ -27,6 +27,13 @@ import io.github.diaslamka.freegames.sources.SteamSource
 import io.github.diaslamka.freegames.ui.AdaptiveFrame
 import io.github.diaslamka.freegames.ui.ClaimedScreen
 import io.github.diaslamka.freegames.ui.GamesScreen
+import io.github.diaslamka.freegames.ui.SECTION_ACCOUNTS
+import io.github.diaslamka.freegames.ui.SECTION_CLAIMING
+import io.github.diaslamka.freegames.ui.SECTION_WATCH
+import io.github.diaslamka.freegames.ui.SECTION_RELAY
+import io.github.diaslamka.freegames.ui.SECTION_FAMILY
+import io.github.diaslamka.freegames.ui.SECTION_DATA
+import io.github.diaslamka.freegames.ui.SECTION_ABOUT
 import io.github.diaslamka.freegames.ui.SettingsScreen
 import io.github.diaslamka.freegames.ui.theme.FreeGamesTheme
 import kotlinx.coroutines.runBlocking
@@ -54,6 +61,7 @@ import java.util.Locale
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], application = android.app.Application::class)
 class AdaptiveScreenshotTest {
+    private val TOUT_OUVERT = listOf(SECTION_ACCOUNTS, SECTION_CLAIMING, SECTION_WATCH, SECTION_RELAY, SECTION_FAMILY, SECTION_DATA, SECTION_ABOUT)
     @get:Rule
     val compose = createComposeRule()
 
@@ -114,7 +122,7 @@ class AdaptiveScreenshotTest {
         GamesScreen(live, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
     }
     private val settings: @Composable () -> Unit = {
-        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     @Test

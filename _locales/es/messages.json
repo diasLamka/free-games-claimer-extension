@@ -2644,5 +2644,11 @@
   },
   "tasteQuietHint": {
     "message": "Un juego nuevo que no encaja con tus gustos espera al resumen del día en vez de sonar. Tus deseos, las segundas oportunidades y lo que encaja suenan enseguida; ante la duda, suena. Requiere «Tus gustos»."
+  },
+  "sessionAutoLabel": {
+    "message": "Comprobar las sesiones automáticamente"
+  },
+  "sessionAutoHint": {
+    "message": "Cada 4 h, en segundo plano. En Steam y Epic, la página de la cuenta se abre un instante en una ventana minimizada: no se hace clic en nada."
   }
 }

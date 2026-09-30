@@ -36,7 +36,6 @@
     <string name="free">Free</string>
     <string name="until">Until %1$s</string>
     <string name="claimed_on">Claimed on %1$s</string>
-    <string name="steam_manual">Steam: one tap on the store page (automatic claiming is off).</string>
     <string name="action_claim">Claim</string>
     <string name="action_claim_all">Claim all</string>
     <string name="action_open">Open</string>
@@ -57,7 +56,6 @@
     <string name="via_extension">by the extension</string>
     <string name="wish_hint">A game you are waiting for</string>
     <string name="wish_add">Add to wishlist</string>
-    <string name="wish_share_tip">Tip: from any app (Reddit, Discord, a browser), Share a store page to this app to check it or wish for it.</string>
     <string name="wish_mine">My wishes</string>
     <string name="wish_free_now">Free now on %1$s!</string>
     <string name="wish_remove">Remove</string>
@@ -65,9 +63,7 @@
     <string name="section_claiming">Claiming</string>
     <string name="section_watch">Watch</string>
     <string name="section_data">Extension data</string>
-    <string name="login_tip">Sign in once in the app: its sessions stay on this phone and are used only to claim.</string>
     <string name="set_claim_on_open">Claim when the app opens</string>
-    <string name="set_claim_on_open_hint">New free games are claimed as soon as you open the app (or tap a notification).</string>
     <string name="set_amazon">Amazon Luna / Prime Gaming</string>
     <string name="set_steam">Steam (option)</string>
     <string name="set_steam_hint">Off by default: Steam forbids automation in its subscriber agreement.</string>
@@ -75,7 +71,6 @@
     <string name="set_digest">One daily summary</string>
     <string name="digest_off">No, as they come</string>
     <string name="every_hours_at">at %1$d:00</string>
-    <string name="set_digest_hint">One notification gathers the day\'s new games. Wished games and second chances still ring right away.</string>
     <string name="every_hours">%1$d h</string>
     <string name="set_country">Store country</string>
     <string name="set_notify_new">Notify new free games</string>
@@ -84,7 +79,6 @@
     <string name="set_others">Show other stores</string>
     <string name="set_ratings">Steam rating of free games</string>
     <string name="check_now">Check now</string>
-    <string name="data_tip">Import the extension backup (Export button, or the weekly one in Downloads/free-games-claimer) to share its history and wishlist. Export writes a file the extension\'s Restore merges. No secret is ever included.</string>
     <string name="import_backup">Import</string>
     <string name="export_backup">Export</string>
     <string name="imported_on">Last import: %1$s</string>
@@ -107,7 +101,6 @@
     <string name="login_hint">Sign in as usual, then tap Done.</string>
     <string name="login_hint_epic">Epic email and password. Account made with Google or Facebook? Give it an Epic password first: Epic emails it, and Google sign-in keeps working.</string>
     <string name="set_background">Also with the screen off</string>
-    <string name="set_background_hint">Claims during background checks, without opening the app. Signed-in stores only.</string>
     <string name="background_title">Claim with the screen off?</string>
     <string name="background_text">During each background check, the app opens the store page itself, invisibly, and claims what is left — the same engine as on screen, one game at a time, ten minutes at most.
 
@@ -138,7 +131,6 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="notif_last_chance_title">Last chance: %1$s</string>
     <string name="notif_last_chance_text">A wished game, free on %1$s, not claimed yet: %2$s left.</string>
     <string name="set_last_chance">Last-chance alarm</string>
-    <string name="set_last_chance_hint">A wished game ends in under 3 h unclaimed: the phone rings like an alarm clock.</string>
     <string name="last_chance_title">Last-chance alarm</string>
     <string name="last_chance_text">When a game from your wishlist is free and ends in under 3 hours without being yours (a captcha, a lost session, a store the app cannot claim), the phone rings like an alarm clock, even in silent mode, until you tap or dismiss it. It rings between 3 and 2 hours before the end: Android does not guarantee the minute to apps that are not alarm clocks. Opening the app silences it. You can change its sound or let it through Do Not Disturb in the channel settings.</string>
     <string name="last_chance_ok">Turn on</string>
@@ -154,7 +146,6 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="year_share">Share</string>
     <string name="year_empty">No game taken that year.</string>
     <string name="tonight_title">Tonight I\'m playing…</string>
-    <string name="tonight_hint">One game from your pile, for the time you have: picked by Steam rating, the format Steam players give it and, if you want, the Steam Deck.</string>
     <string name="tonight_coop_only">With others</string>
     <string name="tonight_coop">Playable with others</string>
     <string name="shortcut_claim_short">Claim</string>
@@ -188,9 +179,7 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="tonight_deck_playable">Playable on Steam Deck</string>
     <string name="set_tonight">“Tonight I\'m playing…”: read the Steam page of games in your pile</string>
     <string name="set_taste">Your taste: spot offers that resemble your games</string>
-    <string name="set_taste_hint">Reads Steam tags, without a cookie: only game numbers.</string>
     <string name="set_taste_quiet">Smart quiet</string>
-    <string name="set_taste_quiet_hint">A new game that doesn\'t match your taste waits for the daily summary (8 pm unless you picked an hour). Your wishes, second chances and what matches ring right away; when in doubt, it rings.</string>
     <string name="tag_for_you">For you</string>
     <string name="notif_taste_line">Close to your taste: %1$s.</string>
     <string name="notif_taste_line_bare">Close to your taste.</string>
@@ -207,7 +196,7 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="widget_free_none">You already have everything that is free right now.</string>
     <string name="widget_free_claim">Claim</string>
     <string name="section_family">The whole family</string>
-    <string name="family_hint">One phone claims for several accounts. Each person gets their own space: their sessions never mix with yours. Epic, GOG and Amazon; Steam and the link with the PC stay with your account.</string>
+    <string name="family_hint">One phone, several accounts: each person gets their own space.</string>
     <string name="family_unsupported">Your version of “Android System WebView” can\'t keep sessions apart. Update it in the Play Store, then come back here.</string>
     <string name="family_name_hint">First name</string>
     <string name="family_add">Add</string>
@@ -219,11 +208,10 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="family_games">Claimed games: %1$d</string>
     <string name="family_for">For %1$s</string>
     <string name="family_nothing">Nothing to claim for %1$s: sign in to their stores, or everything is already taken.</string>
-    <string name="family_login_tip">Tap a store to sign in to it for this person.</string>
     <string name="notif_family_challenge_title">Verification for %1$s</string>
     <string name="notif_family_challenge_text">“%1$s”: open the app, Settings, The whole family.</string>
     <string name="odds_best">Your best chances</string>
-    <string name="odds_hint">The chances of it going free: an estimate, from what the app has seen, the publisher and the Steam page. Not a promise.</string>
+    <string name="odds_hint">An estimate, not a promise.</string>
     <string name="odds_high">Good chances</string>
     <string name="odds_medium">Some chances</string>
     <string name="odds_low">Slim chances</string>
@@ -239,11 +227,9 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="odds_free_to_play">it is already free to play</string>
     <string name="odds_pending">Steam page not read yet</string>
     <string name="odds_not_on_steam">not found on Steam under this name</string>
-    <string name="relay_intro">The app and the browser extension tell each other what they claim: whichever is on takes the game, the other never retries it. End-to-end encrypted through ntfy; no cookie, no code, no account ever goes through.</string>
     <string name="relay_scan">Scan the QR code</string>
     <string name="relay_paste">Paste the code</string>
     <string name="relay_pair">Pair</string>
-    <string name="relay_how">On the computer: extension popup → Settings → Phone relay → Pair my phone.</string>
     <string name="relay_heard">PC heard %1$s</string>
     <string name="relay_not_heard">Paired, the PC has not spoken yet</string>
     <string name="relay_paired_on">Paired on %1$s</string>
@@ -255,6 +241,7 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="relay_paired">Paired with the PC: they now talk to each other.</string>
     <string name="relay_bad_code">That is not a pairing code (it starts with FGC1-).</string>
     <string name="relay_scan_failed">The scanner is unavailable: paste the code instead.</string>
+    <string name="section_about">About</string>
     <string name="section_privacy">Privacy</string>
     <string name="privacy_1">Your store sessions (cookies) stay on this phone. They are only used to claim, and only go to the store they belong to. Each family member’s sessions live in a separate space of their own.</string>
     <string name="privacy_2">No server of ours receives anything: there is none. Offers come from the stores’ public APIs and GamerPower, without your cookies; your wishes and the games in your pile are looked up on Steam’s public store the same way.</string>

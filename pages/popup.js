@@ -1962,6 +1962,11 @@ function sessionLine(entry, storeId) {
   if (entry.at) line.append(el('span', null, since(entry.at)));
   else line.append(el('span', null, t('sessionNever')));
 
+  /* Pourquoi, quand ce n'est pas « connecte » (2.99.6) : la note de la sonde,
+     que personne ne voyait. C'est elle qui dit si une page a ete chargee et ce
+     qu'elle a montre -- de quoi comprendre un « inconnu » sans ouvrir le journal. */
+  if (entry.status !== SESSION.OK && entry.note) line.append(el('span', 'why', entry.note));
+
   if (entry.status === SESSION.OUT && LOGIN_URLS[storeId]) {
     const lien = el('button', 'btn-sm', t('sessionSignIn'));
     lien.addEventListener('click', () => openTab(LOGIN_URLS[storeId]));
@@ -2715,6 +2720,7 @@ function renderNotifications(behaviour) {
   document.getElementById('steam-weekends').checked = behaviour.steamWeekends !== false;
   document.getElementById('steam-dlc').checked = behaviour.steamDlc !== false;
   document.getElementById('tonight-ratings').checked = behaviour.tonight !== false;
+  document.getElementById('session-auto').checked = behaviour.sessionAuto !== false;
   document.getElementById('taste-toggle').checked = behaviour.taste !== false;
   document.getElementById('taste-quiet').checked = behaviour.tasteQuiet === true;
   document.getElementById('taste-quiet').disabled = behaviour.taste === false;
@@ -3094,6 +3100,7 @@ document.getElementById('weekly-recap').addEventListener('change', (e) => writeB
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));
+document.getElementById('session-auto').addEventListener('change', (e) => writeBehaviour({ sessionAuto: e.target.checked }));
 document.getElementById('taste-toggle').addEventListener('change', (e) => writeBehaviour({ taste: e.target.checked }));
 document.getElementById('taste-quiet').addEventListener('change', (e) => writeBehaviour({ tasteQuiet: e.target.checked }));
 for (const b of document.querySelectorAll('#tonight-section [data-time]')) {
@@ -3122,9 +3129,9 @@ document.getElementById('floor').addEventListener('change', async (e) => {
   await load();
 });
 
-/* Sonder les sessions. Un geste explicite : chaque sonde lit un compte avec
-   la session de l'utilisateur, exactement comme l'importation de collection,
-   et pour la meme raison elle ne part jamais toute seule. */
+/* Sonder les sessions, a la demande. Depuis la 2.99.6 la verification part
+   aussi toute seule (reglage « Verifier les connexions automatiquement ») ;
+   ce bouton la force sans attendre. */
 document.getElementById('session-probe').addEventListener('click', async (e) => {
   const button = e.currentTarget;
   button.disabled = true;

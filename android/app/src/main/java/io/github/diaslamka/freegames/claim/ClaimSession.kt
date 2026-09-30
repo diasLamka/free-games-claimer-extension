@@ -421,9 +421,9 @@ class ClaimSession(
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
                 )
                 lib = lib + (Rules.libraryKeyOf(o) to entry)
-                accounts = accounts + (o.store to AccountState(Accounts.OK, now))
+                accounts = accounts + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))
             }
-            if (verdictName == Verdicts.LOGIN) accounts = accounts + (o.store to AccountState(Accounts.LOGGED_OUT, now))
+            if (verdictName == Verdicts.LOGIN) accounts = accounts + (o.store to AccountState(Accounts.LOGGED_OUT, now, via = Accounts.PAGE))
             s.copy(attempts = if (att != null) s.attempts + (o.key to att) else s.attempts, library = lib, accounts = accounts)
         }
     }

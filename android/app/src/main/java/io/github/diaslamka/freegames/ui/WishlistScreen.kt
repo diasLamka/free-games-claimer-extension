@@ -64,13 +64,6 @@ fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove
                     SquareButton(Icons.Rounded.Add, stringResource(R.string.wish_add), ::add)
                 }
             }
-            item("tip") {
-                Text(
-                    "> " + stringResource(R.string.wish_share_tip),
-                    style = MaterialTheme.typography.bodySmall, color = b.ink,
-                    modifier = Modifier.padding(start = 30.dp),
-                )
-            }
             if (best.isNotEmpty()) {
                 item("best-h") { SectionHeader(stringResource(R.string.odds_best), best.size) }
                 item("best-hint") {

@@ -63,9 +63,6 @@ fun FamilyGroup(state: AppState, supported: Boolean, actions: FamilyActions) {
             Notice(stringResource(R.string.family_unsupported), b.accent)
             return@Column
         }
-        if (state.family.isNotEmpty()) {
-            Text("> " + stringResource(R.string.family_login_tip), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
-        }
         for (m in state.family) {
             Column(
                 Modifier.fillMaxWidth().brut(Color.White, border = 2.dp).padding(12.dp),

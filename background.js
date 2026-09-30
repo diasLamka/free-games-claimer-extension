@@ -42,7 +42,7 @@ import {
 } from './watch/commands.js';
 import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory } from './watch/library.js';
 import {
-  KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession,
+  KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession, readSession, dueForProbe, needsPage, settle,
 } from './watch/session.js';
 import { senderKind, messageAllowed, isOurs, hostMatchers, relayRequest } from './watch/messaging.js';
 import { STORE_LABELS, STATES, isExpired, webUrl } from './watch/offer.js';
@@ -53,6 +53,7 @@ import { mirrorLibrary, restoreLibrary, clearLibraryMirror } from './watch/libra
 import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
 import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
 import { importStore, probeSession } from './watch/collection-import.js';
+import { landOnPage } from './watch/session-page.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
 import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watch/lookup.js';
@@ -441,6 +442,7 @@ async function startCycle(origine, options = {}) {
         await maybeOdds(Date.now());
         await maybeTonight(Date.now());
         await maybeTaste(Date.now());
+        await maybeSessions(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
       }
@@ -987,13 +989,58 @@ async function probeSessions(stores) {
     } catch (e) {
       mesure = { status: null, note: (e && e.message) || String(e) };
     }
-    const status = fromImportStatus(mesure.status);
-    etat = recordSession(etat, store, { status, note: mesure.note }, Date.now());
-    record('info', `session ${store} : ${status}${mesure.note ? ` (${mesure.note})` : ''}`);
+    const rapide = { status: fromImportStatus(mesure.status), note: mesure.note };
+    const avant = readSession(etat, store);
+    const now = Date.now();
+
+    /* Un « non » de la sonde rapide n'est cru qu'apres la page (2.99.6) : Steam
+       et Epic renouvellent leurs jetons quand leur page se charge, pas avant.
+       Voir watch/session.js. L'arret d'urgence empeche d'ouvrir la moindre page. */
+    let page;
+    if (needsPage(store, rapide.status, avant, now) && !(await isStopped(api))) {
+      page = await landOnPage(store, { chrome: api, now });
+    }
+    const verdict = settle(store, rapide, page, avant, now);
+    if (verdict.keep) {
+      record('info', `session ${store} : ${verdict.status} (inchange, une page l'a montre il y a peu)`);
+      continue;
+    }
+    etat = recordSession(etat, store, { status: verdict.status, note: verdict.note, via: verdict.via }, Date.now());
+    record('info', `session ${store} : ${verdict.status}${verdict.note ? ` (${verdict.note})` : ''}${page === undefined ? '' : page ? ` -- page : ${String(page.url || '').split('?')[0]}` : ' -- page : non chargee'}`);
   }
 
   await write(api, { [KEY_SESSIONS]: etat });
   return etat;
+}
+
+/**
+ * Les sessions, resondees d'elles-memes (2.99.6), apres chaque cycle.
+ *
+ * L'utilisateur devait cliquer « Verifier les sessions » a chaque fois pour
+ * voir vert. Il ne le fait plus : une mesure « connecte » se renouvelle toutes
+ * les quatre heures, une autre toutes les demi-heures, et la sonde charge la
+ * page du compte quand il faut (voir watch/session.js). Reglage
+ * `sessionAuto`, actif par defaut ; coupe pendant les vacances et par l'arret
+ * d'urgence. Ne jette jamais.
+ */
+let sessionAutoRunning = null;
+function maybeSessions(now = Date.now()) {
+  if (sessionAutoRunning || sessionRunning) return sessionAutoRunning || sessionRunning;
+  sessionAutoRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.sessionAuto === false) return null;
+    if (onVacation(settings.vacation, now)) return null;
+    if (await isStopped(api)) return null;
+    const raw = await readKeys(api, [KEY_SESSIONS]);
+    const suivis = settings.watchedStores || [];
+    const dues = PROBED_STORES.filter((s) => (!suivis.length || suivis.includes(s)) && dueForProbe(readSession(raw[KEY_SESSIONS], s), now));
+    if (!dues.length) return null;
+    sessionRunning = probeSessions(dues);
+    try { return await sessionRunning; } finally { sessionRunning = null; }
+  })()
+    .catch((e) => record('warn', 'sessions : verification automatique impossible', e))
+    .finally(() => { sessionAutoRunning = null; });
+  return sessionAutoRunning;
 }
 
 /* ------------------------------------------------------ essai a blanc */
@@ -1936,9 +1983,9 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return true;
   }
 
-  /* Sonder les sessions, a la demande de la page. Meme regle que
-     l'importation : chaque sonde lit un compte avec la session de
-     l'utilisateur, donc elle part sur un geste, jamais toute seule. */
+  /* Sonder les sessions, a la demande de la page. La verification
+     automatique (`maybeSessions`, 2.99.6) fait la meme chose d'elle-meme ; ceci
+     est le geste explicite, qui ne saute aucune etape. */
   if (msg.type === 'fgc-session-probe') {
     if (sessionRunning) { sendResponse({ busy: true }); return; }
     const demandes = (Array.isArray(msg.stores) && msg.stores.length ? msg.stores : PROBED_STORES)

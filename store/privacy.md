@@ -67,7 +67,9 @@ serveur qui nous appartienne :
 - **avec les cookies du navigateur, et uniquement vers le magasin
   concerne** : Steam, GOG et Epic, pour lire ce que l'utilisateur possede
   deja. Ces requetes ne partent **que sur un clic explicite** de
-  l'utilisateur, jamais de la propre initiative de l'extension.
+  l'utilisateur, jamais de la propre initiative de l'extension. Une seule
+  exception, reglable : la verification de connexion, qui part d'elle-meme
+  (au plus toutes les 4 heures) et ne garde que « connecte / deconnecte ».
 
 Aucune donnee n'est transmise a un tiers.
 

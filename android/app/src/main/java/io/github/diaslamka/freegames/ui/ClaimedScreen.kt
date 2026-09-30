@@ -46,6 +46,8 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.
     val entries = state.library.values.sortedByDescending { it.ts ?: 0 }
     val groups = entries.groupBy { e -> e.ts?.let { Fmt.month(it) } ?: "—" }
     var yearOpen by remember { mutableStateOf(false) }
+    // Les mois dont on a inverse l'etat : le plus recent est ouvert d'office, les autres fermes.
+    var toggled by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(emptyList<String>()) }
     Column(Modifier.fillMaxSize().background(b.base)) {
         TopBlock(stringResource(R.string.tab_claimed)) {
             // Mon annee en image (1.6.0) : a partager.
@@ -76,9 +78,11 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.
                 if (entries.isEmpty()) item("empty", span = full) {
                     Text(stringResource(R.string.claimed_empty), style = MaterialTheme.typography.bodyMedium, color = b.ink)
                 }
-                groups.forEach { (month, list) ->
-                    item("m:$month", span = full) { SectionHeader(month, list.size) }
-                    itemsIndexed(list, key = { _, e -> "e:" + e.store + ":" + e.id }) { i, e ->
+                groups.entries.forEachIndexed { g, (month, list) ->
+                    // Le mois le plus recent reste ouvert ; les autres se deplient au toucher.
+                    val open = if (month in toggled) g != 0 else g == 0
+                    item("m:$month", span = full) { SectionHeader(month, list.size, open, { toggled = if (month in toggled) toggled - month else toggled + month }) }
+                    if (open) itemsIndexed(list, key = { _, e -> "e:" + e.store + ":" + e.id }) { i, e ->
                         ClaimedRow(
                             state, e, onOpen,
                             if (cols > 1) Modifier else Modifier.padding(start = if (i % 3 == 1) 18.dp else 0.dp, end = if (i % 3 == 1) 0.dp else 8.dp),

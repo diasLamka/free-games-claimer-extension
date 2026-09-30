@@ -1,6 +1,7 @@
 package io.github.diaslamka.freegames.data
 
 import android.content.Context
+import io.github.diaslamka.freegames.claim.SessionProbe
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.SourceStatus
@@ -75,7 +76,11 @@ object Watcher {
         }
 
         // Les sessions : Steam dit aussi ce qu'il possede, GOG si on est connecte.
-        val accounts = Accounts.STORES.associateWith { Accounts.check(it, st.country, now) }
+        val accounts = Accounts.STORES.associateWith { store ->
+            val first = Accounts.check(store, st.country, now)
+            // Un « non » des cookies ou de l'API n'est cru qu'apres la page (1.17.0) : voir claim/SessionProbe.kt.
+            runCatching { SessionProbe.confirm(context, store, st.country, first, Graph.store.value.accounts[store], now) }.getOrDefault(first)
+        }
 
         val firstRun = store.value.lastCheck == null
         var fresh: List<Offer> = emptyList()

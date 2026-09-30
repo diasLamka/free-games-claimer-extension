@@ -35,7 +35,6 @@
     <string name="free">Gratuit</string>
     <string name="until">Jusqu\'au %1$s</string>
     <string name="claimed_on">Récupéré le %1$s</string>
-    <string name="steam_manual">Steam : un geste sur la fiche (la récupération automatique est coupée).</string>
     <string name="action_claim">Récupérer</string>
     <string name="action_claim_all">Tout récupérer</string>
     <string name="action_open">Ouvrir</string>
@@ -56,7 +55,6 @@
     <string name="via_extension">par l\'extension</string>
     <string name="wish_hint">Un jeu que tu attends</string>
     <string name="wish_add">Ajouter aux souhaits</string>
-    <string name="wish_share_tip">Astuce : depuis n\'importe quelle appli (Reddit, Discord, un navigateur), « Partager » une fiche de jeu vers cette appli pour la vérifier ou la souhaiter.</string>
     <string name="wish_mine">Mes souhaits</string>
     <string name="wish_free_now">Gratuit maintenant sur %1$s !</string>
     <string name="wish_remove">Retirer</string>
@@ -64,9 +62,7 @@
     <string name="section_claiming">Récupération</string>
     <string name="section_watch">Veille</string>
     <string name="section_data">Données de l\'extension</string>
-    <string name="login_tip">Connecte-toi une fois dans l\'appli : les sessions restent sur ce téléphone et ne servent qu\'à récupérer.</string>
     <string name="set_claim_on_open">Récupérer à l\'ouverture de l\'appli</string>
-    <string name="set_claim_on_open_hint">Les nouveaux jeux gratuits sont pris dès que tu ouvres l\'appli (ou touches une notification).</string>
     <string name="set_amazon">Amazon Luna / Prime Gaming</string>
     <string name="set_steam">Steam (option)</string>
     <string name="set_steam_hint">Coupé par défaut : Steam interdit l\'automatisation dans son contrat d\'abonné.</string>
@@ -74,7 +70,6 @@
     <string name="set_digest">Un seul résumé par jour</string>
     <string name="digest_off">Non, au fil de l\'eau</string>
     <string name="every_hours_at">à %1$d h</string>
-    <string name="set_digest_hint">Une seule notification rassemble les nouveaux jeux du jour. Les jeux souhaités et les deuxièmes chances sonnent tout de suite.</string>
     <string name="every_hours">%1$d h</string>
     <string name="set_country">Pays de la boutique</string>
     <string name="set_notify_new">Prévenir des nouveaux jeux gratuits</string>
@@ -83,7 +78,6 @@
     <string name="set_others">Montrer les autres magasins</string>
     <string name="set_ratings">Note Steam des jeux offerts</string>
     <string name="check_now">Vérifier maintenant</string>
-    <string name="data_tip">Importe la sauvegarde de l\'extension (bouton Exporter, ou celle de la semaine dans Téléchargements/free-games-claimer) pour partager son historique et ses souhaits. Exporter écrit un fichier que « Restaurer » de l\'extension fusionne. Aucun secret n\'y entre jamais.</string>
     <string name="import_backup">Importer</string>
     <string name="export_backup">Exporter</string>
     <string name="imported_on">Dernier import : %1$s</string>
@@ -106,7 +100,6 @@
     <string name="login_hint">Connecte-toi comme d’habitude, puis touche Terminé.</string>
     <string name="login_hint_epic">E-mail et mot de passe Epic. Compte créé avec Google ou Facebook ? Donne-lui d\'abord un mot de passe Epic : Epic l\'envoie par e-mail, et la connexion Google continue de marcher.</string>
     <string name="set_background">Aussi écran éteint</string>
-    <string name="set_background_hint">Récupère pendant la veille de fond, sans ouvrir l\'appli. Seulement les magasins connectés.</string>
     <string name="background_title">Récupérer écran éteint ?</string>
     <string name="background_text">À chaque passage de la veille de fond, l\'appli ouvre elle-même la page du magasin, sans l\'afficher, et récupère ce qui reste — le même moteur qu\'à l\'écran, un jeu à la fois, dix minutes au plus.
 
@@ -137,7 +130,6 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="notif_last_chance_title">Dernière chance : %1$s</string>
     <string name="notif_last_chance_text">Un jeu souhaité, gratuit sur %1$s, pas encore récupéré : il reste %2$s.</string>
     <string name="set_last_chance">Alarme de dernière chance</string>
-    <string name="set_last_chance_hint">Un jeu souhaité finit dans moins de 3 h sans être récupéré : le téléphone sonne comme un réveil.</string>
     <string name="last_chance_title">Alarme de dernière chance</string>
     <string name="last_chance_text">Quand un jeu de ta liste de souhaits est gratuit et finit dans moins de 3 h sans être à toi (un captcha, une session perdue, un magasin que l\'appli ne sait pas prendre), le téléphone sonne comme un réveil, même en silencieux, jusqu\'à ce que tu la touches ou l\'écartes. Elle sonne entre 3 h et 2 h avant la fin : Android ne garantit pas la minute aux applis qui ne sont pas des réveils. Ouvrir l\'appli la fait taire. Son son et le passage en « Ne pas déranger » se règlent dans les réglages du canal.</string>
     <string name="last_chance_ok">Activer</string>
@@ -153,7 +145,6 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="year_share">Partager</string>
     <string name="year_empty">Aucun jeu pris cette année-là.</string>
     <string name="tonight_title">Ce soir je joue à…</string>
-    <string name="tonight_hint">Un jeu de ta pile, pour le temps que tu as : choisi d\'après la note Steam, le format que lui donnent les joueurs Steam et, si tu veux, le Steam Deck.</string>
     <string name="tonight_coop_only">À plusieurs</string>
     <string name="tonight_coop">Se joue à plusieurs</string>
     <string name="shortcut_claim_short">Récupérer</string>
@@ -187,9 +178,7 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="tonight_deck_playable">Jouable sur Steam Deck</string>
     <string name="set_tonight">« Ce soir je joue à… » : lire la fiche Steam des jeux de ta pile</string>
     <string name="set_taste">Tes goûts : repérer les offres qui ressemblent à tes jeux</string>
-    <string name="set_taste_hint">Lit les étiquettes Steam, sans cookie : seulement des numéros de jeux.</string>
     <string name="set_taste_quiet">Silence intelligent</string>
-    <string name="set_taste_quiet_hint">Un nouveau jeu qui ne ressemble pas à tes goûts attend le résumé du jour (20 h si tu n\'as pas choisi d\'heure). Tes souhaits, les deuxièmes chances et ce qui te ressemble sonnent tout de suite ; au moindre doute, ça sonne.</string>
     <string name="tag_for_you">Pour toi</string>
     <string name="notif_taste_line">Proche de tes goûts : %1$s.</string>
     <string name="notif_taste_line_bare">Proche de tes goûts.</string>
@@ -206,7 +195,7 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="widget_free_none">Tu as déjà tout ce qui est gratuit en ce moment.</string>
     <string name="widget_free_claim">Récupérer</string>
     <string name="section_family">Toute la famille</string>
-    <string name="family_hint">Un seul téléphone récupère pour plusieurs comptes. Chaque personne a son espace à elle : ses sessions ne croisent jamais les tiennes. Epic, GOG et Amazon ; Steam et le relais avec le PC restent à ton compte.</string>
+    <string name="family_hint">Un téléphone, plusieurs comptes : chacun son espace.</string>
     <string name="family_unsupported">Ta version d\'« Android System WebView » ne sait pas séparer les sessions. Mets-la à jour dans le Play Store, puis reviens ici.</string>
     <string name="family_name_hint">Prénom</string>
     <string name="family_add">Ajouter</string>
@@ -218,11 +207,10 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="family_games">Jeux récupérés : %1$d</string>
     <string name="family_for">Pour %1$s</string>
     <string name="family_nothing">Rien à récupérer pour %1$s : connecte ses magasins, ou tout est déjà pris.</string>
-    <string name="family_login_tip">Touche un magasin pour t\'y connecter au nom de cette personne.</string>
     <string name="notif_family_challenge_title">Vérification pour %1$s</string>
     <string name="notif_family_challenge_text">« %1$s » : ouvre l\'appli, Réglages, Toute la famille.</string>
     <string name="odds_best">Tes meilleures chances</string>
-    <string name="odds_hint">Les chances de le voir passer gratuit : une estimation, d\'après ce que l\'appli a vu passer, l\'éditeur et la fiche Steam. Pas une promesse.</string>
+    <string name="odds_hint">Une estimation, pas une promesse.</string>
     <string name="odds_high">Chances fortes</string>
     <string name="odds_medium">Chances moyennes</string>
     <string name="odds_low">Chances faibles</string>
@@ -238,11 +226,9 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="odds_free_to_play">il est déjà gratuit à jouer</string>
     <string name="odds_pending">fiche Steam pas encore lue</string>
     <string name="odds_not_on_steam">introuvable sur Steam sous ce nom</string>
-    <string name="relay_intro">L\'appli et l\'extension du navigateur se disent ce qu\'elles récupèrent : celui qui est allumé prend le jeu, l\'autre ne le retente pas. Chiffré de bout en bout par ntfy ; aucun cookie, aucun code, aucun compte n\'y passe.</string>
     <string name="relay_scan">Scanner le QR code</string>
     <string name="relay_paste">Coller le code</string>
     <string name="relay_pair">Associer</string>
-    <string name="relay_how">Sur l\'ordinateur : popup de l\'extension → Réglages → Relais avec le téléphone → Associer mon téléphone.</string>
     <string name="relay_heard">PC entendu %1$s</string>
     <string name="relay_not_heard">Associé, le PC ne s\'est pas encore manifesté</string>
     <string name="relay_paired_on">Associé le %1$s</string>
@@ -254,6 +240,7 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="relay_paired">Associé au PC : ils se parlent désormais.</string>
     <string name="relay_bad_code">Ce n\'est pas un code d\'association (il commence par FGC1-).</string>
     <string name="relay_scan_failed">Le lecteur est indisponible : colle le code à la place.</string>
+    <string name="section_about">À propos</string>
     <string name="section_privacy">Confidentialité</string>
     <string name="privacy_1">Tes sessions de magasin (cookies) restent sur ce téléphone. Elles ne servent qu\'à récupérer, et ne partent que vers le magasin concerné. Celles de chaque membre de la famille vivent dans un espace séparé, à lui.</string>
     <string name="privacy_2">Aucun serveur à nous ne reçoit rien : il n\'y en a pas. Les offres viennent des API publiques des magasins et de GamerPower, sans tes cookies ; tes souhaits et les jeux de ta pile sont cherchés sur la boutique publique de Steam de la même façon.</string>

@@ -280,6 +280,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
    */
   tasteQuiet: false,
   /**
+   * Verifier les connexions toute seule (2.99.6) : toutes les quatre heures,
+   * la sonde relit la session de chaque magasin suivi et, pour Steam et Epic,
+   * charge la page du compte dans une fenetre reduite avant de croire un
+   * « deconnecte ». Rien n'est clique. Voir watch/session.js. Actif par
+   * defaut : sans lui, il fallait cliquer « Verifier les sessions » a chaque fois.
+   */
+  sessionAuto: true,
+  /**
    * La note Steam des jeux offerts (2.78.0) : « Tres positives, 84 % » a cote
    * du jeu et dans sa notification. Lue sur store.steampowered.com, sans
    * cookie. Voir watch/steam-ratings.js.

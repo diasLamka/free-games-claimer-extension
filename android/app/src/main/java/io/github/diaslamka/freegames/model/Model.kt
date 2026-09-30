@@ -146,7 +146,13 @@ data class SourceStatus(val at: Long, val ok: Boolean, val count: Int = 0, val e
 
 /** Ce qu'on sait de la session d'un magasin. */
 @Serializable
-data class AccountState(val status: String = "unknown", val checkedAt: Long = 0, val name: String? = null)
+data class AccountState(
+    val status: String = "unknown",
+    val checkedAt: Long = 0,
+    val name: String? = null,
+    /** D'ou vient le verdict : `page` quand une vraie page de magasin l'a montre (1.17.0), rien quand ce sont les cookies. */
+    val via: String? = null,
+)
 
 @Serializable
 data class Settings(

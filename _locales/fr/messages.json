@@ -2644,5 +2644,11 @@
   },
   "tasteQuietHint": {
     "message": "Un nouveau jeu qui ne ressemble pas à vos goûts attend le résumé du jour au lieu de sonner. Vos souhaits, les deuxièmes chances et ce qui vous ressemble sonnent tout de suite ; au moindre doute, ça sonne. Suppose « Vos goûts »."
+  },
+  "sessionAutoLabel": {
+    "message": "Vérifier les connexions automatiquement"
+  },
+  "sessionAutoHint": {
+    "message": "Toutes les 4 h, en arrière-plan. Pour Steam et Epic, la page du compte s'ouvre un instant dans une fenêtre réduite : rien n'est cliqué."
   }
 }

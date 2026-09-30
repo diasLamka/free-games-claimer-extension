@@ -801,6 +801,8 @@
      de decrire GOG -- l'inverse exact de ce que la ligne dit. */
   .row:has(+ .session) { border-bottom: 0; }
   .session:last-child { border-bottom: 0; }
+  .session { flex-wrap: wrap; }
+  .session .why { flex: 1 1 100%; color: var(--mute); font-size: 11px; overflow-wrap: anywhere; }
   .session .who { font-family: var(--mono); }
   .session .who.out { color: var(--rose); }
   .session .who.ok { color: var(--jade); }
@@ -1570,6 +1572,11 @@
           <button class="btn-sm" id="session-probe" data-i18n="sessionsCheck"></button>
           <span class="aside" id="sessions-when"></span>
         </div>
+        <label class="toggle">
+          <input type="checkbox" id="session-auto">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="sessionAutoLabel"></span><small data-i18n="sessionAutoHint"></small></span>
+        </label>
         <div class="sessions-head">
           <button class="btn-sm" id="dry-run" data-i18n="dryRunButton" data-i18n-attr="title:dryRunHint"></button>
           <span class="aside" id="dry-run-when"></span>

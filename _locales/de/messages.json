@@ -2644,5 +2644,11 @@
   },
   "tasteQuietHint": {
     "message": "Ein neues Spiel, das nicht zu Ihrem Geschmack passt, wartet auf die Tageszusammenfassung, statt zu klingeln. Ihre Wünsche, zweite Chancen und Passendes melden sich sofort; im Zweifel klingelt es. Setzt „Ihr Geschmack“ voraus."
+  },
+  "sessionAutoLabel": {
+    "message": "Anmeldungen automatisch prüfen"
+  },
+  "sessionAutoHint": {
+    "message": "Alle 4 Std. im Hintergrund. Bei Steam und Epic öffnet sich kurz die Kontoseite in einem minimierten Fenster: Es wird nichts angeklickt."
   }
 }

@@ -40,6 +40,13 @@ import io.github.diaslamka.freegames.sources.GogSource
 import io.github.diaslamka.freegames.sources.SteamSource
 import io.github.diaslamka.freegames.ui.ClaimedScreen
 import io.github.diaslamka.freegames.ui.GamesScreen
+import io.github.diaslamka.freegames.ui.SECTION_ACCOUNTS
+import io.github.diaslamka.freegames.ui.SECTION_CLAIMING
+import io.github.diaslamka.freegames.ui.SECTION_WATCH
+import io.github.diaslamka.freegames.ui.SECTION_RELAY
+import io.github.diaslamka.freegames.ui.SECTION_FAMILY
+import io.github.diaslamka.freegames.ui.SECTION_DATA
+import io.github.diaslamka.freegames.ui.SECTION_ABOUT
 import io.github.diaslamka.freegames.ui.SettingsScreen
 import io.github.diaslamka.freegames.ui.WishlistScreen
 import io.github.diaslamka.freegames.claim.ClaimSession
@@ -83,6 +90,9 @@ import java.util.Locale
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "fr-rFR-w400dp-h880dp-night-xxhdpi", application = android.app.Application::class)
 class ScreenshotTest {
+    /** Toutes les sections des Reglages ouvertes : pour photographier ce qu'elles contiennent. */
+    private val TOUT_OUVERT = listOf(SECTION_ACCOUNTS, SECTION_CLAIMING, SECTION_WATCH, SECTION_RELAY, SECTION_FAMILY, SECTION_DATA, SECTION_ABOUT)
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -171,7 +181,7 @@ class ScreenshotTest {
 
     @Test
     fun reglagesJaunePapier() = shoot("B-reglages-clair", Accent.JAUNE, dark = false, tabs = 3) {
-        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
 
@@ -190,7 +200,7 @@ class ScreenshotTest {
     @Test
     @Config(qualifiers = "+h1500dp")
     fun settings() = shoot("A-reglages", Accent.JAUNE, dark = true, tabs = 3) {
-        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     /* 1.2.0 : la recuperation ecran eteint, le relais avec le PC, la confidentialite. */
@@ -203,22 +213,22 @@ class ScreenshotTest {
 
     @Test
     fun reglagesEcranEteint() = shoot("C-reglages-ecran-eteint", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "Steam") {
-        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     @Test
     fun reglagesRelais() = shoot("C-reglages-relais", Accent.JAUNE, dark = false, tabs = 3, scrollTo = "Dissocier") {
-        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     @Test
     fun reglagesRelaisLibre() = shoot("C-reglages-relais-libre", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "Scanner") {
-        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     @Test
     fun reglagesConfidentialite() = shoot("C-reglages-confidentialite", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "désinstaller") {
-        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(paired, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     @Test
@@ -293,10 +303,22 @@ class ScreenshotTest {
         GamesScreen(s, now, refreshing = false, claiming = false, onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {})
     }
 
+    /** Les Reglages tels qu'on les ouvre (1.17.0) : un sommaire, tout est plie. */
+    @Test
+    fun reglagesPlies() = shoot("C-reglages-plies", Accent.JAUNE, dark = true, tabs = 3) {
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+    }
+
+    /** « A propos » : les versions et la confidentialite, au meme endroit. */
+    @Test
+    fun aPropos() = shoot("C-a-propos", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "Confidentialité") {
+        SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = listOf(SECTION_ABOUT))
+    }
+
     /** Le resume du jour (1.13.0) : le reglage, l'heure choisie et ce qui passe quand meme tout de suite. */
     @Test
     fun resume() = shoot("C-reglages-resume", Accent.JAUNE, dark = true, tabs = 3, scrollTo = "un seul résumé") {
-        SettingsScreen(live.copy(settings = live.settings.copy(digestHour = 20)), now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {})
+        SettingsScreen(live.copy(settings = live.settings.copy(digestHour = 20)), now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = TOUT_OUVERT)
     }
 
     /** Toute la famille (1.9.0) : la section des Reglages, et le panneau au nom d'un membre. */

@@ -134,12 +134,24 @@ Uniquement vers **le magasin concerne lui-meme**, jamais vers un tiers :
 `accounts.epicgames.com` (import de collection, sur clic). Toutes sont des
 `GET`, sans corps, avec `Accept: application/json` pour seul en-tete.
 
-La **sonde de session** (2.25.0, bouton « Verifier les sessions ») emprunte
-les memes adresses, en demandant le moins possible : une seule page, jamais
-la pagination. Elle part **sur un geste**, comme l'import -- l'extension ne
-lit jamais un compte de sa propre initiative. C'est pour tenir cette phrase
-qu'une fonction de sonde automatique, ecrite puis relue, a ete retiree avant
-d'etre livree (voir le commentaire en fin de `watch/session.js`).
+La **sonde de session** (2.25.0) emprunte les memes adresses, en demandant le
+moins possible : une seule page, jamais la pagination. Elle part sur un geste
+(bouton « Verifier les sessions ») **et**, depuis la 2.99.6, **toute seule**
+(reglage « Verifier les connexions automatiquement », actif par defaut et
+coupable) : au plus toutes les quatre heures, pour les magasins suivis. Seul le
+verdict « connecte / deconnecte » est garde -- jamais la liste des jeux lue
+pour le poser. L'importation de collection, elle, reste sur un geste :
+l'extension ne lit jamais votre bibliotheque de sa propre initiative.
+
+Pour Steam et Epic, quand la lecture rapide ne dit pas « connecte », la page du
+compte (`store.steampowered.com/account/`, `epicgames.com/account/personal`)
+se charge un instant dans une fenetre reduite, avec votre session, comme si
+vous la visitiez. C'est ce chargement qui renouvelle les jetons de ces
+magasins ; sans lui la sonde concluait « deconnecte » a un compte connecte.
+Rien n'y est clique, aucun script n'y est injecte : seuls l'adresse d'arrivee
+et le titre de l'onglet sont lus. Une page qui ne dit rien (defi anti-robot,
+page inattendue) laisse « inconnu », jamais « deconnecte ». L'arret d'urgence
+et le mode vacances coupent la verification automatique.
 
 **Tester la recuperation** (2.64.0) ouvre, sur un geste lui aussi, la page
 d'un jeu offert dans chaque magasin reclame, avec votre session -- comme vous

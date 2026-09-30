@@ -4,6 +4,46 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.6 -- 2026-09-30
+
+**Connecte pour de bon : la page confirme, et la verification part toute seule**
+
+Signale : Steam ou Epic « deconnecte » alors que le compte l'est, et un clic
+sur « Verifier les sessions » a refaire a chaque fois.
+
+- **Cause probable.** Steam et Epic gardent la session dans des jetons qui
+  expirent en quelques heures, et c'est leur **page** qui les renouvelle en se
+  chargeant. La sonde, elle, lisait les cookies ou l'API sans charger de page :
+  passees quelques heures elle voyait un jeton expire et concluait
+  « deconnecte » (ou « inconnu ») -- jusqu'au jour ou l'on ouvrait le magasin a
+  la main, ce qui renouvelait tout. Le compte de l'utilisateur n'a pas pu etre
+  observe d'ici : c'est la lecture des faits connus qui mene la, et le motif
+  de chaque verdict s'affiche desormais sous le magasin.
+- **Un « non » n'est cru qu'apres la page** (Steam, Epic). Quand la lecture
+  rapide ne dit pas « connecte », la page du compte se charge un instant dans
+  une fenetre reduite ; on lit ou elle a atterri et son titre. Sur la
+  connexion : « deconnecte ». Sur le compte : « connecte ». Un defi
+  anti-robot ou une page inattendue : « inconnu » -- **jamais**
+  « deconnecte ». GOG garde sa sonde JSON, sans ambiguite.
+- **Toute seule.** Une mesure « connecte » se renouvelle toutes les quatre
+  heures, une autre toutes les demi-heures, apres chaque cycle. Reglage
+  « Verifier les connexions automatiquement » (actif ; coupe pendant les
+  vacances et par l'arret d'urgence). Un compte dont une page a montre la
+  perte n'ouvre pas de fenetre avant six heures.
+- **Le motif est visible** : « la page du compte renvoie vers la connexion »,
+  « la page n'a rien montre de net (Un instant…) »… au lieu d'un « inconnu »
+  muet.
+- **Ce qui change dans les promesses ecrites.** `SECURITY.md` et la fiche
+  disaient que la sonde ne part jamais toute seule ; ce n'est plus vrai, et
+  les textes le disent. L'importation de collection, qui lit la
+  bibliotheque, reste sur un geste.
+
+Mesure, dans un vrai Chromium avec l'extension chargee et sans compte : Steam
+renvoie bien vers `/login/?redir=account%2F` (« deconnecte », page a l'appui),
+Epic repond par un defi anti-robot (« inconnu », pas « deconnecte »), GOG dit
+« Full authentication is required ». Le cas « connecte » n'a pas pu etre rejoue
+sans compte : il est tenu par les tests (1581).
+
 ## 2.99.5 -- 2026-09-29
 
 **Silence intelligent : seul ce qui vous ressemble sonne**
