@@ -8,10 +8,10 @@ import { classify, KINDS } from '../watch/canary.js';
 import { STORES } from '../watch/offer.js';
 import { CONTENT_MESSAGES, messageAllowed } from '../watch/messaging.js';
 
-test('le verdict existe, laisse l\'onglet ouvert et ne s\'abandonne pas', () => {
+test('le verdict existe, laisse l\'onglet ouvert, et ne revient plus a l\'infini (2.106.0)', () => {
   assert.equal(TEACH_VERDICT, VERDICTS.TEACH);
   assert.ok(MANUAL_VERDICTS.includes(TEACH_VERDICT));
-  assert.ok(HUMAN_VERDICTS.includes(TEACH_VERDICT));
+  assert.ok(!HUMAN_VERDICTS.includes(TEACH_VERDICT), 'il suit le recul et l\'abandon ordinaires');
 });
 
 test('pour le canari, c\'est le magasin qui a bouge (comme un selecteur casse)', () => {

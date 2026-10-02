@@ -47,6 +47,7 @@ fun ClaimPanel(session: ClaimSession, onStopped: () -> Unit = {}, onDismissed: (
         onStop = { session.stop(); onStopped() },
         onDismiss = { session.dismiss(); onDismissed() },
         onUser = { session.userFinished(it) },
+        onAnswer = { session.answer(it) },
         who = session.memberName,
     ) {
         AndroidView(
@@ -64,6 +65,8 @@ fun ClaimPanelContent(
     onStop: () -> Unit,
     onDismiss: () -> Unit,
     onUser: (Boolean) -> Unit,
+    /** « Deja a moi » / « plus offert » (1.24.0), sur la demande « montre-moi le bouton ». */
+    onAnswer: (String) -> Unit = {},
     /** Toute la famille (1.9.0) : pour qui l'on recupere. */
     who: String? = null,
     page: @Composable (Modifier) -> Unit,
@@ -124,6 +127,13 @@ fun ClaimPanelContent(
             Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrutButton(stringResource(R.string.challenge_continue), { onUser(true) })
                 BrutButton(stringResource(R.string.challenge_skip), { onUser(false) }, primary = false)
+            }
+            // Deux reponses de plus (1.24.0) : le jeu est deja a toi, ou n'est plus offert. L'offre est close, on ne la redemande plus.
+            if (ui.teach) {
+                Row(Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BrutButton(stringResource(R.string.teach_owned), { onAnswer(Verdicts.OWNED) }, primary = false)
+                    BrutButton(stringResource(R.string.teach_gone), { onAnswer(Verdicts.GONE) }, primary = false)
+                }
             }
         }
         if (ui.running) {

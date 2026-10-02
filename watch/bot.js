@@ -163,7 +163,7 @@ function readableLeft(ms) {
 const VERDICT_KEYS = Object.freeze({
   claimed: 'verdictClaimed', redeemed: 'verdictRedeemed', already_redeemed: 'verdictAlreadyRedeemed',
   code_pending_gog: 'verdictCodePending', code_copied: 'verdictCodeCopied', needs_link: 'verdictNeedsLink',
-  needs_login: 'verdictNeedsLogin', challenge: 'verdictChallenge', needs_teaching: 'verdictTeach', skipped: 'verdictSkipped',
+  needs_login: 'verdictNeedsLogin', challenge: 'verdictChallenge', needs_teaching: 'verdictTeach', owned: 'verdictOwned', gone: 'verdictGone', skipped: 'verdictSkipped',
   bad_url: 'verdictBadUrl', failed: 'verdictFailed', expired: 'verdictExpired', upcoming: 'verdictUpcoming',
   undetermined: 'verdictUndetermined', quota: 'verdictQuota', needs_base: 'verdictNeedsBase',
 });

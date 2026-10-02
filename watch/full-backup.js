@@ -35,6 +35,7 @@ import { KEYS, readKeys, write } from './storage.js';
 import { KEY_CODES } from './backup.js';
 import { KEY_LIBRARY, mergeEntry } from './library.js';
 import { KEY_LEDGER, mergeLedger } from './ledger.js';
+import { KEY_DEJA, mergeDeja } from './deja.js';
 import { KEY_OUTCOMES, MAX_OUTCOMES } from './outcomes.js';
 import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, MAX_WISHES } from './wishlist.js';
 import { KEY_COLLECTION, sanitiseCollection } from './collection.js';
@@ -61,6 +62,8 @@ export const BACKUP_KEYS = Object.freeze([
   KEY_CODES, ...HISTORY_KEYS, KEY_LIBRARY, KEY_OUTCOMES,
   /* Le carnet (2.105.0) : sa chaine est plus longue que n'importe quel resume. */
   KEY_LEDGER,
+  /* « Deja a vous » (2.106.0) : ce que le compte du magasin, ou vous, avez dit posseder. */
+  KEY_DEJA,
   KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEY_COLLECTION,
   KEY_TAUGHT, KEY_COUNTRY, KEY_LANG, ...ENGINE_SWITCHES,
   KEY_UI, KEYS.SETTINGS, KEYS.FILTERS,
@@ -228,6 +231,7 @@ export function planRestore(local, fichier, { now, steamAutoClaim = false } = {}
   for (const k of HISTORY_KEYS) if (k in f) prendre(k, mergeHistory(l[k], f[k]), true);
   if (KEY_LIBRARY in f) prendre(KEY_LIBRARY, mergeLibrary(l[KEY_LIBRARY], f[KEY_LIBRARY]));
   if (KEY_LEDGER in f) prendre(KEY_LEDGER, mergeLedger(l[KEY_LEDGER], f[KEY_LEDGER]));
+  if (KEY_DEJA in f) prendre(KEY_DEJA, mergeDeja(l[KEY_DEJA], f[KEY_DEJA], now));
   if (KEY_OUTCOMES in f) prendre(KEY_OUTCOMES, mergeOutcomes(l[KEY_OUTCOMES], f[KEY_OUTCOMES]));
   if (KEY_WISHLIST in f) prendre(KEY_WISHLIST, mergeWishes(l[KEY_WISHLIST], f[KEY_WISHLIST]));
   // Comme `teach` l'ecrit : un objet -- sauf si le stockage le tient deja en texte.

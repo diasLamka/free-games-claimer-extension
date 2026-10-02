@@ -54,6 +54,18 @@ export const VERDICTS = Object.freeze({
   TEACH: 'needs_teaching',
   OUT_OF_SCOPE: 'out_of_scope',
 
+  /**
+   * Le jeu est DEJA A VOUS (2.106.0) : le compte du magasin le dit, ou vous l'avez
+   * dit sur le bandeau. Definitif, et rien n'est ouvert ni demande.
+   */
+  OWNED: 'owned',
+  /**
+   * La page ne propose plus rien a prendre (2.106.0) : offre terminee, ou jeu deja
+   * a vous dont la page ne le dit pas. PAS definitif d'emblee -- une page mal
+   * rendue lui ressemble : deux constats espaces de GONE_CONFIRM_MS le rendent tel.
+   */
+  GONE: 'gone',
+
   /** L'offre est terminee. Confirme par une date, jamais par un DOM seul. */
   EXPIRED: 'expired',
   /** Elle n'a pas encore ouvert : rien a faire, et surtout pas un onglet. */
@@ -95,7 +107,7 @@ export const WAITING_RECHECK_MS = 12 * 3600 * 1000;
 export const FINAL_VERDICTS = Object.freeze([
   VERDICTS.CLAIMED, VERDICTS.REDEEMED, VERDICTS.ALREADY_REDEEMED,
   VERDICTS.SKIPPED, VERDICTS.OUT_OF_SCOPE, VERDICTS.BAD_URL,
-  VERDICTS.EXPIRED,
+  VERDICTS.EXPIRED, VERDICTS.OWNED,
 ]);
 
 /** Verdicts qui demandent un humain : on laisse l'onglet ouvert. */
@@ -110,8 +122,30 @@ export const MANUAL_VERDICTS = Object.freeze([VERDICTS.CHALLENGE, VERDICTS.TEACH
  * faite.
  */
 export const HUMAN_VERDICTS = Object.freeze([
-  VERDICTS.LOGIN, VERDICTS.LINK_ACCOUNT, VERDICTS.CHALLENGE, VERDICTS.TEACH,
+  VERDICTS.LOGIN, VERDICTS.LINK_ACCOUNT, VERDICTS.CHALLENGE,
 ]);
+
+/**
+ * « Montrez-moi le bouton » n'est PAS dans la liste ci-dessus (2.106.0). Il y etait
+ * depuis la 2.102.0, avec « jamais abandonne » : une offre que la page ne laissait
+ * pas prendre -- un jeu deja a vous, une offre finie -- redemandait le bouton a
+ * l'infini, un onglet ouvert dans votre fenetre a chaque fois. La question est
+ * posee UNE fois par offre (MAX_ASKS) ; ensuite l'offre suit le recul ordinaire et
+ * l'abandon au cinquieme essai, comme tout echec, sans plus rien demander.
+ */
+export const MAX_ASKS = 1;
+/** Apres la demande, on laisse a l'utilisateur le temps de repondre avant de retenter. */
+export const ASK_WAIT_MS = 24 * 3600 * 1000;
+/** Deux constats « rien a prendre » espaces d'au moins cela valent « c'est fini ». */
+export const GONE_CONFIRM_MS = 2 * 3600 * 1000;
+/** Le premier constat « rien a prendre » se reverifie apres cela. */
+export const GONE_RECHECK_MS = 3 * 3600 * 1000;
+
+/** A-t-on deja pose la question « montrez-moi le bouton » pour cette offre ? */
+export function alreadyAsked(offer) {
+  if (!offer) return false;
+  return (offer.asks || 0) >= MAX_ASKS || offer.verdict === VERDICTS.TEACH;
+}
 
 /**
  * Recul entre deux tentatives, par nombre d'essais deja faits.
@@ -454,6 +488,9 @@ export async function claimOffer(offer, {
   fetch: fetchImpl,
   steamTiming,
   force = false,
+  /* Faux : le moteur ne demande PAS « montrez-moi le bouton » (2.106.0), l'offre a
+     deja eu sa question. */
+  teach = true,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('reclamer : "maintenant" est obligatoire');
 
@@ -519,7 +556,9 @@ export async function claimOffer(offer, {
 
     const promesseVerdict = awaitVerdict(tabId, 'fgc-verdict', budgetMs);
     try {
-      await chrome.tabs.sendMessage(tabId, { type: 'fgc-reclame', budgetMs, force: force === true });
+      await chrome.tabs.sendMessage(tabId, {
+        type: 'fgc-reclame', budgetMs, force: force === true, ...(teach === false ? { teach: false } : {}),
+      });
     } catch (e) {
       return { verdict: VERDICTS.FAILURE, details: `ordre non transmis : ${(e && e.message) || e}`, resolvedUrl, store };
     }
@@ -546,7 +585,8 @@ export async function claimOffer(offer, {
         // Et on le sort de sa fenetre reduite : un onglet qui a besoin d'un
         // humain ne doit pas vivre dans une fenetre que personne ne trouvera.
         const surfaced = await surfaceTab(chrome, tabId);
-        await markPiloted(chrome, tabId, { manual: true, openedAt: now });
+        // L'offre est retenue : une reponse du bandeau (« deja a moi », « plus offert ») sait ainsi laquelle elle regle.
+        await markPiloted(chrome, tabId, { manual: true, openedAt: now, offer: offer.catalogKey || null });
         // Notre onglet est parti ailleurs : la fenetre reduite ne contient
         // plus que d'eventuels onglets ouverts par la page. On la ferme --
         // sauf si c'est elle, devenue celle de l'utilisateur, qui le porte.

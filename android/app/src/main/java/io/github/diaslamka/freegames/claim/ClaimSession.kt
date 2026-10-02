@@ -19,6 +19,7 @@ import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Bargain
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.OwnedCheck
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
@@ -135,6 +136,10 @@ class ClaimSession(
      * qui ne l'etait pas, et un geste explicite est plus recent qu'elle.
      */
     private var forced = false
+    /** Les offres sur lesquelles TU as touche « Recuperer » : seules elles peuvent redemander « montre-moi le bouton ». */
+    private var targeted: Set<String> = emptySet()
+    /** Ta reponse sur le panneau (« deja a moi », « plus offert »), en attendant que la boucle la lise. */
+    private var teachAnswer: String? = null
     val webView: WebView by lazy { created = true; build() }
 
     private fun log(msg: String) = Log.i("FGC", msg)
@@ -312,6 +317,16 @@ class ClaimSession(
     }
 
     /**
+     * Ta reponse sur le panneau « montre-moi le bouton » (1.24.0) : le jeu est deja a toi, ou n'est plus
+     * offert. L'offre est close, on ne la redemande plus.
+     */
+    fun answer(kind: String) {
+        if (kind != Verdicts.OWNED && kind != Verdicts.GONE) return
+        teachAnswer = kind
+        userDone?.complete(false)
+    }
+
+    /**
      * Tout ce qui reste a prendre -- ou seulement `keys`, qui passent alors
      * outre le recul (le bouton « Recuperer » d'une carte).
      */
@@ -323,6 +338,7 @@ class ClaimSession(
     fun start(keys: Set<String> = emptySet()): Boolean {
         if (_ui.value.running) return true
         forced = true
+        targeted = keys
         val now = System.currentTimeMillis()
         val s = Graph.store.value
         val todo = Rules.pending(s, now, force = keys).let { list -> if (keys.isEmpty()) list else list.filter { it.key in keys } }
@@ -375,6 +391,15 @@ class ClaimSession(
                     record(offer, Verdicts.LOGIN, "session a reprendre", count = false)
                     continue
                 }
+                /* DEJA A TOI ? On le demande au magasin avant d'ouvrir la moindre page (1.24.0) : un jeu pris a la
+                   main, ou que la page ne dit plus « a toi » (« Jouer »), ne rouvre rien et ne redemande rien. */
+                if (!family && offer.store in OwnedCheck.ORACLE_STORES) {
+                    val preuve = OwnedCheck.accountOwns(Graph.http, offer, st.owned)
+                    if (preuve != null) {
+                        recordOwned(offer, preuve.note)
+                        continue
+                    }
+                }
                 _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
                 if (headless) Notifier.working(context, offer.shownTitle, i + 1, todo.size)
                 if (!family) runCatching { RelayLink.lock(context, offer, System.currentTimeMillis()) }
@@ -403,9 +428,21 @@ class ClaimSession(
                     } else {
                         // La page reste ouverte : un clic de l'utilisateur apprend le bouton au moteur (qui previent par fgc-appris).
                         _ui.value = _ui.value.copy(needsUser = true, teach = true, visible = true)
+                        teachAnswer = null
                         userDone = CompletableDeferred()
                         val retry = userDone!!.await()
                         _ui.value = _ui.value.copy(needsUser = false, teach = false)
+                        // Ta reponse : « deja a moi » ou « plus offert » -- l'offre est close, la question ne revient pas.
+                        val reponse = teachAnswer
+                        teachAnswer = null
+                        if (reponse == Verdicts.OWNED) {
+                            recordOwned(offer, "tu as dit : deja a toi")
+                            continue
+                        }
+                        if (reponse == Verdicts.GONE) {
+                            record(offer, Verdicts.GONE, "tu as dit : plus offert", confirmed = true)
+                            continue
+                        }
                         if (retry) result = runOne(offer, steamDone)
                     }
                 }
@@ -433,15 +470,22 @@ class ClaimSession(
         return won
     }
 
-    private suspend fun record(o: Offer, verdictName: String, details: String?, count: Boolean = true) {
+    /** Le jeu est a toi (le compte du magasin, ou toi, l'a dit) : l'offre est close et le jeu memorise (1.24.0). */
+    private suspend fun recordOwned(o: Offer, note: String) {
+        val now = System.currentTimeMillis()
+        record(o, Verdicts.OWNED, note)
+        if (member == null) Graph.store.update { s -> s.copy(deja = Rules.remember(s.deja, o, now)) }
+    }
+
+    private suspend fun record(o: Offer, verdictName: String, details: String?, count: Boolean = true, confirmed: Boolean = false) {
         val now = System.currentTimeMillis()
         _ui.value = _ui.value.copy(outcomes = _ui.value.outcomes + Outcome(o.key, o.shownTitle, o.store, verdictName, details))
         if (member != null) {
-            Graph.store.update { Family.record(it, member, o, verdictName, details, now, unattended = headless, count = count) }
+            Graph.store.update { Family.record(it, member, o, verdictName, details, now, unattended = headless, count = count, confirmed = confirmed) }
             return
         }
         Graph.store.update { s ->
-            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless) else s.attempts[o.key]
+            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key]
             var lib = s.library
             var accounts = s.accounts
             if (verdictName in Verdicts.ACQUIRED) {
@@ -508,8 +552,10 @@ class ClaimSession(
         _ui.value = _ui.value.copy(step = STEP_CLAIM)
         val budget = if (headless) HEADLESS_BUDGET_MS else BUDGET_MS
         val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget); put("force", forced)
-            // Devant l'ecran : demander tout de suite ; en fond : jamais (personne pour cliquer).
-            if (headless) put("teach", false) else put("teach", "now")
+            // Devant l'ecran : demander tout de suite -- UNE fois par offre (1.24.0), sauf si c'est toi qui as touche
+            // « Recuperer » sur elle ; en fond : jamais (personne pour cliquer).
+            val dejaDemande = Rules.alreadyAsked(Graph.store.value.attempts[o.key]) && o.key !in targeted
+            if (headless || dejaDemande) put("teach", false) else put("teach", "now")
         }) }.toString()
         withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
         val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }

@@ -2658,13 +2658,25 @@
     "message": "Enséñame el botón"
   },
   "notifyTeachBody": {
-    "message": "No reconocí el botón: la página está abierta, haz clic una vez y lo recordaré."
+    "message": "No reconocí el botón: la página está abierta. Haz clic una vez, o di que ya tienes el juego. No lo volveré a preguntar."
   },
   "teachBanner": {
-    "message": "Free Games Claimer: no reconocí el botón que consigue el juego. Haz clic una vez y lo recordaré."
+    "message": "Free Games Claimer: no reconocí el botón que consigue el juego. Haz clic una vez y lo recordaré — o dime que ya lo tienes, o que ya no es gratis."
   },
   "verdictTeach": {
     "message": "botón por enseñar"
+  },
+  "teachAnswerOwned": {
+    "message": "Ya lo tengo"
+  },
+  "teachAnswerGone": {
+    "message": "Ya no es gratis"
+  },
+  "verdictOwned": {
+    "message": "ya es tuyo"
+  },
+  "verdictGone": {
+    "message": "nada que conseguir"
   },
   "bargainGradeA": {
     "message": "Una verdadera ganga"

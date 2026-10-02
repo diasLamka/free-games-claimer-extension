@@ -347,8 +347,12 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="share_no_end">no end date</string>
     <string name="share_upcoming">Coming soon on Epic:</string>
     <string name="share_from">from %1$s</string>
-    <string name="teach_help">%1$s: I did not recognise the button. Tap it once in the page below, I will remember.</string>
+    <string name="teach_help">%1$s: I did not recognise the button. Tap it once in the page below, I will remember — or tell me you already own it, or that it is no longer free.</string>
     <string name="verdict_teach">Show me the button</string>
+    <string name="verdict_owned">already yours</string>
+    <string name="verdict_gone">nothing left to take</string>
+    <string name="teach_owned">I already own it</string>
+    <string name="teach_gone">No longer free</string>
     <string name="notif_teach_title">%1$s: show me the button</string>
     <string name="notif_teach_text">I did not recognise %1$s\'s button. Open the app and tap Claim: you can show it to me with one tap.</string>
     <string name="channel_update">App updates</string>

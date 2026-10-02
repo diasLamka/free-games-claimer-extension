@@ -35,8 +35,9 @@ import {
   readState, readKeys, readSettings, write, writeCycle, KEYS, DEFAULT_SETTINGS, normaliseSettings,
   rememberNotification, readNotification, readNotificationLink,
 } from './watch/storage.js';
-import { reportVerdict, isPiloted, sweepTabs, tabVanished, expectClosure, forgetPiloted } from './watch/claim.js';
-import { TEACH_VERDICT, storeOfPlatform, resetForTeaching, showTeachBanner, isManualPilotTab } from './watch/teach.js';
+import { reportVerdict, isPiloted, sweepTabs, tabVanished, expectClosure, forgetPiloted, KEY_TABS } from './watch/claim.js';
+import { TEACH_VERDICT, ANSWERS, storeOfPlatform, resetForTeaching, settleByAnswer, showTeachBanner, isManualPilotTab } from './watch/teach.js';
+import { KEY_DEJA, VIA as DEJA_VIA, remember as rememberDeja } from './watch/deja.js';
 import {
   claimAllNow, claimOneNow, isStopped, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
@@ -319,6 +320,7 @@ async function runNoticeAction(id, index) {
       catalogKey: retenu.catalogKey,
       claimableStores: CLAIMABLE_STORES,
       record,
+      fetch: (u, i) => fetch(u, i),
     });
     record('info', `reclamation depuis une notification : ${r.claimed} prise(s)`);
     return;
@@ -867,7 +869,7 @@ async function botContext() {
 /** Ce que le bot peut FAIRE : les memes gestes que les boutons du popup, et rien d'autre. */
 async function botEffects(effect) {
   if (effect.kind === 'claim') {
-    const r = await claimAllNow({ chrome: api, claimableStores: CLAIMABLE_STORES, record });
+    const r = await claimAllNow({ chrome: api, claimableStores: CLAIMABLE_STORES, record, fetch: (u, i) => fetch(u, i) });
     if (r && r.stopped) return { text: t('botClaimStopped') };
     return { text: t('botClaimDone', String((r && r.claimed) || 0), String((r && r.left) || 0)) };
   }
@@ -1812,7 +1814,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
          clic a l'utilisateur, dans sa langue. L'onglet est remonte par
          l'orchestrateur ; le bandeau est deja la quand il arrive. */
       if (msg.type === 'fgc-verdict' && msg.verdict === TEACH_VERDICT) {
-        langue.then(() => showTeachBanner(api, tabId, t('teachBanner'))).catch(() => {});
+        langue.then(() => showTeachBanner(api, tabId, t('teachBanner'), { owned: t('teachAnswerOwned'), gone: t('teachAnswerGone') })).catch(() => {});
       }
     }
     return;
@@ -1836,6 +1838,36 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       }
       if (count) await startCycle('apprentissage');
     })().catch((e) => record('warn', 'apprentissage : suite impossible', e));
+    return;
+  }
+
+  /* L'utilisateur a REPONDU sur le bandeau (2.106.0) : « c'est deja a moi » ou « ce n'est
+     plus offert ». L'offre pour laquelle l'onglet a ete laisse ouvert est close -- on
+     ne la redemande plus --, le jeu deja a vous entre dans la memoire « deja a vous »,
+     et l'onglet se referme. Seul un onglet laisse ouvert pour un humain est entendu. */
+  if (msg.type === 'fgc-reponse') {
+    const tabId = sender && sender.tab && sender.tab.id;
+    if (tabId === undefined || (msg.answer !== ANSWERS.OWNED && msg.answer !== ANSWERS.GONE)) return;
+    (async () => {
+      if (!(await isManualPilotTab(api, tabId))) return;
+      const zone = api.storage.session || api.storage.local;
+      const { [KEY_TABS]: liste } = await zone.get(KEY_TABS);
+      const catalogKey = liste && liste[tabId] ? liste[tabId].offer : null;
+      const now = Date.now();
+      const raw = await readKeys(api, [KEYS.OFFERS, KEY_DEJA]);
+      const r = settleByAnswer(raw[KEYS.OFFERS] || {}, catalogKey, msg.answer, now);
+      if (r.offer) {
+        await writeCycle(api, { catalog: r.catalog });
+        if (msg.answer === ANSWERS.OWNED) {
+          const m = rememberDeja(raw[KEY_DEJA], { store: r.offer.store, title: r.offer.title, via: DEJA_VIA.ANSWER }, now);
+          if (m.added) await write(api, { [KEY_DEJA]: m.deja });
+        }
+        record('info', `reponse sur le bandeau : ${r.offer.title} -> ${msg.answer === ANSWERS.OWNED ? 'deja a vous' : 'plus offert'}`);
+      }
+      expectClosure(tabId);
+      try { await api.tabs.remove(tabId); } catch { /* deja ferme */ }
+      await forgetPiloted(api, tabId);
+    })().catch((e) => record('warn', 'reponse du bandeau : suite impossible', e));
     return;
   }
 
@@ -1942,7 +1974,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   /* Reclamer tout, a la demande. Le plafond horaire tient toujours : c'est lui
      qui protege le compte, pas la modestie du cycle ordinaire. */
   if (msg.type === 'fgc-claim-all') {
-    claimAllNow({ chrome: api, claimableStores: CLAIMABLE_STORES, record })
+    claimAllNow({ chrome: api, claimableStores: CLAIMABLE_STORES, record, fetch: (u, i) => fetch(u, i) })
       .then(sendResponse)
       .catch((e) => {
         record('error', 'reclamation groupee en echec', e);
@@ -1977,6 +2009,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       catalogKey: msg.catalogKey,
       claimableStores: CLAIMABLE_STORES,
       record,
+      fetch: (u, i) => fetch(u, i),
     })
       .then(sendResponse)
       .catch((e) => {

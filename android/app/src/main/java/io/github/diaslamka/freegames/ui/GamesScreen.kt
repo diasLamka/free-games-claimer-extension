@@ -314,6 +314,8 @@ fun verdictText(verdict: String, details: String?): String {
         Verdicts.LOGIN -> stringResource(R.string.verdict_login)
         Verdicts.CHALLENGE -> stringResource(R.string.verdict_challenge)
         Verdicts.TEACH -> stringResource(R.string.verdict_teach)
+        Verdicts.OWNED -> stringResource(R.string.verdict_owned)
+        Verdicts.GONE -> stringResource(R.string.verdict_gone)
         Verdicts.NEEDS_BASE -> stringResource(R.string.verdict_base)
         Verdicts.LINK_ACCOUNT -> stringResource(R.string.verdict_link)
         Verdicts.OUT_OF_SCOPE -> stringResource(R.string.verdict_out_of_scope)

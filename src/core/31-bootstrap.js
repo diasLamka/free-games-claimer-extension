@@ -122,7 +122,9 @@
   function teachRequest(platform, reasonText, mode) {
     if (mode === false) return null;
     if (!demoPlatform() || isEpicNotFoundPage(location.pathname)) return null;
-    var labels = visibleActionLabels(8);
+    /* Seulement ce que l'utilisateur pourrait montrer (2.106.0) : sans un seul
+       controle enseignable, la question n'a pas de reponse. */
+    var labels = navTeachableLabels(8);
     if (!labels.length) return null;
     if (!teachBegin(platform, mode === 'now')) return null;
     return {
@@ -131,6 +133,30 @@
       reasonText: (reasonText || PILOT_EMPTY_REASON) + ' | boutons : ' + labels.join(' / ').slice(0, 160),
       plateforme: platform
     };
+  }
+
+  /* RIEN A PRENDRE ICI (2.106.0).
+   *
+   * Une page lue, sans defi, sans connexion a refaire, et qui ne propose AUCUN
+   * controle qu'on pourrait montrer : "offre terminee", ou un jeu deja a vous dont
+   * la page ne dit plus que "Jouer", ou une page qui ne vend plus que "Acheter".
+   * Avant la 2.106.0 le moteur demandait alors "montrez-moi le bouton" -- et le
+   * redemandait, sans fin, pour un jeu qu'on avait deja. Il le dit maintenant tel
+   * quel (verdict gone) : le worker confirme une seconde fois, puis cesse.
+   *
+   * Une page vide ou en erreur n'est pas "rien a prendre" : il faut qu'elle ait
+   * l'air d'une vraie page de magasin (au moins trois controles), sinon c'est un
+   * echec comme avant, qui sera retente. */
+  var PILOT_GONE_REASON = 'rien a prendre sur cette page';
+
+  function pageOffersNothing() {
+    if (!demoPlatform() || isEpicNotFoundPage(location.pathname)) return false;
+    if (navLastOutcome === 'ended') return true;
+    return navCandidates().length >= 3 && navTeachableLabels(1).length === 0;
+  }
+
+  function goneVerdict(platform) {
+    return { type: 'fgc-verdict', verdict: 'gone', reasonText: PILOT_GONE_REASON, plateforme: platform };
   }
 
   function runClaimOrder(budgetMs, force, teachMode) {
@@ -174,8 +200,13 @@
       if (found) {
         clearInterval(timer);
         // Un echec de bouton que l'utilisateur peut reparer d'un clic : on le demande.
-        var ask = found.statusLine === 'failed' && TEACHABLE_REASON.test(String(found.reasonText || ''))
-          ? teachRequest(platform, found.reasonText, teachMode) : null;
+        var teachable = found.statusLine === 'failed' && TEACHABLE_REASON.test(String(found.reasonText || ''));
+        var ask = teachable ? teachRequest(platform, found.reasonText, teachMode) : null;
+        // Un bouton introuvable sur une page qui n'offre plus rien : l'offre est finie (ou le jeu est a vous).
+        if (!ask && teachable && pageOffersNothing()) {
+          sendToPilot(goneVerdict(platform));
+          return;
+        }
         sendToPilot(ask || {
           type: 'fgc-verdict',
           verdict: found.statusLine,
@@ -196,8 +227,9 @@
       // pour que le recul et le canari le lisent comme avant.
       if (settled) {
         clearInterval(timer);
-        sendToPilot(teachRequest(platform, PILOT_EMPTY_REASON, teachMode)
-          || { type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform });
+        sendToPilot(pageOffersNothing() ? goneVerdict(platform)
+          : (teachRequest(platform, PILOT_EMPTY_REASON, teachMode)
+            || { type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform }));
         return;
       }
       if (Date.now() - debut > budgetMs) {

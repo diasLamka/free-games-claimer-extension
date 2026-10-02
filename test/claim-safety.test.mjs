@@ -135,17 +135,22 @@ test('un verdict qui attend un humain echappe au recul et a l\'abandon', () => {
   }
 });
 
-test('un bouton a montrer (2.102.0) laisse un onglet ouvert : il respecte son recul, jamais abandonne', () => {
+test('un bouton a montrer laisse un onglet ouvert, respecte son recul, et SE FINIT (2.106.0)', () => {
   /* Comme un defi : la page est remontee dans la fenetre de l'utilisateur, et la
-     rouvrir a chaque cycle empilerait les onglets. Mais l'utilisateur peut
-     toujours revenir montrer le bouton : l'offre n'est donc jamais abandonnee. */
+     rouvrir a chaque cycle empilerait les onglets. Mais, a la difference d'un defi,
+     « montrez-moi le bouton » n'est PLUS « jamais abandonne » : avec la 2.102.0, un
+     jeu deja a vous (ou une offre finie) le redemandait a l'infini. La question est
+     posee une fois par offre ; ensuite, recul ordinaire et abandon au cinquieme
+     essai, comme tout echec. */
   assert.ok(MANUAL_VERDICTS.includes(VERDICTS.TEACH), 'l\'onglet doit rester ouvert');
-  assert.ok(HUMAN_VERDICTS.includes(VERDICTS.TEACH));
+  assert.ok(!HUMAN_VERDICTS.includes(VERDICTS.TEACH), 'plus de « jamais abandonne »');
   const enAttente = catalog(offer({ verdict: VERDICTS.TEACH, attempts: 1, nextAttemptAt: T + 10 * MIN }));
   assert.equal(candidats(enAttente).length, 0, 'un onglet a ete rouvert avant le recul');
-  const echu = catalog(offer({ verdict: VERDICTS.TEACH, attempts: MAX_ATTEMPTS + 3, nextAttemptAt: T - MIN }));
-  assert.equal(candidats(echu).length, 1, 'une offre a montrer ne doit jamais etre abandonnee');
-  assert.ok(!FINAL_VERDICTS.includes(VERDICTS.TEACH), 'elle revient apres l\'apprentissage');
+  const echu = catalog(offer({ verdict: VERDICTS.TEACH, attempts: 2, nextAttemptAt: T - MIN }));
+  assert.equal(candidats(echu).length, 1, 'passe le recul, on retente (sans reposer la question)');
+  const abandonne = catalog(offer({ verdict: VERDICTS.TEACH, attempts: MAX_ATTEMPTS, nextAttemptAt: T - MIN }));
+  assert.equal(candidats(abandonne).length, 0, 'au cinquieme essai, c\'est fini');
+  assert.ok(!FINAL_VERDICTS.includes(VERDICTS.TEACH), 'elle revient apres l\'apprentissage (resetForTeaching)');
 });
 
 test('un defi de securite respecte son recul, mais n\'est jamais abandonne', () => {

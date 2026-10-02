@@ -346,8 +346,12 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="share_no_end">sin fecha de fin</string>
     <string name="share_upcoming">Pronto en Epic:</string>
     <string name="share_from">desde el %1$s</string>
-    <string name="teach_help">%1$s: no reconocí el botón. Tócalo una vez en la página de abajo y lo recordaré.</string>
+    <string name="teach_help">%1$s: no reconocí el botón. Tócalo una vez en la página de abajo y lo recordaré — o dime que ya lo tienes, o que ya no es gratis.</string>
     <string name="verdict_teach">Enséñame el botón</string>
+    <string name="verdict_owned">ya es tuyo</string>
+    <string name="verdict_gone">nada que conseguir</string>
+    <string name="teach_owned">Ya lo tengo</string>
+    <string name="teach_gone">Ya no es gratis</string>
     <string name="notif_teach_title">%1$s: enséñame el botón</string>
     <string name="notif_teach_text">No reconocí el botón de %1$s. Abre la app y pulsa Conseguir: puedes enseñármelo con un solo toque.</string>
     <string name="channel_update">Actualizaciones de la app</string>

@@ -130,6 +130,10 @@ data class Attempt(
     val verdict: String? = null,
     val details: String? = null,
     val nextAt: Long? = null,
+    /** Combien de fois on a demande « montre-moi le bouton » pour cette offre (1.24.0) : une seule. */
+    val asks: Int = 0,
+    /** Quand on a lu « rien a prendre » pour la premiere fois (1.24.0) : deux constats espaces closent l'offre. */
+    val goneAt: Long? = null,
 )
 
 /**
@@ -265,6 +269,12 @@ data class AppState(
     val announced: Map<String, Long> = emptyMap(),
     val reminded: Map<String, Long> = emptyMap(),
     val attempts: Map<String, Attempt> = emptyMap(),
+    /**
+     * « Deja a toi » (1.24.0) : les jeux dont le compte du magasin, ou toi sur le panneau, a dit qu'ils
+     * sont a toi -- « magasin|titre normalise » -> quand. Comme veille:deja de l'extension : pas dans
+     * le registre, donc ni dans le bilan ni dans l'annee.
+     */
+    val deja: Map<String, Long> = emptyMap(),
     val ratings: Map<String, Rating> = emptyMap(),
     /** « Piege ou bonne affaire ? » (1.22.0) : la fiche de prix Steam, par « app:<id> ». */
     val checks: Map<String, PriceCheck> = emptyMap(),

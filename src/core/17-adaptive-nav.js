@@ -52,6 +52,11 @@
      se fie pas a la memoire d'historique du moteur. */
   var navForceRecheck = false;
 
+  /* Comment la derniere navigation s'est terminee ("ended", "owned", "none"...).
+     Lu par le pilote (31-bootstrap.js) : une page qui dit que l'offre est finie
+     n'est pas une page dont il faut montrer le bouton (2.106.0). */
+  var navLastOutcome = '';
+
   /* Le vocabulaire : [motif, poids]. Les poids disent a quel point un libelle
      PREND (claim) ou MENE (goto). Ecrit en echappements \uXXXX : le moteur est
      en ASCII pur. */
@@ -495,6 +500,28 @@
     return null;
   }
 
+  /* Les controles que l'utilisateur POURRAIT montrer (2.106.0) : visibles, hors
+     entete et pied, hors liste ou vignette, ni interdits (argent, panier, jouer,
+     installer), ni "dans la bibliotheque", ni une simple confirmation, ni
+     inactifs. S'il n'y en a aucun, il n'y a RIEN a enseigner : une page qui ne
+     propose que "Jouer" est celle d'un jeu deja a vous, une page qui ne vend plus
+     que "Acheter" est celle d'une offre finie -- demander "montrez-moi le
+     bouton" y serait une question sans reponse, posee a l'infini. */
+  function navTeachableLabels(limit) {
+    var pool = navCandidates();
+    var out = [];
+    for (var i = 0; i < pool.length && out.length < (limit || 8); i++) {
+      var el = pool[i];
+      var text = navText(el);
+      if (!text || text.length > 45) continue;
+      if (navVetoReason(text) || navOwnedText(text) || NAV_LEXICON.confirm.test(text)) continue;
+      if (navClosest(el, NAV_CHROME_SEL) || navClosest(el, NAV_LIST_SEL)) continue;
+      if (el.disabled || (el.getAttribute && el.getAttribute('aria-disabled') === 'true')) continue;
+      if (out.indexOf(text) === -1) out.push(text);
+    }
+    return out;
+  }
+
   function navDialogConfirm(memory) {
     var dialogs;
     try { dialogs = Array.prototype.slice.call(document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')); } catch (e) { dialogs = []; }
@@ -604,6 +631,7 @@
 
     function done(outcome, extra) {
       navOrderClear();
+      navLastOutcome = outcome;
       var r = { outcome: outcome, trail: trail };
       if (extra) Object.keys(extra).forEach(function (k) { r[k] = extra[k]; });
       return Promise.resolve(r);

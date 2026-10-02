@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.105.0
+ * FREE GAMES AUTO-CLAIMER -- v2.106.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -2796,6 +2796,11 @@
      se fie pas a la memoire d'historique du moteur. */
   var navForceRecheck = false;
 
+  /* Comment la derniere navigation s'est terminee ("ended", "owned", "none"...).
+     Lu par le pilote (31-bootstrap.js) : une page qui dit que l'offre est finie
+     n'est pas une page dont il faut montrer le bouton (2.106.0). */
+  var navLastOutcome = '';
+
   /* Le vocabulaire : [motif, poids]. Les poids disent a quel point un libelle
      PREND (claim) ou MENE (goto). Ecrit en echappements \uXXXX : le moteur est
      en ASCII pur. */
@@ -3239,6 +3244,28 @@
     return null;
   }
 
+  /* Les controles que l'utilisateur POURRAIT montrer (2.106.0) : visibles, hors
+     entete et pied, hors liste ou vignette, ni interdits (argent, panier, jouer,
+     installer), ni "dans la bibliotheque", ni une simple confirmation, ni
+     inactifs. S'il n'y en a aucun, il n'y a RIEN a enseigner : une page qui ne
+     propose que "Jouer" est celle d'un jeu deja a vous, une page qui ne vend plus
+     que "Acheter" est celle d'une offre finie -- demander "montrez-moi le
+     bouton" y serait une question sans reponse, posee a l'infini. */
+  function navTeachableLabels(limit) {
+    var pool = navCandidates();
+    var out = [];
+    for (var i = 0; i < pool.length && out.length < (limit || 8); i++) {
+      var el = pool[i];
+      var text = navText(el);
+      if (!text || text.length > 45) continue;
+      if (navVetoReason(text) || navOwnedText(text) || NAV_LEXICON.confirm.test(text)) continue;
+      if (navClosest(el, NAV_CHROME_SEL) || navClosest(el, NAV_LIST_SEL)) continue;
+      if (el.disabled || (el.getAttribute && el.getAttribute('aria-disabled') === 'true')) continue;
+      if (out.indexOf(text) === -1) out.push(text);
+    }
+    return out;
+  }
+
   function navDialogConfirm(memory) {
     var dialogs;
     try { dialogs = Array.prototype.slice.call(document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')); } catch (e) { dialogs = []; }
@@ -3348,6 +3375,7 @@
 
     function done(outcome, extra) {
       navOrderClear();
+      navLastOutcome = outcome;
       var r = { outcome: outcome, trail: trail };
       if (extra) Object.keys(extra).forEach(function (k) { r[k] = extra[k]; });
       return Promise.resolve(r);
@@ -5328,7 +5356,9 @@
   function teachRequest(platform, reasonText, mode) {
     if (mode === false) return null;
     if (!demoPlatform() || isEpicNotFoundPage(location.pathname)) return null;
-    var labels = visibleActionLabels(8);
+    /* Seulement ce que l'utilisateur pourrait montrer (2.106.0) : sans un seul
+       controle enseignable, la question n'a pas de reponse. */
+    var labels = navTeachableLabels(8);
     if (!labels.length) return null;
     if (!teachBegin(platform, mode === 'now')) return null;
     return {
@@ -5337,6 +5367,30 @@
       reasonText: (reasonText || PILOT_EMPTY_REASON) + ' | boutons : ' + labels.join(' / ').slice(0, 160),
       plateforme: platform
     };
+  }
+
+  /* RIEN A PRENDRE ICI (2.106.0).
+   *
+   * Une page lue, sans defi, sans connexion a refaire, et qui ne propose AUCUN
+   * controle qu'on pourrait montrer : "offre terminee", ou un jeu deja a vous dont
+   * la page ne dit plus que "Jouer", ou une page qui ne vend plus que "Acheter".
+   * Avant la 2.106.0 le moteur demandait alors "montrez-moi le bouton" -- et le
+   * redemandait, sans fin, pour un jeu qu'on avait deja. Il le dit maintenant tel
+   * quel (verdict gone) : le worker confirme une seconde fois, puis cesse.
+   *
+   * Une page vide ou en erreur n'est pas "rien a prendre" : il faut qu'elle ait
+   * l'air d'une vraie page de magasin (au moins trois controles), sinon c'est un
+   * echec comme avant, qui sera retente. */
+  var PILOT_GONE_REASON = 'rien a prendre sur cette page';
+
+  function pageOffersNothing() {
+    if (!demoPlatform() || isEpicNotFoundPage(location.pathname)) return false;
+    if (navLastOutcome === 'ended') return true;
+    return navCandidates().length >= 3 && navTeachableLabels(1).length === 0;
+  }
+
+  function goneVerdict(platform) {
+    return { type: 'fgc-verdict', verdict: 'gone', reasonText: PILOT_GONE_REASON, plateforme: platform };
   }
 
   function runClaimOrder(budgetMs, force, teachMode) {
@@ -5380,8 +5434,13 @@
       if (found) {
         clearInterval(timer);
         // Un echec de bouton que l'utilisateur peut reparer d'un clic : on le demande.
-        var ask = found.statusLine === 'failed' && TEACHABLE_REASON.test(String(found.reasonText || ''))
-          ? teachRequest(platform, found.reasonText, teachMode) : null;
+        var teachable = found.statusLine === 'failed' && TEACHABLE_REASON.test(String(found.reasonText || ''));
+        var ask = teachable ? teachRequest(platform, found.reasonText, teachMode) : null;
+        // Un bouton introuvable sur une page qui n'offre plus rien : l'offre est finie (ou le jeu est a vous).
+        if (!ask && teachable && pageOffersNothing()) {
+          sendToPilot(goneVerdict(platform));
+          return;
+        }
         sendToPilot(ask || {
           type: 'fgc-verdict',
           verdict: found.statusLine,
@@ -5402,8 +5461,9 @@
       // pour que le recul et le canari le lisent comme avant.
       if (settled) {
         clearInterval(timer);
-        sendToPilot(teachRequest(platform, PILOT_EMPTY_REASON, teachMode)
-          || { type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform });
+        sendToPilot(pageOffersNothing() ? goneVerdict(platform)
+          : (teachRequest(platform, PILOT_EMPTY_REASON, teachMode)
+            || { type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform }));
         return;
       }
       if (Date.now() - debut > budgetMs) {
@@ -5726,6 +5786,11 @@
       teachBegin: teachBegin,
       teachState: teachState,
       teachRequest: teachRequest,
+      navTeachableLabels: navTeachableLabels,
+      pageOffersNothing: pageOffersNothing,
+      goneVerdict: goneVerdict,
+      navOutcome: function (v) { if (v !== undefined) navLastOutcome = v; return navLastOutcome; },
+      runClaimOrder: runClaimOrder,
       navDescribe: navDescribe,
       navFingerprint: navFingerprint,
       navFpMatch: navFpMatch,

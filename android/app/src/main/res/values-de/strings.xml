@@ -346,8 +346,12 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="share_no_end">ohne Enddatum</string>
     <string name="share_upcoming">Bald bei Epic:</string>
     <string name="share_from">ab %1$s</string>
-    <string name="teach_help">%1$s: Ich habe den Button nicht erkannt. Tippe ihn einmal auf der Seite unten an, ich merke es mir.</string>
+    <string name="teach_help">%1$s: Ich habe den Button nicht erkannt. Tippe ihn einmal auf der Seite unten an, ich merke es mir — oder sag mir, dass du das Spiel schon hast oder dass es nicht mehr gratis ist.</string>
     <string name="verdict_teach">Zeig mir den Button</string>
+    <string name="verdict_owned">schon in deiner Bibliothek</string>
+    <string name="verdict_gone">nichts mehr abzuholen</string>
+    <string name="teach_owned">Gehört mir schon</string>
+    <string name="teach_gone">Nicht mehr gratis</string>
     <string name="notif_teach_title">%1$s: zeig mir den Button</string>
     <string name="notif_teach_text">Ich habe den Button von %1$s nicht erkannt. Öffne die App und tippe auf Holen: Du kannst ihn mir mit einem Tipp zeigen.</string>
     <string name="channel_update">App-Updates</string>

@@ -4,6 +4,73 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.106.0 / appli 1.24.0 -- 2026-10-02
+
+**Un jeu qu'on possede ne se recupere qu'UNE fois : le magasin est interroge avant d'ouvrir un onglet, et la question « montrez-moi le bouton » n'est posee qu'une fois**
+
+Signale : « pour GOG, et peut-etre les autres, il faut le recuperer une seule fois alors
+que la c'est a l'infini ; il faut verifier pour chaque magasin si c'est deja recupere, et
+ne plus le demander ».
+
+- **La cause, mesuree en vrai Chromium.** Une page GOG qui disait « offre terminee », ou qui
+  ne montrait plus que « Jouer » parce que le jeu etait deja au compte, sortait du moteur
+  en `needs_teaching` (« montrez-moi le bouton ») -- et ce verdict etait « jamais
+  abandonne » depuis la 2.102.0. A chaque tentative : un onglet remonte dans la fenetre
+  de l'utilisateur, la meme question, pour un jeu qu'il avait deja. La question n'avait
+  d'ailleurs aucune reponse : sur une page ou tout est interdit (jouer, acheter, installer),
+  aucun clic ne peut etre appris.
+- **Le moteur ne demande plus dans le vide** (`src/core/17-adaptive-nav.js`,
+  `31-bootstrap.js`). Il ne demande « montrez-moi le bouton » que s'il y a un controle
+  que l'utilisateur POURRAIT montrer (`navTeachableLabels`) : visible, hors entete et
+  pied, hors liste, ni interdit, ni « dans la bibliotheque », ni une simple confirmation,
+  ni inactif. Sinon -- une vraie page de magasin (trois controles au moins) qui n'offre
+  plus rien, ou « offre terminee » lu par le navigateur -- il rend un verdict a part,
+  **`gone`** (« rien a prendre ici »). Une page blanche ou en erreur reste un echec, qui
+  sera retente.
+- **Une seule question par offre** (`watch/claim.js`, `watch/cycle.js`). « Montrez-moi le
+  bouton » sort de la liste « jamais abandonne ». Apres la question, l'offre attend la
+  journee (`ASK_WAIT_MS`), puis suit le recul ordinaire et l'abandon au cinquieme essai ;
+  le moteur recoit `teach: false` et ne redemande pas. Seul un clic « Recuperer » de
+  l'utilisateur peut la reposer. Une offre d'avant la 2.106.0 qui attendait le bouton
+  compte comme deja demandee.
+- **« Rien a prendre » se confirme deux fois.** Une page mal rendue ressemble a une page
+  vide : un premier `gone` se reverifie trois heures plus tard, le second -- deux heures
+  d'ecart au moins -- clot l'offre (`RESOLVED`, qui ne revient pas). « Reessayer » la
+  rouvre. Pour le canari, ni `gone` ni `owned` n'accusent le magasin.
+- **Le magasin dit si le jeu est a vous, AVANT tout onglet** (`watch/owned-check.js`).
+  Sur GOG, la liste de la bibliotheque accepte une recherche : avec VOTRE session, une
+  page, une lecture. Le titre doit etre IDENTIQUE (editions et casse pres : « Civilization »
+  n'est pas « Civilization VI ») -- un faux « deja a vous » ferait rater un jeu offert. Reponse
+  illisible, session absente, recherche que GOG ignorerait : on ne sait pas, et rien n'est
+  bloque (la page tranche, comme avant). Ma collection importee repond d'abord, sans
+  requete. Verdict `owned` (definitif) : ni onglet, ni jeton du plafond horaire. Les
+  autres magasins n'ont pas d'adresse equivalente : ils passent par le registre, la
+  collection (identifiants exacts), l'historique du moteur -- et la regle « une question,
+  puis plus rien ».
+- **Le bandeau a deux reponses de plus.** « C'est deja a moi » et « Plus offert » : un clic
+  de CONFIANCE (un clic fabrique par la page est ignore) regle l'offre -- le worker ne la
+  redemande plus, referme l'onglet, et note le jeu dans `veille:deja`.
+- **`veille:deja`** (`watch/deja.js`) : « magasin|titre normalise » -> quand et d'ou (compte,
+  collection, votre reponse). Cinq cents au plus, quatorze mois, dans la sauvegarde
+  complete (union). Ce n'est PAS le registre : ni bilan, ni recap de l'annee, ni carnet. Le
+  meme jeu qui revient sous une autre cle (un autre site, un giveaway rejoue) ne rouvre rien.
+  Un clic de l'utilisateur l'ignore (il peut s'etre trompe), pas le compte du magasin.
+- **Appli** (1.24.0). Les memes regles en Kotlin (`Rules.kt`, `data/OwnedCheck.kt`,
+  `ClaimSession.kt`) : `TEACH` ne s'abandonne plus mais attend la journee, `GONE` se
+  confirme deux fois, la recherche GOG avec la session des pages de connexion de l'appli,
+  la memoire « deja a toi » (separee pour chaque membre de la famille), et les deux
+  boutons sur le panneau. Le fond ne demande jamais le bouton (personne pour cliquer).
+- **Verifie en vrai Chromium** (voie du cycle, pas le clic force) : jeu deja a vous et GOG
+  qui le dit -> 0 page ouverte, 3 passages ; « offre terminee » ou « Jouer » seul -> 2
+  visites, aucune question, offre close, plus rien ensuite ; un controle inconnu -> UNE
+  question, un seul onglet laisse ouvert, abandon au cinquieme essai ; clic sur « C'est
+  deja a moi » / « Plus offert » -> offre close, onglet referme, jeu memorise ; un vrai
+  giveaway et une page « dans la bibliotheque » -> une visite, puis plus rien.
+- Non verifie : la forme REELLE de `getFilteredProducts` avec une session (jamais mesuree
+  d'ici : la recherche `search=` est celle des outils de bibliotheque GOG ; si GOG
+  l'ignorait, on retombe sur « on ne sait pas »), le libelle reel d'un jeu GOG deja a
+  vous, Epic et Luna reels (Cloudflare, pas de compte), la WebView Android.
+
 ## Appli 1.23.0 -- 2026-10-02 (extension inchangee, 2.105.0)
 
 **« Ta soiree choisit le jeu » : l'agenda du telephone dit combien de temps tu as, les avis Steam disent combien de temps le jeu prend**

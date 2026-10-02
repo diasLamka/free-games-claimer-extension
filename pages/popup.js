@@ -165,6 +165,8 @@ const VERDICT_KEYS = {
   needs_login: ['verdictNeedsLogin', 'wait'],
   challenge: ['verdictChallenge', 'wait'],
   needs_teaching: ['verdictTeach', 'wait'],
+  owned: ['verdictOwned', 'ok'],
+  gone: ['verdictGone', 'wait'],
   skipped: ['verdictSkipped', 'wait'],
   bad_url: ['verdictBadUrl', 'ko'],
   failed: ['verdictFailed', 'ko'],

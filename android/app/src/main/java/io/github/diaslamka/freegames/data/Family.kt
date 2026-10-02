@@ -74,6 +74,8 @@ object Family {
         library = m.library,
         attempts = m.attempts,
         accounts = m.accounts,
+        // « Deja a toi » (1.24.0) est celui du compte principal : un membre ne possede pas forcement le meme jeu.
+        deja = emptyMap(),
         steamOwned = emptyList(),
         relay = null,
         settings = s.settings.copy(claimSteam = false),
@@ -86,9 +88,9 @@ object Family {
         }
 
     /** Un verdict pour ce membre : ses essais, ses jeux, ses comptes. Rien du compte principal ne bouge. */
-    fun record(s: AppState, id: String, o: Offer, verdict: String, details: String?, now: Long, unattended: Boolean, count: Boolean = true): AppState =
+    fun record(s: AppState, id: String, o: Offer, verdict: String, details: String?, now: Long, unattended: Boolean, count: Boolean = true, confirmed: Boolean = false): AppState =
         change(s, id) { m ->
-            val att = if (count) Rules.afterVerdict(m.attempts[o.key], verdict, details, now, unattended) else m.attempts[o.key]
+            val att = if (count) Rules.afterVerdict(m.attempts[o.key], verdict, details, now, unattended, confirmed) else m.attempts[o.key]
             var lib = m.library
             var acc = m.accounts
             if (verdict in Verdicts.ACQUIRED) {

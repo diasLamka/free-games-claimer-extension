@@ -67,6 +67,9 @@ export const TAKING_VERDICTS = Object.freeze([
   'redeemed',
   'already_redeemed',
   'code_copied',
+  /* Le compte du magasin, ou l'utilisateur, a dit que le jeu est a lui (2.106.0) : meme
+     raisonnement que `already_redeemed` -- la question est « l'ai-je ? ». */
+  'owned',
 ]);
 
 /** Les etats apres lesquels une offre ne bouge plus. Memes que catalog.js. */

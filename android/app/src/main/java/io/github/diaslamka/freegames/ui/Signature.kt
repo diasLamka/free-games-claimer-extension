@@ -147,7 +147,7 @@ enum class StampKind { CLAIMED, OWNED, SKIPPED, FAILED, WAITING }
 fun stampKindOf(verdict: String?): StampKind? = when (verdict) {
     null -> null
     Verdicts.CLAIMED, Verdicts.REDEEMED -> StampKind.CLAIMED
-    Verdicts.ALREADY_REDEEMED -> StampKind.OWNED
+    Verdicts.ALREADY_REDEEMED, Verdicts.OWNED -> StampKind.OWNED
     Verdicts.SKIPPED, Verdicts.OUT_OF_SCOPE -> StampKind.SKIPPED
     Verdicts.FAILURE, Verdicts.BAD_URL -> StampKind.FAILED
     else -> StampKind.WAITING

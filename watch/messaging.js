@@ -131,6 +131,10 @@ export const CONTENT_MESSAGES = Object.freeze([
      reessaie les offres du magasin et referme l'onglet : il lit l'onglet dans
      `sender.tab`, jamais dans le message. */
   'fgc-appris',
+  /* La reponse de l'utilisateur sur le bandeau (2.106.0) : « c'est deja a moi » ou « ce
+     n'est plus offert ». Le worker lit l'onglet dans `sender.tab` et n'agit que
+     sur un onglet laisse ouvert pour un humain -- jamais sur ce que dit le message. */
+  'fgc-reponse',
 ]);
 
 /**

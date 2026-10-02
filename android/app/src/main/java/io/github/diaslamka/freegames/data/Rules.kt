@@ -29,10 +29,24 @@ object Verdicts {
     const val EXPIRED = "expired"
     const val NEEDS_BASE = "needs_base_game"
     const val UNDETERMINED = "undetermined"
+    /** Le compte du magasin, ou toi, dit que le jeu est deja a toi (1.24.0) : definitif, rien n'est ouvert. */
+    const val OWNED = "owned"
+    /** La page ne propose plus rien a prendre (1.24.0) : deux constats espaces le rendent definitif. */
+    const val GONE = "gone"
 
     val ACQUIRED = setOf(CLAIMED, REDEEMED, ALREADY_REDEEMED)
-    val FINAL = setOf(CLAIMED, REDEEMED, ALREADY_REDEEMED, SKIPPED, OUT_OF_SCOPE, BAD_URL, EXPIRED)
-    val HUMAN = setOf(LOGIN, LINK_ACCOUNT, CHALLENGE, TEACH)
+    val FINAL = setOf(CLAIMED, REDEEMED, ALREADY_REDEEMED, SKIPPED, OUT_OF_SCOPE, BAD_URL, EXPIRED, OWNED)
+    /**
+     * « Montre-moi le bouton » n'y est PLUS (1.24.0) : il ne s'abandonnait jamais, et un jeu deja a toi le
+     * redemandait a l'infini. La question est posee une fois (ASK_WAIT_MS pour y repondre), puis l'offre suit
+     * le recul ordinaire et l'abandon au cinquieme essai.
+     */
+    val HUMAN = setOf(LOGIN, LINK_ACCOUNT, CHALLENGE)
+
+    const val ASK_WAIT_MS = 24 * 3_600_000L
+    const val GONE_CONFIRM_MS = 2 * 3_600_000L
+    const val GONE_RECHECK_MS = 3 * 3_600_000L
+    const val MAX_DEJA = 500
 
     /** Quinze minutes, une heure, quatre heures, douze heures ; cinq essais au plus. */
     val BACKOFF_MS = listOf(15 * 60_000L, 60 * 60_000L, 4 * 3_600_000L, 12 * 3_600_000L)
@@ -113,7 +127,7 @@ object Rules {
     fun pending(s: AppState, now: Long, force: Set<String> = emptySet()): List<Offer> =
         s.offers.values
             .filter { it.isOpen(now) && claimable(it, s.settings) }
-            .filter { claimedEntry(it, s.library) == null && !ownedOnSteam(it, s) }
+            .filter { claimedEntry(it, s.library) == null && !ownedOnSteam(it, s) && !inDeja(it, s) }
             .filter { o ->
                 if (o.key in force) return@filter true
                 val a = s.attempts[o.key] ?: return@filter true
@@ -123,19 +137,52 @@ object Rules {
             }
             .sortedWith(compareBy<Offer> { it.end ?: Long.MAX_VALUE }.thenBy { it.title })
 
+    /** A-t-on deja pose « montre-moi le bouton » pour cette offre ? (Une offre d'avant la 1.24.0 qui l'attendait compte comme posee.) */
+    fun alreadyAsked(a: Attempt?): Boolean = a != null && (a.asks >= 1 || a.verdict == Verdicts.TEACH)
+
     /** Ce que devient l'essai d'une offre apres un verdict. */
-    fun afterVerdict(prev: Attempt?, verdict: String, details: String?, now: Long, unattended: Boolean = false): Attempt {
+    fun afterVerdict(prev: Attempt?, verdict: String, details: String?, now: Long, unattended: Boolean = false, confirmed: Boolean = false): Attempt {
         val count = (prev?.count ?: 0) + if (verdict in Verdicts.HUMAN) 0 else 1
+        val asks = (prev?.asks ?: 0) + if (verdict == Verdicts.TEACH) 1 else 0
+        // « Rien a prendre » : un premier constat se reverifie, le second -- espace de GONE_CONFIRM_MS -- clot l'offre.
+        val gone = verdict == Verdicts.GONE
+        val goneAt = if (gone) (prev?.goneAt ?: now) else null
+        // `confirmed` : TU l'as dit sur le panneau (« plus offert ») -- un seul constat suffit alors.
+        val goneConfirmed = gone && (confirmed || (prev?.goneAt != null && now - prev.goneAt >= Verdicts.GONE_CONFIRM_MS))
         val next = when {
             verdict in Verdicts.FINAL -> null
+            goneConfirmed -> null
+            // La journee entiere pour repondre, puis le recul ordinaire : la question ne revient pas.
+            verdict == Verdicts.TEACH -> now + Verdicts.ASK_WAIT_MS
+            gone -> now + Verdicts.GONE_RECHECK_MS
             // Un defi rencontre sans personne devant : le fond ne revient pas le
             // provoquer a chaque passage. La notification, elle, passe outre.
-            (verdict == Verdicts.CHALLENGE || verdict == Verdicts.TEACH) && unattended -> now + Verdicts.BACKOFF_MS[2]
+            verdict == Verdicts.CHALLENGE && unattended -> now + Verdicts.BACKOFF_MS[2]
             verdict in Verdicts.HUMAN -> null
             verdict == Verdicts.NEEDS_BASE -> now + Verdicts.WAITING_RECHECK_MS
             else -> Verdicts.nextAttemptAt(count, now)
         }
-        return Attempt(count = count, lastAt = now, verdict = verdict, details = details, nextAt = next)
+        // Clos : le plafond d'essais est atteint, `pending` ne la propose plus (« Recuperer » la rouvre).
+        return Attempt(
+            count = if (goneConfirmed) Verdicts.MAX_ATTEMPTS else count,
+            lastAt = now, verdict = verdict, details = details, nextAt = next, asks = asks, goneAt = goneAt,
+        )
+    }
+
+    /** La cle de la memoire « deja a toi » : le magasin et le titre normalise, comme ownedKeys de l'extension. */
+    fun dejaKey(store: String, title: String?): String? {
+        val t = Titles.normalise(title)
+        return if (store.isNotEmpty() && t.isNotEmpty()) "$store|$t" else null
+    }
+
+    fun inDeja(o: Offer, s: AppState): Boolean = dejaKey(o.store, o.title)?.let { s.deja.containsKey(it) } == true
+
+    /** Ajoute un constat ; la memoire reste bornee, les plus anciens sortent. */
+    fun remember(deja: Map<String, Long>, o: Offer, now: Long): Map<String, Long> {
+        val k = dejaKey(o.store, o.title) ?: return deja
+        if (k in deja) return deja
+        val next = deja + (k to now)
+        return if (next.size <= Verdicts.MAX_DEJA) next else next.entries.sortedBy { it.value }.drop(next.size - Verdicts.MAX_DEJA).associate { it.key to it.value }
     }
 
     /** Souhaite : a la main, ou par une liste importee. */

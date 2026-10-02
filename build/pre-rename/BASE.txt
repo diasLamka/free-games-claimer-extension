@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 37
-sha256  : CB3E91914709C7A7142BBDC9952137148E48EF3DD575D939DB52A77CD65B3EF1
-motif   : claimer qui se repare seul : forme des boutons, montrez-moi le bouton
+sha256  : D444F8542081D9B16484E8B95C10FF365A53110A8627064A1E7B5A43F22EB2B5
+motif   : 2.106.0 : une page sans rien a montrer (offre finie, jeu deja a vous) dit gone au lieu de demander le bouton
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

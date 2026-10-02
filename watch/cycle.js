@@ -33,6 +33,8 @@ import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { isNetworkFailure } from './net.js';
 import { ownedKeys, ownedKeyFor } from './library.js';
+import { KEY_DEJA, VIA as DEJA_VIA, readDeja, remember as rememberDeja, dejaKeys } from './deja.js';
+import { accountOwns } from './owned-check.js';
 import { TYPES as RELAY_TYPES, MAX_HELP_MS, ROLES as RELAY_ROLES, syncRelay, announce, maybeAlive, appLink } from './relay.js';
 import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
@@ -60,6 +62,10 @@ import {
   nextAttemptAt,
   BUDGET_MS,
   sweepTabs,
+  ASK_WAIT_MS,
+  GONE_CONFIRM_MS,
+  GONE_RECHECK_MS,
+  alreadyAsked,
 } from './claim.js';
 import {
   readContext,
@@ -1080,6 +1086,10 @@ export async function claimWhatCanBe({
    * faux navigateur complet a chaque fois. Meme raison d'etre que le fetch
    * injecte juste au-dessus. */
   claim = claimOffer,
+  /* « Est-ce deja a vous ? », demande au magasin AVANT d'ouvrir un onglet (2.106.0).
+     Rend { owns: true, via, note } ou null. Par defaut : le compte GOG (voir
+     watch/owned-check.js). Remplacable en test, comme `claim`. */
+  ownerCheck = undefined,
 }) {
   const next = { ...catalog };
   let timestamps = cadence;
@@ -1090,8 +1100,17 @@ export async function claimWhatCanBe({
 
   /* Ce que l'extension possede deja, pour ne pas rouvrir un onglet dessus.
      Construit une fois par cycle, pas une fois par offre. */
-  const owned = library && !forced ? ownedKeys(library, normaliseTitle) : null;
+  /* Et ce qu'on a CONSTATE sans que l'extension l'ait pris (2.106.0) : un jeu deja
+     a vous d'apres le compte, ou d'apres votre reponse sur le bandeau. */
+  let dejaRaw = null;
+  try { dejaRaw = (await chrome.storage.local.get(KEY_DEJA))[KEY_DEJA] || null; } catch { dejaRaw = null; }
+  let deja = readDeja(dejaRaw, now);
+  let dejaChanged = false;
+  const ownedLib = library && !forced ? ownedKeys(library, normaliseTitle) : null;
+  const ownedDeja = !forced ? dejaKeys(deja) : null;
+  const owned = ownedLib || (ownedDeja && ownedDeja.size) ? new Set([...(ownedLib || []), ...(ownedDeja || [])]) : null;
   const ownedIds = collection ? ownedStoreKeys(collection) : null;
+  const askOwner = ownerCheck || ((o) => accountOwns(o, { fetch: fetchImpl, collection }));
 
   const tri = claimCandidates(next, filters, {
     claimableStores, watchedStores, now, owned, ownedIds,
@@ -1122,6 +1141,34 @@ export async function claimWhatCanBe({
   let done = 0;
   for (const offer of candidates) {
     if (done >= howMany) break;
+
+    /* DEJA A VOUS ? On le demande au magasin avant tout onglet (2.106.0). Un jeu
+       pris a la main, ou que la page ne dit plus « a vous » (« Jouer »), n'a pas a
+       rouvrir une fenetre ni a reposer « montrez-moi le bouton » a chaque essai.
+       Ni jeton du plafond horaire, ni place dans `done` : rien n'est envoye. */
+    if (offer.store !== STORES.STEAM) {
+      let preuve = null;
+      try { preuve = await askOwner(offer); } catch { preuve = null; }
+      if (preuve && preuve.owns === true) {
+        next[offer.catalogKey] = {
+          ...next[offer.catalogKey],
+          verdict: VERDICTS.OWNED,
+          state: STATES.RESOLVED,
+          alreadyOwned: true,
+          ownedVia: preuve.via || null,
+          nextAttemptAt: null,
+          attemptStartedAt: null,
+          details: preuve.note || null,
+          updatedAt: Date.now(),
+        };
+        const m = rememberDeja(deja, { store: offer.store, title: offer.title, via: preuve.via === 'collection' ? DEJA_VIA.COLLECTION : DEJA_VIA.ACCOUNT }, Date.now());
+        deja = m.deja;
+        if (m.added) dejaChanged = true;
+        claims.push({ title: offer.title, catalogKey: offer.catalogKey, verdict: VERDICTS.OWNED, details: preuve.note || null });
+        record('info', `${offer.title} -> deja a vous (${preuve.via || 'compte'}), rien d'ouvert`);
+        continue;
+      }
+    }
 
     /* Steam, en option : plus lent que tout le reste, EN PLUS du plafond
        horaire. Une offre retenue ne consomme pas de place -- la suivante, sur
@@ -1166,6 +1213,9 @@ export async function claimWhatCanBe({
       record,
       fetch: fetchImpl,
       force: forced,
+      /* Une seule fois « montrez-moi le bouton » par offre (2.106.0) -- sauf si
+         l'utilisateur est la et vient de le demander (`forced`). */
+      teach: forced || !alreadyAsked(next[offer.catalogKey]),
     });
 
     /* Rien n'a ete envoye au magasin -- un DLC dont le jeu de base manque,
@@ -1180,7 +1230,14 @@ export async function claimWhatCanBe({
     }
 
     const attempts = (next[offer.catalogKey].attempts || 0) + 1;
-    const definitif = FINAL_VERDICTS.includes(r.verdict);
+    const avant = next[offer.catalogKey];
+    /* « Rien a prendre » (2.106.0) : un premier constat se reverifie, le second --
+       espace d'au moins GONE_CONFIRM_MS -- clot l'offre. Une page mal rendue ressemble
+       a une page vide ; deux fois, a des heures d'ecart, non. */
+    const gone = r.verdict === VERDICTS.GONE;
+    const goneConfirme = gone && typeof avant.goneAt === 'number' && commence - avant.goneAt >= GONE_CONFIRM_MS;
+    const demande = r.verdict === VERDICTS.TEACH;
+    const definitif = FINAL_VERDICTS.includes(r.verdict) || goneConfirme;
     const humain = HUMAN_VERDICTS.includes(r.verdict);
     const ongletLaisse = MANUAL_VERDICTS.includes(r.verdict);
     const attente = WAITING_VERDICTS.includes(r.verdict);
@@ -1201,7 +1258,14 @@ export async function claimWhatCanBe({
          « Reessayer maintenant » efface le recul. */
       nextAttemptAt: definitif || (humain && !ongletLaisse) ? null
         : attente ? Date.now() + WAITING_RECHECK_MS
-          : nextAttemptAt(ongletLaisse ? Math.min(attempts, MAX_ATTEMPTS - 1) : attempts, Date.now()),
+          /* Apres la question, on laisse la journee a l'utilisateur ; apres un
+             premier « rien a prendre », trois heures -- puis plus rien. */
+          : demande ? Date.now() + ASK_WAIT_MS
+            : gone ? Date.now() + GONE_RECHECK_MS
+              : nextAttemptAt(ongletLaisse ? Math.min(attempts, MAX_ATTEMPTS - 1) : attempts, Date.now()),
+      asks: (avant.asks || 0) + (demande ? 1 : 0),
+      askedAt: demande ? commence : (avant.askedAt ?? null),
+      goneAt: gone ? (avant.goneAt ?? commence) : null,
       // Le motif technique est garde : c'est lui qui dit a l'utilisateur ce
       // qu'il doit faire, quand l'extension ne peut plus rien.
       details: r.details || null,
@@ -1229,6 +1293,10 @@ export async function claimWhatCanBe({
   }
 
   if (steamHeld) record('info', `steam : attend son tour (${steamHeld})`);
+
+  if (dejaChanged) {
+    try { await chrome.storage.local.set({ [KEY_DEJA]: deja }); } catch (e) { record('warn', 'memoire « deja a vous » non ecrite', e); }
+  }
 
   /* Une alerte n'est ecrite qu'a sa naissance. Repetee a chaque cycle, elle
      noierait le journal et finirait ignoree -- exactement le sort qu'on veut

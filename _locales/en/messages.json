@@ -2658,13 +2658,25 @@
     "message": "Show me the button"
   },
   "notifyTeachBody": {
-    "message": "I didn't recognise the button: the page is open, click it once and I'll remember."
+    "message": "I didn't recognise the button: the page is open. Click it once, or say you already own the game. I won't ask again."
   },
   "teachBanner": {
-    "message": "Free Games Claimer: I didn't recognise the button that takes the game. Click it once and I'll remember."
+    "message": "Free Games Claimer: I didn't recognise the button that takes the game. Click it once and I'll remember — or tell me you already own it, or that it's no longer free."
   },
   "verdictTeach": {
     "message": "button to show me"
+  },
+  "teachAnswerOwned": {
+    "message": "I already own it"
+  },
+  "teachAnswerGone": {
+    "message": "No longer free"
+  },
+  "verdictOwned": {
+    "message": "already yours"
+  },
+  "verdictGone": {
+    "message": "nothing left to take"
   },
   "bargainGradeA": {
     "message": "A real bargain"

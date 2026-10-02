@@ -38,7 +38,7 @@ export async function isStopped(chrome) {
   return raw[KEY_STOP] === true;
 }
 
-export async function claimAllNow({ chrome, now = Date.now(), claimableStores, record = () => {} }) {
+export async function claimAllNow({ chrome, now = Date.now(), claimableStores, record = () => {}, fetch: fetchImpl }) {
   if (await isStopped(chrome)) {
     record('warn', 'arret d\'urgence actif : aucune reclamation');
     return { claimed: 0, left: 0, claims: [], stopped: true };
@@ -50,6 +50,7 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
   const { catalog, cadence, claims, canary } = await claimWhatCanBe({
     chrome,
     now,
+    fetch: fetchImpl,
     catalog: raw[KEYS.OFFERS] || {},
     filters: raw[KEYS.FILTERS] || {},
     /* L'option Steam s'applique ici comme au cycle -- et son rythme aussi :
@@ -100,10 +101,22 @@ export async function retryNow({ chrome, catalogKey, now = Date.now() }) {
   const offer = catalog[catalogKey];
   if (!offer) return { retried: false };
 
+  /* « Rien a prendre » confirme (2.106.0) clot l'offre ; un clic de l'utilisateur la
+     rouvre -- et lui rend sa question « montrez-moi le bouton », qu'il peut vouloir
+     entendre une seconde fois. */
+  const rouvre = offer.verdict === 'gone' && offer.state === STATES.RESOLVED;
   await writeCycle(chrome, {
     catalog: {
       ...catalog,
-      [catalogKey]: { ...offer, nextAttemptAt: null, attempts: 0, updatedAt: now },
+      [catalogKey]: {
+        ...offer,
+        nextAttemptAt: null,
+        attempts: 0,
+        asks: 0,
+        goneAt: null,
+        ...(rouvre ? { state: STATES.QUEUED, verdict: null } : {}),
+        updatedAt: now,
+      },
     },
   });
   return { retried: true };
@@ -222,7 +235,7 @@ export async function snooze({ chrome, catalogKey, now = Date.now(), ms = SNOOZE
  * la reclamation automatique, et un clic explicite est plus recent que lui.
  */
 export async function claimOneNow({
-  chrome, catalogKey, now = Date.now(), claimableStores, record = () => {}, claim,
+  chrome, catalogKey, now = Date.now(), claimableStores, record = () => {}, claim, fetch: fetchImpl,
 }) {
   if (await isStopped(chrome)) {
     record('warn', 'arret d\'urgence actif : aucune reclamation');
@@ -245,6 +258,7 @@ export async function claimOneNow({
   const r = await claimWhatCanBe({
     chrome,
     now,
+    fetch: fetchImpl,
     catalog: seule,
     filters: raw[KEYS.FILTERS] || {},
     claimableStores: claimableStoresFor(settings, claimableStores),

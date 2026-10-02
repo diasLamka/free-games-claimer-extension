@@ -2658,13 +2658,25 @@
     "message": "Zeig mir den Button"
   },
   "notifyTeachBody": {
-    "message": "Ich habe den Button nicht erkannt: Die Seite ist geöffnet, klicke einmal darauf, ich merke es mir."
+    "message": "Ich habe den Button nicht erkannt: Die Seite ist geöffnet. Klicke einmal darauf oder sag, dass du das Spiel schon hast. Ich frage nicht noch einmal."
   },
   "teachBanner": {
-    "message": "Free Games Claimer: Ich habe den Button zum Abholen nicht erkannt. Klicke einmal darauf, ich merke es mir."
+    "message": "Free Games Claimer: Ich habe den Button zum Abholen nicht erkannt. Klicke einmal darauf, ich merke es mir — oder sag mir, dass du das Spiel schon hast oder dass es nicht mehr gratis ist."
   },
   "verdictTeach": {
     "message": "Button zeigen"
+  },
+  "teachAnswerOwned": {
+    "message": "Gehört mir schon"
+  },
+  "teachAnswerGone": {
+    "message": "Nicht mehr gratis"
+  },
+  "verdictOwned": {
+    "message": "schon in deiner Bibliothek"
+  },
+  "verdictGone": {
+    "message": "nichts mehr abzuholen"
   },
   "bargainGradeA": {
     "message": "Echtes Schnäppchen"
