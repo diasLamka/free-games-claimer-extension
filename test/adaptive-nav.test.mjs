@@ -209,7 +209,8 @@ test('de la fiche au giveaway : le lien est SUIVI dans cet onglet et l\'ordre es
 
   fgc.navRun('GOG', {});                       // ne revient pas : la page est dechargee
   await new Promise((r) => setTimeout(r, 40));
-  assert.deepEqual(suivis, ['https://www.gog.com/en/giveaway/claim']);
+  // Le lien suivi reste dans la langue du reglage (France par defaut, 2.101.0).
+  assert.deepEqual(suivis, ['https://www.gog.com/fr/giveaway/claim']);
   assert.equal(clics(lien), 0, 'un lien vers une autre page se suit, il ne s\'ouvre pas dans un nouvel onglet');
   const ordre = fgc.navOrderPending();
   assert.equal(ordre.platform, 'GOG');
@@ -372,7 +373,8 @@ test('la fiche GOG reelle : le lien /#giveaway est suivi vers la page d\'accueil
   page(sandbox, { elements: [reel] });
   fgc.navRun('GOG', {});
   await new Promise((r) => setTimeout(r, 40));
-  assert.deepEqual(suivis, ['https://www.gog.com/#giveaway']);
+  // « /#giveaway » perd le prefixe de langue : il est remis dans celle du reglage (2.101.0).
+  assert.deepEqual(suivis, ['https://www.gog.com/fr/#giveaway']);
   assert.equal(clics(reel), 0);
 });
 

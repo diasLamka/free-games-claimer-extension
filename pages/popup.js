@@ -24,6 +24,7 @@ import {
 import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
 import { money, worthLabel as worthLabelIn } from '../lib/money.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from '../watch/locale.js';
+import { installLinkLocalizer } from '../watch/localizer.js';
 import { claimsMade, tally, mainStore, exportFileName, alreadyYours } from '../watch/tally.js';
 import { band24h, isTrustworthy } from '../watch/schedule/prediction.js';
 import { claimableStoresFor } from '../watch/sources/index.js';
@@ -84,6 +85,8 @@ import {
 } from '../watch/session.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
+/* Les liens vers les magasins s'ouvrent dans la langue du reglage (watch/localize.js). */
+const localizeLink = installLinkLocalizer(api, document);
 
 /* ------------------------------------------------------- le tableau de bord */
 
@@ -358,7 +361,7 @@ function shortDateTime(ms) {
 }
 
 function openTab(url) {
-  api.tabs.create({ url, active: true });
+  api.tabs.create({ url: localizeLink(url), active: true });
   // Le tableau de bord, lui, reste : on y revient, on ne le traverse pas.
   if (!EN_ONGLET) window.close();
 }

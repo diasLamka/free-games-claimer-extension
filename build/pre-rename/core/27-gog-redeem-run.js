@@ -139,7 +139,7 @@
       }
       if (remaining && remaining.length) {
         log(PLATFORM, 'info', 'Rechargement de ' + CONFIG.gogRedeemUrl + ' pour le code suivant.');
-        setTimeout(function () { location.assign(CONFIG.gogRedeemUrl); }, 2500);
+        setTimeout(function () { location.assign(gogRedeemUrl()); }, 2500);
       }
     }).catch(function (err) {
       if (err === 'STOP') return;

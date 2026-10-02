@@ -53,14 +53,23 @@
     // d'ou l'on vient -- la liste, ou la fiche d'un autre jeu deja possede --
     // et un libelle croise la ne dit rien de celui-ci.
     var ownedEl = null;
+    var waitStart = Date.now();
+    var adaptive = false;
     return waitForElement(function () {
       var slugNow = extractEpicSlug(location.href);
       var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
       ownedEl = onThisGame ? epicOwnedHere() : null;
       if (ownedEl) return ownedEl;
-      return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
+      var known = findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
+      if (known) { adaptive = false; return known; }
+      // Aucun libelle livre ne convient : Epic a peut-etre change son mot. On
+      // laisse d'abord a la fiche le temps de s'afficher, puis le SENS decide.
+      if (!onThisGame || Date.now() - waitStart < CONFIG.epicAdaptiveGraceMs) return null;
+      var guess = epicAdaptiveClaimButton(PLATFORM);
+      adaptive = !!guess;
+      return guess;
     }, { timeout: 12000 }).catch(function () {
       // L'echec porte son diagnostic : les libelles reellement visibles disent
       // quel motif manque, et la prochaine capture d'ecran suffit a corriger.
@@ -76,13 +85,62 @@
       if (challenge) throw new Error('Defi de securite (' + challenge.type + ') detecte avant le clic initial.');
 
       var text = (btn.textContent || '').trim();
-      var direct = EPIC_LIBRARY_LOOSE_PATTERNS.some(function (p) { return p.test(text); });
+      var direct = EPIC_LIBRARY_LOOSE_PATTERNS.some(function (p) { return p.test(text); })
+        || (adaptive && /librar|biblioth|sammlung|colecci|raccolta/i.test(text));
+      var sig = navSignature(btn);
 
-      log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
+      log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (adaptive ? ' (libelle inconnu, retenu pour son sens)' : '') + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
       robustClick(btn);
 
-      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () { return 'CLAIMED'; });
+      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () {
+        // Ce libelle a pris le jeu : il pese plus la prochaine fois.
+        navLearn(PLATFORM, 'claim', sig, true);
+        return 'CLAIMED';
+      }, function (err) {
+        if (adaptive) navLearn(PLATFORM, 'claim', sig, false);
+        throw err;
+      });
     });
+  }
+
+  /* LE BOUTON D'ACQUISITION, QUAND LE MOT A CHANGE (2.101.0).
+   *
+   * Les libelles livres ("Obtenir", "Get", "Ajouter a la bibliotheque") sont
+   * tout ce que le moteur reconnaissait : qu'Epic ecrive "Recuperer" ou
+   * "Claim now" et la fiche restait sans bouton pendant douze secondes, puis
+   * un echec. Ici le SENS prend le relais -- le meme vocabulaire a poids que
+   * GOG, la meme memoire, les memes interdits (argent, panier, abonnement, prix).
+   *
+   * Ce que cela ne change PAS : le clic passe par robustClick (libelles payants
+   * refuses), et l'argent reste garde par le module de l'iframe de paiement,
+   * dont les listes de confirmation sont figees et ne lisent pas ce
+   * vocabulaire. Un bouton de plus a cliquer sur la fiche, jamais un bouton
+   * de plus dans la fenetre d'achat.
+   *
+   * Seulement sur la fiche d'UN jeu, et seulement le bouton d'achat principal
+   * qu'Epic marque (data-testid), ou, a defaut, un controle de la zone
+   * principale hors liste (une extension vendue dans une rangee n'est pas le
+   * jeu). */
+  function epicAdaptiveClaimButton(PLATFORM) {
+    if (!extractEpicSlug(location.href)) return null;
+    var memory = navMemoryRead(PLATFORM);
+    var principaux = epicPurchaseButtons();
+    var el = null;
+    if (principaux.length) {
+      var s = navScore(principaux[0], 'claim', memory);
+      el = s && s.score >= NAV_THRESHOLD ? principaux[0] : null;
+    } else {
+      var pool = navCandidates().filter(function (c) { return !navClosest(c, NAV_LIST_SEL) && !navClosest(c, NAV_CHROME_SEL); });
+      var best = null;
+      pool.forEach(function (c) {
+        var sc = navScore(c, 'claim', memory);
+        if (sc && sc.score >= NAV_THRESHOLD && (!best || sc.score > best.score)) best = { el: c, score: sc.score };
+      });
+      el = best ? best.el : null;
+    }
+    if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
+    if (looksPaid(actionText(el))) return null;
+    return el;
   }
 
   // Parcours DIRECT : le bouton "Ajouter a la bibliotheque" vient d'etre

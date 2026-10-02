@@ -3,6 +3,7 @@ package io.github.diaslamka.freegames.data
 import io.github.diaslamka.freegames.model.AccountState
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.sources.Countries
+import io.github.diaslamka.freegames.sources.Localize
 import io.github.diaslamka.freegames.sources.SteamSource
 import io.github.diaslamka.freegames.sources.get
 import io.github.diaslamka.freegames.sources.bool
@@ -27,7 +28,7 @@ object Accounts {
 
     fun loginUrl(store: String, country: String?): String = when (store) {
         Stores.EPIC -> "https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2Fstore.epicgames.com%2F"
-        Stores.GOG -> "https://www.gog.com/#openlogin"
+        Stores.GOG -> Localize.url("https://www.gog.com/#openlogin", country) ?: "https://www.gog.com/#openlogin"
         Stores.AMAZON -> "https://${Countries.lunaHost(country)}/claims/home"
         Stores.STEAM -> "https://store.steampowered.com/login/"
         else -> "https://store.epicgames.com/"
@@ -58,8 +59,8 @@ object Accounts {
 
     /** Les domaines dont les cookies font la session : pour la bonne page d'accueil. */
     fun homeUrl(store: String, country: String?): String = when (store) {
-        Stores.EPIC -> "https://store.epicgames.com/"
-        Stores.GOG -> "https://www.gog.com/"
+        Stores.EPIC -> Localize.url("https://store.epicgames.com/", country) ?: "https://store.epicgames.com/"
+        Stores.GOG -> Localize.url("https://www.gog.com/", country) ?: "https://www.gog.com/"
         Stores.AMAZON -> "https://${Countries.lunaHost(country)}/claims/home"
         Stores.STEAM -> "https://store.steampowered.com/"
         else -> "https://store.epicgames.com/"

@@ -60,6 +60,14 @@
          AUTORISES qui borne le risque, pas le selecteur qui a designe le
          bouton. */
       var cta = buyBox.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(buyBox, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true });
+      // Ni l'attribut ni un libelle connu : le sens, dans la boite d'achat seulement.
+      if (!cta) {
+        var meant = navBest('claim', navMemoryRead(PLATFORM), buyBox);
+        if (meant) {
+          cta = meant.el;
+          log(PLATFORM, 'info', 'Bouton retenu pour son sens : "' + meant.text + '" (score ' + meant.score + ').');
+        }
+      }
       if (cta && !lunaClaimLabelAllowed(cta)) {
         // La trace : ce libelle devient une proposition dans l'interface, au
         // lieu d'une ligne de journal que personne ne peut utiliser.
@@ -72,7 +80,7 @@
       }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
-        if (LUNA_CLAIMED_TEXT.test(boxText)) {
+        if (lunaClaimedText(boxText)) {
           // Magasin a code : le code peut deja etre affiche sur la fiche.
           var lateCode = findLunaRevealedCode();
           if (lateCode && !lunaOfferDone(offerId)) {
@@ -101,6 +109,7 @@
          libelles payants et l'anti-rafale. Tant que ce parcours l'evitait, le
          bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
+      var ctaSignature = navSignature(cta);
       if (!robustClick(cta)) {
         recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
@@ -109,6 +118,9 @@
       }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
+        // Le libelle qui vient de prendre un jeu pese plus la prochaine fois ; un echec, moins.
+        if (outcome.type === 'claimed' || outcome.type === 'code') navLearn(PLATFORM, 'claim', ctaSignature, true);
+        else if (outcome.type === 'timeout') navLearn(PLATFORM, 'claim', ctaSignature, false);
         handleLunaClaimOutcome(PLATFORM, offerId, title, store, outcome);
         return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax);
       }).then(function () {
@@ -116,7 +128,7 @@
         var pendingGog = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         if (pendingGog.length && store === 'gog') {
           notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpenShort', pendingGog.length));
-          openInTab(CONFIG.gogRedeemUrl, true);
+          openInTab(gogRedeemUrl(), true);
         }
       });
     });
@@ -223,7 +235,7 @@
         return waitForElement(function () {
           if (isLunaReauthVisible()) throw new Error('MANUAL_LOGIN_REQUIRED');
           var text = spacedText(o.card);
-          return LUNA_CLAIMED_TEXT.test(text) || lunaSuccessVisible(o.card) ? o.card : null;
+          return lunaClaimedText(text) || lunaSuccessVisible(o.card) ? o.card : null;
         }, { timeout: 12000 }).then(function () {
           saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games', o.knownTitle);
           bumpLunaBatch('claimed');

@@ -55,6 +55,7 @@ import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunn
 import { importStore, probeSession } from './watch/collection-import.js';
 import { landOnPage } from './watch/session-page.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
+import { localizeFor } from './watch/localizer.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
 import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watch/lookup.js';
 import { ownedElsewhere, guardLines, guardStoreOf, isProductPage } from './watch/owned-guard.js';
@@ -1498,6 +1499,7 @@ api.notifications.onClicked.addListener((id) => {
   // Mener a l'offre, jamais a une page d'accueil : c'est tout l'interet du
   // clic. Le popup reste le repli quand on ne sait pas ou aller.
   readNotificationLink(api, id)
+    .then((url) => (url ? localizeFor(api, url) : url))
     .then((url) => api.tabs.create({ url: url || api.runtime.getURL('pages/popup.html'), active: true }))
     .catch(() => api.tabs.create({ url: api.runtime.getURL('pages/popup.html'), active: true }))
     .catch((e) => record('warn', 'ouverture depuis la notification impossible', e));

@@ -68,6 +68,9 @@
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.
     epicCardWaitTimeout: 8000,
+    // Avant de laisser le SENS choisir le bouton d'une fiche Epic (libelle inconnu),
+    // on laisse aux libelles livres le temps d'apparaitre (15-epic-claim.js).
+    epicAdaptiveGraceMs: 6000,
     // Duree pendant laquelle un slug ayant mene a /not-found reste bloque.
     epicBadUrlTtlMs: 7 * 24 * 60 * 60 * 1000,
     // Duree de validite du marqueur de reprise pose avant une navigation

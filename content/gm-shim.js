@@ -28,6 +28,9 @@
     // l'URL de l'API Epic, donc prechargees comme l'arret d'urgence.
     'FGC_epic_country',
     'FGC_epic_lang',
+    // Le domaine Luna ou une session est ouverte : lu de facon SYNCHRONE pour
+    // choisir l'adresse a ouvrir (localisation des adresses, watch/localize.js).
+    'FGC_luna_host',
     'FGC_pending_codes',
     // Les libelles appris par l'utilisateur : lus de facon SYNCHRONE avant
     // chaque clic, comme l'arret d'urgence. Une lecture asynchrone arriverait

@@ -18,6 +18,7 @@ import io.github.diaslamka.freegames.MainActivity
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.sources.Localize
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Taste
 import io.github.diaslamka.freegames.model.AppState
@@ -81,7 +82,8 @@ object Notifier {
 
     private fun openUrl(context: Context, code: Int, url: String): PendingIntent =
         PendingIntent.getActivity(
-            context, code, Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            context, code,
+            Intent(Intent.ACTION_VIEW, Uri.parse(Localize.url(url, Graph.store.value.settings.country) ?: url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 

@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.100.0
+ * FREE GAMES AUTO-CLAIMER -- v2.101.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -97,6 +97,9 @@
     // Temps d'attente du rendu cote client des cartes sur /free-games avant
     // de conclure qu'une carte est absente et de rediriger vers sa fiche.
     epicCardWaitTimeout: 8000,
+    // Avant de laisser le SENS choisir le bouton d'une fiche Epic (libelle inconnu),
+    // on laisse aux libelles livres le temps d'apparaitre (15-epic-claim.js).
+    epicAdaptiveGraceMs: 6000,
     // Duree pendant laquelle un slug ayant mene a /not-found reste bloque.
     epicBadUrlTtlMs: 7 * 24 * 60 * 60 * 1000,
     // Duree de validite du marqueur de reprise pose avant une navigation
@@ -1089,6 +1092,89 @@
     return true;
   }
 
+  /* Les adresses des magasins dans la langue et le pays du reglage.
+   *
+   * COPIE ES5 de watch/localize.js (le moteur tourne aussi en userscript, sans
+   * modules). test/localize.test.mjs compare les deux sur une table d'adresses :
+   * une divergence fait echouer le test, pas l'utilisateur.
+   *
+   * Epic : segment de langue du chemin, ou ?lang= a defaut. GOG : prefixe de
+   * langue du chemin (six langues seulement). Luna : domaine du pays, sauf si
+   * une session a ete vue ailleurs (FGC_luna_host) -- on ne deconnecte personne
+   * pour traduire une page. Steam n'est pas touche : sa reclamation lit des
+   * libelles mesures en anglais. */
+  var LOCALE_EPIC_SEGMENTS = { fr: 'fr', en: 'en-US', de: 'de', es: 'es-ES', it: 'it', pt: 'pt-BR', pl: 'pl' };
+  var LOCALE_EPIC_KNOWN = ['ar', 'de', 'en-us', 'es-es', 'es-mx', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-br', 'ru', 'th', 'tr', 'zh-cn', 'zh-hant'];
+  var LOCALE_GOG_LANGS = ['en', 'de', 'fr', 'pl', 'ru', 'zh'];
+  var LOCALE_GOG_HEADS = ['game', 'games', 'redeem'];
+  var LOCALE_LUNA_BY_COUNTRY = {
+    FR: 'luna.amazon.fr', BE: 'luna.amazon.fr', LU: 'luna.amazon.fr', CH: 'luna.amazon.fr',
+    DE: 'luna.amazon.de', GB: 'luna.amazon.co.uk', IE: 'luna.amazon.co.uk',
+    IT: 'luna.amazon.it', ES: 'luna.amazon.es', CA: 'luna.amazon.ca',
+    NL: 'luna.amazon.nl', PL: 'luna.amazon.pl'
+  };
+  var LOCALE_LUNA_FORM = /^luna\.amazon\.(com|fr|de|co\.uk|it|es|ca|com\.au|co\.jp|in|com\.mx|com\.br|nl|se|pl|com\.tr)$/;
+
+  function readLunaHost() {
+    var host = String(GM_getValue('FGC_luna_host', '') || '').trim().toLowerCase();
+    return LOCALE_LUNA_FORM.test(host) ? host : '';
+  }
+
+  /* Retient le domaine Luna ou une session est ouverte. Appele seulement
+     apres avoir vu la page SANS bouton de connexion. */
+  function rememberLunaHost() {
+    var host = String(location.hostname || '').toLowerCase();
+    if (!LOCALE_LUNA_FORM.test(host) || readLunaHost() === host) return;
+    try { GM_setValue('FGC_luna_host', host); } catch (e) { /* stockage indisponible */ }
+  }
+
+  function localizeStoreUrl(raw, forClaim) {
+    if (typeof raw !== 'string' || !raw) return raw;
+    var u;
+    try { u = new URL(raw); } catch (e) { return raw; }
+    if (u.protocol !== 'https:') return raw;
+    var country = getEpicCountry();
+    var lang = getEpicLang();
+    var host = u.hostname.toLowerCase();
+    var first;
+
+    if (host === 'store.epicgames.com') {
+      var page = lang;
+      if (forClaim) page = CONFIG.epicReadableLangs.indexOf(lang) !== -1 ? lang : 'en';
+      else if (!Object.prototype.hasOwnProperty.call(LOCALE_EPIC_SEGMENTS, lang)) page = 'en';
+      first = /^\/([A-Za-z]{2}(?:-[A-Za-z]{2,4})?)(?=\/|$)/.exec(u.pathname);
+      if (first && LOCALE_EPIC_KNOWN.indexOf(first[1].toLowerCase()) !== -1) {
+        var segment = LOCALE_EPIC_SEGMENTS[page];
+        if (segment && first[1] !== segment) u.pathname = '/' + segment + u.pathname.slice(first[0].length);
+      } else if (u.searchParams.get('lang') !== page) {
+        u.searchParams.set('lang', page);
+      }
+    } else if (host === 'www.gog.com' || host === 'gog.com') {
+      if (LOCALE_GOG_LANGS.indexOf(lang) === -1) return raw;
+      first = /^\/(en|de|fr|pl|ru|zh)(?=\/|$)/.exec(u.pathname);
+      if (first) {
+        if (first[1] !== lang) u.pathname = '/' + lang + u.pathname.slice(first[0].length);
+      } else {
+        var head = u.pathname.split('/')[1] || '';
+        if (head === '' || LOCALE_GOG_HEADS.indexOf(head) !== -1) {
+          u.pathname = '/' + lang + (u.pathname === '/' ? '/' : u.pathname);
+        }
+      }
+    } else if (/^luna\.amazon\./.test(host)) {
+      if (!/^\/claims(\/|$)/.test(u.pathname)) return raw;
+      var target = readLunaHost() || LOCALE_LUNA_BY_COUNTRY[country] || 'luna.amazon.com';
+      if (u.hostname !== target) u.hostname = target;
+    } else {
+      return raw;
+    }
+
+    var out = u.toString();
+    return out === raw || out === raw + '/' ? raw : out;
+  }
+
+  function gogRedeemUrl() {
+    return localizeStoreUrl(CONFIG.gogRedeemUrl, false);
+  }
   // ---------------------------------------------------------------------------
   // Epic : resolution des slugs et construction des URL
   // ---------------------------------------------------------------------------
@@ -1325,7 +1411,11 @@
 
     var principaux = epicPurchaseButtons();
     if (principaux.length) {
-      return epicOwnershipText(actionText(principaux[0])) ? principaux[0] : null;
+      // Le libelle livre d'abord ; le sens (navigateur adaptatif) ensuite, pour
+      // les langues et les tournures que les motifs ne connaissent pas -- sur
+      // CE bouton seulement, jamais sur une vignette d'ailleurs.
+      var ctaText = actionText(principaux[0]);
+      return (epicOwnershipText(ctaText) || navOwnedText(ctaText)) ? principaux[0] : null;
     }
 
     var candidates = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
@@ -1350,7 +1440,8 @@
     if (principaux.length) {
       var t = actionText(principaux[0]);
       var achetable = EPIC_MAIN_CTA_PATTERNS.some(function (p) { return p.test(t); })
-        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); });
+        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); })
+        || navClaimsLabel(principaux[0], 'Epic Games');
       return achetable ? 'unowned' : null;
     }
     var cta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: mustBeEnabled !== false })
@@ -2068,14 +2159,23 @@
     // d'ou l'on vient -- la liste, ou la fiche d'un autre jeu deja possede --
     // et un libelle croise la ne dit rien de celui-ci.
     var ownedEl = null;
+    var waitStart = Date.now();
+    var adaptive = false;
     return waitForElement(function () {
       var slugNow = extractEpicSlug(location.href);
       var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
       ownedEl = onThisGame ? epicOwnedHere() : null;
       if (ownedEl) return ownedEl;
-      return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
+      var known = findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
           || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
+      if (known) { adaptive = false; return known; }
+      // Aucun libelle livre ne convient : Epic a peut-etre change son mot. On
+      // laisse d'abord a la fiche le temps de s'afficher, puis le SENS decide.
+      if (!onThisGame || Date.now() - waitStart < CONFIG.epicAdaptiveGraceMs) return null;
+      var guess = epicAdaptiveClaimButton(PLATFORM);
+      adaptive = !!guess;
+      return guess;
     }, { timeout: 12000 }).catch(function () {
       // L'echec porte son diagnostic : les libelles reellement visibles disent
       // quel motif manque, et la prochaine capture d'ecran suffit a corriger.
@@ -2091,13 +2191,62 @@
       if (challenge) throw new Error('Defi de securite (' + challenge.type + ') detecte avant le clic initial.');
 
       var text = (btn.textContent || '').trim();
-      var direct = EPIC_LIBRARY_LOOSE_PATTERNS.some(function (p) { return p.test(text); });
+      var direct = EPIC_LIBRARY_LOOSE_PATTERNS.some(function (p) { return p.test(text); })
+        || (adaptive && /librar|biblioth|sammlung|colecci|raccolta/i.test(text));
+      var sig = navSignature(btn);
 
-      log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
+      log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (adaptive ? ' (libelle inconnu, retenu pour son sens)' : '') + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
       robustClick(btn);
 
-      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () { return 'CLAIMED'; });
+      return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () {
+        // Ce libelle a pris le jeu : il pese plus la prochaine fois.
+        navLearn(PLATFORM, 'claim', sig, true);
+        return 'CLAIMED';
+      }, function (err) {
+        if (adaptive) navLearn(PLATFORM, 'claim', sig, false);
+        throw err;
+      });
     });
+  }
+
+  /* LE BOUTON D'ACQUISITION, QUAND LE MOT A CHANGE (2.101.0).
+   *
+   * Les libelles livres ("Obtenir", "Get", "Ajouter a la bibliotheque") sont
+   * tout ce que le moteur reconnaissait : qu'Epic ecrive "Recuperer" ou
+   * "Claim now" et la fiche restait sans bouton pendant douze secondes, puis
+   * un echec. Ici le SENS prend le relais -- le meme vocabulaire a poids que
+   * GOG, la meme memoire, les memes interdits (argent, panier, abonnement, prix).
+   *
+   * Ce que cela ne change PAS : le clic passe par robustClick (libelles payants
+   * refuses), et l'argent reste garde par le module de l'iframe de paiement,
+   * dont les listes de confirmation sont figees et ne lisent pas ce
+   * vocabulaire. Un bouton de plus a cliquer sur la fiche, jamais un bouton
+   * de plus dans la fenetre d'achat.
+   *
+   * Seulement sur la fiche d'UN jeu, et seulement le bouton d'achat principal
+   * qu'Epic marque (data-testid), ou, a defaut, un controle de la zone
+   * principale hors liste (une extension vendue dans une rangee n'est pas le
+   * jeu). */
+  function epicAdaptiveClaimButton(PLATFORM) {
+    if (!extractEpicSlug(location.href)) return null;
+    var memory = navMemoryRead(PLATFORM);
+    var principaux = epicPurchaseButtons();
+    var el = null;
+    if (principaux.length) {
+      var s = navScore(principaux[0], 'claim', memory);
+      el = s && s.score >= NAV_THRESHOLD ? principaux[0] : null;
+    } else {
+      var pool = navCandidates().filter(function (c) { return !navClosest(c, NAV_LIST_SEL) && !navClosest(c, NAV_CHROME_SEL); });
+      var best = null;
+      pool.forEach(function (c) {
+        var sc = navScore(c, 'claim', memory);
+        if (sc && sc.score >= NAV_THRESHOLD && (!best || sc.score > best.score)) best = { el: c, score: sc.score };
+      });
+      el = best ? best.el : null;
+    }
+    if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return null;
+    if (looksPaid(actionText(el))) return null;
+    return el;
   }
 
   // Parcours DIRECT : le bouton "Ajouter a la bibliotheque" vient d'etre
@@ -2707,6 +2856,7 @@
     /comprar|carrito|pagar|deseos|suscrib|compartir|ver tr[a\u00e1]iler/i,
     /acquista|carrello|paga\b|desideri|condividi/i,
     /sign in|log in|login|log out|connexion|se connecter|se d[e\u00e9]connecter|anmelden|abmelden|iniciar sesi|accedi|register|sign up|inscri|cr[e\u00e9]er un compte|newsletter|cookie|privacy|confidentialit|datenschutz|privacidad|terms|conditions|cgu|cgv|unsubscribe|d[e\u00e9]sinscri/i,
+    /\b(trial|join|upgrade|renew)\b|luna ?\+|check out|essai|essayer|rejoindre|mettre [a\u00e0] niveau|caisse|testen|beitreten|kasse|probar|prueba|unirse|caja|prova|iscriviti|cassa/i,
     /\b(cancel|close|dismiss|later|decline|no thanks)\b|annuler|fermer|plus tard|non merci|refuser|abbrechen|schlie[s\u00df]en|cerrar|cancelar|chiudi/i
   ];
   var NAV_PRICE = /[$\u20ac\u00a3\u00a5]\s?[1-9]|[1-9]\d*[.,]\d{0,2}\s?[$\u20ac\u00a3\u00a5]|[1-9]\d*\s?(eur|usd|gbp)\b/i;
@@ -2866,17 +3016,19 @@
     return { score: score, why: why, text: text };
   }
 
-  function navCandidates() {
+  /* Les controles visibles : de toute la page, ou d'une zone (root) quand un
+     module sait deja OU regarder -- la boite d'achat d'une fiche, par exemple. */
+  function navCandidates(root) {
     var nodes;
     try {
-      nodes = Array.prototype.slice.call(document.querySelectorAll('button, a[href], [role="button"], input[type="button"], input[type="submit"]'));
+      nodes = Array.prototype.slice.call((root || document).querySelectorAll('button, a[href], [role="button"], input[type="button"], input[type="submit"]'));
     } catch (e) { nodes = []; }
     return nodes.filter(navVisible);
   }
 
   /* Le meilleur controle pour un role, ou null sous le seuil. */
-  function navBest(kind, memory) {
-    var pool = navCandidates();
+  function navBest(kind, memory, root) {
+    var pool = navCandidates(root);
     var scored = [];
     for (var i = 0; i < pool.length; i++) {
       var s = navScore(pool[i], kind, memory);
@@ -2887,6 +3039,30 @@
     if (!top || top.score < NAV_THRESHOLD) return null;
     top.runnerUp = scored[1] ? scored[1].text + ' (' + scored[1].score + ')' : null;
     return top;
+  }
+
+  /* Ce controle PREND-il un jeu, d'apres le sens de son libelle ? (2.101.0)
+     Pour les modules qui ont deja trouve leur bouton par un attribut ou une
+     liste de libelles (Epic, Luna) : quand le magasin change le mot, le sens
+     decide -- sans jamais passer devant les interdits (argent, panier,
+     abonnement), qui sont evalues dans navScore avant tout vocabulaire. */
+  function navClaimsLabel(el, platform) {
+    var s = navScore(el, 'claim', navMemoryRead(platform));
+    return !!s && s.score >= NAV_THRESHOLD;
+  }
+
+  /* Ce libelle dit-il que le jeu est deja a vous ? Texte court seulement. */
+  function navOwnedText(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t || t.length > 60) return false;
+    return navOwnedAnywhere(t);
+  }
+
+  /* Idem sur un bloc de texte plus long (la boite d'achat d'une fiche). */
+  function navOwnedAnywhere(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    for (var i = 0; i < NAV_LEXICON.owned.length; i++) if (NAV_LEXICON.owned[i].test(t)) return true;
+    return false;
   }
 
   /* La structure seule (2.100.0). Quand aucun libelle ne dit "prends", mais que la
@@ -3161,7 +3337,8 @@
       // Un lien vers une autre page se SUIT dans cet onglet (jamais dans un nouveau) ;
       // un bouton se clique, et la page peut changer sans se recharger.
       if (url && url.sameSite && !url.samePage) {
-        try { location.assign(url.href); } catch (e) { navOrderClear(); return done('refused', { text: st.text }); }
+        // Dans la langue du reglage : GOG pointe souvent vers "/#giveaway", qui perd le prefixe de langue.
+        try { location.assign(localizeStoreUrl(url.href, true)); } catch (e) { navOrderClear(); return done('refused', { text: st.text }); }
         return waitMs(15000).then(function () { navOrderClear(); return done('navigating'); });
       }
       if (!robustClick(st.el)) { navOrderClear(); return done('refused', { text: navText(st.el) }); }
@@ -3252,6 +3429,132 @@
       log(PLATFORM, 'error', 'ECHEC GOG : ' + ((err && err.message) || err));
       updateUiState('error', uiText('engGogFailed', navTitle()));
     });
+  }
+  /* ======================================================================
+   * APPRENDRE DE VOTRE GESTE (2.101.0)
+   *
+   * Quand un magasin change sa page et que le moteur ne reconnait plus rien,
+   * le plus simple est que VOUS recuperiez le jeu a la main, une fois. Ce module
+   * regarde, sans rien envoyer nulle part : il retient le libelle des controles
+   * sur lesquels VOUS avez clique, et -- seulement si la page dit ensuite que le
+   * jeu est a vous alors qu'il ne l'etait pas avant votre clic -- il les range
+   * dans la memoire du navigateur adaptatif (celle de ce magasin, sur cet
+   * appareil) : le dernier clic comme "ce qui prend le jeu", celui d'avant,
+   * s'il a change de page, comme "ce qui y mene".
+   *
+   * Ce que cela ne peut PAS faire :
+   *   - un clic du moteur (evenement synthetique) n'est jamais une demonstration :
+   *     seul un clic de confiance (event.isTrusted) compte ;
+   *   - un libelle d'argent, de panier, d'abonnement ou de connexion n'est jamais
+   *     retenu (memes interdits que le navigateur) ;
+   *   - la memoire ne fait qu'AJOUTER du sens a un libelle : elle ne contourne
+   *     ni les interdits, ni robustClick, ni -- chez Epic -- le module de
+   *     paiement, dont les listes sont figees ;
+   *   - rien ne quitte la page : sessionStorage pour les clics (90 s), la
+   *     memoire locale du moteur pour ce qui a marche.
+   * ====================================================================== */
+
+  var DEMO_KEY = 'FGC_nav_demo';
+  var DEMO_WINDOW_MS = 90000;
+  // Le jeu doit devenir "a vous" peu apres le DERNIER clic : une commande payee a la main, des
+  // minutes et des pages plus tard, ne dit rien du bouton qui prend un jeu gratuit.
+  var DEMO_EFFECT_MS = 45000;
+  var DEMO_MAX = 4;
+  var DEMO_POLL_MS = 2500;
+  var demoTimer = 0;
+
+  function demoPlatform() {
+    var name = platformNameForHost(location.hostname);
+    return name === 'GOG' || name === 'Epic Games' || name === 'Amazon Luna' ? name : null;
+  }
+
+  /* La page dit-elle, MAINTENANT, que le jeu est a vous ? */
+  function demoOwnedNow(platform) {
+    try {
+      if (platform === 'GOG') return !!navOwnedEvidence();
+      if (platform === 'Epic Games') return !!epicOwnedHere();
+      if (platform === 'Amazon Luna') {
+        var box = document.querySelector('[data-a-target="buy-box"]');
+        return !!box && lunaClaimedText(spacedText(box));
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function demoRead() {
+    try {
+      var list = JSON.parse(sessionStorage.getItem(DEMO_KEY) || '[]');
+      if (Object.prototype.toString.call(list) !== '[object Array]') return [];
+      var now = Date.now();
+      return list.filter(function (e) { return e && typeof e.ts === 'number' && now - e.ts <= DEMO_WINDOW_MS && typeof e.sig === 'string'; });
+    } catch (e) { return []; }
+  }
+
+  function demoWrite(list) {
+    try {
+      if (list.length) sessionStorage.setItem(DEMO_KEY, JSON.stringify(list.slice(-DEMO_MAX)));
+      else sessionStorage.removeItem(DEMO_KEY);
+    } catch (e) {}
+  }
+
+  /* Un clic de l'utilisateur sur un controle : on retient de quoi il s'agit. */
+  function demoOnClick(ev) {
+    if (!ev || ev.isTrusted !== true) return;
+    var platform = demoPlatform();
+    if (!platform) return;
+    var target = ev.target;
+    var el = target && typeof target.closest === 'function'
+      ? target.closest('button, a[href], [role="button"], input[type="button"], input[type="submit"]')
+      : null;
+    if (!el) return;
+    var text = navText(el);
+    if (!text || text.length > 60 || navVetoReason(text)) return;
+    // "Continuer", "Accepter", "OK" : des confirmations, deja connues du navigateur comme telles -- pas ce qui prend un jeu.
+    if (NAV_LEXICON.confirm.test(text)) return;
+    var sig = navSignature(el);
+    if (!sig) return;
+    var list = demoRead();
+    list.push({ sig: sig, ts: Date.now(), path: location.pathname, ownedBefore: demoOwnedNow(platform) });
+    demoWrite(list);
+    demoArm();
+  }
+
+  /* Le jeu est-il maintenant a vous ? Alors ces clics ont pris le jeu. */
+  function demoCheck() {
+    var platform = demoPlatform();
+    var list = demoRead();
+    if (!platform || !list.length) { demoStop(); return; }
+    if (!demoOwnedNow(platform)) return;
+    var last = list[list.length - 1];
+    if (Date.now() - last.ts > DEMO_EFFECT_MS) { demoWrite([]); demoStop(); return; }
+    // Deja a vous avant le clic : rien n'a ete appris, et il ne faut pas le faire croire.
+    if (last.ownedBefore) { demoWrite([]); demoStop(); return; }
+    navLearn(platform, 'claim', last.sig, true);
+    var learned = '"' + last.sig + '"';
+    var before = list.length > 1 ? list[list.length - 2] : null;
+    if (before && before.path !== last.path && last.ts - before.ts <= 30000) {
+      navLearn(platform, 'goto', before.sig, true);
+      learned = '"' + before.sig + '" puis ' + learned;
+    }
+    log(platform, 'info', 'Appris de votre geste : ' + learned + ' a pris ce jeu. Le moteur le reconnaitra la prochaine fois.');
+    demoWrite([]);
+    demoStop();
+  }
+
+  function demoStop() {
+    if (demoTimer) { clearInterval(demoTimer); demoTimer = 0; }
+  }
+
+  function demoArm() {
+    if (demoTimer) return;
+    demoTimer = setInterval(demoCheck, DEMO_POLL_MS);
+  }
+
+  function startDemoLearning() {
+    if (!demoPlatform()) return;
+    try { document.addEventListener('click', demoOnClick, true); } catch (e) {}
+    // Des clics en attente venus de la page precedente : on reprend la surveillance ici.
+    if (demoRead().length) demoArm();
   }
   // ===========================================================================
   // AMAZON LUNA (ex-Prime Gaming) -- offres "Recuperer le jeu" (FGWP)
@@ -3358,15 +3661,27 @@
     var text = actionText(el);
     if (!text) return false;
     if (looksPaid(text)) return false;
+    // Les interdits du navigateur adaptatif valent aussi pour les libelles livres : "Obtenir Luna+
+    // gratuitement" contient "obtenir", et ne prend aucun jeu (abonnement, essai, paiement).
+    if (navVetoReason(text)) return false;
     var ok = LUNA_CLAIM_PATTERNS.some(function (p) { return p.test(text); })
           || LUNA_CLAIM_LOOSE_PATTERNS.some(function (p) { return p.test(text); })
-          || matchesTaught(text, 'luna');
+          || matchesTaught(text, 'luna')
+          // Le SENS, quand Amazon change le mot (2.101.0) : meme vocabulaire a poids
+          // et memes interdits que le navigateur adaptatif. looksPaid est passe plus haut.
+          || navClaimsLabel(el, 'Amazon Luna');
     return ok;
   }
 
   var LUNA_COMPLETE_PATTERNS = [/^complete claim$/i, /^terminer( la r[e\u00e9]clamation)?$/i, /^finaliser/i, /^continuer$/i, /^continue$/i, /^confirm(er)?$/i];
   var LUNA_LINK_ACCOUNT_PATTERNS = [/associer (un|votre|mon|le) compte/i, /link (game |your |a )?account/i, /lier (un|votre|mon|le) compte/i];
   var LUNA_CLAIMED_TEXT = /\bclaimed\b|\bcollected\b|r[e\u00e9]cup[e\u00e9]r[e\u00e9]e?(?![a-z\u00e0-\u00ff])|successfully|\bsuccess\b|succ[e\u00e8]s(?![a-z\u00e0-\u00ff])|in your library|dans votre biblioth[e\u00e8]que|ajout[e\u00e9]e? [a\u00e0] votre|d[e\u00e9]j[a\u00e0] (r[e\u00e9]cup[e\u00e9]r[e\u00e9]|obtenu|r[e\u00e9]clam[e\u00e9])/i;
+
+  /* "Deja a vous" : les mots livres, puis le sens (navigateur adaptatif) pour les
+     langues et les tournures qu'ils ne connaissent pas. */
+  function lunaClaimedText(text) {
+    return LUNA_CLAIMED_TEXT.test(text) || navOwnedAnywhere(text);
+  }
 
   var LUNA_STORE_SUFFIXES = {
     epic: 'epic', gog: 'gog', aga: 'amazon', amazon: 'amazon', legacy: 'legacy',
@@ -3679,7 +3994,7 @@
     if (document.querySelector('.thank-you-title, [data-a-target*="success" i], [data-a-target*="ClaimStateClaimed" i]')) return true;
     var modal = lunaModalRoot();
     var scopes = [modal, scopeEl].filter(Boolean);
-    return scopes.some(function (s) { return LUNA_CLAIMED_TEXT.test(spacedText(s)); });
+    return scopes.some(function (s) { return lunaClaimedText(spacedText(s)); });
   }
 
   // Observe la page apres le clic sur "Obtenir le jeu" jusqu'a un resultat
@@ -3789,7 +4104,7 @@
         button: button,
         card: card,
         hasCta: hasCta,
-        collected: !hasCta && LUNA_CLAIMED_TEXT.test(text)
+        collected: !hasCta && lunaClaimedText(text)
       });
     });
     return offers;
@@ -3810,7 +4125,7 @@
       saveLunaBatch(batch);
       log(PLATFORM, 'info', gogCodes.length + ' code(s) GOG en attente : ouverture de ' + CONFIG.gogRedeemUrl + ' pour l\'echange automatique.');
       notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpen', gogCodes.length));
-      openInTab(CONFIG.gogRedeemUrl, true);
+      openInTab(gogRedeemUrl(), true);
     }
     saveLunaQueue([]);
     // Fin de serie : compteurs remis a zero pour que le lot ne soit pas rejoue
@@ -3961,6 +4276,14 @@
          AUTORISES qui borne le risque, pas le selecteur qui a designe le
          bouton. */
       var cta = buyBox.querySelector('[data-a-target="buy-box_call-to-action"]') || findActionElement(buyBox, LUNA_CLAIM_PATTERNS, { mustBeEnabled: true });
+      // Ni l'attribut ni un libelle connu : le sens, dans la boite d'achat seulement.
+      if (!cta) {
+        var meant = navBest('claim', navMemoryRead(PLATFORM), buyBox);
+        if (meant) {
+          cta = meant.el;
+          log(PLATFORM, 'info', 'Bouton retenu pour son sens : "' + meant.text + '" (score ' + meant.score + ').');
+        }
+      }
       if (cta && !lunaClaimLabelAllowed(cta)) {
         // La trace : ce libelle devient une proposition dans l'interface, au
         // lieu d'une ligne de journal que personne ne peut utiliser.
@@ -3973,7 +4296,7 @@
       }
       var boxText = spacedText(buyBox);
       if (!cta || cta.disabled || cta.getAttribute('aria-disabled') === 'true') {
-        if (LUNA_CLAIMED_TEXT.test(boxText)) {
+        if (lunaClaimedText(boxText)) {
           // Magasin a code : le code peut deja etre affiche sur la fiche.
           var lateCode = findLunaRevealedCode();
           if (lateCode && !lunaOfferDone(offerId)) {
@@ -4002,6 +4325,7 @@
          libelles payants et l'anti-rafale. Tant que ce parcours l'evitait, le
          bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
+      var ctaSignature = navSignature(cta);
       if (!robustClick(cta)) {
         recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');
@@ -4010,6 +4334,9 @@
       }
 
       return watchLunaClaimOutcome(buyBox, CONFIG.lunaClaimOutcomeTimeout, store, linkBefore).then(function (outcome) {
+        // Le libelle qui vient de prendre un jeu pese plus la prochaine fois ; un echec, moins.
+        if (outcome.type === 'claimed' || outcome.type === 'code') navLearn(PLATFORM, 'claim', ctaSignature, true);
+        else if (outcome.type === 'timeout') navLearn(PLATFORM, 'claim', ctaSignature, false);
         handleLunaClaimOutcome(PLATFORM, offerId, title, store, outcome);
         return randomDelay(CONFIG.claimDelayMin, CONFIG.claimDelayMax);
       }).then(function () {
@@ -4017,7 +4344,7 @@
         var pendingGog = getPendingRedeemCodes('gog').filter(function (c) { return (c.attempts || 0) < CONFIG.gogRedeemMaxAttempts; });
         if (pendingGog.length && store === 'gog') {
           notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpenShort', pendingGog.length));
-          openInTab(CONFIG.gogRedeemUrl, true);
+          openInTab(gogRedeemUrl(), true);
         }
       });
     });
@@ -4124,7 +4451,7 @@
         return waitForElement(function () {
           if (isLunaReauthVisible()) throw new Error('MANUAL_LOGIN_REQUIRED');
           var text = spacedText(o.card);
-          return LUNA_CLAIMED_TEXT.test(text) || lunaSuccessVisible(o.card) ? o.card : null;
+          return lunaClaimedText(text) || lunaSuccessVisible(o.card) ? o.card : null;
         }, { timeout: 12000 }).then(function () {
           saveHistoryEntry(PLATFORM, lunaHistoryKey(o.id), 'claimed', 'Amazon Games', o.knownTitle);
           bumpLunaBatch('claimed');
@@ -4196,6 +4523,7 @@
     }
 
     if (isLunaReauthVisible()) return Promise.reject(new Error('MANUAL_LOGIN_REQUIRED'));
+    rememberLunaHost();
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
@@ -4215,6 +4543,10 @@
 
   function scheduleLunaAutoWatcher() {
     if (location.hostname.indexOf('luna.amazon.') === -1) return;
+    // Une session ouverte sur CE domaine : c'est lui que la localisation des adresses doit garder.
+    setTimeout(function () {
+      if (!document.querySelector('[data-a-target="sign-in-button"]') && !isLikelyLoggedOut() && !isLunaReauthVisible()) rememberLunaHost();
+    }, 5000);
     var queue = getLunaQueue();
     var finishPending = false;
     try { finishPending = sessionStorage.getItem('FGC_luna_finish_pending') === '1'; } catch (e) {}
@@ -4496,7 +4828,7 @@
       }
       if (remaining && remaining.length) {
         log(PLATFORM, 'info', 'Rechargement de ' + CONFIG.gogRedeemUrl + ' pour le code suivant.');
-        setTimeout(function () { location.assign(CONFIG.gogRedeemUrl); }, 2500);
+        setTimeout(function () { location.assign(gogRedeemUrl()); }, 2500);
       }
     }).catch(function (err) {
       if (err === 'STOP') return;
@@ -4649,7 +4981,7 @@
     if (location.hostname.indexOf('gog.com') !== -1) {
       GM_registerMenuCommand('Echanger les codes GOG en attente', function () {
         if (isGogRedeemPage(location.pathname)) dispatch();
-        else location.assign(CONFIG.gogRedeemUrl);
+        else location.assign(gogRedeemUrl());
       });
     }
     GM_registerMenuCommand('Voir l\'historique de cette plateforme', function () {
@@ -4893,7 +5225,9 @@
         claim: function () {
           return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
             || findActionElement(document, EPIC_MAIN_CTA_PATTERNS)
-            || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
+            || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS)
+            // Lecture seule : le bouton que le SENS designerait (libelle inconnu).
+            || epicAdaptiveClaimButton('Epic Games');
         }
       };
     }
@@ -4921,7 +5255,7 @@
         return {
           owned: function () {
             var r = lunaCta();
-            return r && !enabled(r.cta) && LUNA_CLAIMED_TEXT.test(spacedText(r.box)) ? r.box : null;
+            return r && !enabled(r.cta) && lunaClaimedText(spacedText(r.box)) ? r.box : null;
           },
           claim: function () {
             var r = lunaCta();
@@ -4962,6 +5296,7 @@
     if (document.querySelector('[data-a-target="sign-in-button"]')
       || (location.hostname.indexOf('luna.amazon.') !== -1 && isLunaReauthVisible())) { done('needs_login'); return; }
     if (detectSecurityChallenge()) { done('challenge'); return; }
+    if (location.hostname.indexOf('luna.amazon.') !== -1) rememberLunaHost();
 
     var targets = inspectionTargets();
     if (!targets) { done('wrong_page', null, { visible: visibleActionLabels(8) }); return; }
@@ -5049,6 +5384,7 @@
       if (pauseEpic || pauseLuna) log('CORE', 'info', 'Delai de repos en cours -- Epic : ' + (pauseEpic ? formatDelay(pauseEpic) : 'pret') + ', Luna : ' + (pauseLuna ? formatDelay(pauseLuna) : 'pret') + '.');
       scheduleLunaAutoWatcher();
       scheduleGogRedeemWatcher();
+      startDemoLearning();
     }, 1500);
   }
 
@@ -5064,6 +5400,10 @@
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
       epicStoreUrl: epicStoreUrl,
+      localizeStoreUrl: localizeStoreUrl,
+      readLunaHost: readLunaHost,
+      rememberLunaHost: rememberLunaHost,
+      gogRedeemUrl: gogRedeemUrl,
       getEpicCountry: getEpicCountry,
       getEpicLang: getEpicLang,
       getEpicPageLang: getEpicPageLang,
@@ -5156,6 +5496,15 @@
       navMemoryRead: navMemoryRead,
       navOrderPending: navOrderPending,
       navOwnedEvidence: navOwnedEvidence,
+      navClaimsLabel: navClaimsLabel,
+      demoOnClick: demoOnClick,
+      demoCheck: demoCheck,
+      demoRead: demoRead,
+      startDemoLearning: startDemoLearning,
+      navOwnedText: navOwnedText,
+      navOwnedAnywhere: navOwnedAnywhere,
+      lunaClaimedText: lunaClaimedText,
+      epicAdaptiveClaimButton: epicAdaptiveClaimButton,
       runGogModule: runGogModule,
       epicCtaState: epicCtaState,
       isEpicGameUnownedOnCurrentPage: isEpicGameUnownedOnCurrentPage,

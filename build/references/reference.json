@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.100.0.js",
-  "sha256": "06F79D4E4125C39EC8A2E4F438EC31C072A9F9D945FDFEF34A1C676CF06E69E9",
-  "octets": 265372,
-  "version": "2.100.0",
-  "motif": "2.100.0 : navigateur adaptatif (17-adaptive-nav.js), le module GOG suit le chemin de page en page"
+  "fichier": "reference-v2.101.0.js",
+  "sha256": "737FE3E367525C3CF8125EFFF9C853665655E53613EBF66B67D02EF7BBC55726",
+  "octets": 282657,
+  "version": "2.101.0",
+  "motif": "navigateur adaptatif Epic et Luna, adresses localisees, apprentissage du geste"
 }

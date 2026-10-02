@@ -9,6 +9,7 @@
  * page ouverte pendant un cycle voit les lignes arriver, sans sonder.
  */
 import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { installLinkLocalizer } from '../watch/localizer.js';
 import {
   KEY_JOURNAL,
   filterEntries,
@@ -19,6 +20,7 @@ import {
 } from '../watch/journal.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
+installLinkLocalizer(api, document);
 
 const KEY_UI = 'veille:ui';
 

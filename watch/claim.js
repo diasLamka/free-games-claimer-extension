@@ -16,6 +16,7 @@
  */
 import { STORES, storeFromUrl } from './offer.js';
 import { readSettings } from './storage.js';
+import { localizeFor } from './localizer.js';
 import { readOwnership } from './sources/steam.js';
 import {
   steamAppUrl, steamPageStep, describeStep, ownedFromStep,
@@ -354,6 +355,10 @@ async function tabWhere(chrome, tabId) {
  * chrome.windows) et les plateformes ou la creation de fenetre echoue.
  */
 export async function openHiddenTab(chrome, url) {
+  /* La page s'ouvre dans la langue et le pays du reglage (GOG en /fr/, Epic en
+     ?lang=fr, Luna sur son domaine) : c'est cette page-la que le moteur lit.
+     Une langue que le moteur ne lit pas est ramenee a l'anglais (forClaim). */
+  url = await localizeFor(chrome, url, { forClaim: true });
   if (chrome.windows && typeof chrome.windows.create === 'function') {
     try {
       const win = await chrome.windows.create({ url, type: 'normal', state: 'minimized' });

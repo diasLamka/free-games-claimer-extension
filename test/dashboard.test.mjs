@@ -93,7 +93,7 @@ test('le popup pose le marqueur avant tout rendu, et ne se ferme plus quand il e
   const marqueur = JS.indexOf("document.documentElement.dataset.vue = 'onglet'");
   assert.ok(marqueur > 0 && marqueur < JS.indexOf('\nload()'), 'marqueur pose avant le premier load()');
   assert.match(JS, /api\.extension\.getViews\(\{ type: 'tab' \}\)/, 'jamais les vues de type popup : un doute vaut « popup »');
-  assert.match(JS, /function openTab\(url\) \{\s*api\.tabs\.create\(\{ url, active: true \}\);\s*\/\/[^\n]*\s*if \(!EN_ONGLET\) window\.close\(\);/);
+  assert.match(JS, /function openTab\(url\) \{\s*api\.tabs\.create\(\{ url: localizeLink\(url\), active: true \}\);\s*\/\/[^\n]*\s*if \(!EN_ONGLET\) window\.close\(\);/);
   assert.match(JS, /api\.runtime\.openOptionsPage\(\)/, 'le bouton ramene l\'onglet existant');
   assert.match(JS, /openTab\(api\.runtime\.getURL\(DASHBOARD_PAGE\)\)/);
 });

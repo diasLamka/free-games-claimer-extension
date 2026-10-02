@@ -162,6 +162,19 @@ meme onglet ; son ordre en cours (magasin, etape, titre) vit dans le
 `sessionStorage` de l'onglet, jamais ailleurs. Sa memoire (`FGC_nav_GOG`) ne
 contient que des libelles de boutons et des compteurs.
 
+Depuis la 2.101.0, Epic et Luna s'en servent aussi, avec les memes interdits
+(argent, panier, abonnement, essai gratuit, `Luna+`, caisse, connexion). Chez
+Epic, le module de l'iframe de paiement ne lit PAS ce vocabulaire : ses listes de
+confirmation restent figees. **Apprendre de votre geste** n'ecoute que vos clics
+de confiance sur les pages de GOG, Epic et Luna, garde les clics 90 secondes dans
+le `sessionStorage` de l'onglet, et ne range un libelle dans la memoire que si la
+page dit ensuite que le jeu est a vous alors qu'il ne l'etait pas avant votre
+clic ; rien ne quitte l'appareil. **Les adresses localisees**
+(`watch/localize.js`) ne changent que la langue ou le domaine d'une adresse deja
+choisie -- jamais l'endroit ou l'on va : Steam, le http et les autres hotes sont
+rendus tels quels, et un domaine Luna n'est suivi que s'il est dans la liste
+connue.
+
 **Tester la recuperation** (2.64.0) ouvre, sur un geste lui aussi, la page
 d'un jeu offert dans chaque magasin reclame, avec votre session -- comme vous
 le feriez en la visitant. Le moteur recoit l'ordre `fgc-inspecte`, jamais

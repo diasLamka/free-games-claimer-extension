@@ -40,6 +40,7 @@
     }
 
     if (isLunaReauthVisible()) return Promise.reject(new Error('MANUAL_LOGIN_REQUIRED'));
+    rememberLunaHost();
 
     var challenge = detectSecurityChallenge();
     if (challenge) {
@@ -59,6 +60,10 @@
 
   function scheduleLunaAutoWatcher() {
     if (location.hostname.indexOf('luna.amazon.') === -1) return;
+    // Une session ouverte sur CE domaine : c'est lui que la localisation des adresses doit garder.
+    setTimeout(function () {
+      if (!document.querySelector('[data-a-target="sign-in-button"]') && !isLikelyLoggedOut() && !isLunaReauthVisible()) rememberLunaHost();
+    }, 5000);
     var queue = getLunaQueue();
     var finishPending = false;
     try { finishPending = sessionStorage.getItem('FGC_luna_finish_pending') === '1'; } catch (e) {}

@@ -211,7 +211,9 @@
         claim: function () {
           return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
             || findActionElement(document, EPIC_MAIN_CTA_PATTERNS)
-            || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS);
+            || findShortestActionElement(document, EPIC_LIBRARY_LOOSE_PATTERNS)
+            // Lecture seule : le bouton que le SENS designerait (libelle inconnu).
+            || epicAdaptiveClaimButton('Epic Games');
         }
       };
     }
@@ -239,7 +241,7 @@
         return {
           owned: function () {
             var r = lunaCta();
-            return r && !enabled(r.cta) && LUNA_CLAIMED_TEXT.test(spacedText(r.box)) ? r.box : null;
+            return r && !enabled(r.cta) && lunaClaimedText(spacedText(r.box)) ? r.box : null;
           },
           claim: function () {
             var r = lunaCta();
@@ -280,6 +282,7 @@
     if (document.querySelector('[data-a-target="sign-in-button"]')
       || (location.hostname.indexOf('luna.amazon.') !== -1 && isLunaReauthVisible())) { done('needs_login'); return; }
     if (detectSecurityChallenge()) { done('challenge'); return; }
+    if (location.hostname.indexOf('luna.amazon.') !== -1) rememberLunaHost();
 
     var targets = inspectionTargets();
     if (!targets) { done('wrong_page', null, { visible: visibleActionLabels(8) }); return; }
@@ -367,6 +370,7 @@
       if (pauseEpic || pauseLuna) log('CORE', 'info', 'Delai de repos en cours -- Epic : ' + (pauseEpic ? formatDelay(pauseEpic) : 'pret') + ', Luna : ' + (pauseLuna ? formatDelay(pauseLuna) : 'pret') + '.');
       scheduleLunaAutoWatcher();
       scheduleGogRedeemWatcher();
+      startDemoLearning();
     }, 1500);
   }
 

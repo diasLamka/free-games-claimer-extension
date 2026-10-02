@@ -9,6 +9,7 @@
  * magasin apparait des qu'il est lu, sans sondage.
  */
 import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { installLinkLocalizer } from '../watch/localizer.js';
 import { STORE_LABELS } from '../watch/offer.js';
 import { KEY_LIBRARY } from '../watch/library.js';
 import {
@@ -34,6 +35,7 @@ import {
 import { DECK, deckAtLeast } from '../watch/deck.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
+installLinkLocalizer(api, document);
 
 const KEY_UI = 'veille:ui';
 

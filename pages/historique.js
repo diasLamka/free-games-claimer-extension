@@ -11,6 +11,7 @@
  * cause qu'on peut corriger.
  */
 import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
+import { installLinkLocalizer } from '../watch/localizer.js';
 import { STORE_LABELS } from '../watch/offer.js';
 import { KEY_OUTCOMES, OUTCOMES } from '../watch/outcomes.js';
 import { KEY_LIBRARY } from '../watch/library.js';
@@ -24,6 +25,7 @@ import {
 import { KEY_COVERS, PER_RUN as COVERS_PER_RUN, coverFor, needsCover } from '../watch/covers.js';
 
 const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
+installLinkLocalizer(api, document);
 
 const KEY_UI = 'veille:ui';
 

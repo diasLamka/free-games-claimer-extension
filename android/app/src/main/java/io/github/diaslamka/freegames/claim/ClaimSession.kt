@@ -30,6 +30,7 @@ import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.notify.Notifier
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.JSON
+import io.github.diaslamka.freegames.sources.Localize
 import io.github.diaslamka.freegames.sources.SteamSource
 import io.github.diaslamka.freegames.sources.arr
 import io.github.diaslamka.freegames.sources.bool
@@ -466,7 +467,9 @@ class ClaimSession(
     /* ---------------------------------------- Epic, GOG, Amazon : le moteur */
 
     private suspend fun claimWithEngine(o: Offer): Pair<String, String?> {
-        val target = o.url ?: o.resolveUrl ?: return Verdicts.BAD_URL to "aucune page a ouvrir"
+        val raw = o.url ?: o.resolveUrl ?: return Verdicts.BAD_URL to "aucune page a ouvrir"
+        // La page s'ouvre dans la langue du pays choisi (GOG en /fr/, Epic en ?lang=fr, Luna sur son domaine) : c'est elle que le moteur lit.
+        val target = Localize.url(raw, Graph.store.value.settings.country, forClaim = true) ?: raw
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             return Verdicts.FAILURE to "WebView trop ancienne : mettez a jour « Android System WebView »"
         }
@@ -598,7 +601,7 @@ class ClaimSession(
 
         /** Seul le web s'ouvre au-dehors : une adresse venue d'une source ne lance jamais une autre appli. */
         fun openExternally(context: Context, url: String) {
-            val web = Titles.webUrl(url) ?: return
+            val web = Titles.webUrl(url)?.let { Localize.url(it, Graph.store.value.settings.country) ?: it } ?: return
             runCatching {
                 context.startActivity(
                     android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(web))

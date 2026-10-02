@@ -103,15 +103,27 @@
     var text = actionText(el);
     if (!text) return false;
     if (looksPaid(text)) return false;
+    // Les interdits du navigateur adaptatif valent aussi pour les libelles livres : "Obtenir Luna+
+    // gratuitement" contient "obtenir", et ne prend aucun jeu (abonnement, essai, paiement).
+    if (navVetoReason(text)) return false;
     var ok = LUNA_CLAIM_PATTERNS.some(function (p) { return p.test(text); })
           || LUNA_CLAIM_LOOSE_PATTERNS.some(function (p) { return p.test(text); })
-          || matchesTaught(text, 'luna');
+          || matchesTaught(text, 'luna')
+          // Le SENS, quand Amazon change le mot (2.101.0) : meme vocabulaire a poids
+          // et memes interdits que le navigateur adaptatif. looksPaid est passe plus haut.
+          || navClaimsLabel(el, 'Amazon Luna');
     return ok;
   }
 
   var LUNA_COMPLETE_PATTERNS = [/^complete claim$/i, /^terminer( la r[e\u00e9]clamation)?$/i, /^finaliser/i, /^continuer$/i, /^continue$/i, /^confirm(er)?$/i];
   var LUNA_LINK_ACCOUNT_PATTERNS = [/associer (un|votre|mon|le) compte/i, /link (game |your |a )?account/i, /lier (un|votre|mon|le) compte/i];
   var LUNA_CLAIMED_TEXT = /\bclaimed\b|\bcollected\b|r[e\u00e9]cup[e\u00e9]r[e\u00e9]e?(?![a-z\u00e0-\u00ff])|successfully|\bsuccess\b|succ[e\u00e8]s(?![a-z\u00e0-\u00ff])|in your library|dans votre biblioth[e\u00e8]que|ajout[e\u00e9]e? [a\u00e0] votre|d[e\u00e9]j[a\u00e0] (r[e\u00e9]cup[e\u00e9]r[e\u00e9]|obtenu|r[e\u00e9]clam[e\u00e9])/i;
+
+  /* "Deja a vous" : les mots livres, puis le sens (navigateur adaptatif) pour les
+     langues et les tournures qu'ils ne connaissent pas. */
+  function lunaClaimedText(text) {
+    return LUNA_CLAIMED_TEXT.test(text) || navOwnedAnywhere(text);
+  }
 
   var LUNA_STORE_SUFFIXES = {
     epic: 'epic', gog: 'gog', aga: 'amazon', amazon: 'amazon', legacy: 'legacy',

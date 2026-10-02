@@ -41,7 +41,7 @@
         button: button,
         card: card,
         hasCta: hasCta,
-        collected: !hasCta && LUNA_CLAIMED_TEXT.test(text)
+        collected: !hasCta && lunaClaimedText(text)
       });
     });
     return offers;
@@ -62,7 +62,7 @@
       saveLunaBatch(batch);
       log(PLATFORM, 'info', gogCodes.length + ' code(s) GOG en attente : ouverture de ' + CONFIG.gogRedeemUrl + ' pour l\'echange automatique.');
       notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogCodesOpen', gogCodes.length));
-      openInTab(CONFIG.gogRedeemUrl, true);
+      openInTab(gogRedeemUrl(), true);
     }
     saveLunaQueue([]);
     // Fin de serie : compteurs remis a zero pour que le lot ne soit pas rejoue

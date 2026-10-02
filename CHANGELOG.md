@@ -4,6 +4,60 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.101.0 -- 2026-10-02
+
+**Epic et Amazon lisent la page aussi, les adresses suivent votre pays, et le moteur apprend de votre geste**
+
+Demande : « fais pareil pour Epic et Amazon », des adresses « en fonction de la
+langue, France = FR, pas anglais », et un moteur « totalement autonome qui
+s'adapte ».
+
+- **Les adresses suivent votre pays.** Un nouveau module (`watch/localize.js`,
+  copie ES5 dans le moteur, copie Kotlin dans l'appli, les trois gardees par une
+  table d'or) met chaque adresse de magasin dans la langue du reglage : Epic
+  (`/en-US/` devient `/fr/`, ou `?lang=fr` quand l'adresse n'a pas de segment),
+  GOG (`/en/` devient `/fr/`, le prefixe est pose s'il manque) et Luna (le
+  domaine du pays : `luna.amazon.fr`). Cela vaut pour la fenetre de
+  reclamation, le clic sur une notification et tous les liens des pages de
+  l'extension (reecrits au clic, y compris clic du milieu). Steam n'est pas
+  touche : sa reclamation lit des libelles mesures en anglais.
+- **Une session Luna ouverte ailleurs l'emporte.** Le moteur retient le domaine
+  Luna ou il voit une session ouverte (`FGC_luna_host`) : on ne vous deconnecte
+  pas pour traduire une page. Un domaine inconnu n'est jamais suivi.
+- **Pour reclamer, la langue reste lisible.** Les motifs de clic d'Epic ne
+  connaissent que le francais et l'anglais : une page a reclamer s'ouvre dans
+  l'une des deux (l'allemand devient l'anglais), pas en allemand ou le moteur ne
+  lirait aucun bouton (la lecon de la 2.20.0). Les liens affiches, eux, gardent
+  toute la langue du pays.
+- **Epic : le sens prend le relais.** Quand aucun libelle livre ne convient
+  (Epic ecrit « Recuperer », « Claim now »...), la fiche attend six secondes puis
+  laisse le vocabulaire a poids de GOG choisir -- sur le bouton d'achat principal
+  qu'Epic marque, ou a defaut un controle de la zone principale hors liste. Le
+  « deja a vous » se lit aussi en allemand, espagnol, italien, portugais, sur
+  CE bouton. L'argent reste garde exactement comme avant : le clic passe par
+  `robustClick`, et le module de l'iframe de paiement, dont les listes de
+  confirmation sont figees, ne lit pas ce vocabulaire.
+- **Luna : le sens autorise le bouton.** La liste des libelles autorises accepte
+  aussi un libelle dont le sens est « recuperer » ; le bouton est cherche dans la
+  boite d'achat si ni l'attribut ni un libelle connu ne le designent ; « deja a
+  vous » se lit en plusieurs langues. Et les interdits du navigateur valent
+  desormais AUSSI pour les libelles livres : « Obtenir Luna+ gratuitement »
+  contenait « obtenir » et passait -- il ne passe plus (abonnement, essai, caisse,
+  `Luna+` ajoutes aux interdits).
+- **Le moteur apprend de votre geste.** Quand un magasin change sa page, recuperez
+  le jeu a la main une fois : le moteur retient le libelle de ce sur quoi vous
+  avez clique si, et seulement si, la page dit ensuite que le jeu est a vous
+  alors qu'il ne l'etait pas avant (le clic d'avant, s'il a change de page, est
+  retenu comme « ce qui mene »). Seuls les clics de confiance comptent (jamais
+  ceux du moteur), jamais un libelle d'argent, de panier ou de connexion ni une
+  simple confirmation (« Continuer », « OK »), le jeu doit devenir a vous dans
+  les 45 secondes du dernier clic (une commande payee a la main, des minutes
+  plus tard, ne prouve rien), et la memoire ne fait qu'ajouter du sens : elle
+  ne passe devant aucun interdit.
+
+Non verifie : un compte connecte reel sur Epic (pages derriere Cloudflare depuis
+le bac a sable) et sur Luna ; le WebView Android.
+
 ## 2.100.0 -- 2026-10-02
 
 **Le navigateur adaptatif : la recuperation lit la page au lieu de chercher un libelle**

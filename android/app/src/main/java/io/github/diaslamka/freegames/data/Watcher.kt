@@ -13,6 +13,7 @@ import io.github.diaslamka.freegames.sources.EpicMobileSource
 import io.github.diaslamka.freegames.sources.EpicSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
 import io.github.diaslamka.freegames.sources.GogSource
+import io.github.diaslamka.freegames.sources.Localize
 import io.github.diaslamka.freegames.sources.SourceResult
 import io.github.diaslamka.freegames.sources.SteamSource
 import io.github.diaslamka.freegames.work.Scheduler
@@ -23,7 +24,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
-import java.util.Locale
 
 /**
  * Un passage de la veille : lire les sources, fusionner, annoncer ce qui est
@@ -62,7 +62,8 @@ object Watcher {
         // Le relais avant tout : un jeu deja pris par le PC n'est ni annonce ni retente.
         runCatching { RelayLink.sync(context, now) }
         val st = store.value.settings
-        EpicSource.pageLang = if (Locale.getDefault().language == "fr") "fr" else "en"
+        // La page Epic suit la langue du PAYS choisi (francais ou anglais : les deux seules que le moteur lit), pas celle du telephone.
+        EpicSource.pageLang = Localize.epicPageLang(Countries.of(st.country).lang, forClaim = true)
 
         val results = coroutineScope {
             val http = Graph.http

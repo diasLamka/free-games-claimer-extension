@@ -112,6 +112,7 @@
     /comprar|carrito|pagar|deseos|suscrib|compartir|ver tr[a\u00e1]iler/i,
     /acquista|carrello|paga\b|desideri|condividi/i,
     /sign in|log in|login|log out|connexion|se connecter|se d[e\u00e9]connecter|anmelden|abmelden|iniciar sesi|accedi|register|sign up|inscri|cr[e\u00e9]er un compte|newsletter|cookie|privacy|confidentialit|datenschutz|privacidad|terms|conditions|cgu|cgv|unsubscribe|d[e\u00e9]sinscri/i,
+    /\b(trial|join|upgrade|renew)\b|luna ?\+|check out|essai|essayer|rejoindre|mettre [a\u00e0] niveau|caisse|testen|beitreten|kasse|probar|prueba|unirse|caja|prova|iscriviti|cassa/i,
     /\b(cancel|close|dismiss|later|decline|no thanks)\b|annuler|fermer|plus tard|non merci|refuser|abbrechen|schlie[s\u00df]en|cerrar|cancelar|chiudi/i
   ];
   var NAV_PRICE = /[$\u20ac\u00a3\u00a5]\s?[1-9]|[1-9]\d*[.,]\d{0,2}\s?[$\u20ac\u00a3\u00a5]|[1-9]\d*\s?(eur|usd|gbp)\b/i;
@@ -271,17 +272,19 @@
     return { score: score, why: why, text: text };
   }
 
-  function navCandidates() {
+  /* Les controles visibles : de toute la page, ou d'une zone (root) quand un
+     module sait deja OU regarder -- la boite d'achat d'une fiche, par exemple. */
+  function navCandidates(root) {
     var nodes;
     try {
-      nodes = Array.prototype.slice.call(document.querySelectorAll('button, a[href], [role="button"], input[type="button"], input[type="submit"]'));
+      nodes = Array.prototype.slice.call((root || document).querySelectorAll('button, a[href], [role="button"], input[type="button"], input[type="submit"]'));
     } catch (e) { nodes = []; }
     return nodes.filter(navVisible);
   }
 
   /* Le meilleur controle pour un role, ou null sous le seuil. */
-  function navBest(kind, memory) {
-    var pool = navCandidates();
+  function navBest(kind, memory, root) {
+    var pool = navCandidates(root);
     var scored = [];
     for (var i = 0; i < pool.length; i++) {
       var s = navScore(pool[i], kind, memory);
@@ -292,6 +295,30 @@
     if (!top || top.score < NAV_THRESHOLD) return null;
     top.runnerUp = scored[1] ? scored[1].text + ' (' + scored[1].score + ')' : null;
     return top;
+  }
+
+  /* Ce controle PREND-il un jeu, d'apres le sens de son libelle ? (2.101.0)
+     Pour les modules qui ont deja trouve leur bouton par un attribut ou une
+     liste de libelles (Epic, Luna) : quand le magasin change le mot, le sens
+     decide -- sans jamais passer devant les interdits (argent, panier,
+     abonnement), qui sont evalues dans navScore avant tout vocabulaire. */
+  function navClaimsLabel(el, platform) {
+    var s = navScore(el, 'claim', navMemoryRead(platform));
+    return !!s && s.score >= NAV_THRESHOLD;
+  }
+
+  /* Ce libelle dit-il que le jeu est deja a vous ? Texte court seulement. */
+  function navOwnedText(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t || t.length > 60) return false;
+    return navOwnedAnywhere(t);
+  }
+
+  /* Idem sur un bloc de texte plus long (la boite d'achat d'une fiche). */
+  function navOwnedAnywhere(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    for (var i = 0; i < NAV_LEXICON.owned.length; i++) if (NAV_LEXICON.owned[i].test(t)) return true;
+    return false;
   }
 
   /* La structure seule (2.100.0). Quand aucun libelle ne dit "prends", mais que la
@@ -566,7 +593,8 @@
       // Un lien vers une autre page se SUIT dans cet onglet (jamais dans un nouveau) ;
       // un bouton se clique, et la page peut changer sans se recharger.
       if (url && url.sameSite && !url.samePage) {
-        try { location.assign(url.href); } catch (e) { navOrderClear(); return done('refused', { text: st.text }); }
+        // Dans la langue du reglage : GOG pointe souvent vers "/#giveaway", qui perd le prefixe de langue.
+        try { location.assign(localizeStoreUrl(url.href, true)); } catch (e) { navOrderClear(); return done('refused', { text: st.text }); }
         return waitMs(15000).then(function () { navOrderClear(); return done('navigating'); });
       }
       if (!robustClick(st.el)) { navOrderClear(); return done('refused', { text: navText(st.el) }); }

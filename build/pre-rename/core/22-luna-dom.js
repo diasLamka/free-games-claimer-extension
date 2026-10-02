@@ -64,7 +64,7 @@
     if (document.querySelector('.thank-you-title, [data-a-target*="success" i], [data-a-target*="ClaimStateClaimed" i]')) return true;
     var modal = lunaModalRoot();
     var scopes = [modal, scopeEl].filter(Boolean);
-    return scopes.some(function (s) { return LUNA_CLAIMED_TEXT.test(spacedText(s)); });
+    return scopes.some(function (s) { return lunaClaimedText(spacedText(s)); });
   }
 
   // Observe la page apres le clic sur "Obtenir le jeu" jusqu'a un resultat

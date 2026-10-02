@@ -234,7 +234,11 @@
 
     var principaux = epicPurchaseButtons();
     if (principaux.length) {
-      return epicOwnershipText(actionText(principaux[0])) ? principaux[0] : null;
+      // Le libelle livre d'abord ; le sens (navigateur adaptatif) ensuite, pour
+      // les langues et les tournures que les motifs ne connaissent pas -- sur
+      // CE bouton seulement, jamais sur une vignette d'ailleurs.
+      var ctaText = actionText(principaux[0]);
+      return (epicOwnershipText(ctaText) || navOwnedText(ctaText)) ? principaux[0] : null;
     }
 
     var candidates = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
@@ -259,7 +263,8 @@
     if (principaux.length) {
       var t = actionText(principaux[0]);
       var achetable = EPIC_MAIN_CTA_PATTERNS.some(function (p) { return p.test(t); })
-        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); });
+        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); })
+        || navClaimsLabel(principaux[0], 'Epic Games');
       return achetable ? 'unowned' : null;
     }
     var cta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: mustBeEnabled !== false })

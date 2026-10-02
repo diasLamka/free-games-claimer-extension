@@ -58,7 +58,7 @@
     if (location.hostname.indexOf('gog.com') !== -1) {
       GM_registerMenuCommand('Echanger les codes GOG en attente', function () {
         if (isGogRedeemPage(location.pathname)) dispatch();
-        else location.assign(CONFIG.gogRedeemUrl);
+        else location.assign(gogRedeemUrl());
       });
     }
     GM_registerMenuCommand('Voir l\'historique de cette plateforme', function () {

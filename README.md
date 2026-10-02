@@ -94,7 +94,7 @@ node build/build.mjs --freeze "motif"
 node build/verify-rename.mjs --rebase "motif"
 ```
 
-### Le navigateur adaptatif (GOG)
+### Le navigateur adaptatif (GOG, Epic, Luna)
 
 `src/core/17-adaptive-nav.js` ne cherche pas un libelle : il classe la page
 (connexion, defi, jeu deja a vous, bouton qui prend, lien qui mene, fenetre de
@@ -103,7 +103,21 @@ dans plusieurs langues, avec la structure de la page pour departager. Il suit
 les liens du meme site de page en page (l'ordre en cours est ecrit dans
 `sessionStorage` et repris par la page suivante), ne choisit JAMAIS ce qui parle
 d'argent, ne tient une reussite que sur une preuve, et retient par magasin ce
-qui a marche (`FGC_nav_<plateforme>`). Voir le CHANGELOG 2.100.0.
+qui a marche (`FGC_nav_<plateforme>`). Voir le CHANGELOG 2.100.0. Depuis la 2.101.0,
+Epic et Luna s'en servent aussi quand leur libelle change (le paiement Epic reste
+garde par ses listes figees), et le moteur apprend du libelle que VOUS avez clique
+quand la page confirme ensuite que le jeu est a vous (`17-nav-demo.js`).
+
+### Les adresses dans votre langue
+
+`watch/localize.js` met chaque adresse Epic, GOG et Luna dans la langue et le pays
+du reglage (France : `/fr/`, `?lang=fr`, `luna.amazon.fr`) a l'ouverture de la
+fenetre de reclamation, au clic d'une notification et au clic d'un lien des pages
+de l'extension. Le moteur (`src/core/09-locale-urls.js`) et l'appli
+(`sources/Localize.kt`) en tiennent une copie, gardee par
+`android/app/src/test/resources/localize-golden.tsv` (`UPDATE_GOLDEN=1 npm test`
+la regenere). Une session Luna vue sur un autre domaine l'emporte
+(`FGC_luna_host`) ; Steam n'est pas touche.
 
 ### Trois contraintes verifiees a chaque build
 
