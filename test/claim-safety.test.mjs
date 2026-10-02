@@ -11,7 +11,7 @@ import { claimCandidates, reclaimAbandoned, runCycle, KEY_STOP } from '../watch/
 import { claimAllNow } from '../watch/commands.js';
 import { fakeChrome } from './fake-chrome.mjs';
 import {
-  VERDICTS, FINAL_VERDICTS, HUMAN_VERDICTS, MAX_ATTEMPTS, nextAttemptAt, BUDGET_MS,
+  VERDICTS, FINAL_VERDICTS, HUMAN_VERDICTS, MANUAL_VERDICTS, MAX_ATTEMPTS, nextAttemptAt, BUDGET_MS,
   awaitVerdict, tabVanished, expectClosure, openHiddenTab, surfaceTab, sweepTabs,
 } from '../watch/claim.js';
 import { STATES, STORES } from '../watch/offer.js';
@@ -125,7 +125,7 @@ test('un verdict qui attend un humain echappe au recul et a l\'abandon', () => {
   /* Se reconnecter est une chose que l'utilisateur peut faire, et l'extension
      doit encore etre prete quand il l'a faite. L'abandonner apres cinq essais
      la rendrait muette au moment precis ou elle redevient utile. */
-  for (const v of HUMAN_VERDICTS.filter((x) => x !== VERDICTS.CHALLENGE)) {
+  for (const v of HUMAN_VERDICTS.filter((x) => !MANUAL_VERDICTS.includes(x))) {
     const cat = catalog(offer({
       verdict: v,
       attempts: MAX_ATTEMPTS + 3,
@@ -133,6 +133,19 @@ test('un verdict qui attend un humain echappe au recul et a l\'abandon', () => {
     }));
     assert.equal(candidats(cat).length, 1, `${v} doit rester candidat`);
   }
+});
+
+test('un bouton a montrer (2.102.0) laisse un onglet ouvert : il respecte son recul, jamais abandonne', () => {
+  /* Comme un defi : la page est remontee dans la fenetre de l'utilisateur, et la
+     rouvrir a chaque cycle empilerait les onglets. Mais l'utilisateur peut
+     toujours revenir montrer le bouton : l'offre n'est donc jamais abandonnee. */
+  assert.ok(MANUAL_VERDICTS.includes(VERDICTS.TEACH), 'l\'onglet doit rester ouvert');
+  assert.ok(HUMAN_VERDICTS.includes(VERDICTS.TEACH));
+  const enAttente = catalog(offer({ verdict: VERDICTS.TEACH, attempts: 1, nextAttemptAt: T + 10 * MIN }));
+  assert.equal(candidats(enAttente).length, 0, 'un onglet a ete rouvert avant le recul');
+  const echu = catalog(offer({ verdict: VERDICTS.TEACH, attempts: MAX_ATTEMPTS + 3, nextAttemptAt: T - MIN }));
+  assert.equal(candidats(echu).length, 1, 'une offre a montrer ne doit jamais etre abandonnee');
+  assert.ok(!FINAL_VERDICTS.includes(VERDICTS.TEACH), 'elle revient apres l\'apprentissage');
 });
 
 test('un defi de securite respecte son recul, mais n\'est jamais abandonne', () => {
@@ -383,6 +396,35 @@ test('un defi de securite fait remonter l\'onglet dans la fenetre de l\'utilisat
 test('surfaceTab n\'echoue jamais : sans fenetre utilisateur, il rend false', async () => {
   const chrome = { windows: { async getLastFocused() { throw new Error('aucune fenetre'); } } };
   assert.equal(await surfaceTab(chrome, 42), false);
+});
+
+test('surfaceTab ne deplace pas un onglet dans sa propre fenetre reduite (2.102.0)', async () => {
+  /* La fenetre reduite qu'on vient d'ouvrir peut etre la « derniere utilisee » :
+     y deplacer l'onglet, puis la refermer, perdait l'onglet a montrer. */
+  const moved = [];
+  const chrome = {
+    windows: {
+      async getLastFocused() { return { id: 9, state: 'minimized' }; },
+      async getAll() { return [{ id: 9, state: 'minimized' }, { id: 2, state: 'normal' }]; },
+    },
+    tabs: { async get() { return { id: 42, windowId: 9 }; }, async move(tabId, opts) { moved.push({ tabId, ...opts }); } },
+  };
+  assert.equal(await surfaceTab(chrome, 42), true);
+  assert.deepEqual(moved, [{ tabId: 42, windowId: 2, index: -1 }], 'dans la vraie fenetre de l\'utilisateur');
+});
+
+test('sans autre fenetre, c\'est la sienne qui remonte, et l\'appelant ne la ferme pas', async () => {
+  const updates = [];
+  const chrome = {
+    windows: {
+      async getLastFocused() { return { id: 9, state: 'minimized' }; },
+      async getAll() { return [{ id: 9, state: 'minimized' }]; },
+      async update(id, o) { updates.push({ id, ...o }); },
+    },
+    tabs: { async get() { return { id: 42, windowId: 9 }; }, async move() { throw new Error('ne doit pas bouger'); } },
+  };
+  assert.equal(await surfaceTab(chrome, 42), 'own');
+  assert.deepEqual(updates, [{ id: 9, state: 'normal', focused: true }]);
 });
 
 /* ------------------------------------------- fenetres qui ne trainent pas */

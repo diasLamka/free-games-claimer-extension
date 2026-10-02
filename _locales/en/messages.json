@@ -2650,5 +2650,20 @@
   },
   "sessionAutoHint": {
     "message": "Every 4 h, in the background. For Steam and Epic, the account page opens briefly in a minimized window: nothing is clicked."
+  },
+  "engNotifyLearned": {
+    "message": "“$1” learned on $2: the claim will be retried."
+  },
+  "notifyTeachTitle": {
+    "message": "Show me the button"
+  },
+  "notifyTeachBody": {
+    "message": "I didn't recognise the button: the page is open, click it once and I'll remember."
+  },
+  "teachBanner": {
+    "message": "Free Games Claimer: I didn't recognise the button that takes the game. Click it once and I'll remember."
+  },
+  "verdictTeach": {
+    "message": "button to show me"
   }
 }

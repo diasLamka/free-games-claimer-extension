@@ -4,6 +4,60 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.102.0 -- 2026-10-02
+
+**Le claimer qui se repare seul : le moteur reconnait un bouton par sa forme, et demande UN clic quand il ne le reconnait plus**
+
+Quand un magasin change sa page, tous les claimers cassent -- et aucun n'apprend
+de la panne. Ici, trois niveaux, du plus automatique au plus humain :
+
+- **La forme, pas seulement le mot.** Un controle qui a pris un jeu est retenu avec
+  sa structure : marque de test (`data-testid`), cible (`data-a-target`), classes
+  lisibles, forme de l'adresse. Quand le magasin change le MOT (« Add to library »
+  devient « Prends-le »), un controle de meme forme est reconnu apres une seule
+  reussite -- deux quand la forme ne tient qu'a des classes. Les classes generees
+  par une feuille de style (`css-1x2y3z`) ne comptent pas. Un controle qui dit
+  deja « dans la bibliotheque » ne prend plus rien, meme reconnu par sa forme.
+- **Aucun interdit ne tombe.** La forme n'ajoute que du sens, comme la memoire de
+  libelle : le libelle doit rester lisible, et argent, panier, abonnement, essai
+  gratuit, connexion -- et, nouveau, **installer, lancer, telecharger, mettre a
+  jour** (un controle d'Epic devenu « Installer » une fois le jeu pris) -- restent
+  interdits quel que soit le score.
+- **« Montrez-moi le bouton ».** Si le moteur, pilote par la veille, lit la page
+  (session bonne, aucun defi) sans reconnaitre de bouton, il ne se contente plus
+  d'echouer : verdict `needs_teaching`, l'onglet remonte dans votre fenetre avec
+  un bandeau, une notification vous demande UN clic. Votre clic, prouve par « le
+  jeu est a vous » (quatre minutes pour se montrer : une commande Epic prend du
+  temps), apprend le bouton ; le worker referme l'onglet et reessaie l'offre tout
+  de suite. Une fois toutes les six heures par magasin au plus ; jamais sur une
+  page de paiement, jamais pour un libelle d'argent ou une simple confirmation.
+  Le canari le compte comme un selecteur casse (le magasin a bouge), l'offre n'est
+  jamais abandonnee.
+- **L'appli** (1.21.0) fait pareil : devant l'ecran, la page reste ouverte dans le
+  panneau et un toucher apprend le bouton ; en fond, une notification le demande.
+
+Deux defauts trouves par l'essai de bout en bout dans un vrai Chromium, et corriges :
+
+- **La memoire du navigateur adaptatif ne se relisait jamais** d'une page a l'autre
+  (2.100.0 et 2.101.0) : `FGC_nav_<magasin>` s'ecrivait, mais n'etait pas dans la
+  liste des cles prechargees du shim -- la lecture synchrone rendait toujours le
+  defaut. Aucun test unitaire ne pouvait le voir (le harnais lit une `Map`) ; un
+  test compare maintenant, cle par cle, ce que le moteur lit a ce que le shim
+  precharge (`test/engine-keys.test.mjs`).
+- **L'onglet remonte etait referme aussitot.** Le navigateur referme de lui-meme la
+  fenetre reduite quand son dernier onglet part ; le repli du nettoyage fermait
+  alors l'onglet qu'on venait de montrer -- valable aussi pour un defi de
+  securite. `surfaceTab` ne choisit plus la fenetre reduite elle-meme, et le
+  nettoyage ne touche plus jamais a l'onglet.
+
+Mesure dans un vrai Chromium avec l'extension, contre une page GOG a la structure
+reelle mais au libelle inconnu : verdict `needs_teaching` en 15,7 s, onglet remonte
+avec son bandeau, un VRAI clic sur « Prends-le », « Appris de votre geste », onglet
+referme, offre retentee, `OK Recupere : Bounty Train (Prends-le)` -- score 15 :
+appris + forme.
+
+Non verifie : Epic et Luna reels (Cloudflare, pas de compte), le WebView Android.
+
 ## 2.101.0 -- 2026-10-02
 
 **Epic et Amazon lisent la page aussi, les adresses suivent votre pays, et le moteur apprend de votre geste**

@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 37
-sha256  : 3F19CD8A0C392D4E53ECA69E62F3DBB46AA00FB22BC67116388CF098BC97F6D8
-motif   : navigateur adaptatif Epic et Luna, adresses localisees, apprentissage du geste
+sha256  : CB3E91914709C7A7142BBDC9952137148E48EF3DD575D939DB52A77CD65B3EF1
+motif   : claimer qui se repare seul : forme des boutons, montrez-moi le bouton
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

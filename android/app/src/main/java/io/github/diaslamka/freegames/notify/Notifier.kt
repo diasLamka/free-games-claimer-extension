@@ -337,6 +337,22 @@ object Notifier {
         }
     }
 
+    /** Le moteur n'a pas reconnu le bouton (1.21.0) : toucher la notification ouvre l'appli, ou « Recuperer » le lui montre. */
+    fun teach(context: Context, o: Offer) {
+        val b = NotificationCompat.Builder(context, CH_ACCOUNT)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_teach_title, o.shownTitle))
+            .setContentText(context.getString(R.string.notif_teach_text, Stores.label(o.store)))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(context.getString(R.string.notif_teach_text, Stores.label(o.store))))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 3950 + (o.key.hashCode() and 0x3f), claimKey = o.key))
+        if (!allowed(context)) return
+        try {
+            NotificationManagerCompat.from(context).notify(3950 + (o.key.hashCode() and 0x3f), b.build())
+        } catch (_: SecurityException) {
+        }
+    }
+
     fun login(context: Context, store: String, who: String? = null) {
         val base = 3000 + store.hashCode() % 100 + (who?.let { 200 + (it.hashCode() and 0x3f) * 4 } ?: 0)
         val b = NotificationCompat.Builder(context, CH_ACCOUNT)

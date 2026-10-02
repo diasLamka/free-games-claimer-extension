@@ -87,17 +87,17 @@
       var text = (btn.textContent || '').trim();
       var direct = EPIC_LIBRARY_LOOSE_PATTERNS.some(function (p) { return p.test(text); })
         || (adaptive && /librar|biblioth|sammlung|colecci|raccolta/i.test(text));
-      var sig = navSignature(btn);
+      var desc = navDescribe(btn);
 
       log(PLATFORM, 'info', 'Clic sur "' + text + '"' + (adaptive ? ' (libelle inconnu, retenu pour son sens)' : '') + (direct ? ' (parcours direct bibliotheque).' : ' (parcours panier).'));
       robustClick(btn);
 
       return (direct ? claimEpicDirect(PLATFORM) : claimEpicViaCart(PLATFORM)).then(function () {
         // Ce libelle a pris le jeu : il pese plus la prochaine fois.
-        navLearn(PLATFORM, 'claim', sig, true);
+        navLearn(PLATFORM, 'claim', desc, true);
         return 'CLAIMED';
       }, function (err) {
-        if (adaptive) navLearn(PLATFORM, 'claim', sig, false);
+        if (adaptive) navLearn(PLATFORM, 'claim', desc, false);
         throw err;
       });
     });

@@ -2650,5 +2650,20 @@
   },
   "sessionAutoHint": {
     "message": "Alle 4 Std. im Hintergrund. Bei Steam und Epic öffnet sich kurz die Kontoseite in einem minimierten Fenster: Es wird nichts angeklickt."
+  },
+  "engNotifyLearned": {
+    "message": "„$1“ auf $2 gelernt: der Versuch wird wiederholt."
+  },
+  "notifyTeachTitle": {
+    "message": "Zeig mir den Button"
+  },
+  "notifyTeachBody": {
+    "message": "Ich habe den Button nicht erkannt: Die Seite ist geöffnet, klicke einmal darauf, ich merke es mir."
+  },
+  "teachBanner": {
+    "message": "Free Games Claimer: Ich habe den Button zum Abholen nicht erkannt. Klicke einmal darauf, ich merke es mir."
+  },
+  "verdictTeach": {
+    "message": "Button zeigen"
   }
 }

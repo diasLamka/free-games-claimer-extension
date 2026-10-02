@@ -14,6 +14,7 @@ import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.sources.SourceResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -52,6 +53,18 @@ class RulesTest {
         assertNull(login.nextAt)
         assertNull(Rules.afterVerdict(a1, Verdicts.CLAIMED, null, now).nextAt)
         assertEquals(now + 12 * 3_600_000L, Rules.afterVerdict(null, Verdicts.NEEDS_BASE, "1", now).nextAt)
+    }
+
+    @Test
+    fun aButtonToShowIsHumanWorkAndNeverGivenUp() {
+        // 1.21.0 : le moteur n'a pas reconnu le bouton. Comme un defi : l'utilisateur peut le montrer, donc ni abandon ni compteur.
+        assertTrue(Verdicts.TEACH in Verdicts.HUMAN)
+        assertFalse(Verdicts.TEACH in Verdicts.FINAL)
+        val seen = Rules.afterVerdict(null, Verdicts.TEACH, "x", now)
+        assertEquals(0, seen.count)
+        assertNull("devant l'ecran : la prochaine ouverture le reprend", seen.nextAt)
+        val night = Rules.afterVerdict(null, Verdicts.TEACH, "x", now, unattended = true)
+        assertEquals("sans personne : le fond ne revient pas avant quatre heures", now + 4 * 3_600_000L, night.nextAt)
     }
 
     @Test

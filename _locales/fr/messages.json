@@ -2650,5 +2650,20 @@
   },
   "sessionAutoHint": {
     "message": "Toutes les 4 h, en arrière-plan. Pour Steam et Epic, la page du compte s'ouvre un instant dans une fenêtre réduite : rien n'est cliqué."
+  },
+  "engNotifyLearned": {
+    "message": "« $1 » est appris sur $2 : la récupération va être retentée."
+  },
+  "notifyTeachTitle": {
+    "message": "Montrez-moi le bouton"
+  },
+  "notifyTeachBody": {
+    "message": "Je n'ai pas reconnu le bouton : la page est ouverte, cliquez une fois dessus, je m'en souviendrai."
+  },
+  "teachBanner": {
+    "message": "Free Games Claimer : je n'ai pas reconnu le bouton qui prend le jeu. Cliquez dessus une fois, je m'en souviendrai."
+  },
+  "verdictTeach": {
+    "message": "bouton à me montrer"
   }
 }

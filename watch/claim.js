@@ -46,6 +46,12 @@ export const VERDICTS = Object.freeze({
   FAILURE: 'failed',
   LOGIN: 'needs_login',
   CHALLENGE: 'challenge',
+  /**
+   * Le moteur a lu la page, session et defi en regle, et ne reconnait aucun
+   * bouton (2.102.0) : le magasin a change sa page. L'onglet reste ouvert, remonte
+   * dans la fenetre de l'utilisateur, et UN clic de sa part apprend le bon bouton.
+   */
+  TEACH: 'needs_teaching',
   OUT_OF_SCOPE: 'out_of_scope',
 
   /** L'offre est terminee. Confirme par une date, jamais par un DOM seul. */
@@ -93,7 +99,7 @@ export const FINAL_VERDICTS = Object.freeze([
 ]);
 
 /** Verdicts qui demandent un humain : on laisse l'onglet ouvert. */
-export const MANUAL_VERDICTS = Object.freeze([VERDICTS.CHALLENGE]);
+export const MANUAL_VERDICTS = Object.freeze([VERDICTS.CHALLENGE, VERDICTS.TEACH]);
 
 /**
  * Verdicts qui attendent une action de l'utilisateur, et qu'un recul
@@ -104,7 +110,7 @@ export const MANUAL_VERDICTS = Object.freeze([VERDICTS.CHALLENGE]);
  * faite.
  */
 export const HUMAN_VERDICTS = Object.freeze([
-  VERDICTS.LOGIN, VERDICTS.LINK_ACCOUNT, VERDICTS.CHALLENGE,
+  VERDICTS.LOGIN, VERDICTS.LINK_ACCOUNT, VERDICTS.CHALLENGE, VERDICTS.TEACH,
 ]);
 
 /**
@@ -388,13 +394,41 @@ export async function openHiddenTab(chrome, url) {
  * de l'utilisateur, elle s'inverse.
  */
 export async function surfaceTab(chrome, tabId) {
+  let own;
+  try { const t = await chrome.tabs.get(tabId); own = t ? t.windowId : undefined; } catch { own = undefined; }
+
+  /* La derniere fenetre utilisee -- mais PAS celle de l'onglet lui-meme ni une
+     fenetre reduite. Un navigateur qui vient d'ouvrir la fenetre reduite de la
+     reclamation peut la rendre « derniere utilisee » : deplacer l'onglet dans sa
+     propre fenetre, puis refermer cette fenetre, emportait l'onglet qu'on voulait
+     montrer (constate en 2.102.0, avec un onglet « montrez-moi le bouton »). */
   try {
     const last = await chrome.windows.getLastFocused({ windowTypes: ['normal'] });
-    if (last && last.id !== undefined) {
+    if (last && last.id !== undefined && last.id !== own && last.state !== 'minimized') {
       await chrome.tabs.move(tabId, { windowId: last.id, index: -1 });
       return true;
     }
+  } catch { /* on cherche une autre fenetre */ }
+
+  try {
+    if (typeof chrome.windows.getAll === 'function') {
+      const all = await chrome.windows.getAll({ windowTypes: ['normal'] });
+      const other = (all || []).find((w) => w && w.id !== undefined && w.id !== own && w.state !== 'minimized');
+      if (other) {
+        await chrome.tabs.move(tabId, { windowId: other.id, index: -1 });
+        return true;
+      }
+    }
   } catch { /* la fenetre reduite reste, la notification menera a l'offre */ }
+
+  /* Aucune fenetre de l'utilisateur : celle de l'onglet devient la sienne. Rendre
+     'own' dit a l'appelant de NE PAS la refermer. */
+  try {
+    if (own !== undefined && typeof chrome.windows.update === 'function') {
+      await chrome.windows.update(own, { state: 'normal', focused: true });
+      return 'own';
+    }
+  } catch { /* rien de plus a tenter */ }
   return false;
 }
 
@@ -511,11 +545,12 @@ export async function claimOffer(offer, {
         // marque pour que le balayage des orphelins ne le referme pas.
         // Et on le sort de sa fenetre reduite : un onglet qui a besoin d'un
         // humain ne doit pas vivre dans une fenetre que personne ne trouvera.
-        await surfaceTab(chrome, tabId);
+        const surfaced = await surfaceTab(chrome, tabId);
         await markPiloted(chrome, tabId, { manual: true, openedAt: now });
         // Notre onglet est parti ailleurs : la fenetre reduite ne contient
-        // plus que d'eventuels onglets ouverts par la page. On la ferme.
-        await closeHiddenWindow(chrome, windowId, tabId);
+        // plus que d'eventuels onglets ouverts par la page. On la ferme --
+        // sauf si c'est elle, devenue celle de l'utilisateur, qui le porte.
+        if (surfaced !== 'own') await closeEmptiedWindow(chrome, windowId, tabId);
       } else {
         // Annoncer NOTRE fermeture avant de la faire : sans cela, l'ecouteur
         // onRemoved la prendrait pour une disparition subie.
@@ -832,6 +867,27 @@ export async function claimSteamOffer(offer, {
       await forgetPiloted(chrome, tabId);
     }
   }
+}
+
+/**
+ * Referme la fenetre reduite APRES que l'onglet l'a quittee pour la fenetre de
+ * l'utilisateur -- sans jamais toucher a l'onglet.
+ *
+ * Un navigateur referme de lui-meme une fenetre dont le dernier onglet part :
+ * `windows.remove` echoue alors, et le repli de `closeHiddenWindow` (fermer
+ * l'onglet) emportait l'onglet qu'on venait de montrer a l'utilisateur. C'etait
+ * vrai pour un defi de securite, et pour « montrez-moi le bouton » (2.102.0).
+ * Ici : la fenetre est relue, fermee seulement s'il n'y reste pas NOTRE onglet,
+ * et une fenetre deja partie n'est pas une erreur.
+ */
+async function closeEmptiedWindow(chrome, windowId, tabId) {
+  if (windowId === null || windowId === undefined) return;
+  try {
+    const w = await chrome.windows.get(windowId, { populate: true });
+    if (!w) return;
+    if ((w.tabs || []).some((t) => t && t.id === tabId)) return;
+    await chrome.windows.remove(windowId);
+  } catch { /* deja fermee : un navigateur referme seul une fenetre vide */ }
 }
 
 /**

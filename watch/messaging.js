@@ -127,6 +127,10 @@ export const CONTENT_MESSAGES = Object.freeze([
   /* L'anti-doublon (2.87.0) : la fiche d'un jeu demande si on le possede
      deja ailleurs. Elle LIT, comme le lanceur : aucune ecriture. */
   'fgc-owned-guard',
+  /* Le moteur a appris un bouton d'un clic de l'utilisateur (2.102.0). Le worker
+     reessaie les offres du magasin et referme l'onglet : il lit l'onglet dans
+     `sender.tab`, jamais dans le message. */
+  'fgc-appris',
 ]);
 
 /**

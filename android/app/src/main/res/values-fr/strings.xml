@@ -304,6 +304,10 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="share_no_end">sans date de fin</string>
     <string name="share_upcoming">Bientôt sur Epic :</string>
     <string name="share_from">à partir du %1$s</string>
+    <string name="teach_help">%1$s : je n\'ai pas reconnu le bouton. Touche-le une fois dans la page ci-dessous, je m\'en souviendrai.</string>
+    <string name="verdict_teach">Montre-moi le bouton</string>
+    <string name="notif_teach_title">%1$s : montre-moi le bouton</string>
+    <string name="notif_teach_text">Je n\'ai pas reconnu le bouton de %1$s. Ouvre l\'appli et touche Récupérer : tu pourras me le montrer d\'un seul toucher.</string>
     <string name="channel_update">Mises à jour de l\'appli</string>
     <string name="notif_update_title">Mise à jour %1$s disponible</string>
     <string name="notif_update_text">Ouvre Réglages › À propos pour l\'installer.</string>

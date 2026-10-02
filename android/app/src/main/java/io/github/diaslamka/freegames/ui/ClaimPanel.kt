@@ -117,7 +117,7 @@ fun ClaimPanelContent(
         Box(Modifier.fillMaxWidth().height(3.dp).background(Color.Black))
         if (ui.needsUser) {
             Text(
-                stringResource(R.string.challenge_help, Stores.label(ui.store)).uppercase(),
+                (if (ui.teach) stringResource(R.string.teach_help, Stores.label(ui.store)) else stringResource(R.string.challenge_help, Stores.label(ui.store))).uppercase(),
                 style = MaterialTheme.typography.labelMedium, color = Color.Black,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             )

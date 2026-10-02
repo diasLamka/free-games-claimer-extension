@@ -109,7 +109,7 @@
          libelles payants et l'anti-rafale. Tant que ce parcours l'evitait, le
          bouton d'arret d'urgence ne pouvait pas interrompre une serie Luna. */
       var linkBefore = findLunaLinkAccountElement();
-      var ctaSignature = navSignature(cta);
+      var ctaSignature = navDescribe(cta);
       if (!robustClick(cta)) {
         recordLunaFailure(offerId, 'clic refuse par les garde-fous', title);
         if (partOfSeries) bumpLunaBatch('failed');

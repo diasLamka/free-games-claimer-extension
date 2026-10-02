@@ -23,6 +23,8 @@ object Verdicts {
     const val FAILURE = "failed"
     const val LOGIN = "needs_login"
     const val CHALLENGE = "challenge"
+    /** Le moteur a lu la page sans reconnaitre de bouton (2.102.0) : un clic de l'utilisateur le lui apprend. */
+    const val TEACH = "needs_teaching"
     const val OUT_OF_SCOPE = "out_of_scope"
     const val EXPIRED = "expired"
     const val NEEDS_BASE = "needs_base_game"
@@ -30,7 +32,7 @@ object Verdicts {
 
     val ACQUIRED = setOf(CLAIMED, REDEEMED, ALREADY_REDEEMED)
     val FINAL = setOf(CLAIMED, REDEEMED, ALREADY_REDEEMED, SKIPPED, OUT_OF_SCOPE, BAD_URL, EXPIRED)
-    val HUMAN = setOf(LOGIN, LINK_ACCOUNT, CHALLENGE)
+    val HUMAN = setOf(LOGIN, LINK_ACCOUNT, CHALLENGE, TEACH)
 
     /** Quinze minutes, une heure, quatre heures, douze heures ; cinq essais au plus. */
     val BACKOFF_MS = listOf(15 * 60_000L, 60 * 60_000L, 4 * 3_600_000L, 12 * 3_600_000L)
@@ -128,7 +130,7 @@ object Rules {
             verdict in Verdicts.FINAL -> null
             // Un defi rencontre sans personne devant : le fond ne revient pas le
             // provoquer a chaque passage. La notification, elle, passe outre.
-            verdict == Verdicts.CHALLENGE && unattended -> now + Verdicts.BACKOFF_MS[2]
+            (verdict == Verdicts.CHALLENGE || verdict == Verdicts.TEACH) && unattended -> now + Verdicts.BACKOFF_MS[2]
             verdict in Verdicts.HUMAN -> null
             verdict == Verdicts.NEEDS_BASE -> now + Verdicts.WAITING_RECHECK_MS
             else -> Verdicts.nextAttemptAt(count, now)

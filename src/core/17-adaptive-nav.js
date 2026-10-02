@@ -42,6 +42,7 @@
   var NAV_ORDER_KEY = 'FGC_nav_order';
   var NAV_MEMORY_PREFIX = 'FGC_nav_';
   var NAV_MEMORY_MAX = 24;
+  var NAV_FP_MAX = 8;
   var NAV_THRESHOLD = 6;
   var NAV_MAX_HOPS = 3;
   var NAV_MAX_STEPS = 8;
@@ -112,6 +113,7 @@
     /comprar|carrito|pagar|deseos|suscrib|compartir|ver tr[a\u00e1]iler/i,
     /acquista|carrello|paga\b|desideri|condividi/i,
     /sign in|log in|login|log out|connexion|se connecter|se d[e\u00e9]connecter|anmelden|abmelden|iniciar sesi|accedi|register|sign up|inscri|cr[e\u00e9]er un compte|newsletter|cookie|privacy|confidentialit|datenschutz|privacidad|terms|conditions|cgu|cgv|unsubscribe|d[e\u00e9]sinscri/i,
+    /\b(install|launch|download|update)\b|installer|lancer|t[e\u00e9]l[e\u00e9]charger|mettre [a\u00e0] jour|herunterladen|installieren|descargar|instalar|scarica|installa/i,
     /\b(trial|join|upgrade|renew)\b|luna ?\+|check out|essai|essayer|rejoindre|mettre [a\u00e0] niveau|caisse|testen|beitreten|kasse|probar|prueba|unirse|caja|prova|iscriviti|cassa/i,
     /\b(cancel|close|dismiss|later|decline|no thanks)\b|annuler|fermer|plus tard|non merci|refuser|abbrechen|schlie[s\u00df]en|cerrar|cancelar|chiudi/i
   ];
@@ -203,9 +205,104 @@
     try { GM_setValue(NAV_MEMORY_PREFIX + platform, JSON.stringify(memory)); } catch (e) {}
   }
 
-  /* Retient qu'un controle a (ou n'a pas) fait ce qu'on en attendait. */
-  function navLearn(platform, kind, elOrSignature, ok) {
-    var sig = typeof elOrSignature === 'string' ? elOrSignature : navSignature(elOrSignature);
+  /* L'EMPREINTE STRUCTURELLE (2.102.0).
+   *
+   * Un libelle change -- "Add to library" devient "Prends-le" --, la structure
+   * du bouton, elle, ne bouge pas toujours : meme marque de test, meme cible,
+   * memes classes lisibles. Quand un controle a pris un jeu, on retient donc
+   * aussi COMMENT il est fait, et un controle qui lui ressemble est reconnu
+   * meme sous un mot que personne ne connait.
+   *
+   * Ce que l'empreinte ne remplace jamais : le libelle doit rester LISIBLE
+   * (navScore l'exige) pour que les interdits s'appliquent -- argent, panier,
+   * abonnement, installation. Elle ne fait qu'ajouter du sens, comme la memoire
+   * de libelle ; elle ne passe devant aucun interdit. */
+  function navStableClass(token) {
+    // Une classe lisible, pas le hash d'une feuille de style (css-1x2y3z, sc-AbCd, _a1b2c3).
+    if (!token || token.length > 32) return false;
+    if (/^(css|sc|jsx|svelte|ng|ember|emotion|_)/i.test(token)) return false;
+    if (/\d{3,}/.test(token) || /^[a-z]{1,2}\d/i.test(token)) return false;
+    return /^[a-z][a-z0-9]*(?:[-_]{1,2}[a-z0-9]+)*$/i.test(token);
+  }
+
+  /* La forme d'une adresse, sans ce qui varie d'un jeu a l'autre. */
+  function navHrefShape(path) {
+    var p = String(path || '');
+    var hash = p.indexOf('#') !== -1 ? p.slice(p.indexOf('#')) : '';
+    var base = p.split('#')[0].split('?')[0];
+    var parts = base.split('/');
+    if (parts.length >= 4) parts[parts.length - 1] = '*';
+    return (parts.join('/') + hash).slice(0, 80);
+  }
+
+  function navFingerprint(el) {
+    if (!el || !el.getAttribute) return null;
+    var fp = { t: String(el.tagName || '').toLowerCase() };
+    try {
+      var role = el.getAttribute('role');
+      if (role) fp.r = String(role).toLowerCase().slice(0, 20);
+      var tid = el.getAttribute('data-testid');
+      if (tid) fp.i = String(tid).slice(0, 60);
+      var at = el.getAttribute('data-a-target');
+      if (at) fp.a = String(at).slice(0, 60);
+      var cls = String((el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className) || '')
+        .split(/\s+/).filter(navStableClass).slice(0, 6);
+      if (cls.length) fp.c = cls;
+      var url = navUrl(el);
+      if (url && url.sameSite) fp.h = navHrefShape(url.path);
+    } catch (e) { return null; }
+    // Rien de distinctif (un <button> nu) : pas d'empreinte, on ne retient pas une forme que tous partagent.
+    return (fp.i || fp.a || (fp.c && fp.c.length >= 2) || fp.h) ? fp : null;
+  }
+
+  function navFpSame(a, b) {
+    if (!a || !b || a.t !== b.t) return false;
+    if (a.i && b.i) return a.i === b.i;
+    if (a.a && b.a) return a.a === b.a;
+    if (a.c && b.c) {
+      var shared = 0;
+      for (var i = 0; i < a.c.length; i++) if (b.c.indexOf(a.c[i]) !== -1) shared++;
+      if (shared >= Math.max(2, Math.ceil(Math.min(a.c.length, b.c.length) * 0.66))) return true;
+    }
+    return !!(a.h && b.h && a.h === b.h && (a.r || '') === (b.r || ''));
+  }
+
+  /* Ce controle ressemble-t-il a un controle qui a deja rempli ce role ? */
+  function navFpMatch(el, kind, memory) {
+    var list = memory && memory.fp && memory.fp[kind];
+    if (!list || !list.length) return false;
+    var cur = navFingerprint(el);
+    if (!cur) return false;
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (!e || !(e.ok > e.ko)) continue;
+      // Une empreinte faite de classes ou d'une adresse seules est moins nette qu'une marque de test : deux fois.
+      var net = !!((e.fp && e.fp.i) || (e.fp && e.fp.a));
+      if (!net && e.ok < 2) continue;
+      if (navFpSame(cur, e.fp)) return true;
+    }
+    return false;
+  }
+
+  /* Un controle AVANT son clic : le libelle et l'empreinte (apres, la page a pu changer). */
+  function navDescribe(el) {
+    return { sig: navSignature(el), fp: navFingerprint(el) };
+  }
+
+  /* Retient qu'un controle a (ou n'a pas) fait ce qu'on en attendait. "subject" :
+     un libelle normalise, un element, ou un navDescribe(). */
+  function navLearn(platform, kind, subject, ok) {
+    var sig;
+    var fp = null;
+    if (typeof subject === 'string') {
+      sig = subject;
+    } else if (subject && typeof subject.sig === 'string') {
+      sig = subject.sig;
+      fp = subject.fp || null;
+    } else {
+      sig = navSignature(subject);
+      fp = navFingerprint(subject);
+    }
     if (!sig) return;
     var memory = navMemoryRead(platform);
     var slot = memory[kind] || (memory[kind] = {});
@@ -216,6 +313,19 @@
     if (keys.length > NAV_MEMORY_MAX) {
       keys.sort(function (a, b) { return slot[a].ts - slot[b].ts; });
       for (var i = 0; i < keys.length - NAV_MEMORY_MAX; i++) delete slot[keys[i]];
+    }
+    if (fp) {
+      var all = memory.fp || (memory.fp = {});
+      var list = all[kind] || (all[kind] = []);
+      var found = null;
+      for (var j = 0; j < list.length; j++) if (navFpSame(fp, list[j].fp) && navFpSame(list[j].fp, fp)) { found = list[j]; break; }
+      if (!found) { found = { fp: fp, ok: 0, ko: 0, ts: 0 }; list.push(found); }
+      if (ok) found.ok++; else found.ko++;
+      found.ts = Date.now();
+      if (list.length > NAV_FP_MAX) {
+        list.sort(function (a, b) { return b.ts - a.ts; });
+        list.length = NAV_FP_MAX;
+      }
     }
     navMemoryWrite(platform, memory);
   }
@@ -229,6 +339,8 @@
     if (!text || text.length > 90) return null;
     var veto = navVetoReason(text);
     if (veto) return { score: -99, veto: veto, text: text, why: ['interdit : ' + veto] };
+    // Un controle qui dit deja "dans la bibliotheque" ne PREND plus rien : meme reconnu par sa forme, il n'est pas a cliquer.
+    if (kind === 'claim' && navOwnedText(text)) return null;
 
     var lexicon = NAV_LEXICON[kind];
     var best = 0;
@@ -244,6 +356,10 @@
     // Un libelle dont le sens n'est dans aucun vocabulaire mais qui a DEJA pris le jeu
     // (ou mene a lui) est compris : la memoire etend le vocabulaire.
     if (!best && learned) { best = 8; score = 8; why.push('appris'); }
+    // Meme chose par la STRUCTURE : un controle fait comme un controle qui a pris le jeu,
+    // sous un mot nouveau (l'empreinte, voir navFingerprint).
+    var shaped = navFpMatch(el, kind, memory);
+    if (!best && shaped) { best = 8; score = 8; why.push('empreinte'); }
 
     var url = navUrl(el);
     if (kind === 'goto') {
@@ -267,6 +383,7 @@
     }
     if (el.disabled || (el.getAttribute && el.getAttribute('aria-disabled') === 'true')) { score -= 10; why.push('inactif'); }
 
+    if (shaped && why.indexOf('empreinte') === -1) { score += 3; why.push('empreinte +3'); }
     if (learned && why.indexOf('appris') === -1) { score += 4; why.push('appris +4'); }
     else if (known && known.ko > known.ok) { score -= 3; why.push('echec -3'); }
     return { score: score, why: why, text: text };
@@ -481,6 +598,7 @@
 
     // La page ou l'on est arrive dit si le lien suivi a valu la peine.
     var arrivedFrom = order && order.lastGoto ? order.lastGoto : null;
+    var arrivedFp = order && order.lastGotoFp ? order.lastGotoFp : null;
     // Le titre du jeu, lu sur la page d'ou l'on vient : celle d'arrivee n'a souvent que le nom du site.
     var carriedTitle = order && order.title ? order.title : null;
 
@@ -501,8 +619,9 @@
       if (steps > NAV_MAX_STEPS) return done('stuck');
       return navWaitState(memory, options.stateTimeoutMs || 12000).then(function (st) {
         if (arrivedFrom && (st.state === 'claim' || st.state === 'owned')) {
-          navLearn(platform, 'goto', { textContent: arrivedFrom, getAttribute: function () { return null; } }, true);
+          navLearn(platform, 'goto', { sig: navSignature({ textContent: arrivedFrom, getAttribute: function () { return null; } }), fp: arrivedFp }, true);
           arrivedFrom = null;
+          arrivedFp = null;
         }
         if (st.state === 'login') return done('login');
         if (st.state === 'captcha') return done('captcha', { detail: st.detail });
@@ -530,10 +649,11 @@
     }
 
     function actClaim(st) {
-      var sig = navSignature(st.el);
+      var desc = navDescribe(st.el);
+      var sig = desc.sig;
       if (seen['claim:' + sig]) {
         // Le meme controle apres un clic : la page n'a pas change comme il faut.
-        navLearn(platform, 'claim', sig, false);
+        navLearn(platform, 'claim', desc, false);
         return done('stuck', { text: navText(st.el) });
       }
       seen['claim:' + sig] = true;
@@ -551,7 +671,7 @@
         if (after.state === 'captcha') return done('captcha', { detail: after.detail });
         if (after.state === 'login') return done('login');
         if (after.state === 'owned') {
-          navLearn(platform, 'claim', sig, true);
+          navLearn(platform, 'claim', desc, true);
           return done('claimed', { title: title });
         }
         if (after.state === 'confirm' || after.state === 'claim') {
@@ -563,10 +683,10 @@
         // pas : une fenetre, un defi peuvent l'avoir recouvert. Dans le doute, ce n'est
         // pas un succes -- le prochain passage verra le jeu "a vous" et le dira.
         if (navOwnedLabel(st.el) || (container && document.body.contains(container) && navOwnedLabel(container))) {
-          navLearn(platform, 'claim', sig, true);
+          navLearn(platform, 'claim', desc, true);
           return done('claimed', { title: title });
         }
-        navLearn(platform, 'claim', sig, false);
+        navLearn(platform, 'claim', desc, false);
         return step();
       });
     }
@@ -580,14 +700,15 @@
     function actGoto(st) {
       if (hops >= NAV_MAX_HOPS) return done('stuck', { text: st.text });
       var url = navUrl(st.el);
-      var sig = navSignature(st.el);
+      var gotoDesc = navDescribe(st.el);
+      var sig = gotoDesc.sig;
       if (seen['goto:' + sig]) return done('stuck', { text: st.text });
       seen['goto:' + sig] = true;
       log(platform, 'info', 'Navigation : lien vers l\'offre ' + describe(st) + (url ? ' -> ' + url.path : '') + '.');
       trail.push(navText(st.el));
       var fromPath = location.pathname + location.search;
       navOrderSave({
-        platform: platform, hops: hops + 1, trail: trail.slice(), lastGoto: navText(st.el), title: carriedTitle || navTitle(),
+        platform: platform, hops: hops + 1, trail: trail.slice(), lastGoto: navText(st.el), lastGotoFp: gotoDesc.fp, title: carriedTitle || navTitle(),
         force: !!options.force, deadline: Date.now() + (options.budgetMs || 5 * 60 * 1000)
       });
       // Un lien vers une autre page se SUIT dans cet onglet (jamais dans un nouveau) ;

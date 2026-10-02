@@ -111,6 +111,10 @@ export function classify(verdict, details = null) {
   const v = String(verdict || '').toLowerCase();
   if (SUCCESS_VERDICTS.includes(v)) return KINDS.SUCCESS;
   if (HUMAN_VERDICTS.includes(v)) return KINDS.HUMAN;
+  /* Le moteur a lu la page et n'y reconnait aucun bouton (2.102.0) : c'est
+     exactement ce que le canari cherche -- le magasin a change -- meme si la
+     reparation passe, cette fois, par l'utilisateur. */
+  if (v === 'needs_teaching') return KINDS.SELECTOR;
 
   /* `undetermined` n'accuse personne : il veut dire que le service worker est
      mort en pleine reclamation. C'est notre panne, pas celle du magasin. */

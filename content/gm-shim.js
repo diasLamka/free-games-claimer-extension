@@ -41,7 +41,14 @@
     // platformNameForHost() : ces trois noms couvrent tous les hotes injectes.
     'FGC_history_Epic Games',
     'FGC_history_GOG',
-    'FGC_history_Amazon Luna'
+    'FGC_history_Amazon Luna',
+    // La memoire du navigateur adaptatif, par magasin (libelles et formes qui ont
+    // pris un jeu). Lue de facon SYNCHRONE au debut de chaque passage : sans le
+    // prechargement, elle s'ecrivait mais ne se relisait JAMAIS d'une page a
+    // l'autre -- ce que l'essai de bout en bout de 2.102.0 a revele.
+    'FGC_nav_GOG',
+    'FGC_nav_Epic Games',
+    'FGC_nav_Amazon Luna'
   ];
 
   // Le script est injecte dans toutes les iframes (all_frames), mais le moteur

@@ -106,7 +106,34 @@
   // finit exactement ainsi, et c'est le magasin qui a bouge.
   var PILOT_EMPTY_REASON = 'le module a termine sans rien noter';
 
-  function runClaimOrder(budgetMs, force) {
+  /* UN ECHEC QUE L'UTILISATEUR PEUT REPARER (2.102.0).
+   *
+   * Le moteur a lu la page, la session est bonne, aucun defi -- et pourtant il ne
+   * reconnait aucun bouton (ou rien que le moteur sache cliquer). C'est le cas
+   * ou le magasin a change sa page : plutot qu'un echec silencieux, on le dit
+   * (needs_teaching), l'onglet remonte, et UN clic de l'utilisateur apprend au
+   * moteur le bon bouton (17-nav-demo.js). Une fois toutes les six heures par
+   * magasin au plus. */
+  var TEACHABLE_REASON = /introuvable|inattendu|non reconnu|aucune etape|bouton/i;
+
+  /* "mode" : false = ne jamais demander (personne devant l'ecran : la recuperation
+     de fond de l'appli) ; 'now' = demander sans attendre les six heures
+     (l'utilisateur est la) ; autre chose = la regle habituelle. */
+  function teachRequest(platform, reasonText, mode) {
+    if (mode === false) return null;
+    if (!demoPlatform() || isEpicNotFoundPage(location.pathname)) return null;
+    var labels = visibleActionLabels(8);
+    if (!labels.length) return null;
+    if (!teachBegin(platform, mode === 'now')) return null;
+    return {
+      type: 'fgc-verdict',
+      verdict: 'needs_teaching',
+      reasonText: (reasonText || PILOT_EMPTY_REASON) + ' | boutons : ' + labels.join(' / ').slice(0, 160),
+      plateforme: platform
+    };
+  }
+
+  function runClaimOrder(budgetMs, force, teachMode) {
     var platform = platformNameForHost(location.hostname);
     if (force) navForceRecheck = true;
     /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
@@ -146,7 +173,10 @@
       if (!found && settled && !detectSecurityChallenge()) found = standingEntry(platform, location.href);
       if (found) {
         clearInterval(timer);
-        sendToPilot({
+        // Un echec de bouton que l'utilisateur peut reparer d'un clic : on le demande.
+        var ask = found.statusLine === 'failed' && TEACHABLE_REASON.test(String(found.reasonText || ''))
+          ? teachRequest(platform, found.reasonText, teachMode) : null;
+        sendToPilot(ask || {
           type: 'fgc-verdict',
           verdict: found.statusLine,
           key: found.key,
@@ -166,7 +196,8 @@
       // pour que le recul et le canari le lisent comme avant.
       if (settled) {
         clearInterval(timer);
-        sendToPilot({ type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform });
+        sendToPilot(teachRequest(platform, PILOT_EMPTY_REASON, teachMode)
+          || { type: 'fgc-verdict', verdict: 'failed', reasonText: PILOT_EMPTY_REASON, plateforme: platform });
         return;
       }
       if (Date.now() - debut > budgetMs) {
@@ -320,7 +351,7 @@
         }
         if (msg.type !== 'fgc-reclame') return;
         sendResponse({ recu: true });
-        runClaimOrder(msg.budgetMs || 5 * 60 * 1000, msg.force === true);
+        runClaimOrder(msg.budgetMs || 5 * 60 * 1000, msg.force === true, msg.teach);
         return true;
       });
     } catch (e) {}
@@ -333,6 +364,8 @@
     /* Une reclamation qui a change de page (2.100.0) : l'ordre a ete ecrit avant
        de partir, et personne ne le renverra a CETTE page -- l'onglet est le meme,
        le verdict attendu aussi. On le reprend ici, avec ce qui reste du budget. */
+    // Une demande "montrez-moi le bouton" en cours : la page suivante continue d'ecouter vos clics.
+    if (teachState()) startDemoLearning();
     var resumedOrder = navOrderPending();
     if (resumedOrder && resumedOrder.platform === platformNameForHost(location.hostname)) {
       log('CORE', 'info', 'Reprise de la reclamation apres changement de page (etape ' + resumedOrder.hops + ').');

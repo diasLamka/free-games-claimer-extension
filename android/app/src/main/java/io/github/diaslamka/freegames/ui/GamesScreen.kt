@@ -311,6 +311,7 @@ fun verdictText(verdict: String, details: String?): String {
     val base = when (verdict) {
         Verdicts.LOGIN -> stringResource(R.string.verdict_login)
         Verdicts.CHALLENGE -> stringResource(R.string.verdict_challenge)
+        Verdicts.TEACH -> stringResource(R.string.verdict_teach)
         Verdicts.NEEDS_BASE -> stringResource(R.string.verdict_base)
         Verdicts.LINK_ACCOUNT -> stringResource(R.string.verdict_link)
         Verdicts.OUT_OF_SCOPE -> stringResource(R.string.verdict_out_of_scope)

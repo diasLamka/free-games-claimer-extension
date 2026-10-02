@@ -32,10 +32,11 @@
 import { runCycle } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
 import {
-  readState, readKeys, readSettings, write, KEYS, DEFAULT_SETTINGS, normaliseSettings,
+  readState, readKeys, readSettings, write, writeCycle, KEYS, DEFAULT_SETTINGS, normaliseSettings,
   rememberNotification, readNotification, readNotificationLink,
 } from './watch/storage.js';
-import { reportVerdict, isPiloted, sweepTabs, tabVanished } from './watch/claim.js';
+import { reportVerdict, isPiloted, sweepTabs, tabVanished, expectClosure, forgetPiloted } from './watch/claim.js';
+import { TEACH_VERDICT, storeOfPlatform, resetForTeaching, showTeachBanner, isManualPilotTab } from './watch/teach.js';
 import {
   claimAllNow, claimOneNow, isStopped, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
@@ -1552,7 +1553,36 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 
   if (msg.type === 'fgc-pret' || msg.type === 'fgc-verdict' || msg.type === 'fgc-inspection') {
     const tabId = sender && sender.tab && sender.tab.id;
-    if (tabId !== undefined) reportVerdict(tabId, msg.type, msg);
+    if (tabId !== undefined) {
+      reportVerdict(tabId, msg.type, msg);
+      /* Le moteur n'a pas reconnu le bouton (2.102.0) : le bandeau demande UN
+         clic a l'utilisateur, dans sa langue. L'onglet est remonte par
+         l'orchestrateur ; le bandeau est deja la quand il arrive. */
+      if (msg.type === 'fgc-verdict' && msg.verdict === TEACH_VERDICT) {
+        langue.then(() => showTeachBanner(api, tabId, t('teachBanner'))).catch(() => {});
+      }
+    }
+    return;
+  }
+
+  /* Le moteur a appris un bouton d'un clic de l'utilisateur (2.102.0) : les offres
+     du magasin qui l'attendaient repartent, l'onglet laisse ouvert se referme. */
+  if (msg.type === 'fgc-appris') {
+    const tabId = sender && sender.tab && sender.tab.id;
+    const store = storeOfPlatform(msg.plateforme);
+    if (!store) return;
+    (async () => {
+      const raw = await readKeys(api, [KEYS.OFFERS]);
+      const { catalog, count } = resetForTeaching(raw[KEYS.OFFERS] || {}, store, Date.now());
+      if (count) await writeCycle(api, { catalog });
+      record('info', `appris sur ${msg.plateforme} : ${count} offre(s) a retenter`);
+      if (tabId !== undefined && await isManualPilotTab(api, tabId)) {
+        expectClosure(tabId);
+        try { await api.tabs.remove(tabId); } catch { /* deja ferme */ }
+        await forgetPiloted(api, tabId);
+      }
+      if (count) await startCycle('apprentissage');
+    })().catch((e) => record('warn', 'apprentissage : suite impossible', e));
     return;
   }
 

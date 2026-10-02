@@ -103,6 +103,8 @@ class ClaimSession(
         val total: Int = 0,
         val step: String? = null,
         val needsUser: Boolean = false,
+        /** `needsUser` pour « montre-moi le bouton » plutot que pour un defi (1.21.0). */
+        val teach: Boolean = false,
         val outcomes: List<Outcome> = emptyList(),
         val visible: Boolean = false,
     )
@@ -247,6 +249,8 @@ class ClaimSession(
                 ready?.complete(msg["url"].str.orEmpty())
             }
             "fgc-verdict" -> if (isMainFrame && piloting) verdict?.complete(msg ?: JsonNull)
+            // Le moteur a appris le bouton d'un clic de l'utilisateur : on reessaie ce jeu.
+            "fgc-appris" -> if (isMainFrame && piloting) userDone?.complete(true)
             "fgc-fetch" -> scope.launch { reply(fetchFor(msg["url"].str)) }
             else -> log("moteur : ${msg["type"].str} ${msg["title"].str.orEmpty()} ${msg["text"].str.orEmpty()}".take(200))
         }
@@ -297,7 +301,7 @@ class ClaimSession(
         job?.cancel()
         piloting = false
         userDone?.complete(false)
-        _ui.value = _ui.value.copy(running = false, step = null, needsUser = false)
+        _ui.value = _ui.value.copy(running = false, step = null, needsUser = false, teach = false)
         scope.launch(Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
     }
 
@@ -388,6 +392,19 @@ class ClaimSession(
                         userDone = CompletableDeferred()
                         val retry = userDone!!.await()
                         _ui.value = _ui.value.copy(needsUser = false)
+                        if (retry) result = runOne(offer, steamDone)
+                    }
+                }
+                if (result.first == Verdicts.TEACH) {
+                    if (headless) {
+                        // Personne devant l'ecran : on previent, et le jeu attend qu'on lui montre le bouton.
+                        if (!family) Notifier.teach(context, offer)
+                    } else {
+                        // La page reste ouverte : un clic de l'utilisateur apprend le bouton au moteur (qui previent par fgc-appris).
+                        _ui.value = _ui.value.copy(needsUser = true, teach = true, visible = true)
+                        userDone = CompletableDeferred()
+                        val retry = userDone!!.await()
+                        _ui.value = _ui.value.copy(needsUser = false, teach = false)
                         if (retry) result = runOne(offer, steamDone)
                     }
                 }
@@ -488,7 +505,10 @@ class ClaimSession(
         }
         _ui.value = _ui.value.copy(step = STEP_CLAIM)
         val budget = if (headless) HEADLESS_BUDGET_MS else BUDGET_MS
-        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget); put("force", forced) }) }.toString()
+        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget); put("force", forced)
+            // Devant l'ecran : demander tout de suite ; en fond : jamais (personne pour cliquer).
+            if (headless) put("teach", false) else put("teach", "now")
+        }) }.toString()
         withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
         val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }
             ?: return Verdicts.FAILURE to "aucun verdict en ${budget / 1000} s"

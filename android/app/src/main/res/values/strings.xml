@@ -305,6 +305,10 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="share_no_end">no end date</string>
     <string name="share_upcoming">Coming soon on Epic:</string>
     <string name="share_from">from %1$s</string>
+    <string name="teach_help">%1$s: I did not recognise the button. Tap it once in the page below, I will remember.</string>
+    <string name="verdict_teach">Show me the button</string>
+    <string name="notif_teach_title">%1$s: show me the button</string>
+    <string name="notif_teach_text">I did not recognise %1$s\'s button. Open the app and tap Claim: you can show it to me with one tap.</string>
     <string name="channel_update">App updates</string>
     <string name="notif_update_title">Update %1$s available</string>
     <string name="notif_update_text">Open Settings › About to install it.</string>

@@ -108,6 +108,18 @@ Epic et Luna s'en servent aussi quand leur libelle change (le paiement Epic rest
 garde par ses listes figees), et le moteur apprend du libelle que VOUS avez clique
 quand la page confirme ensuite que le jeu est a vous (`17-nav-demo.js`).
 
+### Le claimer qui se repare seul
+
+Trois niveaux. **La forme** : un controle qui a pris un jeu est retenu avec sa
+structure (marque de test, cible, classes lisibles, forme de l'adresse), et un
+controle de meme forme est reconnu sous un mot nouveau -- sans jamais passer devant
+un interdit (argent, panier, abonnement, installer, lancer...). **Le sens**, par le
+vocabulaire du navigateur adaptatif. **Votre clic** : quand le moteur lit la page
+sans reconnaitre de bouton, verdict `needs_teaching`, l'onglet remonte avec un
+bandeau, et UN clic prouve par « le jeu est a vous » apprend le bouton ; le worker
+referme l'onglet et reessaie. Une demande toutes les six heures par magasin au
+plus. Voir le CHANGELOG 2.102.0.
+
 ### Les adresses dans votre langue
 
 `watch/localize.js` met chaque adresse Epic, GOG et Luna dans la langue et le pays

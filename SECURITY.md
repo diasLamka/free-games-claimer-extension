@@ -169,7 +169,14 @@ confirmation restent figees. **Apprendre de votre geste** n'ecoute que vos clics
 de confiance sur les pages de GOG, Epic et Luna, garde les clics 90 secondes dans
 le `sessionStorage` de l'onglet, et ne range un libelle dans la memoire que si la
 page dit ensuite que le jeu est a vous alors qu'il ne l'etait pas avant votre
-clic ; rien ne quitte l'appareil. **Les adresses localisees**
+clic ; rien ne quitte l'appareil. **Montrez-moi le bouton** (2.102.0) : quand le
+moteur ne reconnait aucun bouton, l'onglet remonte avec un bandeau et attend UN
+clic de votre part ; la demande n'a lieu qu'une fois toutes les six heures par
+magasin, l'apprentissage ne retient jamais un libelle d'argent, de panier,
+d'installation ou de connexion, ni un clic fait sur une page de paiement, et la
+forme retenue (marque de test, classes lisibles, forme de l'adresse) n'ajoute que
+du sens : elle ne passe devant aucun interdit. Le bandeau est pose dans une racine
+fantome fermee et ne porte qu'un texte du worker. **Les adresses localisees**
 (`watch/localize.js`) ne changent que la langue ou le domaine d'une adresse deja
 choisie -- jamais l'endroit ou l'on va : Steam, le http et les autres hotes sont
 rendus tels quels, et un domaine Luna n'est suivi que s'il est dans la liste

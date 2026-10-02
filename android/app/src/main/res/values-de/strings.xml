@@ -304,6 +304,10 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="share_no_end">ohne Enddatum</string>
     <string name="share_upcoming">Bald bei Epic:</string>
     <string name="share_from">ab %1$s</string>
+    <string name="teach_help">%1$s: Ich habe den Button nicht erkannt. Tippe ihn einmal auf der Seite unten an, ich merke es mir.</string>
+    <string name="verdict_teach">Zeig mir den Button</string>
+    <string name="notif_teach_title">%1$s: zeig mir den Button</string>
+    <string name="notif_teach_text">Ich habe den Button von %1$s nicht erkannt. Öffne die App und tippe auf Holen: Du kannst ihn mir mit einem Tipp zeigen.</string>
     <string name="channel_update">App-Updates</string>
     <string name="notif_update_title">Update %1$s verfügbar</string>
     <string name="notif_update_text">Öffne Einstellungen › Über die App, um es zu installieren.</string>

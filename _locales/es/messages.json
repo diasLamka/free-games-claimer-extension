@@ -2650,5 +2650,20 @@
   },
   "sessionAutoHint": {
     "message": "Cada 4 h, en segundo plano. En Steam y Epic, la página de la cuenta se abre un instante en una ventana minimizada: no se hace clic en nada."
+  },
+  "engNotifyLearned": {
+    "message": "«$1» aprendido en $2: se reintentará la recogida."
+  },
+  "notifyTeachTitle": {
+    "message": "Enséñame el botón"
+  },
+  "notifyTeachBody": {
+    "message": "No reconocí el botón: la página está abierta, haz clic una vez y lo recordaré."
+  },
+  "teachBanner": {
+    "message": "Free Games Claimer: no reconocí el botón que consigue el juego. Haz clic una vez y lo recordaré."
+  },
+  "verdictTeach": {
+    "message": "botón por enseñar"
   }
 }

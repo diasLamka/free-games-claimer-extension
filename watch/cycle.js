@@ -857,6 +857,13 @@ export async function runCycle({
           text: t('notifyChallengeBody'),
           id: `defi-${now}`,
         });
+        /* Le moteur n'a pas reconnu le bouton (2.102.0) : la page est ouverte
+           dans la fenetre de l'utilisateur, un clic suffit a la lui apprendre. */
+        if (claims.some((x) => x.verdict === VERDICTS.TEACH)) await notify({
+          title: t('notifyTeachTitle'),
+          text: t('notifyTeachBody'),
+          id: `apprendre-${now}`,
+        });
         /* Le relais (2.89.0) : un defi, c'est une demande d'aide. L'appli la
            lit a son prochain passage, sonne, et le jeu se finit sur le
            telephone -- avec SA session : rien n'est resolu a distance. */

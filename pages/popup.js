@@ -160,6 +160,7 @@ const VERDICT_KEYS = {
   needs_link: ['verdictNeedsLink', 'wait'],
   needs_login: ['verdictNeedsLogin', 'wait'],
   challenge: ['verdictChallenge', 'wait'],
+  needs_teaching: ['verdictTeach', 'wait'],
   skipped: ['verdictSkipped', 'wait'],
   bad_url: ['verdictBadUrl', 'ko'],
   failed: ['verdictFailed', 'ko'],
@@ -685,7 +686,7 @@ function horizonOf(offer, now) {
 /* ------------------------------------------------------- what needs you */
 
 /** Verdicts that stopped on something only a person can resolve. */
-const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'quota', 'failed', 'needs_base_game']);
+const NEEDS_YOU = new Set(['needs_login', 'needs_link', 'challenge', 'needs_teaching', 'quota', 'failed', 'needs_base_game']);
 
 /**
  * Offers whose last autonomous attempt stopped on a human.
