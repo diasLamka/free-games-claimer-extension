@@ -141,6 +141,16 @@ discussion privee -- jamais dans un groupe ou un canal --, n'execute pas un mess
 vieux de plus de quinze minutes, et ne donne jamais un code, un jeton ou une adresse
 de webhook. Voir le CHANGELOG 2.104.0.
 
+### Le carnet et le gardien de bibliotheque
+
+Chaque jeu pris ajoute une ligne a un **carnet** dont les lignes se tiennent par
+leurs empreintes SHA-256 : modifier ou retirer une ligne se voit, et la verification
+dit laquelle. Notez l'empreinte de tete ailleurs pour que le retrait des dernieres
+lignes se voie aussi. C'est votre journal, **pas un recu signe par un magasin**. Le
+**gardien** (coupe par defaut) relit chaque mois la collection que vous avez deja
+importee et dit quel jeu pris n'y est plus, apres deux relectures. Voir le CHANGELOG
+2.105.0.
+
 ### Les adresses dans votre langue
 
 `watch/localize.js` met chaque adresse Epic, GOG et Luna dans la langue et le pays

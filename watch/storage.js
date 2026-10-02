@@ -318,6 +318,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * watch/library-sync.js.
    */
   syncLibrary: false,
+  /**
+   * Le gardien de bibliotheque (2.105.0) : une fois par mois, relire la
+   * collection des magasins deja importes et dire quel jeu pris n'y est plus.
+   * Coupe par defaut : chaque relecture lit un compte avec votre session. Voir
+   * watch/library-watch.js.
+   */
+  libraryWatch: false,
 });
 
 /**

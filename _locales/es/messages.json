@@ -2884,5 +2884,92 @@
   },
   "phoneBotGroup": {
     "message": "El bot solo responde en un chat privado: usa tu propio número, no el de un grupo o canal."
+  },
+  "ledgerTitle": {
+    "message": "Registro"
+  },
+  "ledgerHint": {
+    "message": "Un registro de lo que ha conseguido la extensión: cada línea lleva la huella (SHA-256) de la anterior, así que modificar o quitar una línea se nota. Es MI registro, no un recibo firmado por una tienda: no prueba nada a un tercero. Anota la huella de cabecera en otro sitio para notar también que quiten las últimas líneas."
+  },
+  "ledgerCount": {
+    "message": "$1 línea(s) · huella de cabecera $2"
+  },
+  "ledgerEmpty": {
+    "message": "El registro está vacío: se llena con cada juego conseguido."
+  },
+  "ledgerVerify": {
+    "message": "Verificar la cadena"
+  },
+  "ledgerOk": {
+    "message": "Cadena intacta: $1 línea(s), huella de cabecera $2."
+  },
+  "ledgerBad": {
+    "message": "Cadena rota en la línea $1: $2."
+  },
+  "ledgerReasonHash": {
+    "message": "esta línea fue modificada"
+  },
+  "ledgerReasonPrev": {
+    "message": "se quitó, añadió o movió una línea antes"
+  },
+  "ledgerReasonN": {
+    "message": "la numeración está rota"
+  },
+  "ledgerReasonHead": {
+    "message": "la huella de cabecera ya no es la anunciada"
+  },
+  "ledgerExport": {
+    "message": "Exportar el registro"
+  },
+  "ledgerCheckFile": {
+    "message": "Comprobar un archivo"
+  },
+  "ledgerFileOk": {
+    "message": "Archivo intacto: $1 línea(s), huella de cabecera $2."
+  },
+  "ledgerFileInLive": {
+    "message": "Esta huella figura en el registro actual: no se ha reescrito nada desde entonces."
+  },
+  "ledgerFileNotInLive": {
+    "message": "Esta huella NO figura en el registro actual: se reescribió, o este archivo es de otro registro."
+  },
+  "ledgerFileBad": {
+    "message": "Archivo ilegible o cadena rota ($1)."
+  },
+  "libWatchLabel": {
+    "message": "Vigilar mi biblioteca (una vez al mes)"
+  },
+  "libWatchHint": {
+    "message": "Vuelve a leer la colección de Steam, GOG y Epic que ya importaste (con tu sesión) y te dice si un juego conseguido ya no figura: retirada de la tienda, reembolso o título distinto, no sé cuál. Dos lecturas con un día de diferencia antes de cualquier aviso."
+  },
+  "libWatchState": {
+    "message": "Última lectura: $1 · próxima: $2"
+  },
+  "libWatchNever": {
+    "message": "Aún sin leer."
+  },
+  "libWatchNeedsImport": {
+    "message": "Importa primero tu colección (Mi colección): el vigilante vuelve a leer lo que ya importaste."
+  },
+  "libWatchPending": {
+    "message": "Por confirmar en la próxima lectura: $1"
+  },
+  "libWatchLost": {
+    "message": "Desaparecidos de tu biblioteca: $1"
+  },
+  "libWatchTitleOne": {
+    "message": "Un juego conseguido ha desaparecido de tu biblioteca"
+  },
+  "libWatchTitleMany": {
+    "message": "$1 juegos conseguidos han desaparecido de tu biblioteca"
+  },
+  "libWatchLine": {
+    "message": "«$1» ($2), conseguido el $3"
+  },
+  "libWatchMore": {
+    "message": "… y $1 más."
+  },
+  "libWatchWhy": {
+    "message": "Retirada de la tienda, reembolso o título distinto: abre tu biblioteca para comprobarlo."
   }
 }

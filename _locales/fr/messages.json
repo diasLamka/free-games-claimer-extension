@@ -2884,5 +2884,92 @@
   },
   "phoneBotGroup": {
     "message": "Le bot ne répond qu’en discussion privée : mettez votre propre numéro, pas celui d’un groupe ou d’un canal."
+  },
+  "ledgerTitle": {
+    "message": "Carnet"
+  },
+  "ledgerHint": {
+    "message": "Un journal de ce que l’extension a pris : chaque ligne porte l’empreinte (SHA-256) de la précédente, donc modifier ou retirer une ligne se voit. C’est MON journal, pas un reçu signé par un magasin : il ne prouve rien à un tiers. Notez l’empreinte de tête ailleurs pour voir aussi le retrait des dernières lignes."
+  },
+  "ledgerCount": {
+    "message": "$1 ligne(s) · empreinte de tête $2"
+  },
+  "ledgerEmpty": {
+    "message": "Le carnet est vide : il se remplit à chaque jeu pris."
+  },
+  "ledgerVerify": {
+    "message": "Vérifier la chaîne"
+  },
+  "ledgerOk": {
+    "message": "Chaîne intacte : $1 ligne(s), empreinte de tête $2."
+  },
+  "ledgerBad": {
+    "message": "Chaîne rompue à la ligne $1 : $2."
+  },
+  "ledgerReasonHash": {
+    "message": "cette ligne a été modifiée"
+  },
+  "ledgerReasonPrev": {
+    "message": "une ligne a été retirée, ajoutée ou déplacée avant elle"
+  },
+  "ledgerReasonN": {
+    "message": "la numérotation est brisée"
+  },
+  "ledgerReasonHead": {
+    "message": "l’empreinte de tête n’est plus celle annoncée"
+  },
+  "ledgerExport": {
+    "message": "Exporter le carnet"
+  },
+  "ledgerCheckFile": {
+    "message": "Vérifier un fichier"
+  },
+  "ledgerFileOk": {
+    "message": "Fichier intact : $1 ligne(s), empreinte de tête $2."
+  },
+  "ledgerFileInLive": {
+    "message": "Cette empreinte figure dans le carnet actuel : rien n’a été réécrit depuis."
+  },
+  "ledgerFileNotInLive": {
+    "message": "Cette empreinte ne figure PAS dans le carnet actuel : il a été réécrit, ou ce fichier vient d’un autre carnet."
+  },
+  "ledgerFileBad": {
+    "message": "Fichier illisible ou chaîne rompue ($1)."
+  },
+  "libWatchLabel": {
+    "message": "Surveiller ma bibliothèque (une fois par mois)"
+  },
+  "libWatchHint": {
+    "message": "Relit la collection de Steam, GOG et Epic que vous avez déjà importée (avec votre session) et vous dit si un jeu pris n’y figure plus : retrait du magasin, remboursement ou titre différent, je ne sais pas lequel. Deux relectures à un jour d’écart avant toute alerte."
+  },
+  "libWatchState": {
+    "message": "Dernière relecture : $1 · prochaine : $2"
+  },
+  "libWatchNever": {
+    "message": "Pas encore relue."
+  },
+  "libWatchNeedsImport": {
+    "message": "Importez d’abord votre collection (Ma collection) : le gardien relit ce que vous avez déjà importé."
+  },
+  "libWatchPending": {
+    "message": "À confirmer à la prochaine relecture : $1"
+  },
+  "libWatchLost": {
+    "message": "Disparus de votre bibliothèque : $1"
+  },
+  "libWatchTitleOne": {
+    "message": "Un jeu pris a disparu de votre bibliothèque"
+  },
+  "libWatchTitleMany": {
+    "message": "$1 jeux pris ont disparu de votre bibliothèque"
+  },
+  "libWatchLine": {
+    "message": "« $1 » ($2), pris le $3"
+  },
+  "libWatchMore": {
+    "message": "… et $1 autre(s)."
+  },
+  "libWatchWhy": {
+    "message": "Retrait du magasin, remboursement ou titre différent : ouvrez votre bibliothèque pour vérifier."
   }
 }

@@ -63,6 +63,8 @@ import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, steamAppId, tone } from '../watch/steam-ratings.js';
 import { KEY_BOT, botBlocked, readBotState } from '../watch/bot.js';
+import { KEY_LEDGER, exportLedger, readExport, readLedger, shortHead, verifyLedger } from '../watch/ledger.js';
+import { KEY_LIBWATCH, readWatchState } from '../watch/library-watch.js';
 import { KEY_CHECKS, certify, checkAppId, collectionFacts, gradeTone, verdictFor, verdictTitle } from '../watch/bargain.js';
 import { KEY_TASTE, readTasteState, tasteFor, tasteNames } from '../watch/taste.js';
 import { composeShareList } from '../watch/share-list.js';
@@ -245,6 +247,8 @@ const KEYS_READ = [
   KEY_RATINGS,
   KEY_CHECKS,
   KEY_BOT,
+  KEY_LEDGER,
+  KEY_LIBWATCH,
   KEY_COVERS,
   KEY_RELAY,
   KEY_STEAM_DLC,
@@ -2536,6 +2540,7 @@ function renderTally(all) {
   zone.textContent = '';
   renderMonthChart(rows);
   renderHero(rows, b, all);
+  renderLedger(all);
   document.getElementById('year-open').hidden = !yearsOf(get(all, KEY_LIBRARY, {})).length;
 
   foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))
@@ -3312,6 +3317,72 @@ function renderPhone(all) {
       : t('phoneLastFailed', shortDateTime(etat.at), etat.note || `HTTP ${etat.status}`);
   } else zone.textContent = '';
 }
+
+/* ------------------------------------------- le carnet et le gardien (2.105.0) */
+
+const REASONS_LEDGER = { hash: 'ledgerReasonHash', prev: 'ledgerReasonPrev', n: 'ledgerReasonN', head: 'ledgerReasonHead' };
+
+function renderLedger(all) {
+  const l = readLedger(get(all, KEY_LEDGER, null));
+  const head = shortHead(l.head);
+  document.getElementById('ledger-count').textContent = l.entries.length ? t('ledgerCount', String(l.baseN + l.entries.length), head) : t('ledgerEmpty');
+  foldSay('fold-ledger', l.entries.length ? String(l.baseN + l.entries.length) : '');
+  document.getElementById('ledger-export').disabled = !l.entries.length;
+  document.getElementById('ledger-verify').disabled = !l.entries.length;
+
+  const watch = document.getElementById('lib-watch');
+  watch.checked = behaviourCache.libraryWatch === true;
+  const zone = document.getElementById('lib-watch-state');
+  zone.hidden = behaviourCache.libraryWatch !== true;
+  if (zone.hidden) return;
+  const w = readWatchState(get(all, KEY_LIBWATCH, null));
+  const lignes = [w.at ? t('libWatchState', shortDateTime(w.at), w.nextAt ? shortDateTime(w.nextAt) : '?') : t('libWatchNever')];
+  const items = get(all, KEY_COLLECTION, null);
+  if (!items || !Object.keys(items.stores || {}).length) lignes.push(t('libWatchNeedsImport'));
+  const attente = Object.values(w.missing).filter((m) => !m.alertedAt).map((m) => m.title);
+  const perdus = Object.values(w.missing).filter((m) => m.alertedAt).map((m) => m.title);
+  if (attente.length) lignes.push(t('libWatchPending', attente.slice(0, 5).join(', ')));
+  if (perdus.length) lignes.push(t('libWatchLost', perdus.slice(0, 5).join(', ')));
+  zone.textContent = lignes.join(' \u00b7 ');
+}
+
+document.getElementById('ledger-verify').addEventListener('click', async () => {
+  const all = await readAll();
+  const l = readLedger(get(all, KEY_LEDGER, null));
+  const r = await verifyLedger(l);
+  document.getElementById('ledger-result').textContent = r.ok
+    ? t('ledgerOk', String(l.baseN + r.count), shortHead(r.head))
+    : t('ledgerBad', String(r.badAt ?? '?'), t(REASONS_LEDGER[r.reason] || 'ledgerReasonHash'));
+});
+
+document.getElementById('ledger-export').addEventListener('click', async () => {
+  const all = await readAll();
+  const l = readLedger(get(all, KEY_LEDGER, null));
+  const nom = `carnet-${new Date().toISOString().slice(0, 10)}.json`;
+  download(nom, 'application/json', JSON.stringify(exportLedger(l, { now: Date.now(), version: api.runtime.getManifest().version }), null, 2));
+});
+
+document.getElementById('ledger-file-btn').addEventListener('click', () => document.getElementById('ledger-file').click());
+document.getElementById('ledger-file').addEventListener('change', async (e) => {
+  const zone = document.getElementById('ledger-result');
+  const fichier = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!fichier) return;
+  try {
+    if (fichier.size > MAX_BACKUP_BYTES) throw new Error('trop gros');
+    const lu = readExport(JSON.parse(await fichier.text()));
+    if (!lu) throw new Error('format');
+    const r = await verifyLedger(lu.ledger, { expectedHead: lu.declaredHead });
+    if (!r.ok) { zone.textContent = t('ledgerFileBad', t(REASONS_LEDGER[r.reason] || 'ledgerReasonHash')); return; }
+    const live = readLedger(get(await readAll(), KEY_LEDGER, null));
+    const connu = r.head === live.head || r.head === live.base || live.entries.some((x) => x.hash === r.head);
+    zone.textContent = `${t('ledgerFileOk', String(lu.ledger.baseN + r.count), shortHead(r.head))} ${t(connu ? 'ledgerFileInLive' : 'ledgerFileNotInLive')}`;
+  } catch (err) {
+    zone.textContent = t('ledgerFileBad', String((err && err.message) || err).slice(0, 80));
+  }
+});
+
+document.getElementById('lib-watch').addEventListener('change', (e) => writeBehaviour({ libraryWatch: e.target.checked }));
 
 /* Le bot qui repond (2.104.0) : Telegram seulement, et le dit s'il ne peut pas. */
 function renderPhoneBot(p, all) {

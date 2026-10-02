@@ -2884,5 +2884,92 @@
   },
   "phoneBotGroup": {
     "message": "The bot only answers in a private chat: use your own number, not a group’s or a channel’s."
+  },
+  "ledgerTitle": {
+    "message": "Ledger"
+  },
+  "ledgerHint": {
+    "message": "A log of what the extension took: each line carries the fingerprint (SHA-256) of the one before, so editing or removing a line shows. It is MY log, not a receipt signed by a store: it proves nothing to a third party. Note the head fingerprint elsewhere to also catch the removal of the last lines."
+  },
+  "ledgerCount": {
+    "message": "$1 line(s) · head fingerprint $2"
+  },
+  "ledgerEmpty": {
+    "message": "The ledger is empty: it fills with each game taken."
+  },
+  "ledgerVerify": {
+    "message": "Verify the chain"
+  },
+  "ledgerOk": {
+    "message": "Chain intact: $1 line(s), head fingerprint $2."
+  },
+  "ledgerBad": {
+    "message": "Chain broken at line $1: $2."
+  },
+  "ledgerReasonHash": {
+    "message": "this line was edited"
+  },
+  "ledgerReasonPrev": {
+    "message": "a line was removed, added or moved before it"
+  },
+  "ledgerReasonN": {
+    "message": "the numbering is broken"
+  },
+  "ledgerReasonHead": {
+    "message": "the head fingerprint is no longer the announced one"
+  },
+  "ledgerExport": {
+    "message": "Export the ledger"
+  },
+  "ledgerCheckFile": {
+    "message": "Check a file"
+  },
+  "ledgerFileOk": {
+    "message": "File intact: $1 line(s), head fingerprint $2."
+  },
+  "ledgerFileInLive": {
+    "message": "This fingerprint is in the current ledger: nothing was rewritten since."
+  },
+  "ledgerFileNotInLive": {
+    "message": "This fingerprint is NOT in the current ledger: it was rewritten, or this file comes from another ledger."
+  },
+  "ledgerFileBad": {
+    "message": "Unreadable file or broken chain ($1)."
+  },
+  "libWatchLabel": {
+    "message": "Watch my library (once a month)"
+  },
+  "libWatchHint": {
+    "message": "Re-reads the Steam, GOG and Epic collection you already imported (with your session) and tells you if a game taken is no longer in it: store removal, refund or a different title, I can’t tell which. Two reads a day apart before any alert."
+  },
+  "libWatchState": {
+    "message": "Last read: $1 · next: $2"
+  },
+  "libWatchNever": {
+    "message": "Not read yet."
+  },
+  "libWatchNeedsImport": {
+    "message": "Import your collection first (My collection): the watcher re-reads what you already imported."
+  },
+  "libWatchPending": {
+    "message": "To confirm at the next read: $1"
+  },
+  "libWatchLost": {
+    "message": "Gone from your library: $1"
+  },
+  "libWatchTitleOne": {
+    "message": "A game you took is gone from your library"
+  },
+  "libWatchTitleMany": {
+    "message": "$1 games you took are gone from your library"
+  },
+  "libWatchLine": {
+    "message": "“$1” ($2), taken on $3"
+  },
+  "libWatchMore": {
+    "message": "… and $1 more."
+  },
+  "libWatchWhy": {
+    "message": "Store removal, refund or a different title: open your library to check."
   }
 }

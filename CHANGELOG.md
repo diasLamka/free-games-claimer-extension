@@ -4,6 +4,45 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.105.0 -- 2026-10-02
+
+**Le carnet qu'on ne retouche pas sans que ca se voie, et le gardien qui dit quand un jeu pris disparait de votre bibliotheque**
+
+- **Le carnet** (`watch/ledger.js`). Chaque jeu pris ajoute une ligne, et chaque
+  ligne porte l'empreinte SHA-256 de la precedente : modifier un titre, une date ou
+  une valeur, retirer une ligne du milieu, en inserer une ou en echanger deux casse
+  la chaine, et la verification dit A QUELLE LIGNE. Les constats « deja a vous » sont
+  des lignes a part. Un code, une adresse ou un compte n'y entrent jamais ; un jeu
+  n'est note qu'une fois. Reglages -> Carnet : verifier la chaine, exporter le
+  carnet (un fichier relisible tel quel), verifier un fichier exporte -- et voir si
+  son empreinte figure dans le carnet actuel, c'est-a-dire que rien n'a ete reecrit
+  depuis. Cinq mille lignes au plus : au-dela, les plus anciennes sortent et `base`
+  garde l'empreinte de la derniere sortie, la chaine restante se verifie toujours.
+  Il suit la sauvegarde complete (le plus long l'emporte).
+- **Ce que le carnet n'est pas.** C'est MON journal, pas un recu signe par un
+  magasin : il ne prouve rien a un tiers, et quelqu'un qui tient votre disque peut
+  refaire toute la chaine d'un coup. Il sert a VOUS, a condition de noter son
+  **empreinte de tete** ailleurs : sans elle, ni une reecriture complete ni le
+  retrait des dernieres lignes ne se voient. L'ecran le dit en toutes lettres.
+- **Le gardien de bibliotheque** (`watch/library-watch.js`), coupe par defaut.
+  Une fois par mois, il relit la collection de Steam, GOG et Epic que vous avez
+  DEJA importee (avec votre session, comme « Tout importer ») et dit quel jeu pris
+  n'y est plus : retrait du magasin, remboursement, compte sanctionne -- ou simple
+  titre different, il ne sait pas lequel et le dit. Prudent : import de moins de
+  trois jours et de dix jeux au moins, jeu pris depuis plus de quarante-huit heures,
+  titre apparie sans l'edition, et surtout **deux relectures a plus de vingt heures
+  d'ecart** avant toute alerte (la deuxieme vient le lendemain), une seule alerte par
+  jeu. Notification, et telephone si l'alerte y est branchee. Une importation a la
+  demande rafraichit aussi le gardien quand il est actif.
+
+Essai de bout en bout dans un vrai Chromium : l'historique du moteur ecrit le
+carnet (l'echec n'y entre pas, le constat est une ligne a part), la verification
+passe, une valeur retouchee a la main est designee a la ligne 1, et le gardien note
+un jeu absent d'une collection fraiche sans alerter la premiere fois. Non verifie :
+la relecture reelle d'un compte Steam, GOG ou Epic (pas de session ici) ; l'appariement
+des titres sur de vraies collections -- c'est la qu'une fausse alerte se jouerait, d'ou
+les deux relectures.
+
 ## 2.104.0 -- 2026-10-02
 
 **Le bot Telegram qui repond : ecrivez-lui « etat », « jeux », « prends tout », « pause 3 », « pourquoi Hades », « ce soir », « stop »**

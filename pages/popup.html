@@ -1536,6 +1536,28 @@
       </details>
     </section>
 
+    <!-- Le carnet et le gardien de bibliotheque (2.105.0) : voir watch/ledger.js et watch/library-watch.js. -->
+    <section>
+      <details class="fold" id="fold-ledger">
+        <summary><h2 data-i18n="ledgerTitle"></h2><span class="aside" id="fold-ledger-say"></span></summary>
+        <p class="hint" data-i18n="ledgerHint"></p>
+        <p class="hint" id="ledger-count"></p>
+        <div class="actions">
+          <button class="btn-sm" id="ledger-verify" data-i18n="ledgerVerify"></button>
+          <button class="btn-sm" id="ledger-export" data-i18n="ledgerExport"></button>
+          <button class="btn-sm" id="ledger-file-btn" data-i18n="ledgerCheckFile"></button>
+          <input type="file" id="ledger-file" accept="application/json,.json" hidden>
+        </div>
+        <p class="hint" id="ledger-result" role="status"></p>
+        <label class="toggle">
+          <input type="checkbox" id="lib-watch">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="libWatchLabel"></span><small data-i18n="libWatchHint"></small></span>
+        </label>
+        <p class="hint" id="lib-watch-state" role="status" hidden></p>
+      </details>
+    </section>
+
     <section>
       <details class="fold" id="fold-claim">
         <summary><h2 data-i18n="claimForMe"></h2><span class="aside" id="fold-claim-say"></span></summary>

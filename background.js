@@ -91,6 +91,10 @@ import {
   KEY_CHECKS, PER_RUN as CHECKS_PER_RUN, checkAppId, refreshChecks, collectionFacts, verdictFor, verdictLine,
 } from './watch/bargain.js';
 import { KEY_BOT, ALARM_BOT, POLL_MINUTES as BOT_POLL_MINUTES, botTarget, pollBot } from './watch/bot.js';
+import { KEY_LEDGER, appendEntries, itemsFromTouched, readLedger } from './watch/ledger.js';
+import {
+  KEY_LIBWATCH, due as libWatchDue, missingGames, reconcile as libWatchReconcile, scheduled as libWatchScheduled, storesToImport, trustedStores,
+} from './watch/library-watch.js';
 import { openOffers } from './watch/catalog.js';
 import { KEY_COVERS, refreshCovers } from './watch/covers.js';
 import { money } from './lib/money.js';
@@ -207,6 +211,7 @@ async function ensureSchedule(now = Date.now()) {
   await maybeWeekends(now);
   await maybeAutoBackup(now);
   await maybeRatings(now);
+  await maybeLibraryWatch(now);
 
   const net = await api.alarms.get(ALARM_NET);
   if (!net) {
@@ -453,6 +458,7 @@ async function startCycle(origine, options = {}) {
         await maybeSessions(Date.now());
         await maybeAutoBackup(Date.now());
         await maybeRatings(Date.now());
+        await maybeLibraryWatch(Date.now());
       }
       return result;
     } catch (e) {
@@ -742,6 +748,81 @@ async function rateOne(offer) {
     const { [KEY_RATINGS]: notes } = await readKeys(api, KEY_RATINGS);
     return ratingFor(notes, offer);
   } catch { return null; }
+}
+
+/* ------------------------------------- le carnet et le gardien (2.105.0) */
+
+/* Une seule ecriture du carnet a la fois : deux lots d'historique qui arrivent
+   ensemble ne doivent pas se marcher dessus, la chaine en depend. */
+let ledgerChain = Promise.resolve();
+
+function appendToLedger(items) {
+  const travail = async () => {
+    const raw = await readKeys(api, KEY_LEDGER);
+    const r = await appendEntries(raw[KEY_LEDGER], items, { subtle: crypto.subtle });
+    if (r.added.length) {
+      await write(api, { [KEY_LEDGER]: r.ledger });
+      record('info', `carnet : ${r.added.length} ligne(s) ajoutee(s)`);
+    }
+    return r;
+  };
+  const p = ledgerChain.then(travail, travail);
+  ledgerChain = p.catch(() => null);
+  return p.catch((e) => { record('warn', 'carnet : ecriture impossible', e); return null; });
+}
+
+let libWatchRunning = null;
+
+/**
+ * Le gardien de bibliotheque, une fois par mois et seulement si l'utilisateur
+ * l'a demande : il relit la collection des magasins deja importes une fois, puis
+ * compare. Voir watch/library-watch.js.
+ */
+function maybeLibraryWatch(now = Date.now()) {
+  if (libWatchRunning) return libWatchRunning;
+  libWatchRunning = (async () => {
+    const settings = await readSettings(api);
+    const raw = await readKeys(api, [KEY_LIBWATCH, KEY_COLLECTION_LOOKUP]);
+    if (!libWatchDue(settings, raw[KEY_LIBWATCH], now)) return null;
+    if (collectionRunning) return null;
+    const stores = storesToImport(raw[KEY_COLLECTION_LOOKUP]);
+    if (!stores.length) {
+      // Rien n'a encore ete importe : on attend un mois, l'utilisateur doit importer une fois.
+      await write(api, { [KEY_LIBWATCH]: libWatchScheduled(raw[KEY_LIBWATCH], { now, ok: true }) });
+      return null;
+    }
+    collectionRunning = importCollection(stores);
+    try { await collectionRunning; } finally { collectionRunning = null; }
+    return evaluateLibrary(now);
+  })()
+    .catch((e) => { record('warn', 'gardien de bibliotheque impossible', e); return null; })
+    .finally(() => { libWatchRunning = null; });
+  return libWatchRunning;
+}
+
+/** Compare le registre a la collection relue, dit ce qui manque pour la deuxieme fois. */
+async function evaluateLibrary(now) {
+  await langue;
+  const raw = await readKeys(api, [KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_LIBWATCH, KEY_PHONE]);
+  const stores = trustedStores(raw[KEY_COLLECTION_LOOKUP], now);
+  const missing = missingGames({ library: raw[KEY_LIBRARY] || {}, collection: raw[KEY_COLLECTION_LOOKUP], now, stores });
+  const { state, alerts } = libWatchReconcile(raw[KEY_LIBWATCH], missing, { now, judged: stores });
+  await write(api, { [KEY_LIBWATCH]: libWatchScheduled(state, { now, ok: stores.length > 0 }) });
+  record('info', `gardien : ${missing.length} jeu(x) a confirmer, ${alerts.length} alerte(s)`);
+  if (!alerts.length) return { alerts };
+
+  const settings = await readSettings(api);
+  const dateText = (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  const lignes = alerts.slice(0, 8).map((a) => t('libWatchLine', a.title, STORE_LABELS[a.store] || a.store, dateText(a.claimedAt)));
+  if (alerts.length > 8) lignes.push(t('libWatchMore', String(alerts.length - 8)));
+  const title = t(alerts.length === 1 ? 'libWatchTitleOne' : 'libWatchTitleMany', String(alerts.length));
+  const message = `${lignes.join('\n')}\n${t('libWatchWhy')}`;
+  if (settings.notifyMode !== 'off' && !inQuietHours(effectiveQuiet(settings), now)) {
+    await showNotice({ id: `gardien-${now}`, title, message, url: api.runtime.getURL(DASHBOARD_PAGE) });
+  }
+  const tel = phoneTarget(raw[KEY_PHONE]);
+  if (tel) await pushToPhone({ chrome: api, fetch: (u, i) => fetch(u, i), target: tel, msg: { title, message, priority: PRIORITY.DEFAULT, tags: ['books'] }, now, record, why: 'gardien de bibliotheque' });
+  return { alerts };
 }
 
 /* ------------------------------------------- le bot qui repond (2.104.0) */
@@ -1522,6 +1603,7 @@ async function integrateIntoLibrary(lots, verbe) {
     const raw = await readKeys(api, [KEY_LIBRARY, KEYS.OFFERS]);
     let library = raw[KEY_LIBRARY] || {};
     let total = 0;
+    const touched = [];
 
     for (const { platform, added } of lots) {
       const r = integrateHistory(library, {
@@ -1531,12 +1613,16 @@ async function integrateIntoLibrary(lots, verbe) {
       });
       library = r.library;
       total += r.changed;
+      touched.push(...r.touched);
     }
 
     if (total) {
       await write(api, { [KEY_LIBRARY]: library });
       record('info', `bibliotheque : ${total} entree(s) ${verbe}`);
     }
+    /* Le carnet (2.105.0) : une ligne par jeu NOUVEAU, dans l'ordre des dates. */
+    const lignes = itemsFromTouched(touched).sort((a, b) => a.ts - b.ts);
+    if (lignes.length) await appendToLedger(lignes);
   } catch (e) {
     // Un registre qui echoue ne doit jamais empecher une reclamation.
     record('warn', 'bibliotheque non mise a jour', e);
@@ -2199,7 +2285,11 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     const demandes = Array.isArray(msg.stores) && msg.stores.length ? msg.stores : IMPORTABLE_STORES;
     collectionRunning = importCollection(demandes.filter((s) => IMPORTABLE_STORES.includes(s)));
     collectionRunning
-      .then((results) => sendResponse({ ok: true, results }))
+      .then(async (results) => {
+        /* Une importation a la demande rafraichit aussi le gardien, s'il est actif. */
+        try { if ((await readSettings(api)).libraryWatch === true) await evaluateLibrary(Date.now()); } catch (e) { record('warn', 'gardien : evaluation impossible', e); }
+        sendResponse({ ok: true, results });
+      })
       .catch((e) => {
         record('warn', 'collection : importation impossible', e);
         sendResponse({ ok: false, error: String((e && e.message) || e) });

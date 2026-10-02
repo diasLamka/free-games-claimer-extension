@@ -169,6 +169,10 @@ export function integrateHistory(library, { platform, added, catalog = {} }) {
 
   const next = { ...library };
   let changed = 0;
+  /* Ce qui vient d'entrer ou de changer, pour le carnet (2.105.0) : `isNew`
+     distingue une prise d'un simple enrichissement, `already` un constat
+     (« deja a vous ») d'une vraie reclamation. */
+  const touched = [];
 
   for (const { key, entry } of added) {
     if (!ACQUIRED.includes(entry.status)) continue;
@@ -194,11 +198,20 @@ export function integrateHistory(library, { platform, added, catalog = {} }) {
     const k = libraryKey(store, key);
     const merged = mergeEntry(next[k], fresh);
     if (JSON.stringify(merged) === JSON.stringify(next[k])) continue;
+    touched.push({ key: k, entry: merged, isNew: !next[k], already: isAlreadyEntry(entry) });
     next[k] = merged;
     changed++;
   }
 
-  return { library: next, changed };
+  return { library: next, changed, touched };
+}
+
+/* Un constat « deja a vous » plutot qu'une prise : meme lecture que watch/tally.js
+   (alreadyYours), recopiee ici -- tally.js passe par filters.js, qui importe ce
+   module. */
+const ALREADY_RE = /ALREADY_(OWNED|CLAIMED)|deja marque comme recupere|\(deja reclame\)$/i;
+function isAlreadyEntry(entry) {
+  return ALREADY_RE.test(String((entry && entry.reason) || ''));
 }
 
 /* ---------------------------------------------------------------- lecture */

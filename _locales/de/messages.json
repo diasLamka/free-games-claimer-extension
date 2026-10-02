@@ -2884,5 +2884,92 @@
   },
   "phoneBotGroup": {
     "message": "Der Bot antwortet nur im privaten Chat: trag deine eigene Nummer ein, nicht die einer Gruppe oder eines Kanals."
+  },
+  "ledgerTitle": {
+    "message": "Logbuch"
+  },
+  "ledgerHint": {
+    "message": "Ein Protokoll dessen, was die Erweiterung geholt hat: Jede Zeile trägt den Fingerabdruck (SHA-256) der vorherigen, Änderungen oder Löschungen fallen also auf. Es ist MEIN Protokoll, keine von einem Shop signierte Quittung: Dritten beweist es nichts. Notiere den Kopf-Fingerabdruck anderswo, um auch das Entfernen der letzten Zeilen zu bemerken."
+  },
+  "ledgerCount": {
+    "message": "$1 Zeile(n) · Kopf-Fingerabdruck $2"
+  },
+  "ledgerEmpty": {
+    "message": "Das Logbuch ist leer: es füllt sich mit jedem geholten Spiel."
+  },
+  "ledgerVerify": {
+    "message": "Kette prüfen"
+  },
+  "ledgerOk": {
+    "message": "Kette intakt: $1 Zeile(n), Kopf-Fingerabdruck $2."
+  },
+  "ledgerBad": {
+    "message": "Kette bei Zeile $1 gebrochen: $2."
+  },
+  "ledgerReasonHash": {
+    "message": "diese Zeile wurde geändert"
+  },
+  "ledgerReasonPrev": {
+    "message": "davor wurde eine Zeile entfernt, eingefügt oder verschoben"
+  },
+  "ledgerReasonN": {
+    "message": "die Nummerierung ist gebrochen"
+  },
+  "ledgerReasonHead": {
+    "message": "der Kopf-Fingerabdruck ist nicht mehr der angegebene"
+  },
+  "ledgerExport": {
+    "message": "Logbuch exportieren"
+  },
+  "ledgerCheckFile": {
+    "message": "Datei prüfen"
+  },
+  "ledgerFileOk": {
+    "message": "Datei intakt: $1 Zeile(n), Kopf-Fingerabdruck $2."
+  },
+  "ledgerFileInLive": {
+    "message": "Dieser Fingerabdruck steht im aktuellen Logbuch: seitdem wurde nichts umgeschrieben."
+  },
+  "ledgerFileNotInLive": {
+    "message": "Dieser Fingerabdruck steht NICHT im aktuellen Logbuch: es wurde umgeschrieben, oder die Datei stammt aus einem anderen Logbuch."
+  },
+  "ledgerFileBad": {
+    "message": "Datei unlesbar oder Kette gebrochen ($1)."
+  },
+  "libWatchLabel": {
+    "message": "Meine Bibliothek überwachen (einmal im Monat)"
+  },
+  "libWatchHint": {
+    "message": "Liest die bereits importierte Sammlung von Steam, GOG und Epic erneut (mit deiner Sitzung) und sagt dir, wenn ein geholtes Spiel nicht mehr darin steht: Shop-Entfernung, Rückerstattung oder anderer Titel, ich weiß nicht welches. Zwei Lesungen im Abstand eines Tages vor jedem Alarm."
+  },
+  "libWatchState": {
+    "message": "Zuletzt gelesen: $1 · nächste: $2"
+  },
+  "libWatchNever": {
+    "message": "Noch nicht gelesen."
+  },
+  "libWatchNeedsImport": {
+    "message": "Importiere zuerst deine Sammlung (Meine Sammlung): der Wächter liest erneut, was du schon importiert hast."
+  },
+  "libWatchPending": {
+    "message": "Bei der nächsten Lesung zu bestätigen: $1"
+  },
+  "libWatchLost": {
+    "message": "Aus deiner Bibliothek verschwunden: $1"
+  },
+  "libWatchTitleOne": {
+    "message": "Ein geholtes Spiel ist aus deiner Bibliothek verschwunden"
+  },
+  "libWatchTitleMany": {
+    "message": "$1 geholte Spiele sind aus deiner Bibliothek verschwunden"
+  },
+  "libWatchLine": {
+    "message": "„$1“ ($2), geholt am $3"
+  },
+  "libWatchMore": {
+    "message": "… und $1 weitere."
+  },
+  "libWatchWhy": {
+    "message": "Shop-Entfernung, Rückerstattung oder anderer Titel: öffne deine Bibliothek zur Kontrolle."
   }
 }
