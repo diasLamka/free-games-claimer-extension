@@ -188,6 +188,91 @@
     return m ? normalizeEpicSlug(m[1]) : null;
   }
 
+  /* LA POSSESSION SE LIT SUR LE BOUTON D'ACHAT DE CETTE FICHE (2.99.7).
+   *
+   * Jusqu'ici "Dans la bibliotheque" se cherchait n'importe ou dans la page :
+   * tout bouton, tout lien visible dont le texte contenait ces mots. Or une
+   * page Epic en porte plusieurs sans que CE jeu soit pris -- la carte du
+   * second jeu gratuit de la semaine quand le premier est deja au compte, une
+   * extension ou une autre edition possedee, une vignette "Dans la
+   * bibliotheque" dans un carrousel. Le moteur concluait "deja possede",
+   * l'ecrivait "claimed" dans son historique, et tout ce qui suivait -- le
+   * module ("tous les jeux de la semaine sont deja recuperes"), l'ordre
+   * pilote ("deja recupere") -- s'appuyait sur cette ligne fausse. Signale le
+   * 2026-10-01 : des jeux Epic non recuperes, un anti-bot a l'ecran, et
+   * "deja recupere".
+   *
+   * Desormais :
+   *   - la fiche d'UN jeu seulement : sur une liste, personne n'est "possede ici" ;
+   *   - le bouton d'achat PRINCIPAL, tel qu'Epic le marque
+   *     (data-testid="purchase-cta-button"), fait foi quand il est la : son
+   *     texte, et lui seul. Un "In Library" ailleurs ne le contredit pas ;
+   *   - sinon, le repli par le texte -- mais court (un bouton, pas une
+   *     vignette de jeu) et jamais dans un lien vers un AUTRE jeu. */
+  var EPIC_CTA_SELECTOR = '[data-testid="purchase-cta-button"]';
+  var EPIC_OWNERSHIP_MAX_TEXT = 40;
+
+  function epicElementVisible(el) {
+    return !!(el && (el.offsetWidth || el.offsetHeight || (el.getClientRects && el.getClientRects().length)));
+  }
+
+  function epicOwnershipText(text) {
+    return EPIC_OWNERSHIP_PATTERNS.some(function (p) { return p.test(text); });
+  }
+
+  // Les boutons d'achat principaux visibles de la page, dans l'ordre du DOM.
+  function epicPurchaseButtons() {
+    var list;
+    try { list = Array.prototype.slice.call(document.querySelectorAll(EPIC_CTA_SELECTOR)); } catch (e) { list = []; }
+    return list.filter(epicElementVisible);
+  }
+
+  // L'element qui dit "ce jeu est dans votre bibliotheque", ou null.
+  function epicOwnedHere() {
+    var slug = extractEpicSlug(location.href);
+    if (!slug) return null;
+
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      return epicOwnershipText(actionText(principaux[0])) ? principaux[0] : null;
+    }
+
+    var candidates = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
+    return candidates.find(function (el) {
+      if (!epicElementVisible(el)) return false;
+      var text = actionText(el);
+      if (!text || text.length > EPIC_OWNERSHIP_MAX_TEXT || !epicOwnershipText(text)) return false;
+      var anchor = el.closest ? el.closest('a[href*="/p/"], a[href*="/bundles/"]') : null;
+      if (anchor) {
+        var otherSlug = extractEpicSlug(anchor.getAttribute('href') || '');
+        if (otherSlug && otherSlug !== slug) return false;
+      }
+      return true;
+    }) || null;
+  }
+
+  // 'owned' | 'unowned' | null (la fiche n'a pas fini de s'afficher, ou ne dit rien).
+  function epicCtaState(mustBeEnabled) {
+    if (!extractEpicSlug(location.href)) return null;
+    if (epicOwnedHere()) return 'owned';
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      var t = actionText(principaux[0]);
+      var achetable = EPIC_MAIN_CTA_PATTERNS.some(function (p) { return p.test(t); })
+        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); });
+      return achetable ? 'unowned' : null;
+    }
+    var cta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: mustBeEnabled !== false })
+      || findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: mustBeEnabled !== false });
+    return cta ? 'unowned' : null;
+  }
+
+  // Attend que la fiche dise ce qu'elle est (le rendu est cote client). null au bout du delai.
+  function waitForEpicCtaState(timeoutMs) {
+    return waitForElement(function () { return epicCtaState(false); }, { timeout: timeoutMs, interval: 500 })
+      .catch(function () { return null; });
+  }
+
   function isEpicNotFoundPage(pathname) {
     return /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?not-found\/?$/i.test(pathname || '');
   }

@@ -71,6 +71,8 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     collection: raw[KEY_COLLECTION] || null,
     maxReclamations: MAX_PER_HOUR,
     record,
+    // Un clic de l'utilisateur : voir `forced` dans claimWhatCanBe.
+    forced: true,
   });
 
   await writeCycle(chrome, { catalog, cadence, canary });
@@ -254,6 +256,7 @@ export async function claimOneNow({
     maxReclamations: 1,
     record,
     claim,
+    forced: true,
   });
 
   /* Reinjecter dans le catalogue COMPLET : `claimWhatCanBe` n'a vu qu'une

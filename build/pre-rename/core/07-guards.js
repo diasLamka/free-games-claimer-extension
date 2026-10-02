@@ -16,7 +16,26 @@
     return true;
   }
 
+  /* Un defi niche dans la fenetre d'achat (2.99.7). La frame d'achat, d'une autre
+     origine, nous le dit par message ; il ne compte que tant que la fenetre est
+     ouverte et moins de dix minutes. Seul le fait est accepte, de la part d'un
+     hote epicgames.com : aucune donnee ne transite. */
+  var epicPaymentChallengeAt = 0;
+  if (!IS_EPIC_PAYMENT_FRAME && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('message', function (ev) {
+      var d = ev && ev.data;
+      if (!d || d.fgcPaymentChallenge !== true) return;
+      var host = '';
+      try { host = new URL(ev.origin).hostname; } catch (e) { return; }
+      if (!/(^|\.)epicgames\.com$/i.test(host)) return;
+      epicPaymentChallengeAt = Date.now();
+    });
+  }
+
   function detectSecurityChallenge() {
+    if (!IS_EPIC_PAYMENT_FRAME && epicPaymentChallengeAt && Date.now() - epicPaymentChallengeAt < 10 * 60000 && epicPurchaseOverlayOpen()) {
+      return { type: 'captcha', detail: 'defi dans la fenetre d\'achat Epic' };
+    }
     var iframes = Array.prototype.slice.call(document.querySelectorAll('iframe'));
     var iframeHit = iframes.find(function (f) {
       return /captcha|hcaptcha|recaptcha|arkose|funcaptcha|challenge/i.test(f.src || '') && isElementVisible(f);

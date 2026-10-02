@@ -123,6 +123,14 @@ class ClaimSession(
             WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
 
     private var created = false
+
+    /**
+     * Une recuperation DEMANDEE a l'ecran (1.17.1) et non decidee par la veille :
+     * le moteur ne se fie alors pas a sa memoire (voir `epicForceRecheck` dans
+     * src/core/16-epic-run.js) -- elle a deja ecrit « deja recupere » sur un jeu
+     * qui ne l'etait pas, et un geste explicite est plus recent qu'elle.
+     */
+    private var forced = false
     val webView: WebView by lazy { created = true; build() }
 
     private fun log(msg: String) = Log.i("FGC", msg)
@@ -308,6 +316,7 @@ class ClaimSession(
      */
     fun start(keys: Set<String> = emptySet()): Boolean {
         if (_ui.value.running) return true
+        forced = true
         val now = System.currentTimeMillis()
         val s = Graph.store.value
         val todo = Rules.pending(s, now, force = keys).let { list -> if (keys.isEmpty()) list else list.filter { it.key in keys } }
@@ -329,6 +338,7 @@ class ClaimSession(
 
     /** Toute la famille (1.9.0) : la meme boucle, a l'ecran, pour un membre. Le verrou est tenu par l'appelant. */
     suspend fun runShown(todo: List<Offer>): List<String> {
+        forced = true
         _ui.value = Ui(running = true, total = todo.size, visible = true)
         return runAll(todo)
     }
@@ -475,7 +485,7 @@ class ClaimSession(
         }
         _ui.value = _ui.value.copy(step = STEP_CLAIM)
         val budget = if (headless) HEADLESS_BUDGET_MS else BUDGET_MS
-        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget) }) }.toString()
+        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-reclame"); put("budgetMs", budget); put("force", forced) }) }.toString()
         withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
         val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }
             ?: return Verdicts.FAILURE to "aucun verdict en ${budget / 1000} s"

@@ -414,6 +414,7 @@ export async function claimOffer(offer, {
   record = () => {},
   fetch: fetchImpl,
   steamTiming,
+  force = false,
 } = {}) {
   if (typeof now !== 'number') throw new TypeError('reclamer : "maintenant" est obligatoire');
 
@@ -479,7 +480,7 @@ export async function claimOffer(offer, {
 
     const promesseVerdict = awaitVerdict(tabId, 'fgc-verdict', budgetMs);
     try {
-      await chrome.tabs.sendMessage(tabId, { type: 'fgc-reclame', budgetMs });
+      await chrome.tabs.sendMessage(tabId, { type: 'fgc-reclame', budgetMs, force: force === true });
     } catch (e) {
       return { verdict: VERDICTS.FAILURE, details: `ordre non transmis : ${(e && e.message) || e}`, resolvedUrl, store };
     }

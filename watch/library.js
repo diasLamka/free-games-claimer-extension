@@ -194,6 +194,35 @@ export function integrateHistory(library, { platform, added, catalog = {} }) {
 
 /* ---------------------------------------------------------------- lecture */
 
+/**
+ * Les entrees Epic « deja possede » ecrites a tort (2.99.7), a effacer.
+ *
+ * Avant la 2.99.7 le moteur concluait « deja possede » sur n'importe quel
+ * « Dans la bibliotheque » de la page -- la carte d'un autre jeu suffisait. Il
+ * l'ecrivait `claimed` avec la raison `ALREADY_OWNED` (ou `ALREADY_CLAIMED`),
+ * et tout ce qui suivait s'y fiait. On ne distingue pas ici celles qui etaient
+ * justes : on les efface TOUTES (les trente derniers jours), car la revue de la
+ * fiche les reecrit si elles l'etaient, et une entree `claimed` ordinaire --
+ * celle d'une vraie reclamation, qui compte dans le bilan -- n'est jamais touchee.
+ *
+ * Rend l'historique et le registre sans elles, et les cles retirees. Pure.
+ */
+export const FALSE_OWNERSHIP_DAYS = 30;
+export function falseOwnership(historyValue, library, now) {
+  const history = { ...readHistory(historyValue) };
+  const lib = { ...(library || {}) };
+  const removed = [];
+  for (const [key, entry] of Object.entries(history)) {
+    if (!entry || entry.status !== 'claimed') continue;
+    if (!/^ALREADY_/.test(String(entry.reason || ''))) continue;
+    if (!entry.ts || now - entry.ts > FALSE_OWNERSHIP_DAYS * 86400000) continue;
+    delete history[key];
+    delete lib[libraryKey('epic', key)];
+    removed.push(key);
+  }
+  return { history, library: lib, removed };
+}
+
 /** Les titres normalises deja possedes, pour le rapprochement. */
 export function ownedTitles(library, normalise) {
   const out = new Map();

@@ -1,3 +1,13 @@
+  /* Une recuperation DEMANDEE (le bouton, le menu, ou "Recuperer" du popup)
+   * repart de la page, pas de l'historique (2.99.7). L'historique est la memoire
+   * du moteur ; s'il s'est trompe un jour (un "Dans la bibliotheque" lu sur la
+   * carte d'un autre jeu), il se trompe tant que personne ne l'efface, et le
+   * message "tous les jeux de la semaine sont deja recuperes" repond a un
+   * utilisateur qui vient justement de dire le contraire. Une demande explicite
+   * est plus recente que cette memoire : chaque jeu gratuit est revu sur sa
+   * propre fiche, qui sait, elle, si le jeu est a vous. */
+  var epicForceRecheck = false;
+
   function runEpicGamesModule() {
     var PLATFORM = 'Epic Games';
 
@@ -52,15 +62,39 @@
         return null;
       });
     }).then(function (freebies) {
+      // Le controle de coherence ci-dessous lit la fiche : on lui laisse le
+      // temps de s'afficher (rendu cote client) au lieu de la lire vide.
+      var force = epicForceRecheck;
+      epicForceRecheck = false;
       var currentSlug = extractEpicSlug(location.href);
+      var currentFree = freebies && currentSlug && freebies.find(function (g) { return g.slug === currentSlug; });
+      var pageReady = currentFree && (force || alreadyHandled(PLATFORM, epicHistoryKeyForSlug(currentFree.slug)))
+        ? waitForEpicCtaState(8000)
+        : Promise.resolve(null);
+      return pageReady.then(function (pageState) { return { freebies: freebies, force: force, pageState: pageState }; });
+    }).then(function (ctx) {
+      var freebies = ctx.freebies;
+      var force = ctx.force;
+      var currentSlug = extractEpicSlug(location.href);
+
+      if (freebies && force) {
+        // Demande explicite : l'historique de ces jeux ne decide rien (voir epicForceRecheck).
+        freebies.forEach(function (g) {
+          var k = epicHistoryKeyForSlug(g.slug);
+          if (alreadyHandled(PLATFORM, k)) {
+            log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
+            removeHistoryEntry(PLATFORM, k);
+          }
+        });
+      }
 
       if (freebies) {
         if (currentSlug) {
           var currentGameInList = freebies.find(function (g) { return g.slug === currentSlug; });
           if (currentGameInList) {
             var key = epicHistoryKeyForSlug(currentGameInList.slug);
-            if (alreadyHandled(PLATFORM, key) && isEpicGameUnownedOnCurrentPage()) {
-              log(PLATFORM, 'warn', 'Historique incoherent detecte pour "' + currentGameInList.title + '" : marque "claimed" mais le bouton "Obtenir" est encore visible. Correction de l\'historique et nouvelle tentative.');
+            if (alreadyHandled(PLATFORM, key) && ctx.pageState === 'unowned') {
+              log(PLATFORM, 'warn', 'Historique incoherent detecte pour "' + currentGameInList.title + '" : marque "claimed" mais le bouton d\'achat de la fiche est encore la. Correction de l\'historique et nouvelle tentative.');
               removeHistoryEntry(PLATFORM, key);
             }
           }

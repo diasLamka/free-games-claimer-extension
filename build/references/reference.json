@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.64.0.js",
-  "sha256": "1B7562D1C64E9EC991CF3490028CE707C9D7851C59E4D99D0131F4FE9EB76FEC",
-  "octets": 224518,
-  "version": "2.64.0",
-  "motif": "2.64.0 : essai a blanc (fgc-inspecte, inspectPage) et motifs GOG nommes"
+  "fichier": "reference-v2.99.7.js",
+  "sha256": "16ECBC71AC740AB75F952BE6B48A144E82FB7ECEAB6BBDD0A79D2E9BC256A1B0",
+  "octets": 233355,
+  "version": "2.99.7",
+  "motif": "2.99.7 : la possession se lit sur le bouton d'achat de la fiche, defi de la fenetre d'achat remonte, recuperation demandee sans memoire"
 }

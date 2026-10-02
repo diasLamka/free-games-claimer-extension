@@ -1039,6 +1039,14 @@ export async function claimWhatCanBe({
   maxReclamations,
   record = () => {},
   fetch: fetchImpl,
+  /* Une reclamation DEMANDEE par l'utilisateur (« Tout recuperer », « Recuperer »
+     sur une offre) et non decidee par le cycle (2.99.7). Elle ne se fie ni au
+     registre de l'extension ni a l'historique du moteur : tous deux ont ecrit
+     « deja recupere » sur un jeu qui ne l'etait pas (une etiquette « Dans la
+     bibliotheque » lue sur la carte d'un autre jeu), et un clic explicite est
+     plus recent que cette memoire. Ce que les MAGASINS disent posseder
+     (`collection`, lu sur le compte) reste cru. */
+  forced = false,
   /* Le relais (2.87.0) : les cles « magasin|titre » que l'autre appareil est
      en train de prendre, et deux avis -- avant une reclamation (un verrou),
      apres un succes (le jeu obtenu). Une panne du relais ne bloque rien. */
@@ -1063,7 +1071,7 @@ export async function claimWhatCanBe({
 
   /* Ce que l'extension possede deja, pour ne pas rouvrir un onglet dessus.
      Construit une fois par cycle, pas une fois par offre. */
-  const owned = library ? ownedKeys(library, normaliseTitle) : null;
+  const owned = library && !forced ? ownedKeys(library, normaliseTitle) : null;
   const ownedIds = collection ? ownedStoreKeys(collection) : null;
 
   const tri = claimCandidates(next, filters, {
@@ -1138,6 +1146,7 @@ export async function claimWhatCanBe({
       supportedStores: claimableStores,
       record,
       fetch: fetchImpl,
+      force: forced,
     });
 
     /* Rien n'a ete envoye au magasin -- un DLC dont le jeu de base manque,

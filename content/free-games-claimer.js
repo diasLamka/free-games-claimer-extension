@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.99.6
+ * FREE GAMES AUTO-CLAIMER -- v2.99.7
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -933,7 +933,26 @@
     return true;
   }
 
+  /* Un defi niche dans la fenetre d'achat (2.99.7). La frame d'achat, d'une autre
+     origine, nous le dit par message ; il ne compte que tant que la fenetre est
+     ouverte et moins de dix minutes. Seul le fait est accepte, de la part d'un
+     hote epicgames.com : aucune donnee ne transite. */
+  var epicPaymentChallengeAt = 0;
+  if (!IS_EPIC_PAYMENT_FRAME && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('message', function (ev) {
+      var d = ev && ev.data;
+      if (!d || d.fgcPaymentChallenge !== true) return;
+      var host = '';
+      try { host = new URL(ev.origin).hostname; } catch (e) { return; }
+      if (!/(^|\.)epicgames\.com$/i.test(host)) return;
+      epicPaymentChallengeAt = Date.now();
+    });
+  }
+
   function detectSecurityChallenge() {
+    if (!IS_EPIC_PAYMENT_FRAME && epicPaymentChallengeAt && Date.now() - epicPaymentChallengeAt < 10 * 60000 && epicPurchaseOverlayOpen()) {
+      return { type: 'captcha', detail: 'defi dans la fenetre d\'achat Epic' };
+    }
     var iframes = Array.prototype.slice.call(document.querySelectorAll('iframe'));
     var iframeHit = iframes.find(function (f) {
       return /captcha|hcaptcha|recaptcha|arkose|funcaptcha|challenge/i.test(f.src || '') && isElementVisible(f);
@@ -1260,6 +1279,91 @@
     return m ? normalizeEpicSlug(m[1]) : null;
   }
 
+  /* LA POSSESSION SE LIT SUR LE BOUTON D'ACHAT DE CETTE FICHE (2.99.7).
+   *
+   * Jusqu'ici "Dans la bibliotheque" se cherchait n'importe ou dans la page :
+   * tout bouton, tout lien visible dont le texte contenait ces mots. Or une
+   * page Epic en porte plusieurs sans que CE jeu soit pris -- la carte du
+   * second jeu gratuit de la semaine quand le premier est deja au compte, une
+   * extension ou une autre edition possedee, une vignette "Dans la
+   * bibliotheque" dans un carrousel. Le moteur concluait "deja possede",
+   * l'ecrivait "claimed" dans son historique, et tout ce qui suivait -- le
+   * module ("tous les jeux de la semaine sont deja recuperes"), l'ordre
+   * pilote ("deja recupere") -- s'appuyait sur cette ligne fausse. Signale le
+   * 2026-10-01 : des jeux Epic non recuperes, un anti-bot a l'ecran, et
+   * "deja recupere".
+   *
+   * Desormais :
+   *   - la fiche d'UN jeu seulement : sur une liste, personne n'est "possede ici" ;
+   *   - le bouton d'achat PRINCIPAL, tel qu'Epic le marque
+   *     (data-testid="purchase-cta-button"), fait foi quand il est la : son
+   *     texte, et lui seul. Un "In Library" ailleurs ne le contredit pas ;
+   *   - sinon, le repli par le texte -- mais court (un bouton, pas une
+   *     vignette de jeu) et jamais dans un lien vers un AUTRE jeu. */
+  var EPIC_CTA_SELECTOR = '[data-testid="purchase-cta-button"]';
+  var EPIC_OWNERSHIP_MAX_TEXT = 40;
+
+  function epicElementVisible(el) {
+    return !!(el && (el.offsetWidth || el.offsetHeight || (el.getClientRects && el.getClientRects().length)));
+  }
+
+  function epicOwnershipText(text) {
+    return EPIC_OWNERSHIP_PATTERNS.some(function (p) { return p.test(text); });
+  }
+
+  // Les boutons d'achat principaux visibles de la page, dans l'ordre du DOM.
+  function epicPurchaseButtons() {
+    var list;
+    try { list = Array.prototype.slice.call(document.querySelectorAll(EPIC_CTA_SELECTOR)); } catch (e) { list = []; }
+    return list.filter(epicElementVisible);
+  }
+
+  // L'element qui dit "ce jeu est dans votre bibliotheque", ou null.
+  function epicOwnedHere() {
+    var slug = extractEpicSlug(location.href);
+    if (!slug) return null;
+
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      return epicOwnershipText(actionText(principaux[0])) ? principaux[0] : null;
+    }
+
+    var candidates = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
+    return candidates.find(function (el) {
+      if (!epicElementVisible(el)) return false;
+      var text = actionText(el);
+      if (!text || text.length > EPIC_OWNERSHIP_MAX_TEXT || !epicOwnershipText(text)) return false;
+      var anchor = el.closest ? el.closest('a[href*="/p/"], a[href*="/bundles/"]') : null;
+      if (anchor) {
+        var otherSlug = extractEpicSlug(anchor.getAttribute('href') || '');
+        if (otherSlug && otherSlug !== slug) return false;
+      }
+      return true;
+    }) || null;
+  }
+
+  // 'owned' | 'unowned' | null (la fiche n'a pas fini de s'afficher, ou ne dit rien).
+  function epicCtaState(mustBeEnabled) {
+    if (!extractEpicSlug(location.href)) return null;
+    if (epicOwnedHere()) return 'owned';
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      var t = actionText(principaux[0]);
+      var achetable = EPIC_MAIN_CTA_PATTERNS.some(function (p) { return p.test(t); })
+        || EPIC_LIBRARY_PATTERNS.some(function (p) { return p.test(t); });
+      return achetable ? 'unowned' : null;
+    }
+    var cta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: mustBeEnabled !== false })
+      || findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: mustBeEnabled !== false });
+    return cta ? 'unowned' : null;
+  }
+
+  // Attend que la fiche dise ce qu'elle est (le rendu est cote client). null au bout du delai.
+  function waitForEpicCtaState(timeoutMs) {
+    return waitForElement(function () { return epicCtaState(false); }, { timeout: timeoutMs, interval: 500 })
+      .catch(function () { return null; });
+  }
+
   function isEpicNotFoundPage(pathname) {
     return /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?not-found\/?$/i.test(pathname || '');
   }
@@ -1529,6 +1633,11 @@
       epicPaymentSawSomethingAt = 0;
       log(EPIC_PAYMENT_PLATFORM, 'warn', 'Defi de securite (' + challenge.type + ') dans la frame d\'achat. Sentinelle arretee.', challenge.detail);
       notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPaymentCheck'));
+      /* Le cadre du dessus ne voit pas un captcha niche dans cette frame
+         (origine differente) : sans ce message il attendait cent cinquante
+         secondes une confirmation qui ne pouvait venir, puis concluait mal
+         (2.99.7). Rien que le fait qu'un defi est la -- aucune donnee. */
+      try { window.top.postMessage({ fgcPaymentChallenge: true }, '*'); } catch (e) { /* cadre inaccessible */ }
       return false;
     }
 
@@ -1703,6 +1812,7 @@
         // Action manuelle : on ignore et on remet a zero le delai de repos.
         clearAutoCooldown('epic');
         clearAutoCooldown('luna');
+        epicForceRecheck = true;
         updateUiState('running', uiText('engSearching'));
         dispatch();
       },
@@ -1883,7 +1993,11 @@
       handleEpicPostPurchaseModals();
       if (epicLauncherModalSeen) return document.body;
 
-      var ownershipBtn = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+      // Un defi a resoudre ne se confirme pas en attendant : on le dit tout de suite (2.99.7).
+      var defi = detectSecurityChallenge();
+      if (defi) return { challenge: defi };
+
+      var ownershipBtn = epicOwnedHere();
       if (ownershipBtn) return ownershipBtn;
 
       var nodes = Array.prototype.slice.call(document.querySelectorAll('h1,h2,h3,p'));
@@ -1895,9 +2009,7 @@
   }
 
   function isEpicGameUnownedOnCurrentPage() {
-    var mainCta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: true });
-    var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
-    return !!mainCta && !owned;
+    return epicCtaState(true) === 'unowned';
   }
 
   function claimEpicGame(startEl, title, PLATFORM) {
@@ -1922,7 +2034,11 @@
     var slugBeforeClick = clickedAway ? extractEpicSlug(location.href) : null;
     if (clickedAway) robustClick(startEl);
 
-    var alreadyOwned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+    // Ce controle ne vaut que sur la fiche DEJA ouverte. Apres un clic sur une
+    // carte la page est encore la liste, ou la fiche d'un autre jeu : un
+    // "Dans la bibliotheque" vu la ne dit rien de celui-ci (2.99.7). La
+    // boucle d'attente ci-dessous reprend, sur la bonne fiche.
+    var alreadyOwned = clickedAway ? null : epicOwnedHere();
     if (alreadyOwned) {
       log(PLATFORM, 'info', '"' + title + '" est deja dans la bibliotheque, rien a reclamer.');
       return Promise.resolve('ALREADY_OWNED');
@@ -1954,7 +2070,7 @@
     return waitForElement(function () {
       var slugNow = extractEpicSlug(location.href);
       var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
-      ownedEl = onThisGame ? findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }) : null;
+      ownedEl = onThisGame ? epicOwnedHere() : null;
       if (ownedEl) return ownedEl;
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
@@ -2119,8 +2235,16 @@
     if (!epicSettleSince) epicSettleSince = Date.now();
 
     function round() {
-      return waitForEpicPaymentCompletion().catch(function (err) {
-        var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+      return waitForEpicPaymentCompletion().then(function (found) {
+        if (found && found.challenge) {
+          var e = new Error('Defi de securite (' + found.challenge.type + ') dans la fenetre d\'achat : a resoudre a la main, puis relancer.');
+          e.fgcChallenge = true;
+          throw e;
+        }
+        return found;
+      }).catch(function (err) {
+        if (err && err.fgcChallenge) throw err;
+        var owned = epicOwnedHere();
         if (owned) {
           log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
           return null;
@@ -2197,6 +2321,16 @@
    * fabriquait le bug qu'il corrige. */
   var EPIC_MODULE_RUN_STALE_MS = 5 * 60000;
 
+  /* Une recuperation DEMANDEE (le bouton, le menu, ou "Recuperer" du popup)
+   * repart de la page, pas de l'historique (2.99.7). L'historique est la memoire
+   * du moteur ; s'il s'est trompe un jour (un "Dans la bibliotheque" lu sur la
+   * carte d'un autre jeu), il se trompe tant que personne ne l'efface, et le
+   * message "tous les jeux de la semaine sont deja recuperes" repond a un
+   * utilisateur qui vient justement de dire le contraire. Une demande explicite
+   * est plus recente que cette memoire : chaque jeu gratuit est revu sur sa
+   * propre fiche, qui sait, elle, si le jeu est a vous. */
+  var epicForceRecheck = false;
+
   function runEpicGamesModule() {
     var PLATFORM = 'Epic Games';
 
@@ -2251,15 +2385,39 @@
         return null;
       });
     }).then(function (freebies) {
+      // Le controle de coherence ci-dessous lit la fiche : on lui laisse le
+      // temps de s'afficher (rendu cote client) au lieu de la lire vide.
+      var force = epicForceRecheck;
+      epicForceRecheck = false;
       var currentSlug = extractEpicSlug(location.href);
+      var currentFree = freebies && currentSlug && freebies.find(function (g) { return g.slug === currentSlug; });
+      var pageReady = currentFree && (force || alreadyHandled(PLATFORM, epicHistoryKeyForSlug(currentFree.slug)))
+        ? waitForEpicCtaState(8000)
+        : Promise.resolve(null);
+      return pageReady.then(function (pageState) { return { freebies: freebies, force: force, pageState: pageState }; });
+    }).then(function (ctx) {
+      var freebies = ctx.freebies;
+      var force = ctx.force;
+      var currentSlug = extractEpicSlug(location.href);
+
+      if (freebies && force) {
+        // Demande explicite : l'historique de ces jeux ne decide rien (voir epicForceRecheck).
+        freebies.forEach(function (g) {
+          var k = epicHistoryKeyForSlug(g.slug);
+          if (alreadyHandled(PLATFORM, k)) {
+            log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
+            removeHistoryEntry(PLATFORM, k);
+          }
+        });
+      }
 
       if (freebies) {
         if (currentSlug) {
           var currentGameInList = freebies.find(function (g) { return g.slug === currentSlug; });
           if (currentGameInList) {
             var key = epicHistoryKeyForSlug(currentGameInList.slug);
-            if (alreadyHandled(PLATFORM, key) && isEpicGameUnownedOnCurrentPage()) {
-              log(PLATFORM, 'warn', 'Historique incoherent detecte pour "' + currentGameInList.title + '" : marque "claimed" mais le bouton "Obtenir" est encore visible. Correction de l\'historique et nouvelle tentative.');
+            if (alreadyHandled(PLATFORM, key) && ctx.pageState === 'unowned') {
+              log(PLATFORM, 'warn', 'Historique incoherent detecte pour "' + currentGameInList.title + '" : marque "claimed" mais le bouton d\'achat de la fiche est encore la. Correction de l\'historique et nouvelle tentative.');
               removeHistoryEntry(PLATFORM, key);
             }
           }
@@ -3830,12 +3988,14 @@
     GM_registerMenuCommand('Lancer la recuperation maintenant', function () {
       clearAutoCooldown('epic');
       clearAutoCooldown('luna');
+      epicForceRecheck = true;
       dispatch();
     });
     GM_registerMenuCommand('Relancer maintenant (ignorer le delai)', function () {
       clearAutoCooldown('epic');
       clearAutoCooldown('luna');
       notifyUser('Free Games Claimer', 'Delai de repos remis a zero : la prochaine verification repart immediatement.');
+      epicForceRecheck = true;
       dispatch();
     });
     GM_registerMenuCommand('Etat du delai de repos', function () {
@@ -4021,8 +4181,15 @@
   // finit exactement ainsi, et c'est le magasin qui a bouge.
   var PILOT_EMPTY_REASON = 'le module a termine sans rien noter';
 
-  function runClaimOrder(budgetMs) {
+  function runClaimOrder(budgetMs, force) {
     var platform = platformNameForHost(location.hostname);
+    /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
+       memoire du moteur (2.99.7) : voir epicForceRecheck. */
+    if (force && platform === 'Epic Games') {
+      epicForceRecheck = true;
+      var slugForce = extractEpicSlug(location.href);
+      if (slugForce) removeHistoryEntry(platform, epicHistoryKeyForSlug(slugForce));
+    }
     var before = historyFingerprint(platform);
     var debut = Date.now();
     var moduleDoneAt = 0;
@@ -4046,8 +4213,11 @@
       // module termine, l'entree deja la. Le delai laisse passer une ecriture
       // tardive, qui dirait mieux ce qui vient de se passer.
       var settled = pilotSettled(moduleDoneAt, Date.now());
-      var found = freshEntry(platform, before)
-        || (settled ? standingEntry(platform, location.href) : null);
+      var found = freshEntry(platform, before);
+      /* Un defi a l'ecran passe AVANT une entree d'historique deja la (2.99.7) :
+         "deja recupere" dit sur une page qui demande un humain, c'est exactement
+         ce qui cachait le captcha. Une entree NOUVELLE, elle, est un fait. */
+      if (!found && settled && !detectSecurityChallenge()) found = standingEntry(platform, location.href);
       if (found) {
         clearInterval(timer);
         sendToPilot({
@@ -4111,7 +4281,7 @@
     if (host.indexOf('epicgames.com') !== -1) {
       if (isEpicNotFoundPage(location.pathname)) return null;
       return {
-        owned: function () { return findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }); },
+        owned: function () { return epicOwnedHere(); },
         claim: function () {
           return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
             || findActionElement(document, EPIC_MAIN_CTA_PATTERNS)
@@ -4214,7 +4384,7 @@
         }
         if (msg.type !== 'fgc-reclame') return;
         sendResponse({ recu: true });
-        runClaimOrder(msg.budgetMs || 5 * 60 * 1000);
+        runClaimOrder(msg.budgetMs || 5 * 60 * 1000, msg.force === true);
         return true;
       });
     } catch (e) {}
@@ -4353,6 +4523,9 @@
       GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,
       EPIC_MAIN_CTA_PATTERNS: EPIC_MAIN_CTA_PATTERNS,
       EPIC_OWNERSHIP_PATTERNS: EPIC_OWNERSHIP_PATTERNS,
+      epicOwnedHere: epicOwnedHere,
+      epicCtaState: epicCtaState,
+      isEpicGameUnownedOnCurrentPage: isEpicGameUnownedOnCurrentPage,
       EPIC_LIBRARY_PATTERNS: EPIC_LIBRARY_PATTERNS,
       EPIC_LIBRARY_LOOSE_PATTERNS: EPIC_LIBRARY_LOOSE_PATTERNS,
       EPIC_AGREE_PATTERNS: EPIC_AGREE_PATTERNS,

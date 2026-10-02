@@ -20,7 +20,11 @@
     var slugBeforeClick = clickedAway ? extractEpicSlug(location.href) : null;
     if (clickedAway) robustClick(startEl);
 
-    var alreadyOwned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+    // Ce controle ne vaut que sur la fiche DEJA ouverte. Apres un clic sur une
+    // carte la page est encore la liste, ou la fiche d'un autre jeu : un
+    // "Dans la bibliotheque" vu la ne dit rien de celui-ci (2.99.7). La
+    // boucle d'attente ci-dessous reprend, sur la bonne fiche.
+    var alreadyOwned = clickedAway ? null : epicOwnedHere();
     if (alreadyOwned) {
       log(PLATFORM, 'info', '"' + title + '" est deja dans la bibliotheque, rien a reclamer.');
       return Promise.resolve('ALREADY_OWNED');
@@ -52,7 +56,7 @@
     return waitForElement(function () {
       var slugNow = extractEpicSlug(location.href);
       var onThisGame = !!slugNow && !(clickedAway && slugNow === slugBeforeClick);
-      ownedEl = onThisGame ? findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }) : null;
+      ownedEl = onThisGame ? epicOwnedHere() : null;
       if (ownedEl) return ownedEl;
       return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
           || findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { label: 'Epic: bouton panier (Obtenir / Ajouter au panier)' })
@@ -217,8 +221,16 @@
     if (!epicSettleSince) epicSettleSince = Date.now();
 
     function round() {
-      return waitForEpicPaymentCompletion().catch(function (err) {
-        var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+      return waitForEpicPaymentCompletion().then(function (found) {
+        if (found && found.challenge) {
+          var e = new Error('Defi de securite (' + found.challenge.type + ') dans la fenetre d\'achat : a resoudre a la main, puis relancer.');
+          e.fgcChallenge = true;
+          throw e;
+        }
+        return found;
+      }).catch(function (err) {
+        if (err && err.fgcChallenge) throw err;
+        var owned = epicOwnedHere();
         if (owned) {
           log(PLATFORM, 'info', 'Confirmation non reconnue, mais le jeu est marque comme possede : succes.');
           return null;

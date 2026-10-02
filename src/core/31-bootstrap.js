@@ -106,8 +106,15 @@
   // finit exactement ainsi, et c'est le magasin qui a bouge.
   var PILOT_EMPTY_REASON = 'le module a termine sans rien noter';
 
-  function runClaimOrder(budgetMs) {
+  function runClaimOrder(budgetMs, force) {
     var platform = platformNameForHost(location.hostname);
+    /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
+       memoire du moteur (2.99.7) : voir epicForceRecheck. */
+    if (force && platform === 'Epic Games') {
+      epicForceRecheck = true;
+      var slugForce = extractEpicSlug(location.href);
+      if (slugForce) removeHistoryEntry(platform, epicHistoryKeyForSlug(slugForce));
+    }
     var before = historyFingerprint(platform);
     var debut = Date.now();
     var moduleDoneAt = 0;
@@ -131,8 +138,11 @@
       // module termine, l'entree deja la. Le delai laisse passer une ecriture
       // tardive, qui dirait mieux ce qui vient de se passer.
       var settled = pilotSettled(moduleDoneAt, Date.now());
-      var found = freshEntry(platform, before)
-        || (settled ? standingEntry(platform, location.href) : null);
+      var found = freshEntry(platform, before);
+      /* Un defi a l'ecran passe AVANT une entree d'historique deja la (2.99.7) :
+         "deja recupere" dit sur une page qui demande un humain, c'est exactement
+         ce qui cachait le captcha. Une entree NOUVELLE, elle, est un fait. */
+      if (!found && settled && !detectSecurityChallenge()) found = standingEntry(platform, location.href);
       if (found) {
         clearInterval(timer);
         sendToPilot({
@@ -196,7 +206,7 @@
     if (host.indexOf('epicgames.com') !== -1) {
       if (isEpicNotFoundPage(location.pathname)) return null;
       return {
-        owned: function () { return findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false }); },
+        owned: function () { return epicOwnedHere(); },
         claim: function () {
           return findActionElement(document, EPIC_LIBRARY_PATTERNS, { mustBeEnabled: true })
             || findActionElement(document, EPIC_MAIN_CTA_PATTERNS)
@@ -299,7 +309,7 @@
         }
         if (msg.type !== 'fgc-reclame') return;
         sendResponse({ recu: true });
-        runClaimOrder(msg.budgetMs || 5 * 60 * 1000);
+        runClaimOrder(msg.budgetMs || 5 * 60 * 1000, msg.force === true);
         return true;
       });
     } catch (e) {}

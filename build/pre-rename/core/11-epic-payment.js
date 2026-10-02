@@ -175,6 +175,11 @@
       epicPaymentSawSomethingAt = 0;
       log(EPIC_PAYMENT_PLATFORM, 'warn', 'Defi de securite (' + challenge.type + ') dans la frame d\'achat. Sentinelle arretee.', challenge.detail);
       notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyPaymentCheck'));
+      /* Le cadre du dessus ne voit pas un captcha niche dans cette frame
+         (origine differente) : sans ce message il attendait cent cinquante
+         secondes une confirmation qui ne pouvait venir, puis concluait mal
+         (2.99.7). Rien que le fait qu'un defi est la -- aucune donnee. */
+      try { window.top.postMessage({ fgcPaymentChallenge: true }, '*'); } catch (e) { /* cadre inaccessible */ }
       return false;
     }
 

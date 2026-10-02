@@ -4,6 +4,53 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.99.7 -- 2026-10-02
+
+**Epic : « deja recupere » dit a tort, et l'anti-bot qu'on ne voyait pas**
+
+Signale : des jeux Epic non recuperes la veille ; en forcant, un anti-bot
+s'affiche avant « Ajouter a la bibliotheque » et l'extension repond « deja
+recupere ».
+
+- **La cause.** « Dans la bibliotheque » se cherchait **n'importe ou dans la
+  page** : tout bouton, tout lien visible dont le texte contenait ces mots. Or
+  une page Epic en porte plusieurs sans que CE jeu soit pris -- la carte du
+  second jeu gratuit de la semaine quand le premier est au compte, une
+  extension ou une autre edition possedee, une vignette de carrousel. Le moteur
+  concluait « possede », l'ecrivait `claimed` dans son historique, et tout ce
+  qui suivait s'y fiait : le module (« tous les jeux de la semaine sont deja
+  recuperes »), l'ordre pilote (« deja recupere »), le registre -- qui fait
+  sauter le jeu aux cycles suivants. Un jeu qu'on n'avait pas ne se reclamait
+  plus jamais, sans un mot.
+- **La possession se lit sur le bouton d'achat de CETTE fiche** :
+  `data-testid="purchase-cta-button"`, tel qu'Epic le marque, fait foi ; un
+  « In Library » ailleurs ne le contredit pas. Sans ce marqueur, le repli par
+  le texte reste, mais court (un bouton, pas une vignette) et jamais dans un
+  lien vers un autre jeu. Une liste n'est la fiche d'aucun jeu.
+- **L'anti-bot est enfin vu.** Un captcha niche dans la fenetre d'achat est
+  dans une frame d'une autre origine : le cadre du dessus ne le voyait pas,
+  attendait cent cinquante secondes une confirmation impossible, puis concluait
+  mal. La frame d'achat previent maintenant le cadre du dessus (un message sans
+  donnee, accepte seulement d'un hote epicgames.com) : verdict « defi », onglet
+  remonte, notification -- au lieu d'un silence.
+- **Un defi a l'ecran passe avant « deja recupere »** dans l'ordre pilote.
+- **Forcer, c'est repartir de la page.** « Tout recuperer », « Recuperer » sur
+  une offre, le bouton et le menu de la page n'ecoutent plus ni l'historique du
+  moteur ni le registre : chaque jeu gratuit est revu sur sa fiche. Les
+  magasins, eux, restent crus sur ce qu'ils disent posseder.
+- **Le soin, une fois.** Au prochain demarrage, les entrees Epic
+  `claimed / ALREADY_*` des trente derniers jours sont effacees de l'historique
+  ET du registre ; la revue de la fiche les reecrit si elles etaient justes.
+  Une vraie reclamation (`CLAIMED`) n'est jamais touchee, et ces entrees-la ne
+  comptent dans aucun total.
+- **Appli 1.17.1** : le meme moteur, et l'ordre porte `force` quand la
+  recuperation est demandee a l'ecran.
+
+Ce qui n'a pas pu etre verifie : la page d'Epic est derriere un mur anti-robot
+depuis ce poste, donc le marqueur `purchase-cta-button` repose sur ce que les
+outils de bibliotheque Epic en disent, pas sur une capture. Il est tenu par 12
+tests (1593 en tout) ; le repli par le texte couvre sa disparition.
+
 ## 2.99.6 -- 2026-09-30
 
 **Connecte pour de bon : la page confirme, et la verification part toute seule**

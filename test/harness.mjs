@@ -134,7 +134,8 @@ export function loadEngine(options = {}) {
     PointerEvent: FakeEvent,
     KeyboardEvent: FakeEvent,
     WeakMap,
-    addEventListener: noop,
+    // Un test peut capter les ecouteurs de fenetre poses au chargement (ex. 'message').
+    addEventListener: options.addEventListener || noop,
     removeEventListener: noop,
     open: noop,
 

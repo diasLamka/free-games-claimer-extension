@@ -47,7 +47,11 @@
       handleEpicPostPurchaseModals();
       if (epicLauncherModalSeen) return document.body;
 
-      var ownershipBtn = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
+      // Un defi a resoudre ne se confirme pas en attendant : on le dit tout de suite (2.99.7).
+      var defi = detectSecurityChallenge();
+      if (defi) return { challenge: defi };
+
+      var ownershipBtn = epicOwnedHere();
       if (ownershipBtn) return ownershipBtn;
 
       var nodes = Array.prototype.slice.call(document.querySelectorAll('h1,h2,h3,p'));
@@ -59,8 +63,6 @@
   }
 
   function isEpicGameUnownedOnCurrentPage() {
-    var mainCta = findActionElement(document, EPIC_MAIN_CTA_PATTERNS, { mustBeEnabled: true });
-    var owned = findActionElement(document, EPIC_OWNERSHIP_PATTERNS, { mustBeEnabled: false });
-    return !!mainCta && !owned;
+    return epicCtaState(true) === 'unowned';
   }
 

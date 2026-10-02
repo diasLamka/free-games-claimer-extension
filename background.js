@@ -40,7 +40,7 @@ import {
   claimAllNow, claimOneNow, isStopped, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
 } from './watch/commands.js';
-import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory } from './watch/library.js';
+import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory, falseOwnership, libraryKey } from './watch/library.js';
 import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession, readSession, dueForProbe, needsPage, settle,
 } from './watch/session.js';
@@ -1431,7 +1431,33 @@ function toggleRegistre(change) {
   }
 }
 
-const demarrerRegistre = (origine) => backfillLibrary(origine)
+/* Le soin des « deja possede » a tort (2.99.7), une seule fois.
+ *
+ * Jusqu'a la 2.99.6 le moteur lisait « Dans la bibliotheque » n'importe ou dans
+ * la page Epic : la carte d'un AUTRE jeu suffisait a ecrire « claimed / ALREADY_OWNED »
+ * pour un jeu qui n'etait pas pris, et tout le reste -- cycle, popup, ordre
+ * pilote -- s'appuyait sur cette ligne. Ces entrees-la sont effacees de
+ * l'historique ET du registre (le rattrapage ci-dessous les y remettrait), et
+ * chaque jeu gratuit en cours est revu sur sa propre fiche, qui dit vrai.
+ * Elles ne comptent dans aucun total (un jeu deja a vous ne rapporte rien), donc
+ * rien n'est perdu si le jeu l'etait vraiment : la revue le reecrit. */
+const KEY_SOIN = 'veille:soin-possession';
+async function soignerPossession(origine) {
+  const cle = 'FGC_history_Epic Games';
+  const raw = await readKeys(api, [KEY_SOIN, KEY_LIBRARY, cle]);
+  if (raw[KEY_SOIN] === 1) return;
+  const { history, library, removed } = falseOwnership(raw[cle], raw[KEY_LIBRARY] || {}, Date.now());
+  if (removed.length) {
+    await write(api, { [cle]: JSON.stringify(history), [KEY_LIBRARY]: library, [KEY_SOIN]: 1 });
+    record('info', `soin (${origine}) : ${removed.length} jeu(x) Epic note(s) « deja possede(s) » a tort, effaces pour etre revus sur leur fiche`);
+  } else {
+    await write(api, { [KEY_SOIN]: 1 });
+  }
+}
+
+const demarrerRegistre = (origine) => soignerPossession(origine)
+  .catch((e) => record('warn', 'soin du registre impossible', e))
+  .then(() => backfillLibrary(origine))
   .catch((e) => record('warn', 'rattrapage du registre impossible', e))
   .then(() => restaurerRegistre(origine))
   .catch((e) => record('warn', 'restauration du registre impossible', e));
