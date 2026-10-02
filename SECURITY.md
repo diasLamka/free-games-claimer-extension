@@ -153,6 +153,15 @@ et le titre de l'onglet sont lus. Une page qui ne dit rien (defi anti-robot,
 page inattendue) laisse « inconnu », jamais « deconnecte ». L'arret d'urgence
 et le mode vacances coupent la verification automatique.
 
+**Le navigateur adaptatif** (2.100.0, GOG) ne fait que ce que la
+reclamation faisait deja -- cliquer, avec votre session, sur la page du magasin
+concerne -- mais choisit le controle par son sens. Il ne choisit jamais un
+controle qui parle d'argent, de panier, de paiement, de connexion ou de cookies,
+ni un prix non nul ; il ne suit un lien que s'il reste sur le meme site, dans le
+meme onglet ; son ordre en cours (magasin, etape, titre) vit dans le
+`sessionStorage` de l'onglet, jamais ailleurs. Sa memoire (`FGC_nav_GOG`) ne
+contient que des libelles de boutons et des compteurs.
+
 **Tester la recuperation** (2.64.0) ouvre, sur un geste lui aussi, la page
 d'un jeu offert dans chaque magasin reclame, avec votre session -- comme vous
 le feriez en la visitant. Le moteur recoit l'ordre `fgc-inspecte`, jamais

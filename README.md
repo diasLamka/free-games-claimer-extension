@@ -94,6 +94,17 @@ node build/build.mjs --freeze "motif"
 node build/verify-rename.mjs --rebase "motif"
 ```
 
+### Le navigateur adaptatif (GOG)
+
+`src/core/17-adaptive-nav.js` ne cherche pas un libelle : il classe la page
+(connexion, defi, jeu deja a vous, bouton qui prend, lien qui mene, fenetre de
+confirmation, offre terminee) et choisit le controle dont le **sens** colle,
+dans plusieurs langues, avec la structure de la page pour departager. Il suit
+les liens du meme site de page en page (l'ordre en cours est ecrit dans
+`sessionStorage` et repris par la page suivante), ne choisit JAMAIS ce qui parle
+d'argent, ne tient une reussite que sur une preuve, et retient par magasin ce
+qui a marche (`FGC_nav_<plateforme>`). Voir le CHANGELOG 2.100.0.
+
 ### Trois contraintes verifiees a chaque build
 
 Le build echoue si le code les enfreint, parce que les trois ont deja casse le

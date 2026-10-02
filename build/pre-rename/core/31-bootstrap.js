@@ -95,7 +95,7 @@
 
   // Le module a-t-il fini pour de bon ? Rendu depuis PILOT_SETTLE_MS, et
   // aucune execution Epic ou Luna encore en cours : un module deja lance rend
-  // tout de suite une promesse resolue pendant que l'autre travaille encore,
+  // tout de resumedOrder une promesse resolue pendant que l'autre travaille encore,
   // et conclure a ce moment-la annoncerait un echec avant la reclamation.
   function pilotSettled(moduleDoneAt, now) {
     return !!moduleDoneAt && now - moduleDoneAt >= PILOT_SETTLE_MS && !epicModuleRunSince && !lunaModuleRunSince;
@@ -108,6 +108,7 @@
 
   function runClaimOrder(budgetMs, force) {
     var platform = platformNameForHost(location.hostname);
+    if (force) navForceRecheck = true;
     /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
        memoire du moteur (2.99.7) : voir epicForceRecheck. */
     if (force && platform === 'Epic Games') {
@@ -217,8 +218,15 @@
     if (host.indexOf('gog.com') !== -1) {
       if (isGogRedeemPage(location.pathname)) return null;
       return {
-        owned: function () { return findActionElement(document, GOG_OWNED_PATTERNS, { mustBeEnabled: false }); },
-        claim: function () { return findActionElement(document, GOG_CLAIM_PATTERNS); }
+        owned: function () { return navOwnedEvidence(); },
+        claim: function () {
+          // Lecture seule : le bouton knownButton, sinon celui que le sens designe, sinon le lien qui y mene.
+          var knownButton = findActionElement(document, GOG_CLAIM_PATTERNS);
+          if (knownButton) return knownButton;
+          var memoire = navMemoryRead('GOG');
+          var best = navBest('claim', memoire) || navBest('goto', memoire);
+          return best ? best.el : null;
+        }
       };
     }
     if (host.indexOf('luna.amazon.') !== -1) {
@@ -319,6 +327,14 @@
     log('CORE', 'info', 'Onglet pilote par la veille : le moteur attend un ordre.');
     listenForOrders();
     sendToPilot({ type: 'fgc-pret', url: location.href });
+    /* Une reclamation qui a change de page (2.100.0) : l'ordre a ete ecrit avant
+       de partir, et personne ne le renverra a CETTE page -- l'onglet est le meme,
+       le verdict attendu aussi. On le reprend ici, avec ce qui reste du budget. */
+    var resumedOrder = navOrderPending();
+    if (resumedOrder && resumedOrder.platform === platformNameForHost(location.hostname)) {
+      log('CORE', 'info', 'Reprise de la reclamation apres changement de page (etape ' + resumedOrder.hops + ').');
+      runClaimOrder(Math.max(30000, resumedOrder.deadline - Date.now()), resumedOrder.force === true);
+    }
   }
 
   // run_at document_idle peut injecter le script APRES l'evenement load : un

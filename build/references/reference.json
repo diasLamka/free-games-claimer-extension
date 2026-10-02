@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.99.7.js",
-  "sha256": "16ECBC71AC740AB75F952BE6B48A144E82FB7ECEAB6BBDD0A79D2E9BC256A1B0",
-  "octets": 233355,
-  "version": "2.99.7",
-  "motif": "2.99.7 : la possession se lit sur le bouton d'achat de la fiche, defi de la fenetre d'achat remonte, recuperation demandee sans memoire"
+  "fichier": "reference-v2.100.0.js",
+  "sha256": "06F79D4E4125C39EC8A2E4F438EC31C072A9F9D945FDFEF34A1C676CF06E69E9",
+  "octets": 265372,
+  "version": "2.100.0",
+  "motif": "2.100.0 : navigateur adaptatif (17-adaptive-nav.js), le module GOG suit le chemin de page en page"
 }

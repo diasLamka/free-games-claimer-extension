@@ -3,6 +3,7 @@
       clearAutoCooldown('epic');
       clearAutoCooldown('luna');
       epicForceRecheck = true;
+      navForceRecheck = true;
       dispatch();
     });
     GM_registerMenuCommand('Relancer maintenant (ignorer le delai)', function () {
@@ -10,6 +11,7 @@
       clearAutoCooldown('luna');
       notifyUser('Free Games Claimer', 'Delai de repos remis a zero : la prochaine verification repart immediatement.');
       epicForceRecheck = true;
+      navForceRecheck = true;
       dispatch();
     });
     GM_registerMenuCommand('Etat du delai de repos', function () {

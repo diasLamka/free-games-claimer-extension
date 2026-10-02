@@ -23,34 +23,52 @@
       return Promise.resolve();
     }
 
-    var claimBtn = findActionElement(document, GOG_CLAIM_PATTERNS, { label: 'GOG: claim' });
-
-    if (!claimBtn) {
-      log(PLATFORM, 'info', 'Aucun bouton de recuperation visible (peut-etre deja reclame, ou pas de giveaway actif, ou le texte du bouton a change).');
-      updateUiState('ok', uiText('engGogNoGiveaway'));
-      return Promise.resolve();
-    }
-
-    var titleEl = document.querySelector('.giveaway__title, h1');
-    var title = (titleEl && titleEl.textContent && titleEl.textContent.trim()) || location.href;
-    if (alreadyHandled(PLATFORM, title)) {
-      log(PLATFORM, 'info', 'Deja recupere : ' + title);
-      updateUiState('ok', uiText('engAlreadyClaimed'));
-      return Promise.resolve();
-    }
-
-    return withRetry(function () {
-      robustClick(claimBtn);
-      return waitForElement(function () {
-        return findActionElement(document, GOG_OWNED_PATTERNS, { mustBeEnabled: false, label: 'GOG: confirmation' });
-      }, { timeout: 8000 });
-    }, { label: 'recuperation GOG (' + title + ')', retries: 3 }).then(function () {
-      saveHistoryEntry(PLATFORM, title, 'claimed');
-      log(PLATFORM, 'info', 'OK Recupere : ' + title);
-      updateUiState('ok', uiText('engGogClaimed', title));
+    /* Le navigateur adaptatif (2.100.0, voir 17-adaptive-nav.js) : la page dit ce
+       qu'elle est -- fiche d'un jeu en giveaway ("Go to giveaway"), page du
+       giveaway ("Ajouter a la bibliotheque"), jeu deja a vous, fenetre de
+       confirmation -- et le moteur suit le route, de page en page, au lieu de
+       chercher UN libelle exact sur la page ou il se trouve. */
+    var force = navForceRecheck;
+    navForceRecheck = false;
+    return navRun(PLATFORM, { force: force }).then(function (r) {
+      var route = r.trail && r.trail.length ? r.trail.join(' > ') : '';
+      switch (r.outcome) {
+        case 'claimed':
+          saveHistoryEntry(PLATFORM, r.title, 'claimed', 'CLAIMED', r.title);
+          log(PLATFORM, 'info', 'OK Recupere : ' + r.title + (route ? ' (' + route + ')' : ''));
+          updateUiState('ok', uiText('engGogClaimed', r.title));
+          return;
+        case 'owned':
+          saveHistoryEntry(PLATFORM, r.title, 'claimed', 'ALREADY_OWNED', r.title);
+          log(PLATFORM, 'info', 'Deja dans la bibliotheque : ' + r.title);
+          updateUiState('ok', uiText('engAlreadyClaimed'));
+          return;
+        case 'navigating':
+          // La page va changer : la suivante reprend l'ordre (startPiloted).
+          updateUiState('running', uiText('engGogChecking'));
+          return;
+        case 'ended':
+          log(PLATFORM, 'info', 'L\'offre semble terminee (rien a recuperer).');
+          updateUiState('ok', uiText('engGogNoGiveaway'));
+          return;
+        case 'login':
+          log(PLATFORM, 'warn', 'Session GOG non detectee.');
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifyGogLogin'));
+          updateUiState('error', uiText('engGogNotLoggedIn'));
+          return;
+        case 'captcha':
+          log(PLATFORM, 'warn', 'Defi de securite detecte (' + (r.detail || 'captcha') + ').');
+          notifyUser('Free Games Claimer -- GOG', uiText('engNotifySecurityCheck'));
+          updateUiState('error', uiText('engCaptcha'));
+          return;
+        default:
+          // Rien de net, ou un clic sans effet : le diagnostic nomme ce que la page montrait.
+          log(PLATFORM, 'warn', 'Aucune etape de recuperation reconnue (' + r.outcome + '). Chemin : ' + (route || 'aucun')
+            + '. Boutons visibles : ' + ((r.labels && r.labels.length) ? r.labels.join(' | ') : 'aucun'));
+          updateUiState('error', uiText('engGogFailed', navTitle()));
+      }
     }).catch(function (err) {
-      log(PLATFORM, 'error', 'ECHEC pour "' + title + '" : ' + err.message);
-      updateUiState('error', uiText('engGogFailed', title));
+      log(PLATFORM, 'error', 'ECHEC GOG : ' + ((err && err.message) || err));
+      updateUiState('error', uiText('engGogFailed', navTitle()));
     });
   }
-

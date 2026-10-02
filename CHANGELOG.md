@@ -4,6 +4,61 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.100.0 -- 2026-10-02
+
+**Le navigateur adaptatif : la recuperation lit la page au lieu de chercher un libelle**
+
+Signale : sur GOG, la fiche d'un jeu en giveaway porte « Go to giveaway », qui
+mene a une seconde page ou il faut cliquer « Ajouter a la bibliotheque ». Le
+moteur ne cherchait qu'un libelle exact sur la page courante : sur la premiere,
+il ne trouvait rien -- et il aurait recommence a chaque changement de parcours.
+
+- **Lire la page, pas un texte.** Un nouveau module (`17-adaptive-nav.js`)
+  classe la page -- connexion demandee, defi de securite, jeu deja a vous,
+  bouton qui PREND le jeu, lien qui MENE au bouton, fenetre de confirmation,
+  offre terminee -- et choisit le controle dont le SENS colle : un vocabulaire
+  a poids dans six langues (francais, anglais, allemand, espagnol, italien,
+  portugais, polonais pour le plus courant), la structure (zone principale,
+  taille, compte a rebours a cote, hors entete et pied de page).
+- **De page en page.** Un lien vers une autre page se SUIT dans cet onglet (jamais
+  dans un nouvel onglet) ; l'ordre en cours est ecrit avant de partir et la page
+  suivante le reprend, avec ce qui reste du budget. Deux pages, trois au plus :
+  pas de ping-pong.
+- **Le texte VISIBLE decide.** Le bouton reel de la fiche GOG (mesure sur
+  gog.com) porte trois etats dans un meme noeud -- « Check out now », « Go to
+  giveaway », « Buy as a gift » -- dont un seul est affiche. `textContent` les
+  concatene et le controle entier tombait sous le veto ; `innerText` ne rend que
+  ce qu'on voit.
+- **Rien qui coute de l'argent, jamais.** Panier, achat, paiement, liste de
+  souhaits, partage, connexion, cookies, annulation, « redeem code », et tout
+  prix non nul dans un libelle : interdits quel que soit le score. Un lien qui
+  sort du site n'est pas suivi. `robustClick` refuse encore en dernier recours.
+- **Une reussite se prouve.** Le jeu doit apparaitre « dans la bibliotheque »
+  sur LE controle qu'on a clique, ou dans le coin de page ou il vivait, ou sur
+  le controle principal de la zone du giveaway -- jamais sur une vignette, un
+  carrousel ou un lien vers un autre jeu (la lecon d'Epic en 2.99.7). Un bouton
+  qui disparait sans rien dire n'est PAS un succes.
+- **Il apprend.** Un libelle qui a pris le jeu (ou mene a lui) est retenu par
+  magasin et reconnu ensuite partout, meme s'il n'est dans aucun vocabulaire ;
+  un echec pese moins. Et quand aucun libelle ne dit « prends » mais que la page
+  est nettement un giveaway (chemin ou zone « giveaway », compte a rebours, un
+  seul gros controle permis), la structure seule suffit -- puis la memoire
+  prend le relais.
+- **GOG l'utilise des 2.100.0** ; l'essai a blanc le lit sans cliquer.
+
+Mesure, sur la VRAIE page gog.com (invite, lecture seule) : la fiche donne
+« Go to giveaway » (score 20), l'accueil donne « Add to library » (score 14).
+Dans un vrai Chromium avec l'extension chargee, contre deux pages qui reprennent
+cette structure (serveur local mappe sur www.gog.com) : fiche, lien suivi,
+accueil, clic, `claimed` en 1,7 s ; meme chose en allemand (« Zum Giveaway »,
+« Zur Bibliothek hinzufuegen ») ; et avec un libelle inconnu (« Hol dir das
+Spiel »), trouve par la structure puis appris. 20 tests (1613 en tout).
+
+Ce qui n'a pas pu etre verifie : le parcours AVEC un compte connecte (la page
+invite renvoie a la connexion), et l'appli Android en vrai WebView -- elle
+embarque le meme moteur, ses tests passent. Epic et Amazon n'utilisent pas
+encore ce navigateur : leurs pages de paiement meritent d'abord d'etre observees.
+
 ## 2.99.7 -- 2026-10-02
 
 **Epic : « deja recupere » dit a tort, et l'anti-bot qu'on ne voyait pas**
