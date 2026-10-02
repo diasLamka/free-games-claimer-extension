@@ -16,7 +16,7 @@
  * Module pur.
  */
 import { readWorth, readCurrency, UNKNOWN_CURRENCY } from './filters.js';
-import { STORE_LABELS, STORES } from './offer.js';
+import { STORE_LABELS, STORES, worthSource } from './offer.js';
 
 /** Statuts qui signifient « le jeu est a moi ». */
 export const ACQUIRED_STATUSES = Object.freeze(['claimed', 'redeemed']);
@@ -98,6 +98,9 @@ export function claimsMade(histories = {}, catalog = {}, { since = 0, library = 
         title: (known && known.title) || (frozen && frozen.title) || e.title || null,
         worth: readWorth(worth),
         currency: readCurrency(worth),
+        /* D'ou vient la valeur (2.103.0) : le catalogue si elle y est encore,
+           sinon ce que le registre en a fige. Voir watch/bargain.js. */
+        source: (known && known.worth) ? worthSource(known) : ((frozen && frozen.wsrc) || null),
         ts: e.ts,
         status: e.status,
         already: alreadyYours(e),

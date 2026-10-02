@@ -595,6 +595,16 @@
   .rating.bad   { color: var(--rose); }
   .game-actions .rating { margin-left: auto; padding-right: 2px; }
 
+  /* Piege ou bonne affaire ? (2.103.0) : une lettre dans un carre, comme un
+     tampon. La couleur dit le sens ; le « ? » grise dit « pas assez de donnees ». */
+  .bargain { font-family: var(--display); font-size: 10px; font-weight: 700; line-height: 1; padding: 2px 5px; border: 1.5px solid currentColor; color: var(--mute); flex: none; }
+  .bargain.good  { color: var(--jade); }
+  .bargain.mixed { color: var(--amber); }
+  .bargain.bad   { color: var(--rose); }
+  .bargain.none  { opacity: .55; }
+  .game-actions .bargain { margin-left: auto; }
+  .game-actions .rating + .bargain { margin-left: 4px; }
+
   /* The countdown reads as a chip, and its colour is the whole message.
      Digits, not words: "3 h 40" is checkable, "soon" is not. */
   .left {
@@ -1333,6 +1343,7 @@
     <p class="hero-label" data-i18n="heroLabel"></p>
     <p class="hero-value" id="hero-value"></p>
     <p class="hero-sub"><span id="hero-games"></span><span class="hero-delta" id="hero-delta"></span></p>
+    <p class="hero-sub hero-verify" id="hero-verify" hidden></p>
   </section>
 
   <!-- L'image de l'annee (2.93.0) : apercu, telecharger, copier. -->

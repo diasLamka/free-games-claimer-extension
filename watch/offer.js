@@ -199,6 +199,28 @@ export function detectStore({ title, platforms, url } = {}) {
     || STORES.UNKNOWN;
 }
 
+/* ------------------------------------------------------------ provenance */
+
+/**
+ * Les sources qui lisent le catalogue du magasin LUI-MEME : le prix qu'elles
+ * rendent est celui du magasin, pas l'annonce d'un tiers.
+ */
+export const FIRST_PARTY_SOURCES = Object.freeze(['epic-api', 'gog', 'steam', 'epic-mobile']);
+
+/**
+ * Qui a donne la valeur de cette offre : 'store' (le magasin), 'aggregator'
+ * (un site tiers, en dollars et sans garantie) ou null (pas de valeur, ou pas
+ * de source). La provenance du CHAMP (`origin.worth`, voir merge) prime sur la
+ * source de l'offre : une offre decouverte par l'agregateur puis lue par Epic
+ * porte le prix d'Epic.
+ */
+export function worthSource(offer) {
+  if (!offer || !offer.worth) return null;
+  const origin = (offer.origin && offer.origin.worth) || offer.source || null;
+  if (!origin) return null;
+  return FIRST_PARTY_SOURCES.includes(origin) ? 'store' : 'aggregator';
+}
+
 /* ------------------------------------------------------------------- dates */
 
 /**

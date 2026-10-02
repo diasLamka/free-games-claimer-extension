@@ -114,6 +114,7 @@ object Watcher {
 
         // Les notes Steam, puis « Tes gouts » (1.14.0), AVANT d'annoncer : la notification d'un jeu dit de quoi il se rapproche.
         refreshRatings(now)
+        refreshChecks(now)
         refreshTaste(now)
         val ann = Graph.store.value
 
@@ -212,6 +213,24 @@ object Watcher {
             val all = st.ratings + found
             st.copy(ratings = if (all.size > 400) all.entries.sortedByDescending { it.value.at }.take(400).associate { it.toPair() } else all)
         }
+    }
+
+    /**
+     * Les fiches de prix Steam des offres ouvertes (1.22.0), huit au plus : l'appid
+     * vient de la note qu'on vient de lire. Le meme reglage que les notes.
+     */
+    suspend fun refreshChecks(now: Long) {
+        val s = Graph.store.value
+        if (!s.settings.steamRatings) return
+        val appids = s.offers.values.filter { it.isOpen(now) }.mapNotNull { Bargain.appId(it, s.ratings) }
+        if (appids.isEmpty()) return
+        val found = try {
+            Bargain.refresh(Graph.http, appids, s.checks, now)
+        } catch (_: Exception) {
+            return
+        }
+        if (found.isEmpty()) return
+        Graph.store.update { st -> st.copy(checks = Bargain.trimmed(st.checks + found)) }
     }
 
     fun openOffers(s: AppState, now: Long): List<Offer> = s.offers.values.filter { it.isOpen(now) }

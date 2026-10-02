@@ -16,6 +16,7 @@ import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.Bargain
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Relay
@@ -447,6 +448,7 @@ class ClaimSession(
                 val entry = LibraryEntry(
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
+                    wsrc = Bargain.worthSource(o),
                 )
                 lib = lib + (Rules.libraryKeyOf(o) to entry)
                 accounts = accounts + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))

@@ -95,6 +95,7 @@ object Family {
                 lib = lib + (Rules.libraryKeyOf(o) to LibraryEntry(
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdict,
+                    wsrc = Bargain.worthSource(o),
                 ))
                 acc = acc + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))
             }

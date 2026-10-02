@@ -87,6 +87,9 @@ import {
   KEY_RATINGS, PER_RUN as RATINGS_PER_RUN, eligible as ratingEligible, needsRating, ratingFor, steamAppId, ratingLine, refreshRatings,
   tone as ratingTone,
 } from './watch/steam-ratings.js';
+import {
+  KEY_CHECKS, PER_RUN as CHECKS_PER_RUN, checkAppId, refreshChecks, collectionFacts, verdictFor, verdictLine,
+} from './watch/bargain.js';
 import { openOffers } from './watch/catalog.js';
 import { KEY_COVERS, refreshCovers } from './watch/covers.js';
 import { money } from './lib/money.js';
@@ -408,6 +411,8 @@ async function startCycle(origine, options = {}) {
         rateOffer: (offer) => rateOne(offer),
         // Vos gouts (2.99.0) : de quoi un jeu annonce seul se rapproche de ce que vous aimez.
         tasteOffer: (offer) => tasteOne(offer),
+        // Piege ou bonne affaire ? (2.103.0) : la ligne de verdict d'une annonce a un seul jeu.
+        verdictOffer: (offer) => verdictOne(offer),
         // Silence intelligent (2.99.5) : ce qui ne ressemble pas a vos gouts attend le resume.
         tasteDefer: (offers) => tasteDefer(offers),
         notify: async ({ title, text, id, url, kind, catalogKey, image }) => {
@@ -738,6 +743,45 @@ async function rateOne(offer) {
   } catch { return null; }
 }
 
+/* ------------------------------------------- piege ou bonne affaire (2.103.0) */
+
+/* Meme precaution que les notes : une seule ecriture a la fois. */
+let checksChain = Promise.resolve();
+
+/** Les fiches de prix Steam des offres (huit au plus), apres que leurs notes ont donne leur appid. */
+function ensureChecks(offers, { limit = CHECKS_PER_RUN, timeoutMs } = {}) {
+  const travail = async () => {
+    const settings = await readSettings(api);
+    if (settings.steamRatings === false) return null;
+    const raw = await readKeys(api, [KEY_RATINGS, KEY_CHECKS]);
+    const appids = (offers || []).map((o) => checkAppId(o, raw[KEY_RATINGS])).filter(Boolean);
+    if (!appids.length) return null;
+    const r = await refreshChecks(raw[KEY_CHECKS] || {}, appids, {
+      fetch: (u, i) => fetch(u, i), now: Date.now(), limit, timeoutMs,
+    });
+    if (r.got) await write(api, { [KEY_CHECKS]: r.checks });
+    return r;
+  };
+  const p = checksChain.then(travail, travail);
+  checksChain = p.catch(() => null);
+  return p;
+}
+
+/** La ligne « Verdict B : ... » d'une annonce a un seul jeu, ou null. Six secondes au plus. */
+async function verdictOne(offer) {
+  try {
+    const settings = await readSettings(api);
+    if (settings.steamRatings === false) return null;
+    await Promise.race([
+      ensureChecks([offer], { limit: 1, timeoutMs: 4000 }),
+      new Promise((fin) => setTimeout(fin, 5000)),
+    ]);
+    const raw = await readKeys(api, [KEY_RATINGS, KEY_CHECKS, KEY_COLLECTION_LOOKUP]);
+    const res = verdictFor(offer, { ratings: raw[KEY_RATINGS], checks: raw[KEY_CHECKS], facts: collectionFacts(raw[KEY_COLLECTION_LOOKUP]) });
+    return verdictLine(res, t, { money, number: (n) => n.toLocaleString(intlLocale()) }) || null;
+  } catch { return null; }
+}
+
 /**
  * Les noms des etiquettes qui rapprochent un jeu de vos gouts (2.99.0), ou
  * null. Cinq secondes au plus : si le jeu n'a pas encore ses etiquettes, on
@@ -853,6 +897,9 @@ async function maybeRatings(now = Date.now()) {
     ];
     const r = await ensureRatings(offres);
     if (r && r.asked) record('info', `notes Steam : ${r.got}/${r.asked} relue(s)`);
+    /* Puis les prix de catalogue (2.103.0) : l'appid vient de la note qu'on vient de lire. */
+    const c = await ensureChecks(offres);
+    if (c && c.asked) record('info', `prix Steam : ${c.got}/${c.asked} relu(s)`);
     return r;
   } catch (e) {
     record('warn', 'notes Steam impossibles', e);

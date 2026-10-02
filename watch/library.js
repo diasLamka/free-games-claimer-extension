@@ -19,6 +19,8 @@
  * Module pur : la plomberie chrome.* est dans background.js.
  */
 
+import { worthSource } from './offer.js';
+
 /** Cle de stockage. Espace de la veille, jamais l'espace FGC_* du moteur. */
 export const KEY_LIBRARY = 'veille:bibliotheque';
 
@@ -47,7 +49,7 @@ export function libraryKey(store, id) {
  * Ce qu'on garde d'une acquisition. Volontairement peu : le registre n'a pas de
  * date d'expiration, donc chaque champ est un cout permanent.
  */
-export function makeEntry({ store, id, title, url, worth, image, ts, status }) {
+export function makeEntry({ store, id, title, url, worth, image, ts, status, wsrc }) {
   return {
     store,
     id: String(id || '').replace(/^(slug|offer|code):/, ''),
@@ -57,6 +59,11 @@ export function makeEntry({ store, id, title, url, worth, image, ts, status }) {
     image: image || null,
     ts,
     status,
+    /* D'ou vient la valeur (2.103.0) : 'store' si le magasin a donne son propre
+       prix, 'aggregator' si un site tiers l'a annoncee. Fige a l'instant de la
+       reclamation, avec le reste : le catalogue ne s'en souviendra pas. Absent
+       quand on ne sait pas -- le bilan le range alors « a confirmer ». */
+    ...(wsrc === 'store' || wsrc === 'aggregator' ? { wsrc } : {}),
   };
 }
 
@@ -82,6 +89,7 @@ export function mergeEntry(existing, incoming) {
     image: incoming.image || existing.image,
     ts: Math.min(existing.ts, incoming.ts),
     status: existing.status || incoming.status,
+    ...((existing.wsrc || incoming.wsrc) ? { wsrc: existing.wsrc || incoming.wsrc } : {}),
   };
 }
 
@@ -180,6 +188,7 @@ export function integrateHistory(library, { platform, added, catalog = {} }) {
       image: known ? known.image : null,
       ts: entry.ts,
       status: entry.status,
+      wsrc: known ? worthSource(known) : null,
     });
 
     const k = libraryKey(store, key);

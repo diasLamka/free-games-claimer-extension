@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -71,6 +72,8 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.
                     val total = Money.total(state.library.values.map { it.worth }, cur)
                     Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
                 }
+                // Ce que ce chiffre vaut vraiment (1.22.0) : verifie, a confirmer, ecarte.
+                item("verified", span = full) { VerifiedLine(state) }
                 // Ce soir je joue a... (1.8.0) : un jeu de la pile, pour le temps qu'on a.
                 if (entries.isNotEmpty() || state.owned.isNotEmpty()) item("tonight", span = full) {
                     TonightCard(state, now, tonight, onOpen)
@@ -128,4 +131,39 @@ private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Uni
             )
         }
     }
+}
+
+/**
+ * Ce que le grand chiffre vaut vraiment (1.22.0) : le prix donne par le magasin ou recoupe
+ * avec Steam, ce qu'un site tiers annonce sans preuve, et ce qu'une valeur gonflee depasse.
+ * Meme calcul que le tableau de bord de l'extension. Rien tant qu'aucun prix n'est connu.
+ */
+@Composable
+private fun VerifiedLine(state: AppState) {
+    val b = LocalBrut.current
+    val c = remember(state.library, state.ratings, state.checks) { io.github.diaslamka.freegames.data.Bargain.certify(state.library.values, state) }
+    val cur = Countries.of(state.settings.country).currency
+    fun shown(bag: Map<String?, Double>): String? = totalsText(bag, cur)
+    val parts = listOfNotNull(
+        shown(c.verified)?.let { stringResource(R.string.claimed_verified, it) },
+        shown(c.unverified)?.let { stringResource(R.string.claimed_unverified, it) },
+        shown(c.trimmed)?.let { stringResource(R.string.claimed_trimmed, it) },
+        if (c.excluded > 0) stringResource(R.string.claimed_excluded, c.excluded) else null,
+    )
+    if (parts.isEmpty()) return
+    var hint by remember { mutableStateOf(false) }
+    Text(
+        parts.joinToString(" · "),
+        style = MaterialTheme.typography.bodySmall,
+        color = b.ink,
+        modifier = Modifier.padding(bottom = 4.dp).clickable { hint = !hint },
+    )
+    if (hint) Text(stringResource(R.string.claimed_verified_hint), style = MaterialTheme.typography.bodySmall, color = b.mute)
+}
+
+/** Les totaux par devise, celle du pays d'abord, puis la plus grosse somme. */
+private fun totalsText(bag: Map<String?, Double>, preferred: String): String? {
+    if (bag.isEmpty()) return null
+    val order = bag.entries.sortedWith(compareByDescending<Map.Entry<String?, Double>> { it.key == preferred }.thenByDescending { it.value })
+    return order.joinToString(" + ") { Money.format(it.value, it.key ?: preferred) }
 }

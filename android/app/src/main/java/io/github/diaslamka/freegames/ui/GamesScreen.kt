@@ -292,6 +292,8 @@ fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: 
             if (o.end != null) {
                 Text("> " + stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             }
+            // Piege ou bonne affaire ? (1.22.0) : rien a juger sur un jeu qu'on a deja.
+            if (claimed == null && !owned) BargainRow(o, state)
             if (claimed?.ts != null) {
                 Text("> " + stringResource(R.string.claimed_on, Fmt.date(claimed.ts)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             } else if (attempt?.verdict != null && attempt.verdict !in Verdicts.ACQUIRED) {

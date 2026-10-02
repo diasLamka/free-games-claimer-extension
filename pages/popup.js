@@ -62,6 +62,7 @@ import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, steamAppId, tone } from '../watch/steam-ratings.js';
+import { KEY_CHECKS, certify, checkAppId, collectionFacts, gradeTone, verdictFor, verdictTitle } from '../watch/bargain.js';
 import { KEY_TASTE, readTasteState, tasteFor, tasteNames } from '../watch/taste.js';
 import { composeShareList } from '../watch/share-list.js';
 import { KEY_COVERS, coverFor, needsCover } from '../watch/covers.js';
@@ -241,6 +242,7 @@ const KEYS_READ = [
   KEY_WEEKENDS,
   KEY_AUTO_BACKUP,
   KEY_RATINGS,
+  KEY_CHECKS,
   KEY_COVERS,
   KEY_RELAY,
   KEY_STEAM_DLC,
@@ -734,6 +736,17 @@ function ratingOf(ctx, offer) {
   return ctx.ratingsOn ? ratingFor(ctx.ratings, offer) : null;
 }
 
+/* Piege ou bonne affaire ? (2.103.0) : la lettre A-D, ses raisons en infobulle.
+   Une offre deja a vous n'a rien a juger ; une offre sans donnee garde un « ? »
+   discret plutot qu'une absence qu'on prendrait pour un oubli. */
+function bargainTag(ctx, offer) {
+  if (!ctx.ratingsOn || offer.alreadyOwned === true) return null;
+  const v = verdictFor(offer, { ratings: ctx.ratings, checks: ctx.checks, facts: ctx.facts });
+  const tag = el('span', `bargain ${gradeTone(v.grade) || 'none'}`, v.grade || '?');
+  tag.title = verdictTitle(v, t, { money, number: (n) => n.toLocaleString(intlLocale()) });
+  return tag;
+}
+
 function gameCard({ key, offer }, ctx) {
   const { now, alsoOn, owned, fresh, filters, behaviour } = ctx;
   const link = offer.url || offer.resolveUrl;
@@ -964,6 +977,8 @@ function gameCard({ key, offer }, ctx) {
      n'en a plus a 328 px. */
   const note = ratingOf(ctx, offer);
   if (note) actions.append(ratingTag(note));
+  const verdict = ctx.owned.get(offer.normalisedTitle || String(offer.title || '').toLowerCase()) ? null : bargainTag(ctx, offer);
+  if (verdict) actions.append(verdict);
 
   body.append(meta);
   body.append(actions);
@@ -1069,6 +1084,9 @@ function renderGames(all, behaviour) {
     gogWishlist: get(all, KEY_GOG_WISHLIST, null),
     ratings: get(all, KEY_RATINGS, {}),
     ratingsOn: behaviour.steamRatings !== false,
+    // Piege ou bonne affaire ? (2.103.0) : les fiches de prix Steam et ce que la collection dit du jeu de base.
+    checks: get(all, KEY_CHECKS, {}),
+    facts: collectionFacts(get(all, KEY_COLLECTION, null)),
     // Vos gouts (2.99.0) : le profil et les etiquettes deja lues, ou rien quand c'est coupe.
     taste: behaviour.taste !== false ? readTasteState(get(all, KEY_TASTE, null)) : null,
   };
@@ -2472,11 +2490,12 @@ function renderMonthChart(rows) {
    une devise a du l'etre --, combien de jeux, combien a prix connu, et ce que
    le mois en cours a ajoute. Rien tant qu'aucun prix n'est connu : « 0 € »
    en grand dirait une panne, pas un fait. */
-function renderHero(rows, b) {
+function renderHero(rows, b, all) {
   const hero = document.getElementById('hero');
   if (!hero) return;
   hero.hidden = !EN_ONGLET || !b.priced;
   if (hero.hidden) return;
+  renderHeroVerified(rows, all);
   document.getElementById('hero-value').textContent = moneyTotals(b.totals);
   document.getElementById('hero-games').textContent = b.priced < b.count
     ? t('heroGamesPriced', String(b.count), String(b.priced))
@@ -2485,6 +2504,24 @@ function renderHero(rows, b) {
   const mois = new Date().toISOString().slice(0, 7);
   const ceMois = tally(rows.filter((r) => new Date(r.ts).toISOString().slice(0, 7) === mois));
   document.getElementById('hero-delta').textContent = ceMois.priced ? t('heroThisMonth', moneyTotals(ceMois.totals)) : '';
+}
+
+/* Ce que ce chiffre vaut vraiment (2.103.0) : le prix donne par le magasin ou
+   recoupe avec Steam d'un cote, ce qu'un site tiers annonce sans preuve de
+   l'autre, et ce qu'une valeur gonflee depasse. Rien d'autre n'est arrondi. */
+function renderHeroVerified(rows, all) {
+  const zone = document.getElementById('hero-verify');
+  if (!zone) return;
+  const ratings = get(all, KEY_RATINGS, {});
+  const c = certify(rows.filter((r) => !r.already).map((r) => ({ ...r, appid: checkAppId({ title: r.title, store: r.store }, ratings) })), get(all, KEY_CHECKS, {}));
+  const morceaux = [];
+  if (Object.keys(c.verified).length) morceaux.push(t('heroVerified', moneyTotals(c.verified)));
+  if (Object.keys(c.unverified).length) morceaux.push(t('heroUnverified', moneyTotals(c.unverified)));
+  if (Object.keys(c.trimmed).length) morceaux.push(t('heroTrimmed', moneyTotals(c.trimmed)));
+  if (c.excluded) morceaux.push(t('heroExcluded', String(c.excluded)));
+  zone.textContent = morceaux.join(' \u00b7 ');
+  zone.title = morceaux.length ? t('heroVerifiedTitle') : '';
+  zone.hidden = !morceaux.length;
 }
 
 function renderTally(all) {
@@ -2496,7 +2533,7 @@ function renderTally(all) {
   const zone = document.getElementById('tally');
   zone.textContent = '';
   renderMonthChart(rows);
-  renderHero(rows, b);
+  renderHero(rows, b, all);
   document.getElementById('year-open').hidden = !yearsOf(get(all, KEY_LIBRARY, {})).length;
 
   foldSay('fold-tally', b.count ? t('foldTallyCount', String(b.count))

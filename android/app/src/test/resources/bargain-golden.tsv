@@ -1,0 +1,25 @@
+a-epic-top	Hades	epic	epic-api	Game	t	29.99 EUR	-	-	920/1000	-	A	bargainValueConfirmed:29.99 EUR:good;bargainRatedHigh:92~1000:good
+b-sans-valeur	Hades	epic	epic-api	Game	t	-	-	-	920/1000	-	B	bargainRatedHigh:92~1000:good
+b-note-moyenne	Hades	epic	epic-api	Game	t	29.99 EUR	-	-	750/1000	-	B	bargainValueConfirmed:29.99 EUR:good;bargainRatedGood:75~1000:good
+c-partage	Hades	epic	epic-api	Game	t	29.99 EUR	-	-	600/1000	-	C	bargainRatedMixed:60~1000:bad;bargainValueConfirmed:29.99 EUR:good
+d-mal-note	Hades	epic	epic-api	Game	t	29.99 EUR	-	-	400/1000	-	D	bargainRatedLow:40~1000:bad;bargainValueConfirmed:29.99 EUR:good
+b-peu-avis	Hades	epic	epic-api	Game	t	29.99 EUR	-	-	30/30	-	B	bargainValueConfirmed:29.99 EUR:good;bargainFewReviews:30:neutral
+null-rien	Hades	epic	gamerpower	Game	t	-	-	-	-	-	-	bargainNoData::neutral
+d-keepable-faux	Hades	epic	epic-api	Game	f	-	-	-	990/1000	-	D	bargainFreeForever::bad
+d-f2p	Hades	epic	epic-api	Game	t	29.99 EUR	-	game|1|24.99|USD|-|-	990/1000	-	D	bargainFreeForever::bad
+d-demo-fiche	Hades	epic	epic-api	Game	t	29.99 EUR	-	demo|0|24.99|USD|-|-	-	-	D	bargainDemo::bad
+d-demo-titre	Hades Demo	epic	epic-api	Game	t	29.99 EUR	-	-	-	-	D	bargainDemo::bad
+d-musique	Hades	epic	epic-api	Game	t	29.99 EUR	-	music|0|24.99|USD|-|-	-	-	D	bargainNotAGame::bad
+a-demon	Demon Slayer	epic	epic-api	Game	t	29.99 EUR	-	-	900/1000	-	A	bargainValueConfirmed:29.99 EUR:good;bargainRatedHigh:90~1000:good
+a-agregateur-recoupe	Hades	epic	gamerpower	Game	t	$24.99	-	game|0|19.99|USD|-|-	900/1000	-	A	bargainValueConfirmed:19.99 USD:good;bargainRatedHigh:90~1000:good
+c-gonfle	Hades	epic	gamerpower	Game	t	$60.00	-	game|0|19.99|USD|-|-	900/1000	-	C	bargainInflated:60 USD~19.99 USD:bad;bargainRatedHigh:90~1000:good
+d-tres-gonfle-mal-note	Hades	epic	gamerpower	Game	t	$90.00	-	game|0|19.99|USD|-|-	600/1000	-	D	bargainInflated:90 USD~19.99 USD:bad;bargainRatedMixed:60~1000:bad
+b-agregateur-sans-fiche	Hades	epic	gamerpower	Game	t	$30	-	-	900/1000	-	B	bargainRatedHigh:90~1000:good;bargainValueUnconfirmed:30 USD:neutral
+null-agregateur-na	Hades	epic	gamerpower	Game	t	N/A	-	-	-	-	-	bargainNoData::neutral
+d-dlc-base-manque	Hades	steam	steam	DLC	t	4.99 EUR	620	dlc|0|24.99|USD|620|Portal 2	-	f	D	bargainNeedsBase:Portal 2:bad;bargainValueSmall:4.99 EUR:neutral
+b-dlc-base-possede	Hades	steam	steam	DLC	t	4.99 EUR	620	dlc|0|24.99|USD|620|Portal 2	-	t	B	bargainBaseOwned::good;bargainValueSmall:4.99 EUR:neutral
+c-dlc-base-inconnu	Hades	steam	steam	DLC	t	4.99 EUR	620	dlc|0|24.99|USD|620|Portal 2	-	-	C	bargainNeedsBaseUnknown::bad;bargainValueSmall:4.99 EUR:neutral
+c-butin	Skin Pack	epic	gamerpower	DLC	t	-	-	-	-	-	C	bargainExtra::bad
+b-gog-valeur-seule	Hades	gog	gog	Game	t	19.99 USD	-	-	-	-	B	bargainValueConfirmed:19.99 USD:good
+null-petite-valeur-seule	Hades	epic	epic-api	Game	t	5 EUR	-	-	-	-	-	bargainValueSmall:5 EUR:neutral;bargainNoData::neutral
+b-gog-fiche-seule-ok	Hades	gog	gog	Game	t	39,99 EUR	-	-	80/90	-	A	bargainValueConfirmed:39.99 EUR:good;bargainRatedHigh:89~90:good

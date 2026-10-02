@@ -120,6 +120,16 @@ bandeau, et UN clic prouve par « le jeu est a vous » apprend le bouton ; le wo
 referme l'onglet et reessaie. Une demande toutes les six heures par magasin au
 plus. Voir le CHANGELOG 2.102.0.
 
+### Piege ou bonne affaire ?
+
+Chaque jeu offert recoit une lettre de **A** a **D** (`watch/bargain.js`), avec ses
+raisons en infobulle : gratuit de toute facon, demo, DLC sans son jeu de base, valeur
+annoncee gonflee par un site tiers (comparee au prix Steam, en dollars) d'un cote ;
+bonne note Steam et valeur confirmee de l'autre. **A exige les deux.** Sans donnee
+qui compte, la note est « ? » -- elle ne devine pas. Sous le grand chiffre du tableau
+de bord : ce qui est *verifie*, *a confirmer* et *ecarte*. Meme reglage que les notes
+Steam, sans cookie. Voir le CHANGELOG 2.103.0.
+
 ### Les adresses dans votre langue
 
 `watch/localize.js` met chaque adresse Epic, GOG et Luna dans la langue et le pays

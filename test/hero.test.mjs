@@ -47,7 +47,7 @@ test('le rendu ne montre le bloc qu\'au tableau de bord, et seulement avec une v
   assert.match(f, /hero\.hidden = !EN_ONGLET \|\| !b\.priced;/);
   assert.match(f, /if \(hero\.hidden\) return;/);
   assert.match(f, /moneyTotals\(b\.totals\)/, 'le meme total que le Bilan, converti de la meme facon');
-  assert.match(corps('renderTally'), /renderHero\(rows, b\);/);
+  assert.match(corps('renderTally'), /renderHero\(rows, b, all\);/);
 });
 
 test('le chiffre du mois est celui du bilan : l\'extension seule, mois en UTC', () => {

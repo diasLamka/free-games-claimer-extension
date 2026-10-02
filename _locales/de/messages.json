@@ -2070,7 +2070,7 @@
     "message": "Steam-Bewertungen"
   },
   "ratingsHint": {
-    "message": "Was Steam-Spieler denken, neben jedem Gratisspiel und in seiner Benachrichtigung. Von store.steampowered.com gelesen, ohne Cookies."
+    "message": "Was Steam-Spieler denken, neben jedem Gratisspiel und in seiner Benachrichtigung, mit der Note „Falle oder Schnäppchen?“ (A bis D) und ihren Gründen. Von store.steampowered.com gelesen, ohne Cookies."
   },
   "ctxWishMenu": {
     "message": "Benachrichtigen, wenn dieses Spiel gratis ist"
@@ -2665,5 +2665,95 @@
   },
   "verdictTeach": {
     "message": "Button zeigen"
+  },
+  "bargainGradeA": {
+    "message": "Echtes Schnäppchen"
+  },
+  "bargainGradeB": {
+    "message": "Gutes Angebot"
+  },
+  "bargainGradeC": {
+    "message": "Genau hinsehen"
+  },
+  "bargainGradeD": {
+    "message": "Kein echtes Angebot"
+  },
+  "bargainGradeNone": {
+    "message": "Nicht bewertet"
+  },
+  "bargainTitle": {
+    "message": "Falle oder Schnäppchen? $1: $2"
+  },
+  "bargainLine": {
+    "message": "Urteil $1: $2. $3"
+  },
+  "bargainFreeForever": {
+    "message": "Ohnehin dauerhaft kostenlos: nichts gewonnen."
+  },
+  "bargainDemo": {
+    "message": "Eine Demo oder ein Test, nicht das Vollspiel."
+  },
+  "bargainNotAGame": {
+    "message": "Kein Spiel (Musik, Video oder Werbung)."
+  },
+  "bargainRatedHigh": {
+    "message": "Auf Steam sehr gut bewertet ($1 % von $2 Bewertungen)."
+  },
+  "bargainRatedGood": {
+    "message": "Auf Steam gut bewertet ($1 % von $2 Bewertungen)."
+  },
+  "bargainRatedMixed": {
+    "message": "Gemischte Bewertungen auf Steam ($1 % von $2)."
+  },
+  "bargainRatedLow": {
+    "message": "Auf Steam schlecht bewertet ($1 % von $2 Bewertungen)."
+  },
+  "bargainFewReviews": {
+    "message": "Nur $1 Bewertungen auf Steam: die Note ist unsicher."
+  },
+  "bargainValueConfirmed": {
+    "message": "Wert bestätigt: $1."
+  },
+  "bargainValueSmall": {
+    "message": "Geringer Wert: $1."
+  },
+  "bargainValueUnconfirmed": {
+    "message": "Wert von einer Drittseite angegeben ($1), nicht bestätigt."
+  },
+  "bargainInflated": {
+    "message": "Aufgeblähter Wert: angegeben $1, auf Steam aber $2."
+  },
+  "bargainNeedsBase": {
+    "message": "Setzt „$1“ voraus, das du nicht besitzt."
+  },
+  "bargainNeedsBaseBare": {
+    "message": "Setzt das Hauptspiel voraus, das du nicht besitzt."
+  },
+  "bargainNeedsBaseUnknown": {
+    "message": "Setzt das Hauptspiel voraus; deine Steam-Bibliothek ist nicht importiert, daher nicht prüfbar."
+  },
+  "bargainBaseOwned": {
+    "message": "Du besitzt das Hauptspiel."
+  },
+  "bargainExtra": {
+    "message": "Inhalt zu einem Spiel, kein Spiel."
+  },
+  "bargainNoData": {
+    "message": "Nicht genug Informationen für ein Urteil."
+  },
+  "heroVerified": {
+    "message": "Geprüft: $1"
+  },
+  "heroUnverified": {
+    "message": "zu bestätigen: $1"
+  },
+  "heroTrimmed": {
+    "message": "abgezogen (aufgebläht): $1"
+  },
+  "heroExcluded": {
+    "message": "$1 ohnehin kostenlos, nicht gezählt"
+  },
+  "heroVerifiedTitle": {
+    "message": "Geprüft: Der Preis stammt vom Shop selbst oder wurde mit dem Steam-Preis abgeglichen. Zu bestätigen: von einer Drittseite angegeben, ohne Beleg. Abgezogen: so weit ein aufgeblähter Wert über dem Steam-Preis liegt."
   }
 }

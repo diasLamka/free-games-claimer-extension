@@ -134,7 +134,7 @@ export function toNotify(catalog, now) {
  * Compose le message. Une notification par offre au-dela de trois, c'est un
  * harcelement : au-dela on resume.
  */
-export function composeAnnouncement(offers, storeLabel, now = null, rating = null, taste = null) {
+export function composeAnnouncement(offers, storeLabel, now = null, rating = null, taste = null, verdict = null) {
   if (offers.length === 1) {
     const o = offers[0];
     // Le libelle du magasin, pas son identifiant : « Epic Games Store » plutot
@@ -155,9 +155,11 @@ export function composeAnnouncement(offers, storeLabel, now = null, rating = nul
     if (Array.isArray(taste)) texte += `\n${taste.length ? t('tasteLine', taste.join(', ')) : t('tasteLineBare')}`;
     /* La note Steam (2.78.0), sur sa propre ligne : « Steam : Tres positives
        (84 %) ». C'est ce qui dit s'il vaut ses 20 Go. */
+    /* Piege ou bonne affaire ? (2.103.0) : la note A-D et sa premiere raison. */
+    const avecNote = rating ? `${texte}\n${ratingLine(rating)}` : texte;
     return {
       title: chance ? t('notifySecondChanceTitle', o.title) : t('notifyOneTitle', o.title),
-      text: rating ? `${texte}\n${ratingLine(rating)}` : texte,
+      text: verdict ? `${avecNote}\n${verdict}` : avecNote,
     };
   }
   const titles = offers.slice(0, 3).map((o) => o.title).join(', ');
@@ -225,6 +227,12 @@ export async function runCycle({
    * null quand elle n'y est pas. Demandee apres la note, pour la meme annonce.
    */
   tasteOffer = null,
+  /**
+   * La ligne « Verdict B : ... » d'une annonce a un seul jeu (2.103.0), ou
+   * null : voir watch/bargain.js. Demandee apres la note Steam, dont elle
+   * depend (l'appid du jeu).
+   */
+  verdictOffer = null,
   /**
    * Silence intelligent (2.99.5) : rend les cles de catalogue des offres qui
    * ne ressemblent PAS aux gouts de l'utilisateur -- celles-la attendent le
@@ -584,9 +592,13 @@ export async function runCycle({
       if (!decision.digest && watched.length === 1 && typeof tasteOffer === 'function') {
         try { gout = await tasteOffer(first); } catch { gout = null; }
       }
+      let verdict = null;
+      if (!decision.digest && watched.length === 1 && typeof verdictOffer === 'function') {
+        try { verdict = await verdictOffer(first); } catch { verdict = null; }
+      }
       const { title, text } = decision.digest
         ? { title: t('notifyDigestTitle', String(watched.length)), text: watched.map((o) => o.title).join(', ') }
-        : composeAnnouncement(watched, null, now, note, gout);
+        : composeAnnouncement(watched, null, now, note, gout, verdict);
       // Le lien de la premiere offre annoncee : cliquer la notification doit
       // mener a l'offre, pas a une page d'accueil.
       await notify({

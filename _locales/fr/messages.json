@@ -2070,7 +2070,7 @@
     "message": "Notes Steam"
   },
   "ratingsHint": {
-    "message": "L’avis des joueurs Steam à côté de chaque jeu offert, et dans sa notification. Lu sur store.steampowered.com, sans cookie."
+    "message": "L’avis des joueurs Steam à côté de chaque jeu offert, et dans sa notification, avec la note « piège ou bonne affaire ? » (A à D) et ses raisons. Lu sur store.steampowered.com, sans cookie."
   },
   "ctxWishMenu": {
     "message": "Me prévenir quand ce jeu sera gratuit"
@@ -2665,5 +2665,95 @@
   },
   "verdictTeach": {
     "message": "bouton à me montrer"
+  },
+  "bargainGradeA": {
+    "message": "Vraie bonne affaire"
+  },
+  "bargainGradeB": {
+    "message": "Bonne affaire"
+  },
+  "bargainGradeC": {
+    "message": "À regarder de près"
+  },
+  "bargainGradeD": {
+    "message": "Pas une vraie affaire"
+  },
+  "bargainGradeNone": {
+    "message": "Non évaluée"
+  },
+  "bargainTitle": {
+    "message": "Piège ou bonne affaire ? $1 : $2"
+  },
+  "bargainLine": {
+    "message": "Verdict $1 : $2. $3"
+  },
+  "bargainFreeForever": {
+    "message": "Gratuit en permanence : rien n’est gagné."
+  },
+  "bargainDemo": {
+    "message": "Une démo ou un test, pas le jeu complet."
+  },
+  "bargainNotAGame": {
+    "message": "Ce n’est pas un jeu (musique, vidéo ou publicité)."
+  },
+  "bargainRatedHigh": {
+    "message": "Très bien noté sur Steam ($1 % sur $2 avis)."
+  },
+  "bargainRatedGood": {
+    "message": "Bien noté sur Steam ($1 % sur $2 avis)."
+  },
+  "bargainRatedMixed": {
+    "message": "Avis partagés sur Steam ($1 % sur $2 avis)."
+  },
+  "bargainRatedLow": {
+    "message": "Mal noté sur Steam ($1 % sur $2 avis)."
+  },
+  "bargainFewReviews": {
+    "message": "Seulement $1 avis sur Steam : la note n’est pas fiable."
+  },
+  "bargainValueConfirmed": {
+    "message": "Valeur confirmée : $1."
+  },
+  "bargainValueSmall": {
+    "message": "Petite valeur : $1."
+  },
+  "bargainValueUnconfirmed": {
+    "message": "Valeur annoncée par un site tiers ($1), non confirmée."
+  },
+  "bargainInflated": {
+    "message": "Valeur gonflée : annoncée $1, mais $2 sur Steam."
+  },
+  "bargainNeedsBase": {
+    "message": "Il faut posséder « $1 », et vous ne l’avez pas."
+  },
+  "bargainNeedsBaseBare": {
+    "message": "Il faut posséder le jeu de base, et vous ne l’avez pas."
+  },
+  "bargainNeedsBaseUnknown": {
+    "message": "Il faut posséder le jeu de base ; votre bibliothèque Steam n’est pas importée, impossible de vérifier."
+  },
+  "bargainBaseOwned": {
+    "message": "Vous avez le jeu de base."
+  },
+  "bargainExtra": {
+    "message": "Du contenu lié à un jeu, pas un jeu."
+  },
+  "bargainNoData": {
+    "message": "Pas assez d’informations pour juger."
+  },
+  "heroVerified": {
+    "message": "Vérifié : $1"
+  },
+  "heroUnverified": {
+    "message": "à confirmer : $1"
+  },
+  "heroTrimmed": {
+    "message": "écarté (valeur gonflée) : $1"
+  },
+  "heroExcluded": {
+    "message": "$1 gratuit(s) de toute façon, non comptés"
+  },
+  "heroVerifiedTitle": {
+    "message": "Vérifié : le prix vient du magasin lui-même, ou recoupé avec le prix Steam. À confirmer : annoncé par un site tiers, sans preuve. Écarté : ce qu’une valeur gonflée dépasse le prix Steam."
   }
 }

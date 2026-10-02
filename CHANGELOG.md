@@ -4,6 +4,55 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.103.0 -- 2026-10-02
+
+**« Piege ou bonne affaire ? » : une note de A a D sur chaque jeu offert, avec ses raisons, et un total qui dit ce qu'il prouve**
+
+« Gratuit » ne dit pas « interessant ». Un jeu offert peut etre gratuit de toute
+facon, une demo, un DLC qui ne sert a rien sans un jeu qu'on n'a pas, ou un titre
+dont le prix « barre » a ete gonfle par le site qui l'annonce.
+
+- **La note** (`watch/bargain.js`). Une lettre dans un carre, a cote de la note
+  Steam sur chaque carte ; l'infobulle donne TOUTES les raisons, les mauvaises
+  d'abord. **D** sans appel : gratuit en permanence (le magasin le dit, ou Steam :
+  free-to-play), demo ou test, musique / video / publicite. Ensuite : une bonne
+  note Steam (au moins 50 avis) et une valeur confirmee montent, des avis partages
+  ou une valeur gonflee descendent, un DLC dont vous n'avez pas le jeu de base
+  tombe en D. **A exige les deux** -- bonne note ET valeur confirmee --, jamais
+  l'un sans l'autre. Sans AUCUNE donnee qui compte, la note est « ? » (non
+  evaluee) : elle ne devine pas. Une offre deja a vous n'est pas jugee.
+- **Une valeur n'est « confirmee » que de deux facons.** Le magasin l'a donnee
+  lui-meme (Epic, GOG, Steam : leur propre prix), ou un site tiers l'a annoncee
+  en dollars et la fiche Steam (prix de catalogue en dollars aussi : aucune
+  conversion inventee) la confirme. Annoncee plus de 1,5 fois le prix Steam et au
+  moins 5 $ au-dessus, elle est « gonflee ». Sinon : « annoncee, non confirmee ».
+- **La fiche de prix** (`veille:prix-steam`). Pour chaque offre dont on connait
+  l'appid -- le sien, ou celui que sa note Steam a trouve --, `api/appdetails`
+  (type, gratuit ou non, prix de catalogue, jeu de base d'un DLC), huit par
+  passage, une fois par mois, sans cookie, sur un hote deja autorise. Meme reglage
+  que les notes Steam : qui le coupe coupe les deux.
+- **Le jeu de base d'un DLC** se lit dans votre collection Steam importee. Pas
+  importee : « impossible de verifier », prudence, jamais un « vous ne l'avez pas »
+  invente.
+- **Le grand chiffre dit ce qu'il prouve.** Sous « Economise depuis le debut » :
+  *Verifie* (prix du magasin, ou recoupe avec Steam), *a confirmer* (annonce par un
+  site tiers, sans preuve), *ecarte* (ce qu'une valeur gonflee depasse le prix
+  Steam), et le nombre de jeux gratuits de toute facon, non comptes. Le chiffre
+  principal ne change pas ; c'est le « vrai » qui s'affiche dessous. La provenance
+  de la valeur est figee dans le registre a l'instant de la reclamation
+  (`wsrc`) : les reclamations anterieures, sans provenance, restent « a confirmer ».
+- **La notification** d'un jeu annonce seul porte une derniere ligne : « Verdict B :
+  Bonne affaire. Bien note sur Steam (88 % sur 4 200 avis). ».
+- **L'appli** (1.22.0) fait pareil, avec le meme calcul : une table d'or
+  (`bargain-golden.tsv`), regeneree depuis le module JS, est relue par le test
+  Kotlin. Un appui sur la note ouvre les raisons.
+
+Non verifie : la lecture reelle de la fiche Steam sur un compte (le test de bout en
+bout, en vrai Chromium, a tourne sur des donnees posees dans le stockage) ; la
+couverture : un jeu absent de Steam n'a ni note ni prix de catalogue, donc « ? ».
+Ce que la note n'est pas : un avis sur le plaisir de jeu -- elle ne lit que des
+faits (prix, type, avis Steam, jeu de base).
+
 ## 2.102.0 -- 2026-10-02
 
 **Le claimer qui se repare seul : le moteur reconnait un bouton par sa forme, et demande UN clic quand il ne le reconnait plus**

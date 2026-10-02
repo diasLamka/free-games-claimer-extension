@@ -114,6 +114,8 @@ data class LibraryEntry(
     val ts: Long? = null,
     val status: String = "claimed",
     val via: String = "app",
+    /** D'ou vient la valeur (1.22.0) : « store » (le magasin) ou « aggregator » (un site tiers). Figee a la reclamation. */
+    val wsrc: String? = null,
 )
 
 /** Un souhait importe d'une liste Steam ou GOG. */
@@ -128,6 +130,23 @@ data class Attempt(
     val verdict: String? = null,
     val details: String? = null,
     val nextAt: Long? = null,
+)
+
+/**
+ * Ce que la fiche Steam dit d'un titre, en dollars (1.22.0) : de quoi juger
+ * « piege ou bonne affaire ? » -- voir data/Bargain.kt. `none` : Steam repond
+ * mais ne vend pas ce titre.
+ */
+@Serializable
+data class PriceCheck(
+    val at: Long,
+    val none: Boolean = false,
+    val type: String? = null,
+    val isFree: Boolean = false,
+    val price: Double? = null,
+    val currency: String? = null,
+    val fullgame: String? = null,
+    val fullgameName: String? = null,
 )
 
 /** La note Steam d'un titre. */
@@ -247,6 +266,8 @@ data class AppState(
     val reminded: Map<String, Long> = emptyMap(),
     val attempts: Map<String, Attempt> = emptyMap(),
     val ratings: Map<String, Rating> = emptyMap(),
+    /** « Piege ou bonne affaire ? » (1.22.0) : la fiche de prix Steam, par « app:<id> ». */
+    val checks: Map<String, PriceCheck> = emptyMap(),
     val sources: Map<String, SourceStatus> = emptyMap(),
     val steamOwned: List<String> = emptyList(),
     val lastCheck: Long? = null,
