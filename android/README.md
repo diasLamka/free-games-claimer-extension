@@ -20,6 +20,7 @@ web emballee.
 | **Connexions confirmees par la page** (1.17.0) | Steam et Epic renouvellent leur session quand leur PAGE se charge ; lire les cookies ou l'API ne suffit donc pas et concluait « pas connecte » a un compte connecte, jusqu'a ce qu'on l'ouvre a la main. La veille charge maintenant la page du compte (sans fenetre) avant de croire un « non » ; un « inconnu » ne bloque plus la recuperation en fond, et seule une page qui renvoie vers la connexion dit « perdue ». Les Reglages deviennent un sommaire : tout est plie, texte en moins, et « A propos » porte les versions et la confidentialite. |
 | **Epic : « deja recupere » a tort** (1.17.1) | Le moteur lisait « Dans la bibliotheque » n'importe ou dans la page Epic (la carte d'un autre jeu suffisait) et ecrivait « deja recupere » pour un jeu qu'on n'avait pas. Il lit maintenant le bouton d'achat de la fiche du jeu, voit un captcha niche dans la fenetre d'achat, et une recuperation demandee a l'ecran repart de la page au lieu de croire sa memoire. |
 | **Navigateur adaptatif, GOG en deux pages** (1.18.0) | Sur GOG, la fiche d'un jeu en giveaway (« Go to giveaway ») mene a une seconde page (« Ajouter a la bibliotheque ») : le moteur lit maintenant la page, suit le lien dans le meme onglet, reprend sur la page suivante, ne touche jamais a ce qui coute de l'argent, ne tient une reussite que sur une preuve et retient ce qui a marche. Meme moteur que l'extension. |
+| **Mise a jour depuis l'appli** (1.20.0) | *Reglages → A propos* : chercher, telecharger, verifier (taille, SHA-256, signature) et installer la derniere version sans repasser par le navigateur ; une notification previent quand elle existe. Depot prive : un jeton GitHub en lecture seule, chiffre, facultatif. |
 | **Adresses dans ta langue, Epic et Amazon adaptatifs** (1.19.0) | Les pages de GOG, Epic et Luna s'ouvrent dans la langue et le pays que tu as choisis (France : pages en francais, `luna.amazon.fr`), a la reclamation, au clic d'une notification et dans les listes. Epic et Amazon lisent maintenant la page comme GOG quand leur libelle change (sans jamais toucher a ce qui coute de l'argent), et le moteur apprend du bouton que tu as clique toi-meme. Meme moteur que l'extension. |
 | **Nouveau logo** (1.14.1) | Le ticket jaune, la manette, FREE et la fleche de recuperation remplacent l'ancien coupon ambre : icone adaptative, icone thematique (Android 13+) et petite icone des notifications. |
 | **Un seul resume par jour** (1.13.0) | Reglages : a l'heure choisie (8 h, 12 h, 18 h, 20 h), UNE notification rassemble les nouveaux jeux du jour. Les jeux souhaites et les deuxiemes chances sonnent tout de suite, comme le dernier jour, la derniere chance et « Plus tard ». Un jeu pris ou fini entre-temps n'y figure pas. |
@@ -168,9 +169,30 @@ peut signer une « mise a jour » de l'appli.
 
 ### Mettre a jour
 
-Meme chemin : la nouvelle release, son APK, l'installer. Il est signe de la
-meme cle, il s'installe donc **par-dessus** l'ancien, sans rien perdre
-(sessions, historique, reglages).
+**Depuis la 1.20.0, l'appli se met a jour elle-meme** : *Reglages → A propos*
+cherche la derniere release `app-v...`, la telecharge, verifie sa taille, son
+SHA-256 et sa **signature** (celle de l'appli installee, sinon rien n'est
+installe), puis la passe a Android, qui l'installe **par-dessus** l'ancienne,
+sans rien perdre (sessions, historique, reglages). Une notification previent
+(une fois par version, au plus une recherche par jour) ; rien ne s'installe en
+arriere-plan.
+
+Deux reglages, une seule fois :
+
+- **Autoriser l'appli a installer des applis** : Android ouvre son ecran
+  (« Installer des applis inconnues »), on active *Autoriser depuis cette
+  source*, puis on revient appuyer a nouveau.
+- **Le depot est prive**, et GitHub ne montre pas les versions d'un depot prive
+  sans jeton : *A propos → Depot prive ? Jeton GitHub*. Un jeton a grain fin
+  (GitHub → Settings → Developer settings → Fine-grained tokens), **pour ce
+  depot seulement**, avec *Contents : Read-only* et rien d'autre. Il est
+  chiffre par le Keystore Android, ne part que vers `api.github.com`, n'est ni
+  exporte ni sauvegarde.
+
+Sur Android 12 et plus, apres une premiere mise a jour faite par l'appli, le
+systeme peut installer les suivantes **sans demander**; ailleurs il affiche sa
+fenetre « Mettre a jour cette appli ? » : un geste. Le telechargement a la main
+(ci-dessus) reste possible.
 
 ## Les regles
 

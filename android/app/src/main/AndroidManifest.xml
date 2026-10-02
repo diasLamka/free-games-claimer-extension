@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- La mise a jour depuis l'appli (1.20.0) : passer l'APK telecharge au programme
+         d'installation du systeme. L'utilisateur l'autorise une fois, dans les
+         reglages Android (« Installer des applis inconnues »). Rien ne s'installe
+         en arriere-plan. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- WorkManager la declare pour ses taches de premier plan. L'appli n'en
          lance jamais (la recuperation de fond est une tache ordinaire) : la
@@ -102,6 +107,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_free_now" />
         </receiver>
+
+        <!-- La reponse du systeme a l'installation de la mise a jour : demander un geste, reussir, echouer. -->
+        <receiver android:name=".data.UpdateReceiver" android:exported="false" />
 
     </application>
 </manifest>

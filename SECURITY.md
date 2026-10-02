@@ -388,6 +388,18 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
 - **L'export pour l'extension** contient le registre des jeux recuperes, les
   souhaits, le pays et l'historique du moteur. Jamais un cookie, jamais un
   code de rachat : les codes restent dans l'extension.
+- **La mise a jour depuis l'appli** (1.20.0, `data/AppUpdate.kt`) ne parle qu'a
+  GitHub : `api.github.com` pour lister les publications `app-v*`, puis le
+  telechargement de l'APK, dont la redirection n'est suivie que vers
+  `github.com` ou `githubusercontent.com`, en https, **sans le jeton**. Le
+  fichier est verifie (taille, SHA-256 publie avec la version, nom de paquet,
+  version, certificat de signature identique a celui de l'appli installee) avant
+  d'etre passe a Android, qui reverifie la signature a l'installation. Rien ne
+  s'installe en arriere-plan : la veille previent (une notification par
+  version), l'installation part d'un geste dans les reglages. Le **jeton
+  GitHub** (facultatif, depot prive) est un jeton a grain fin en lecture
+  seule, chiffre par une cle du Keystore Android, jamais dans l'etat de l'appli,
+  l'export, une sauvegarde ou le journal.
 - **La cle qui signe l'APK** est dans `android/keystore/`, parce que le depot
   est prive et qu'une mise a jour doit porter la meme signature que la version
   installee. Si le depot devenait public, elle en sortirait (secret du

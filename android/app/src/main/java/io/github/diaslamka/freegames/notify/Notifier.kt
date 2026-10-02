@@ -38,6 +38,7 @@ object Notifier {
     const val CH_ACCOUNT = "comptes"
     const val CH_HELP = "aide"
     const val CH_LAST_CHANCE = "derniere-chance"
+    const val CH_UPDATE = "mise-a-jour"
     private const val TAG_LAST_CHANCE = "derniere-chance"
 
     fun createChannels(context: Context) {
@@ -49,6 +50,7 @@ object Notifier {
                 NotificationChannel(CH_CLAIMS, context.getString(R.string.channel_claims), NotificationManager.IMPORTANCE_LOW),
                 NotificationChannel(CH_ACCOUNT, context.getString(R.string.channel_account), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(CH_HELP, context.getString(R.string.channel_help), NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(CH_UPDATE, context.getString(R.string.channel_update), NotificationManager.IMPORTANCE_DEFAULT),
                 // Le son des alarmes, sur le flux des alarmes : il sonne meme en mode silencieux.
                 NotificationChannel(CH_LAST_CHANCE, context.getString(R.string.channel_last_chance), NotificationManager.IMPORTANCE_HIGH).apply {
                     description = context.getString(R.string.channel_last_chance_hint)
@@ -318,6 +320,21 @@ object Notifier {
     fun silenceLastChance(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         runCatching { nm.activeNotifications.filter { it.tag == TAG_LAST_CHANCE }.forEach { nm.cancel(it.tag, it.id) } }
+    }
+
+    /** Une version plus recente existe (1.20.0) : un clic mene aux reglages, ou elle s'installe. */
+    fun updateAvailable(context: Context, version: String) {
+        val b = NotificationCompat.Builder(context, CH_UPDATE)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_update_title, version))
+            .setContentText(context.getString(R.string.notif_update_text))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 3900, tab = 3))
+        if (!allowed(context)) return
+        try {
+            NotificationManagerCompat.from(context).notify(3900, b.build())
+        } catch (_: SecurityException) {
+        }
     }
 
     fun login(context: Context, store: String, who: String? = null) {

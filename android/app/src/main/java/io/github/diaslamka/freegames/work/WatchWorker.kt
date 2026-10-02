@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.github.diaslamka.freegames.claim.BackgroundClaim
+import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Watcher
 import java.util.concurrent.TimeUnit
 
@@ -18,6 +19,8 @@ import java.util.concurrent.TimeUnit
 class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
         Watcher.check(applicationContext, "fond")
+        // Une mise a jour de l'appli existe-t-elle ? Au plus une recherche par jour ; on previent, on n'installe rien.
+        checkForUpdate()
         // Ecran eteint (reglage coupe par defaut) : ce qui reste a prendre, sur place.
         BackgroundClaim.run(applicationContext)
         if (BackgroundClaim.more(System.currentTimeMillis())) Scheduler.soon(applicationContext)
@@ -26,6 +29,23 @@ class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         throw e
     } catch (_: Exception) {
         if (runAttemptCount < 3) Result.retry() else Result.failure()
+    }
+}
+
+private suspend fun WatchWorker.checkForUpdate() {
+    try {
+        Graph.init(applicationContext)
+        if (!Graph.store.value.settings.notifyUpdate) return
+        val net = io.github.diaslamka.freegames.data.AppUpdate.OkNet(Graph.http.client)
+        val release = io.github.diaslamka.freegames.data.AppUpdate.backgroundCheck(
+            applicationContext, net, io.github.diaslamka.freegames.data.UpdateToken.load(applicationContext),
+            io.github.diaslamka.freegames.BuildConfig.VERSION_NAME, System.currentTimeMillis(),
+        )
+        if (release != null) io.github.diaslamka.freegames.notify.Notifier.updateAvailable(applicationContext, release.version)
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        // Une recherche ratee ne doit jamais faire echouer la veille.
     }
 }
 

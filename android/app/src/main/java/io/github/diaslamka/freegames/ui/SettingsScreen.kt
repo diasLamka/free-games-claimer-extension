@@ -25,6 +25,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +44,10 @@ import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.BuildConfig
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.data.AppUpdate
+import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.Install
+import io.github.diaslamka.freegames.data.UpdateToken
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Settings
@@ -177,9 +187,10 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleSmall, color = Color.Black,
                     )
                     Text(stringResource(R.string.section_privacy).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
-                    listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5).forEach { id ->
+                    listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5, R.string.privacy_6).forEach { id ->
                         Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
                     }
+                    UpdateGroup(s, onSettings)
                 }
             }
         }
@@ -225,6 +236,123 @@ fun SettingsScreen(
             text = { Text(stringResource(R.string.clear_sessions_text)) },
             confirmButton = { TextButton(onClick = { clearConfirm = false; onClearSessions() }) { Text(stringResource(R.string.clear)) } },
             dismissButton = { TextButton(onClick = { clearConfirm = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+}
+
+/**
+ * La mise a jour de l'appli (1.20.0) : chercher, telecharger, installer, sans
+ * repasser par le navigateur. Voir data/AppUpdate.kt pour ce qui la protege.
+ */
+@Composable
+private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val status by AppUpdate.status.collectAsState()
+    var tokenInput by remember { mutableStateOf("") }
+    var hasToken by remember { mutableStateOf(UpdateToken.present(context)) }
+    var tokenNote by remember { mutableStateOf<Int?>(null) }
+    var tokenOpen by remember { mutableStateOf(false) }
+    var allowDialog by remember { mutableStateOf(false) }
+
+    fun net() = AppUpdate.OkNet(Graph.http.client)
+    fun search() {
+        scope.launch {
+            try {
+                AppUpdate.check(net(), UpdateToken.load(context), BuildConfig.VERSION_NAME)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.NETWORK)
+            }
+        }
+    }
+    fun install(release: AppUpdate.Release) {
+        if (!Install.allowed(context)) { allowDialog = true; return }
+        scope.launch {
+            try {
+                val file = AppUpdate.fetch(java.io.File(context.cacheDir, "maj"), net(), UpdateToken.load(context), release) {
+                    Install.sameApp(context, it, release.version)
+                } ?: return@launch
+                AppUpdate.status.value = AppUpdate.Status.Installing
+                withContext(Dispatchers.IO) { Install.start(context, file) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.INSTALL, e.message?.take(100))
+            }
+        }
+    }
+    // On regarde une fois en ouvrant la section : la reponse est la, sans geste de plus.
+    LaunchedEffect(Unit) { if (AppUpdate.status.value is AppUpdate.Status.Idle) search() }
+
+    Text(stringResource(R.string.update_section).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 10.dp))
+    Text(
+        when (val st = status) {
+            is AppUpdate.Status.Idle -> ""
+            is AppUpdate.Status.Checking -> stringResource(R.string.update_checking)
+            is AppUpdate.Status.UpToDate -> stringResource(R.string.update_latest)
+            is AppUpdate.Status.Available -> stringResource(R.string.update_available, st.release.version)
+            is AppUpdate.Status.Downloading -> stringResource(R.string.update_downloading, st.percent)
+            is AppUpdate.Status.Installing -> stringResource(R.string.update_installing)
+            is AppUpdate.Status.Failed -> when (st.reason) {
+                AppUpdate.Reason.PRIVATE -> stringResource(R.string.update_fail_private)
+                AppUpdate.Reason.RATE_LIMIT -> stringResource(R.string.update_fail_rate)
+                AppUpdate.Reason.NETWORK -> stringResource(R.string.update_fail_network)
+                AppUpdate.Reason.NO_RELEASE -> stringResource(R.string.update_fail_none)
+                AppUpdate.Reason.BAD_FILE -> stringResource(R.string.update_fail_file, st.detail.orEmpty())
+                AppUpdate.Reason.WRONG_APP -> stringResource(R.string.update_fail_wrong)
+                AppUpdate.Reason.INSTALL -> stringResource(R.string.update_fail_install, st.detail.orEmpty())
+            }
+        },
+        style = MaterialTheme.typography.bodySmall, color = Color.Black,
+    )
+    Box(Modifier.padding(top = 6.dp)) {
+        when (val st = status) {
+            is AppUpdate.Status.Available -> BrutButton(stringResource(R.string.update_install, st.release.version), { install(st.release) })
+            is AppUpdate.Status.Checking, is AppUpdate.Status.Downloading, is AppUpdate.Status.Installing -> {}
+            else -> BrutButton(stringResource(R.string.update_check), { search() }, primary = false)
+        }
+    }
+    Toggle(stringResource(R.string.set_notify_update), null, settings.notifyUpdate) { v -> onSettings { it.copy(notifyUpdate = v) } }
+
+    Text(
+        (if (tokenOpen) "▾ " else "▸ ") + stringResource(R.string.update_token_title).uppercase(),
+        style = MaterialTheme.typography.labelLarge, color = Color.Black,
+        modifier = Modifier.padding(top = 8.dp).clickableNoRipple { tokenOpen = !tokenOpen },
+    )
+    if (tokenOpen) {
+        Text(stringResource(R.string.update_token_hint), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        if (hasToken) {
+            Text("> " + stringResource(R.string.update_token_saved), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+            BrutButton(stringResource(R.string.update_token_clear), {
+                UpdateToken.clear(context); hasToken = false; tokenNote = null
+            }, primary = false)
+        } else {
+            BrutField(tokenInput, { tokenInput = it.filter { c -> !c.isWhitespace() } }, "github_pat_…", onDone = null)
+            BrutButton(stringResource(R.string.update_token_save), {
+                if (UpdateToken.save(context, tokenInput)) {
+                    hasToken = true; tokenInput = ""; tokenNote = null
+                    search()
+                } else {
+                    tokenNote = R.string.update_token_bad
+                }
+            })
+            tokenNote?.let { Text("> " + stringResource(it), style = MaterialTheme.typography.bodySmall, color = Color.Black) }
+        }
+    }
+
+    if (allowDialog) {
+        AlertDialog(
+            onDismissRequest = { allowDialog = false },
+            title = { Text(stringResource(R.string.update_allow_title)) },
+            text = { Text(stringResource(R.string.update_allow_text)) },
+            confirmButton = {
+                TextButton(onClick = { allowDialog = false; runCatching { context.startActivity(Install.allowIntent(context)) } }) {
+                    Text(stringResource(R.string.update_allow_ok))
+                }
+            },
+            dismissButton = { TextButton(onClick = { allowDialog = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

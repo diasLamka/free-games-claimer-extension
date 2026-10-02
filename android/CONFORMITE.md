@@ -27,6 +27,14 @@ exemption d'optimisation de la batterie, installation d'autres applis.
 
 - Uniquement **WorkManager**, avec reseau requis : toutes les 1 a 12 heures,
   et a l'heure d'ouverture annoncee par Epic.
+- La **mise a jour depuis l'appli** (1.20.0) demande `REQUEST_INSTALL_PACKAGES`
+  (le reglage Android « Installer des applis inconnues », que l'utilisateur
+  accorde une fois) : c'est ce qui permet de passer l'APK de la release au
+  programme d'installation du systeme. Elle est reservee a une appli
+  distribuee HORS de Google Play, comme celle-ci -- Google Play restreint cette
+  permission --, ne s'execute que sur un geste depuis les reglages, verifie la
+  signature avant de proposer quoi que ce soit, et n'installe jamais rien en
+  arriere-plan. La veille ne fait que prevenir.
 - La **recuperation ecran eteint** (coupee par defaut, activee avec une
   explication) est une tache WorkManager ordinaire : dix minutes au plus, un
   jeu a la fois, aucune activite lancee depuis l'arriere-plan, aucune fenetre

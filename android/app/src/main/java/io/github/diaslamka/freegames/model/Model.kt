@@ -193,6 +193,8 @@ data class Settings(
      * ce qui te ressemble sonnent tout de suite. Coupe par defaut.
      */
     val tasteQuiet: Boolean = false,
+    /** Prevenir (une fois par version) quand une mise a jour de l'appli existe (1.20.0). */
+    val notifyUpdate: Boolean = true,
     val onboarded: Boolean = false,
 )
 
