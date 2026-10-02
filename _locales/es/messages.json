@@ -2755,5 +2755,134 @@
   },
   "heroVerifiedTitle": {
     "message": "Verificado: el precio viene de la propia tienda o se cotejó con el precio de Steam. Por confirmar: anunciado por un sitio de terceros, sin prueba. Descartado: lo que un valor inflado supera el precio de Steam."
+  },
+  "botHelp": {
+    "message": "Respondo a: estado · juegos · coge todo · pausa 3 (modo vacaciones, en días) · reanudar · por qué <juego> · esta noche · stop. Nunca doy códigos de canje, tokens ni contraseñas."
+  },
+  "botUnknown": {
+    "message": "No he entendido. Escribe «ayuda» para ver la lista."
+  },
+  "botStale": {
+    "message": "Estaba apagado cuando escribiste (hace $1). No ejecuto nada tan antiguo: vuelve a enviarlo si aún importa."
+  },
+  "botSlowDown": {
+    "message": "Demasiados comandos en una hora: descanso un rato."
+  },
+  "botError": {
+    "message": "No lo he conseguido. El detalle está en el registro de la extensión."
+  },
+  "botStatusGames": {
+    "message": "$1 juego(s) gratis ahora, $2 de los que puedo coger yo solo."
+  },
+  "botStatusNone": {
+    "message": "Nada gratis ahora en las tiendas que sigo."
+  },
+  "botStatusLast": {
+    "message": "Última comprobación: hace $1."
+  },
+  "botStatusNever": {
+    "message": "La vigilancia aún no se ha ejecutado."
+  },
+  "botStatusStopped": {
+    "message": "Parada de emergencia activa: no consigo nada. Escribe «reanudar» para continuar."
+  },
+  "botStatusAuto": {
+    "message": "La recogida automática está desactivada en los ajustes."
+  },
+  "botStatusVacation": {
+    "message": "Modo vacaciones hasta el $1: me callo y sigo consiguiendo juegos."
+  },
+  "botStatusIncidents": {
+    "message": "$1 incidente(s) abierto(s): abre el panel para verlos."
+  },
+  "botGamesHeader": {
+    "message": "Gratis ahora:"
+  },
+  "botGameLine": {
+    "message": "• $1 — $2 — quedan $3"
+  },
+  "botGamesMore": {
+    "message": "… y $1 más."
+  },
+  "botClaimStart": {
+    "message": "Empiezo a conseguir $1 juego(s)…"
+  },
+  "botClaimNothing": {
+    "message": "Ahora no hay nada que pueda conseguir yo solo."
+  },
+  "botClaimStopped": {
+    "message": "Parada de emergencia activa: no se ha conseguido nada. Escribe «reanudar» para continuar."
+  },
+  "botClaimDone": {
+    "message": "Terminado: $1 conseguido(s), $2 por reintentar."
+  },
+  "botPauseBad": {
+    "message": "¿Cuántos días? Por ejemplo «pausa 3» (de 1 a 60)."
+  },
+  "botPauseDone": {
+    "message": "Modo vacaciones durante $1 día(s), hasta el $2. Me callo pero sigo consiguiendo juegos. Escribe «reanudar» para volver antes."
+  },
+  "botResumeDone": {
+    "message": "Vuelvo a la normalidad: el modo vacaciones ha terminado."
+  },
+  "botResumeStop": {
+    "message": "Reanudado: la parada de emergencia se ha levantado."
+  },
+  "botResumeNothing": {
+    "message": "Nada que reanudar: ni vacaciones ni parada de emergencia."
+  },
+  "botStopDone": {
+    "message": "Parada de emergencia: no se consigue nada más y se cierran las pestañas controladas. Escribe «reanudar» para continuar."
+  },
+  "botWhyAsk": {
+    "message": "¿Qué juego? Por ejemplo «por qué Hades»."
+  },
+  "botWhyNone": {
+    "message": "No veo ninguna oferta actual que se parezca a «$1»."
+  },
+  "botWhyOwned": {
+    "message": "«$1» ya está en tu biblioteca ($2, el $3)."
+  },
+  "botWhyHeader": {
+    "message": "«$1» ($2):"
+  },
+  "botWhyEnds": {
+    "message": "Termina en $1."
+  },
+  "botWhyDrop": {
+    "message": "No lo consigo yo solo: $1."
+  },
+  "botWhyVerdict": {
+    "message": "Último intento: $1."
+  },
+  "botWhyBackoff": {
+    "message": "Lo reintentaré en $1."
+  },
+  "botWhyWaiting": {
+    "message": "Está en la cola: lo consigo en la próxima pasada."
+  },
+  "botTonight": {
+    "message": "Esta noche: $1"
+  },
+  "botTonightNone": {
+    "message": "Nada de tu pila encaja (importa Mi colección para que la conozca)."
+  },
+  "phoneBotLabel": {
+    "message": "El bot responde a mis mensajes"
+  },
+  "phoneBotHint": {
+    "message": "Escribe «ayuda» al bot. Lee tus mensajes cada minuto mientras el ordenador esté encendido y el navegador abierto, y solo responde a TI, en un chat privado. No lo uses en un grupo."
+  },
+  "phoneBotListening": {
+    "message": "El bot escucha · última lectura $1"
+  },
+  "phoneBotWaiting": {
+    "message": "El bot empezará a escuchar en un minuto."
+  },
+  "phoneBotFailed": {
+    "message": "El bot no puede leer ($1) · $2"
+  },
+  "phoneBotGroup": {
+    "message": "El bot solo responde en un chat privado: usa tu propio número, no el de un grupo o canal."
   }
 }

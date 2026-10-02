@@ -2755,5 +2755,134 @@
   },
   "heroVerifiedTitle": {
     "message": "Geprüft: Der Preis stammt vom Shop selbst oder wurde mit dem Steam-Preis abgeglichen. Zu bestätigen: von einer Drittseite angegeben, ohne Beleg. Abgezogen: so weit ein aufgeblähter Wert über dem Steam-Preis liegt."
+  },
+  "botHelp": {
+    "message": "Ich antworte auf: Status · Spiele · hol alles · Pause 3 (Urlaubsmodus, in Tagen) · weiter · warum <Spiel> · heute Abend · Stopp. Einlösecodes, Tokens und Passwörter gebe ich nie heraus."
+  },
+  "botUnknown": {
+    "message": "Das habe ich nicht verstanden. Schreib „Hilfe“ für die Liste."
+  },
+  "botStale": {
+    "message": "Ich war aus, als du geschrieben hast (vor $1). So alte Befehle führe ich nicht aus: schick sie noch einmal, falls sie noch gelten."
+  },
+  "botSlowDown": {
+    "message": "Zu viele Befehle in einer Stunde: ich mache eine Pause."
+  },
+  "botError": {
+    "message": "Das hat nicht geklappt. Die Einzelheiten stehen im Protokoll der Erweiterung."
+  },
+  "botStatusGames": {
+    "message": "Gerade $1 Gratisspiel(e), davon $2, die ich allein holen kann."
+  },
+  "botStatusNone": {
+    "message": "Gerade nichts Gratis in den beobachteten Shops."
+  },
+  "botStatusLast": {
+    "message": "Letzte Prüfung: vor $1."
+  },
+  "botStatusNever": {
+    "message": "Die Beobachtung lief noch nicht."
+  },
+  "botStatusStopped": {
+    "message": "Notstopp ist aktiv: ich hole nichts. Schreib „weiter“, um fortzufahren."
+  },
+  "botStatusAuto": {
+    "message": "Das automatische Abholen ist in den Einstellungen aus."
+  },
+  "botStatusVacation": {
+    "message": "Urlaubsmodus bis $1: ich bin still und hole weiter."
+  },
+  "botStatusIncidents": {
+    "message": "$1 offene(r) Vorfall/Vorfälle: öffne das Dashboard."
+  },
+  "botGamesHeader": {
+    "message": "Jetzt gratis:"
+  },
+  "botGameLine": {
+    "message": "• $1 — $2 — noch $3"
+  },
+  "botGamesMore": {
+    "message": "… und $1 weitere."
+  },
+  "botClaimStart": {
+    "message": "Ich hole jetzt $1 Spiel(e)…"
+  },
+  "botClaimNothing": {
+    "message": "Gerade nichts, was ich allein holen kann."
+  },
+  "botClaimStopped": {
+    "message": "Notstopp ist aktiv: nichts wurde geholt. Schreib „weiter“, um fortzufahren."
+  },
+  "botClaimDone": {
+    "message": "Fertig: $1 geholt, $2 noch offen."
+  },
+  "botPauseBad": {
+    "message": "Wie viele Tage? Zum Beispiel „Pause 3“ (1 bis 60)."
+  },
+  "botPauseDone": {
+    "message": "Urlaubsmodus für $1 Tag(e), bis $2. Ich bin still, hole aber weiter. Schreib „weiter“, um früher zurückzukehren."
+  },
+  "botResumeDone": {
+    "message": "Es geht weiter: der Urlaubsmodus ist beendet."
+  },
+  "botResumeStop": {
+    "message": "Weiter: der Notstopp ist aufgehoben."
+  },
+  "botResumeNothing": {
+    "message": "Nichts fortzusetzen: weder Urlaub noch Notstopp."
+  },
+  "botStopDone": {
+    "message": "Notstopp: kein Abholen mehr, gesteuerte Tabs sind geschlossen. Schreib „weiter“, um fortzufahren."
+  },
+  "botWhyAsk": {
+    "message": "Welches Spiel? Zum Beispiel „warum Hades“."
+  },
+  "botWhyNone": {
+    "message": "Ich sehe kein aktuelles Angebot, das wie „$1“ aussieht."
+  },
+  "botWhyOwned": {
+    "message": "„$1“ ist schon in deiner Bibliothek ($2, am $3)."
+  },
+  "botWhyHeader": {
+    "message": "„$1“ ($2):"
+  },
+  "botWhyEnds": {
+    "message": "Es endet in $1."
+  },
+  "botWhyDrop": {
+    "message": "Ich hole es nicht allein: $1."
+  },
+  "botWhyVerdict": {
+    "message": "Letzter Versuch: $1."
+  },
+  "botWhyBackoff": {
+    "message": "Ich versuche es in $1 erneut."
+  },
+  "botWhyWaiting": {
+    "message": "Es steht in der Warteschlange: ich hole es beim nächsten Durchgang."
+  },
+  "botTonight": {
+    "message": "Heute Abend: $1"
+  },
+  "botTonightNone": {
+    "message": "Nichts in deinem Stapel passt (importiere Meine Sammlung, damit ich sie kenne)."
+  },
+  "phoneBotLabel": {
+    "message": "Der Bot antwortet auf meine Nachrichten"
+  },
+  "phoneBotHint": {
+    "message": "Schreib dem Bot „Hilfe“. Er liest deine Nachrichten jede Minute, solange der Rechner an und der Browser offen ist, und antwortet nur DIR im privaten Chat. Nicht in einer Gruppe verwenden."
+  },
+  "phoneBotListening": {
+    "message": "Der Bot hört zu · zuletzt gelesen $1"
+  },
+  "phoneBotWaiting": {
+    "message": "Der Bot hört in einer Minute zu."
+  },
+  "phoneBotFailed": {
+    "message": "Der Bot kann nicht lesen ($1) · $2"
+  },
+  "phoneBotGroup": {
+    "message": "Der Bot antwortet nur im privaten Chat: trag deine eigene Nummer ein, nicht die einer Gruppe oder eines Kanals."
   }
 }

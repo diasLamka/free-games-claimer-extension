@@ -4,6 +4,52 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.104.0 -- 2026-10-02
+
+**Le bot Telegram qui repond : ecrivez-lui « etat », « jeux », « prends tout », « pause 3 », « pourquoi Hades », « ce soir », « stop »**
+
+Jusqu'ici le bot ne faisait qu'ecrire. Il lit maintenant UN message de vous et
+repond (`watch/bot.js`). Coupe par defaut : Reglages -> Telephone -> Telegram ->
+« Le bot repond a mes messages ».
+
+- **Les commandes**, en francais ou en anglais, avec ou sans accent, avec ou sans
+  `/` : *etat* (combien de jeux, dont combien pris seul, derniere verification,
+  arret d'urgence, vacances, incidents), *jeux* (la liste, la fin la plus proche
+  d'abord, liens https seulement), *prends tout* (le meme geste que « Tout
+  recuperer », meme plafond horaire, puis un second message avec le resultat),
+  *pause N* (le mode vacances, de 1 a 60 jours : le bot se tait, la recuperation
+  continue), *reprise* (fin des vacances et de l'arret d'urgence), *pourquoi X*
+  (pourquoi ce jeu n'est pas pris : filtre, deja a vous, dernier essai, prochain
+  essai), *ce soir* (un jeu de votre pile), *stop* (l'arret d'urgence a distance,
+  onglets pilotes refermes), *aide*.
+- **Une seule personne parle.** La discussion PRIVEE dont le numero est celui des
+  reglages, expediteur compris. Un groupe, un canal, un `@nom` : refuses des les
+  reglages (« mettez votre propre numero »), parce que n'importe quel membre
+  piloterait votre recuperateur. Tout autre message est ignore SANS reponse : le
+  bot n'est pas un echo pour des inconnus.
+- **Jamais un secret.** Une reponse se compose de titres, de noms de magasin, de
+  durees et de liens de fiches. Les codes de rachat, les jetons, les adresses de
+  webhook et les cookies ne sont meme pas lus par ce module ; le journal et l'etat
+  n'ecrivent jamais l'adresse de Telegram (elle porte le jeton).
+- **Ce que ca coute, dit honnetement.** Une alarme lit `getUpdates` toutes les
+  minutes : l'ordinateur doit etre allume et le navigateur ouvert, la reponse
+  arrive avec une minute au plus de retard, et il n'y a aucun serveur chez nous.
+  Un message ecrit ordinateur eteint (plus de quinze minutes) n'est PAS execute au
+  retour : le bot le dit, une fois, et demande de le renvoyer.
+- **Au plus une fois.** Le decalage de lecture est ecrit AVANT d'agir : un worker
+  tue en route perd une commande, il ne la rejoue pas. Cinq commandes par lecture
+  au plus (les suivantes restent chez Telegram, lues a la minute d'apres), trente
+  par heure. A l'activation, les anciens messages de la discussion ne partent pas.
+- Un webhook ou un autre programme qui lit deja les messages du meme bot donne un
+  HTTP 409 : le popup le dit au lieu de rester muet.
+
+Essai de bout en bout dans un vrai Chromium, contre un faux serveur Telegram :
+amorcage sans executer le vieux « prends tout », « etat », « pause 2 », « pourquoi
+... », une phrase incomprise et « reprise » repondus en francais, vacances posees
+puis levees, aucun cookie envoye. Non verifie : le vrai serveur de Telegram (pas de
+bot ici) ; la reclamation groupee lancee depuis le bot (testee a part, son effet
+est le meme appel que le bouton).
+
 ## 2.103.0 -- 2026-10-02
 
 **« Piege ou bonne affaire ? » : une note de A a D sur chaque jeu offert, avec ses raisons, et un total qui dit ce qu'il prouve**

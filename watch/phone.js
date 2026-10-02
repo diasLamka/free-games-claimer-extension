@@ -56,6 +56,8 @@ export const DEFAULT_PHONE = Object.freeze({
   mobile: true,
   /** Aussi le recap du jeudi soir (2.65.0). */
   recap: true,
+  /** Telegram seulement (2.104.0) : le bot LIT vos messages et repond. Voir watch/bot.js. */
+  bot: false,
 });
 
 /** Le serveur public, celui que « Nouveau sujet » propose. */
@@ -104,6 +106,7 @@ export function readPhone(raw) {
     wished: p.wished !== false,
     mobile: p.mobile !== false,
     recap: p.recap !== false,
+    bot: p.bot === true,
   };
 }
 

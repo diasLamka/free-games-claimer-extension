@@ -2755,5 +2755,134 @@
   },
   "heroVerifiedTitle": {
     "message": "Vérifié : le prix vient du magasin lui-même, ou recoupé avec le prix Steam. À confirmer : annoncé par un site tiers, sans preuve. Écarté : ce qu’une valeur gonflée dépasse le prix Steam."
+  },
+  "botHelp": {
+    "message": "Je réponds à : état · jeux · prends tout · pause 3 (mode vacances, en jours) · reprise · pourquoi <jeu> · ce soir · stop. Je ne donne jamais de code de rachat, de jeton ni de mot de passe."
+  },
+  "botUnknown": {
+    "message": "Je n’ai pas compris. Écrivez « aide » pour la liste."
+  },
+  "botStale": {
+    "message": "J’étais éteint quand vous m’avez écrit (il y a $1). Je n’exécute rien d’aussi ancien : renvoyez votre message s’il compte encore."
+  },
+  "botSlowDown": {
+    "message": "Trop de commandes en une heure : je me repose un moment."
+  },
+  "botError": {
+    "message": "Je n’y suis pas arrivé. Le détail est dans le journal de l’extension."
+  },
+  "botStatusGames": {
+    "message": "$1 jeu(x) gratuit(s) en ce moment, dont $2 que je peux prendre seul."
+  },
+  "botStatusNone": {
+    "message": "Rien de gratuit en ce moment parmi les magasins suivis."
+  },
+  "botStatusLast": {
+    "message": "Dernière vérification : il y a $1."
+  },
+  "botStatusNever": {
+    "message": "La veille n’a pas encore tourné."
+  },
+  "botStatusStopped": {
+    "message": "Arrêt d’urgence actif : je ne récupère rien. Écrivez « reprise » pour reprendre."
+  },
+  "botStatusAuto": {
+    "message": "La récupération automatique est coupée dans les réglages."
+  },
+  "botStatusVacation": {
+    "message": "Mode vacances jusqu’au $1 : je me tais, je continue à récupérer."
+  },
+  "botStatusIncidents": {
+    "message": "$1 incident(s) ouvert(s) : ouvrez le tableau de bord pour les voir."
+  },
+  "botGamesHeader": {
+    "message": "Gratuit maintenant :"
+  },
+  "botGameLine": {
+    "message": "• $1 — $2 — encore $3"
+  },
+  "botGamesMore": {
+    "message": "… et $1 autre(s)."
+  },
+  "botClaimStart": {
+    "message": "Je lance la récupération de $1 jeu(x)…"
+  },
+  "botClaimNothing": {
+    "message": "Rien à récupérer seul en ce moment."
+  },
+  "botClaimStopped": {
+    "message": "Arrêt d’urgence actif : rien n’a été récupéré. Écrivez « reprise » pour reprendre."
+  },
+  "botClaimDone": {
+    "message": "Terminé : $1 récupéré(s), $2 à reprendre."
+  },
+  "botPauseBad": {
+    "message": "Combien de jours ? Par exemple « pause 3 » (de 1 à 60)."
+  },
+  "botPauseDone": {
+    "message": "Mode vacances pendant $1 jour(s), jusqu’au $2. Je me tais mais je continue à récupérer. Écrivez « reprise » pour revenir plus tôt."
+  },
+  "botResumeDone": {
+    "message": "Je reprends : le mode vacances est terminé."
+  },
+  "botResumeStop": {
+    "message": "Reprise : l’arrêt d’urgence est levé."
+  },
+  "botResumeNothing": {
+    "message": "Rien à reprendre : ni vacances ni arrêt d’urgence."
+  },
+  "botStopDone": {
+    "message": "Arrêt d’urgence : plus aucune récupération, les onglets pilotés sont refermés. Écrivez « reprise » pour reprendre."
+  },
+  "botWhyAsk": {
+    "message": "Quel jeu ? Par exemple « pourquoi Hades »."
+  },
+  "botWhyNone": {
+    "message": "Je ne vois aucune offre en cours qui ressemble à « $1 »."
+  },
+  "botWhyOwned": {
+    "message": "« $1 » est déjà dans votre bibliothèque ($2, le $3)."
+  },
+  "botWhyHeader": {
+    "message": "« $1 » ($2) :"
+  },
+  "botWhyEnds": {
+    "message": "Il se termine dans $1."
+  },
+  "botWhyDrop": {
+    "message": "Je ne le prends pas seul : $1."
+  },
+  "botWhyVerdict": {
+    "message": "Dernier essai : $1."
+  },
+  "botWhyBackoff": {
+    "message": "Je réessaierai dans $1."
+  },
+  "botWhyWaiting": {
+    "message": "Il est dans la file : je le prends au prochain passage."
+  },
+  "botTonight": {
+    "message": "Ce soir : $1"
+  },
+  "botTonightNone": {
+    "message": "Rien dans votre pile ne convient (importez Ma collection pour que je la connaisse)."
+  },
+  "phoneBotLabel": {
+    "message": "Le bot répond à mes messages"
+  },
+  "phoneBotHint": {
+    "message": "Écrivez « aide » au bot. Il lit vos messages toutes les minutes tant que l’ordinateur est allumé et le navigateur ouvert, et ne répond qu’à VOUS, en discussion privée. Ne l’utilisez pas dans un groupe."
+  },
+  "phoneBotListening": {
+    "message": "Le bot écoute · dernière lecture $1"
+  },
+  "phoneBotWaiting": {
+    "message": "Le bot écoutera à la prochaine minute."
+  },
+  "phoneBotFailed": {
+    "message": "Le bot ne peut pas lire ($1) · $2"
+  },
+  "phoneBotGroup": {
+    "message": "Le bot ne répond qu’en discussion privée : mettez votre propre numéro, pas celui d’un groupe ou d’un canal."
   }
 }

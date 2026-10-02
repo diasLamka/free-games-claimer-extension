@@ -29,8 +29,8 @@
  *     developpeur. On pose notre propre plancher a 60 s pour ne dependre
  *     d'aucun des deux.
  */
-import { runCycle } from './watch/cycle.js';
-import { SOURCES, CLAIMABLE_STORES } from './watch/sources/index.js';
+import { runCycle, KEY_STOP } from './watch/cycle.js';
+import { SOURCES, CLAIMABLE_STORES, claimableStoresFor } from './watch/sources/index.js';
 import {
   readState, readKeys, readSettings, write, writeCycle, KEYS, DEFAULT_SETTINGS, normaliseSettings,
   rememberNotification, readNotification, readNotificationLink,
@@ -41,7 +41,7 @@ import {
   claimAllNow, claimOneNow, isStopped, prioritise, pruneNow, readPlaytime, retryNow,
   sendToBridge, snooze, teach, wish,
 } from './watch/commands.js';
-import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory, falseOwnership, libraryKey } from './watch/library.js';
+import { KEY_LIBRARY, PLATFORM_STORES, addedEntries, integrateHistory, falseOwnership, libraryKey, ownedKeys } from './watch/library.js';
 import {
   KEY_SESSIONS, PROBED_STORES, fromImportStatus, recordSession, readSession, dueForProbe, needsPage, settle,
 } from './watch/session.js';
@@ -52,7 +52,7 @@ import { KEY_CANARY, acknowledge } from './watch/canary.js';
 import { KEY_CODES, mirrorCodes, restoreCodes, hasSync } from './watch/backup.js';
 import { mirrorLibrary, restoreLibrary, clearLibraryMirror } from './watch/library-sync.js';
 import { KEY_SENTINEL, writeBeat, clearBeat } from './watch/sentinel.js';
-import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning } from './watch/collection.js';
+import { KEY_COLLECTION, IMPORTABLE_STORES, IMPORT_STATUS, applyImport, markRunning, ownedStoreKeys } from './watch/collection.js';
 import { importStore, probeSession } from './watch/collection-import.js';
 import { landOnPage } from './watch/session-page.js';
 import { KEY_COUNTRY, normaliseCountry } from './watch/locale.js';
@@ -70,8 +70,8 @@ import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js'
 import { currentLocale, intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
-import { badgeState, effectiveQuiet, inQuietHours, onVacation } from './watch/notify-policy.js';
-import { runReturnSummary } from './watch/vacation.js';
+import { badgeState, effectiveQuiet, inQuietHours, onVacation, readVacation } from './watch/notify-policy.js';
+import { runReturnSummary, planVacation } from './watch/vacation.js';
 import { runRecap } from './watch/recap.js';
 import { runCodeReminders } from './watch/code-reminders.js';
 import { restoreBackup } from './watch/full-backup.js';
@@ -79,7 +79,7 @@ import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watc
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
 import { KEY_TASTE, MIN_LIKED as TASTE_MIN_LIKED, fetchGames as fetchTasteGames, notForYou, readTasteState, refreshTaste, signalsFrom, tagLanguage, tastePassDue, tasteFor, tasteNames } from './watch/taste.js';
-import { KEY_TONIGHT, buildPile, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
+import { KEY_TONIGHT, buildPile, pickTonight, playLinks, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
 import { KEY_PLAYTIME } from './watch/playtime.js';
 import { KEY_ANNOTATIONS } from './watch/annotations.js';
 import { runAutoBackup } from './watch/auto-backup.js';
@@ -90,6 +90,7 @@ import {
 import {
   KEY_CHECKS, PER_RUN as CHECKS_PER_RUN, checkAppId, refreshChecks, collectionFacts, verdictFor, verdictLine,
 } from './watch/bargain.js';
+import { KEY_BOT, ALARM_BOT, POLL_MINUTES as BOT_POLL_MINUTES, botTarget, pollBot } from './watch/bot.js';
 import { openOffers } from './watch/catalog.js';
 import { KEY_COVERS, refreshCovers } from './watch/covers.js';
 import { money } from './lib/money.js';
@@ -743,6 +744,115 @@ async function rateOne(offer) {
   } catch { return null; }
 }
 
+/* ------------------------------------------- le bot qui repond (2.104.0) */
+
+/* Une lecture a la fois : l'alarme revient toutes les minutes, une reclamation
+   groupee peut durer plus longtemps. */
+let botBusy = false;
+
+/** Les donnees dont les reponses ont besoin, lues au moment de la premiere commande. */
+async function botContext() {
+  const now = Date.now();
+  const raw = await readKeys(api, [KEYS.OFFERS, KEYS.FILTERS, KEYS.SETTINGS, KEYS.STATE, KEY_LIBRARY, KEY_COLLECTION_LOOKUP, KEY_INCIDENTS, KEY_STOP, KEY_PLAYTIME, KEY_ANNOTATIONS, KEY_TONIGHT, KEY_COVERS]);
+  const settings = normaliseSettings(raw[KEYS.SETTINGS]);
+  const library = raw[KEY_LIBRARY] || {};
+  const suivis = settings.watchedStores || [];
+  const open = openOffers(raw[KEYS.OFFERS] || {}, now).filter((o) => suivis.includes(o.store));
+  const vacation = readVacation(settings.vacation);
+  const pile = buildPile({
+    collection: raw[KEY_COLLECTION_LOOKUP] || null, library, playtime: (raw[KEY_PLAYTIME] || {}).games || null,
+    annotations: raw[KEY_ANNOTATIONS] || {}, state: raw[KEY_TONIGHT] || null, covers: raw[KEY_COVERS] || {},
+  });
+  const pick = pickTonight(pile, { apps: (readTonightState(raw[KEY_TONIGHT])).apps, time: 'evening' }).pick;
+  return {
+    open,
+    filters: raw[KEYS.FILTERS] || {},
+    judging: {
+      supportedStores: claimableStoresFor(settings, CLAIMABLE_STORES),
+      owned: ownedKeys(library, normaliseTitle),
+      ownedIds: ownedStoreKeys(raw[KEY_COLLECTION_LOOKUP] || null),
+    },
+    lastCheck: (raw[KEYS.STATE] || {}).lastCycle || null,
+    vacation: vacation && now >= vacation.from && now < vacation.until ? vacation : null,
+    stopped: raw[KEY_STOP] === true,
+    autoClaim: settings.autonomousClaim,
+    incidents: Object.keys(raw[KEY_INCIDENTS] || {}).length,
+    library,
+    tonight: pick ? { title: pick.title, page: playLinks(pick).page } : null,
+    dateText: (ts) => new Date(ts).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long' }),
+  };
+}
+
+/** Ce que le bot peut FAIRE : les memes gestes que les boutons du popup, et rien d'autre. */
+async function botEffects(effect) {
+  if (effect.kind === 'claim') {
+    const r = await claimAllNow({ chrome: api, claimableStores: CLAIMABLE_STORES, record });
+    if (r && r.stopped) return { text: t('botClaimStopped') };
+    return { text: t('botClaimDone', String((r && r.claimed) || 0), String((r && r.left) || 0)) };
+  }
+  if (effect.kind === 'vacation') {
+    const raw = (await readKeys(api, KEYS.SETTINGS))[KEYS.SETTINGS] || {};
+    await write(api, { [KEYS.SETTINGS]: { ...raw, vacation: planVacation(effect.days, Date.now()), updatedAt: Date.now() } });
+    return null;
+  }
+  if (effect.kind === 'resume') {
+    const now = Date.now();
+    await write(api, { [KEY_STOP]: false });
+    const raw = (await readKeys(api, KEYS.SETTINGS))[KEYS.SETTINGS] || {};
+    const v = readVacation(raw.vacation);
+    if (v) {
+      await write(api, { [KEYS.SETTINGS]: { ...raw, vacation: now > v.from ? { from: v.from, until: now } : null, updatedAt: now } });
+      await maybeReturn(now).catch(() => null);
+    }
+    return null;
+  }
+  if (effect.kind === 'stop') {
+    await write(api, { [KEY_STOP]: true });
+    await sweepTabs(api, Date.now()).catch(() => null);
+    return null;
+  }
+  return null;
+}
+
+/** Une lecture des messages du bot, si le bot est actif. */
+async function pollBotNow() {
+  if (botBusy) return null;
+  botBusy = true;
+  const stopKeepalive = startKeepalive();
+  try {
+    const raw = await readKeys(api, [KEY_PHONE, KEY_BOT]);
+    const target = botTarget(raw[KEY_PHONE]);
+    if (!target) return { skipped: 'off' };
+    await langue;
+    return await pollBot({
+      fetch: (u, i) => fetch(u, i),
+      target,
+      now: Date.now(),
+      read: async () => (await readKeys(api, KEY_BOT))[KEY_BOT],
+      write: (etat) => write(api, { [KEY_BOT]: etat }),
+      context: botContext,
+      effects: botEffects,
+      t,
+      record,
+    });
+  } catch (e) {
+    record('warn', 'bot Telegram : lecture impossible', e);
+    return null;
+  } finally {
+    stopKeepalive();
+    botBusy = false;
+  }
+}
+
+/** L'alarme du bot n'existe que si le bot est actif et sa configuration valable. */
+async function armBot() {
+  const raw = await readKeys(api, KEY_PHONE);
+  const on = Boolean(botTarget(raw[KEY_PHONE]));
+  const alarme = await api.alarms.get(ALARM_BOT);
+  if (on && !alarme) await api.alarms.create(ALARM_BOT, { periodInMinutes: BOT_POLL_MINUTES, delayInMinutes: 0.5 });
+  if (!on && alarme) await api.alarms.clear(ALARM_BOT);
+}
+
 /* ------------------------------------------- piege ou bonne affaire (2.103.0) */
 
 /* Meme precaution que les notes : une seule ecriture a la fois. */
@@ -1124,6 +1234,10 @@ function planifier(origine) {
 }
 
 api.alarms.onAlarm.addListener((alarme) => {
+  if (alarme.name === ALARM_BOT) {
+    pollBotNow().catch((e) => record('warn', 'bot Telegram : lecture impossible', e));
+    return;
+  }
   if (alarme.name === ALARM_DISK) {
     checkDisk({ chrome: api, fetch: (u, i) => fetch(u, i), cycleBusy: !!cycleRunning, record })
       .catch((e) => record('warn', 'lecture du dossier de l\'extension impossible', e));
@@ -1180,6 +1294,12 @@ async function appliquerLangue() {
 }
 
 const langue = appliquerLangue().catch(() => {});
+
+/* Le bot s'arme et se desarme avec ses reglages, et a chaque demarrage du worker. */
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes[KEY_PHONE]) armBot().catch((e) => record('warn', 'bot Telegram : alarme impossible', e));
+});
+armBot().catch((e) => record('warn', 'bot Telegram : alarme impossible', e));
 
 api.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[KEY_UI]) return;

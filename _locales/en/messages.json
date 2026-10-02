@@ -2755,5 +2755,134 @@
   },
   "heroVerifiedTitle": {
     "message": "Verified: the price comes from the store itself, or was cross-checked against the Steam price. To confirm: claimed by a third-party site, no proof. Set aside: how far an inflated value exceeds the Steam price."
+  },
+  "botHelp": {
+    "message": "I answer: status · games · claim all · pause 3 (vacation mode, in days) · resume · why <game> · tonight · stop. I never give out redeem codes, tokens or passwords."
+  },
+  "botUnknown": {
+    "message": "I didn’t understand. Write “help” for the list."
+  },
+  "botStale": {
+    "message": "I was off when you wrote (that was $1 ago). I don’t run anything that old: send it again if it still matters."
+  },
+  "botSlowDown": {
+    "message": "Too many commands in an hour: I’m taking a break."
+  },
+  "botError": {
+    "message": "I couldn’t do that. The details are in the extension’s log."
+  },
+  "botStatusGames": {
+    "message": "$1 free game(s) right now, $2 of which I can take on my own."
+  },
+  "botStatusNone": {
+    "message": "Nothing free right now in the stores I follow."
+  },
+  "botStatusLast": {
+    "message": "Last check: $1 ago."
+  },
+  "botStatusNever": {
+    "message": "The watch hasn’t run yet."
+  },
+  "botStatusStopped": {
+    "message": "Emergency stop is on: I’m claiming nothing. Write “resume” to carry on."
+  },
+  "botStatusAuto": {
+    "message": "Automatic claiming is off in the settings."
+  },
+  "botStatusVacation": {
+    "message": "Vacation mode until $1: I stay quiet and keep claiming."
+  },
+  "botStatusIncidents": {
+    "message": "$1 open incident(s): open the dashboard to see them."
+  },
+  "botGamesHeader": {
+    "message": "Free now:"
+  },
+  "botGameLine": {
+    "message": "• $1 — $2 — $3 left"
+  },
+  "botGamesMore": {
+    "message": "… and $1 more."
+  },
+  "botClaimStart": {
+    "message": "Starting to claim $1 game(s)…"
+  },
+  "botClaimNothing": {
+    "message": "Nothing I can claim on my own right now."
+  },
+  "botClaimStopped": {
+    "message": "Emergency stop is on: nothing was claimed. Write “resume” to carry on."
+  },
+  "botClaimDone": {
+    "message": "Done: $1 claimed, $2 left to retry."
+  },
+  "botPauseBad": {
+    "message": "How many days? For example “pause 3” (1 to 60)."
+  },
+  "botPauseDone": {
+    "message": "Vacation mode for $1 day(s), until $2. I stay quiet but keep claiming. Write “resume” to come back sooner."
+  },
+  "botResumeDone": {
+    "message": "Back to normal: vacation mode is over."
+  },
+  "botResumeStop": {
+    "message": "Resumed: the emergency stop is lifted."
+  },
+  "botResumeNothing": {
+    "message": "Nothing to resume: no vacation and no emergency stop."
+  },
+  "botStopDone": {
+    "message": "Emergency stop: no more claiming, driven tabs are closed. Write “resume” to carry on."
+  },
+  "botWhyAsk": {
+    "message": "Which game? For example “why Hades”."
+  },
+  "botWhyNone": {
+    "message": "I see no current offer that looks like “$1”."
+  },
+  "botWhyOwned": {
+    "message": "“$1” is already in your library ($2, on $3)."
+  },
+  "botWhyHeader": {
+    "message": "“$1” ($2):"
+  },
+  "botWhyEnds": {
+    "message": "It ends in $1."
+  },
+  "botWhyDrop": {
+    "message": "I don’t take it on my own: $1."
+  },
+  "botWhyVerdict": {
+    "message": "Last attempt: $1."
+  },
+  "botWhyBackoff": {
+    "message": "I’ll try again in $1."
+  },
+  "botWhyWaiting": {
+    "message": "It’s in the queue: I’ll take it on the next pass."
+  },
+  "botTonight": {
+    "message": "Tonight: $1"
+  },
+  "botTonightNone": {
+    "message": "Nothing in your pile fits (import My collection so I know it)."
+  },
+  "phoneBotLabel": {
+    "message": "The bot answers my messages"
+  },
+  "phoneBotHint": {
+    "message": "Write “help” to the bot. It reads your messages every minute while the computer is on and the browser open, and only answers YOU, in a private chat. Don’t use it in a group."
+  },
+  "phoneBotListening": {
+    "message": "The bot is listening · last read $1"
+  },
+  "phoneBotWaiting": {
+    "message": "The bot will start listening within a minute."
+  },
+  "phoneBotFailed": {
+    "message": "The bot can’t read ($1) · $2"
+  },
+  "phoneBotGroup": {
+    "message": "The bot only answers in a private chat: use your own number, not a group’s or a channel’s."
   }
 }

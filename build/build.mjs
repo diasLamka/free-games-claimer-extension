@@ -419,7 +419,7 @@ const citees = clesCitees(['pages/popup.html', 'pages/popup.js', 'pages/journal.
   /* Les chances des souhaits (2.94.0), « Ce soir je joue a... » (2.95.0) et
      « Piege ou bonne affaire ? » (2.103.0) rendent leurs raisons par cle, que
      le popup traduit. */
-  'watch/odds.js', 'watch/bargain.js', 'watch/tonight.js', 'watch/taste.js', 'watch/telegram-format.js', 'watch/discord-format.js']);
+  'watch/odds.js', 'watch/bargain.js', 'watch/bot.js', 'watch/tonight.js', 'watch/taste.js', 'watch/telegram-format.js', 'watch/discord-format.js']);
 for (const [cle, fichier] of citees) {
   if (!clesReference.has(cle)) problems.push(`${fichier} : cle i18n inconnue « ${cle} »`);
 }
@@ -469,7 +469,7 @@ const SOURCES_I18N = ['pages/popup.html', 'pages/popup.js', 'pages/journal.html'
   'watch/owned-guard.js',
   /* Les chances des souhaits (2.94.0) et « Ce soir je joue a... » (2.95.0)
      rendent leurs raisons par cle, que le popup traduit. */
-  'watch/odds.js', 'watch/bargain.js', 'watch/tonight.js', 'watch/taste.js', 'watch/telegram-format.js', 'watch/discord-format.js'].map((f) => {
+  'watch/odds.js', 'watch/bargain.js', 'watch/bot.js', 'watch/tonight.js', 'watch/taste.js', 'watch/telegram-format.js', 'watch/discord-format.js'].map((f) => {
   const src = readFileSync(join(ROOT, f), 'utf8');
   return f.endsWith('.html')
     ? src

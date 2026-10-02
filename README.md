@@ -130,6 +130,17 @@ qui compte, la note est « ? » -- elle ne devine pas. Sous le grand chiffre du 
 de bord : ce qui est *verifie*, *a confirmer* et *ecarte*. Meme reglage que les notes
 Steam, sans cookie. Voir le CHANGELOG 2.103.0.
 
+### Le bot Telegram qui repond
+
+Ecrivez a votre bot Telegram : *etat*, *jeux*, *prends tout*, *pause 3* (mode
+vacances), *reprise*, *pourquoi Hades*, *ce soir*, *stop* (arret d'urgence), *aide*.
+Reglages -> Telephone -> Telegram -> « Le bot repond a mes messages » (coupe par
+defaut). Il lit vos messages chaque minute (`getUpdates`, sans serveur chez nous) :
+l'ordinateur doit etre allume et le navigateur ouvert. Il ne repond qu'a VOUS, en
+discussion privee -- jamais dans un groupe ou un canal --, n'execute pas un message
+vieux de plus de quinze minutes, et ne donne jamais un code, un jeton ou une adresse
+de webhook. Voir le CHANGELOG 2.104.0.
+
 ### Les adresses dans votre langue
 
 `watch/localize.js` met chaque adresse Epic, GOG et Luna dans la langue et le pays

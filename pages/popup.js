@@ -62,6 +62,7 @@ import { DRY, DRY_ERRORS, KEY_DRY_RUN, recognised, storesToTest } from '../watch
 import { announcedWindows } from '../watch/recap.js';
 import { KEY_WEEKENDS, openWeekends } from '../watch/steam-weekends.js';
 import { KEY_RATINGS, percent, ratingFor, scoreLabel, steamAppId, tone } from '../watch/steam-ratings.js';
+import { KEY_BOT, botBlocked, readBotState } from '../watch/bot.js';
 import { KEY_CHECKS, certify, checkAppId, collectionFacts, gradeTone, verdictFor, verdictTitle } from '../watch/bargain.js';
 import { KEY_TASTE, readTasteState, tasteFor, tasteNames } from '../watch/taste.js';
 import { composeShareList } from '../watch/share-list.js';
@@ -243,6 +244,7 @@ const KEYS_READ = [
   KEY_AUTO_BACKUP,
   KEY_RATINGS,
   KEY_CHECKS,
+  KEY_BOT,
   KEY_COVERS,
   KEY_RELAY,
   KEY_STEAM_DLC,
@@ -3293,6 +3295,7 @@ function renderPhone(all) {
   document.getElementById('phone-wished').checked = p.wished;
   document.getElementById('phone-mobile').checked = p.mobile;
   document.getElementById('phone-recap').checked = p.recap;
+  renderPhoneBot(p, all);
   // Jamais sous les doigts : un rendu remettrait la valeur stockee.
   const url = document.getElementById('phone-url');
   if (document.activeElement !== url) url.value = p.url;
@@ -3308,6 +3311,23 @@ function renderPhone(all) {
       ? t('phoneLastOk', shortDateTime(etat.at))
       : t('phoneLastFailed', shortDateTime(etat.at), etat.note || `HTTP ${etat.status}`);
   } else zone.textContent = '';
+}
+
+/* Le bot qui repond (2.104.0) : Telegram seulement, et le dit s'il ne peut pas. */
+function renderPhoneBot(p, all) {
+  const telegram = p.service === SERVICES.TELEGRAM;
+  document.getElementById('phone-bot-row').hidden = !telegram;
+  document.getElementById('phone-bot').checked = p.bot;
+  const zone = document.getElementById('phone-bot-state');
+  zone.hidden = !(telegram && p.bot);
+  if (zone.hidden) return;
+  const bloque = botBlocked(p);
+  const etat = readBotState(all[KEY_BOT]);
+  if (bloque === 'group') zone.textContent = t('phoneBotGroup');
+  else if (bloque) zone.textContent = phoneInvalid(p.service);
+  else if (etat.ok && etat.at) zone.textContent = t('phoneBotListening', shortDateTime(etat.at));
+  else if (!etat.ok) zone.textContent = t('phoneBotFailed', etat.note || '?', etat.at ? shortDateTime(etat.at) : '?');
+  else zone.textContent = t('phoneBotWaiting');
 }
 
 /* ------------------------------------------------------------- le relais */
@@ -3624,6 +3644,7 @@ document.getElementById('phone-test').addEventListener('click', async () => {
 document.getElementById('phone-wished').addEventListener('change', (e) => writePhone({ wished: e.target.checked }));
 document.getElementById('phone-mobile').addEventListener('change', (e) => writePhone({ mobile: e.target.checked }));
 document.getElementById('phone-recap').addEventListener('change', (e) => writePhone({ recap: e.target.checked }));
+document.getElementById('phone-bot').addEventListener('change', (e) => writePhone({ bot: e.target.checked }));
 document.getElementById('phone-token').addEventListener('change', (e) => {
   // Le jeton d'un bot Telegram fait partie de l'adresse : il en change l'hote accorde.
   if (document.getElementById('phone-service').value === SERVICES.TELEGRAM) phoneFieldChanged({ token: e.target.value.trim() });
