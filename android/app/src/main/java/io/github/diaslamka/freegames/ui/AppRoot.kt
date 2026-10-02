@@ -350,6 +350,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         onKeep = { pick -> tonightUpdate { it.copy(tonight = pick) } },
                         onSettings = { time, deck, coop -> tonightUpdate { it.copy(tonight = it.tonight.copy(time = time, deckOnly = deck, coop = coop, key = null, shown = emptyList())) } },
                         onAnother = { tonightUpdate { Tonight.reroll(it, System.currentTimeMillis()) } },
+                        // Le creneau libre lu dans l'agenda : on retire le choix, il se refait avec le bon temps.
+                        onEvening = { e -> tonightUpdate { it.copy(evening = e, tonight = it.tonight.copy(key = null, shown = emptyList())) } },
                         onPlaying = { jeu ->
                             tonightUpdate {
                                 Tonight.mark(it, jeu.c.key, Tonight.PLAYING).copy(

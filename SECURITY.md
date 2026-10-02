@@ -421,6 +421,13 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
 - **L'export pour l'extension** contient le registre des jeux recuperes, les
   souhaits, le pays et l'historique du moteur. Jamais un cookie, jamais un
   code de rachat : les codes restent dans l'extension.
+- **L'agenda** (1.23.0, `data/CalendarReader.kt`) n'est lu que si tu touches la puce « Agenda » de
+  « Ce soir je joue a... » et acceptes la permission `READ_CALENDAR`, qui est donc optionnelle. La
+  requete ne demande que le debut, la fin, « toute la journee », la disponibilite et ta reponse :
+  jamais un titre, un lieu, une description ni un participant. Seul le creneau libre calcule (deux
+  heures et un nombre de minutes) est enregistre ; rien n'est envoye. Le temps que les joueurs passent
+  sur un jeu vient de cent avis Steam recents (`appreviews`, sans cookie, `language=all`), quatre jeux
+  au plus par passage.
 - **La mise a jour depuis l'appli** (1.20.0, `data/AppUpdate.kt`) ne parle qu'a
   GitHub : `api.github.com` pour lister les publications `app-v*`, puis le
   telechargement de l'APK, dont la redirection n'est suivie que vers

@@ -34,7 +34,9 @@ object Tonight {
     const val EVENING = "evening"
     const val WEEKEND = "weekend"
     const val ANY = "any"
-    val TIMES = listOf(HOUR, EVENING, WEEKEND, ANY)
+    /** « Selon mon agenda » (1.23.0) : le temps est celui de ta soiree d'apres l'agenda. */
+    const val CALENDAR = "calendar"
+    val TIMES = listOf(HOUR, EVENING, WEEKEND, ANY, CALENDAR)
 
     const val SHORT = "short"
     const val SESSIONS = "sessions"
@@ -245,7 +247,14 @@ object Tonight {
 
     fun tasteView(s: AppState): TasteView? = Taste.effective(s)?.let { TasteView(it, s.taste.names) }
 
-    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean, coop: Boolean = false, taste: TasteView? = null): Scored? {
+    /** Le temps dont on dispose : le choix de l'utilisateur, ou -- en mode agenda -- celui de sa soiree. */
+    fun effectiveTime(s: AppState, now: Long): String {
+        if (s.tonight.time != CALENDAR) return s.tonight.time
+        val e = Evening.fresh(s.evening, now) ?: return ANY
+        return Evening.timeFor(e.minutes)
+    }
+
+    fun score(c: Candidate, info: TonightInfo?, time: String, deckOnly: Boolean, coop: Boolean = false, taste: TasteView? = null, fit: Evening.Fit? = null): Scored? {
         val deck = info?.deck ?: c.deck
         if (deckOnly && !deckAtLeastPlayable(deck)) return null
         // « A plusieurs » : comme Steam Deck, une inconnue ne passe pas -- on ne promet pas une partie a deux sur un jeu qu'on n'a pas lu.
@@ -266,6 +275,8 @@ object Tonight {
             reasons += Reason("tonight_rating", listOf(pct))
         }
         if (coop) { score += 1; reasons += Reason("tonight_coop") }
+        // Ta soiree (1.23.0) : le jeu tient-il dans ton creneau libre ?
+        if (fit != null) { score += fit.bonus; reasons += Reason(fit.key, fit.args) }
         // Tes gouts (1.14.0) : un jeu qui ressemble a ce que tu aimes passe devant.
         if (taste != null && info != null && info.tags.isNotEmpty()) {
             val m = Taste.score(taste.profile, info.tags)
@@ -283,10 +294,10 @@ object Tonight {
     }
 
     /** Parmi les cinq meilleurs pas encore montres, les meilleurs plus souvent. */
-    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), coop: Boolean = false, taste: TasteView? = null, random: () -> Double = Math::random): Pick {
+    fun pick(pile: List<Candidate>, apps: Map<String, TonightInfo>, time: String, deckOnly: Boolean, exclude: Collection<String> = emptyList(), coop: Boolean = false, taste: TasteView? = null, fit: (Candidate) -> Evening.Fit? = { null }, random: () -> Double = Math::random): Pick {
         val notes = pile.mapNotNull { c ->
             val info = c.appid?.let { apps[it] }?.takeUnless { it.none }
-            score(c, info, time, deckOnly, coop, taste)
+            score(c, info, time, deckOnly, coop, taste, fit(c))
         }.sortedWith(compareByDescending<Scored> { it.score }.thenBy { it.c.title })
         if (notes.isEmpty()) return Pick(null, 0, false)
         val vus = exclude.toSet()
@@ -326,9 +337,9 @@ object Tonight {
         val pile = buildPile(s)
         kept(p, pile, now)?.let { c ->
             val info = c.appid?.let { s.tonightApps[it] }?.takeUnless { it.none }
-            score(c, info, p.time, p.deckOnly, p.coop, tasteView(s))?.let { return it to p }
+            score(c, info, effectiveTime(s, now), p.deckOnly, p.coop, tasteView(s), Evening.fitFor(s, c.appid, now))?.let { return it to p }
         }
-        val r = pick(pile, s.tonightApps, p.time, p.deckOnly, p.shown, p.coop, tasteView(s), random)
+        val r = pick(pile, s.tonightApps, effectiveTime(s, now), p.deckOnly, p.shown, p.coop, tasteView(s), fit = { Evening.fitFor(s, it.appid, now) }, random = random)
         return r.pick to p.copy(key = r.pick?.c?.key, at = now)
     }
 
@@ -336,7 +347,7 @@ object Tonight {
     fun reroll(s: AppState, now: Long, random: () -> Double = Math::random): AppState {
         val p = s.tonight
         val exclude = (p.shown + listOfNotNull(p.key)).distinct()
-        val r = pick(buildPile(s), s.tonightApps, p.time, p.deckOnly, exclude, p.coop, tasteView(s), random)
+        val r = pick(buildPile(s), s.tonightApps, effectiveTime(s, now), p.deckOnly, exclude, p.coop, tasteView(s), fit = { Evening.fitFor(s, it.appid, now) }, random = random)
         return s.copy(tonight = p.copy(
             key = r.pick?.c?.key, at = now, shown = if (r.wrapped) emptyList() else exclude.takeLast(200),
             // « Choisir un autre jeu » apres « J'y joue » : la soiree repart.

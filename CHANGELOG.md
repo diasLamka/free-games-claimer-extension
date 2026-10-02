@@ -4,6 +4,34 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.23.0 -- 2026-10-02 (extension inchangee, 2.105.0)
+
+**« Ta soiree choisit le jeu » : l'agenda du telephone dit combien de temps tu as, les avis Steam disent combien de temps le jeu prend**
+
+- **Agenda** (`data/Evening.kt`, `data/CalendarReader.kt`). Dans « Ce soir je joue
+  a... », une cinquieme puce **Agenda**. La permission `READ_CALENDAR` n'est demandee
+  qu'a ce toucher-la, jamais avant ; refusee, rien ne change. Seuls les debuts et
+  fins des evenements sont lus (jamais un titre, un lieu ou un participant), les
+  evenements « toute la journee », « disponible » ou refuses sont ignores, et seul
+  le resultat -- « libre de 20 h a 23 h 30 » -- est enregistre. Rien ne quitte le
+  telephone. Le creneau est le plus long trou libre entre 18 h et 23 h 30 (22 h 30 si
+  un evenement commence avant 9 h demain) ; passe 22 h, c'est la soiree de demain.
+  Un trou de moins de trente minutes n'est pas une partie. Moins d'une heure et demie :
+  « 1 heure » ; sinon « une soiree ».
+- **Le temps que le jeu prend.** Pour les jeux de la pile (quatre par passage au
+  plus, une fois tous les deux mois), l'appli lit cent avis Steam recents -- sans
+  cookie -- et prend la **mediane** du temps de jeu de leurs auteurs. Moins de trente
+  avis avec un temps de jeu : pas de mediane, pas de jugement.
+- **Le jeu qui tient.** Entre 35 et 90 % du creneau : le meilleur choix (« ca tient
+  dans ta soiree ») ; bien plus court : une petite partie ; bien plus long : « une
+  premiere partie, pas la fin » ; plus de quatre heures pour moins d'une heure et
+  demie : on ecarte. Le « ~ » est voulu : c'est une ESTIMATION, les auteurs d'avis
+  jouent plus que la moyenne, et seul Steam la donne -- un jeu hors Steam n'a pas de
+  temps, donc pas d'ajustement.
+- Non verifie : la lecture d'un vrai agenda Android (Robolectric n'a pas de
+  fournisseur de calendrier) ; la partie pure -- creneau, trous, matin d'apres, mediane,
+  ajustement, choix -- est testee, et la carte a ete rendue en image.
+
 ## 2.105.0 -- 2026-10-02
 
 **Le carnet qu'on ne retouche pas sans que ca se voie, et le gardien qui dit quand un jeu pris disparait de votre bibliotheque**

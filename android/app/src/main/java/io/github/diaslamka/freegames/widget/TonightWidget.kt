@@ -116,6 +116,7 @@ class TonightWidget : AppWidgetProvider() {
             Tonight.HOUR -> R.string.tonight_hour
             Tonight.WEEKEND -> R.string.tonight_weekend
             Tonight.ANY -> R.string.tonight_any
+            Tonight.CALENDAR -> R.string.tonight_calendar
             else -> R.string.tonight_evening
         }
 
@@ -131,6 +132,11 @@ class TonightWidget : AppWidgetProvider() {
             "tonight_taste_bare" -> context.getString(R.string.tonight_taste_bare)
             "tonight_deck_verified" -> context.getString(R.string.tonight_deck_verified)
             "tonight_deck_playable" -> context.getString(R.string.tonight_deck_playable)
+            "tonight_fit_tight" -> context.getString(R.string.tonight_fit_tight, (r.args.firstOrNull() as? String).orEmpty())
+            "tonight_fit_short" -> context.getString(R.string.tonight_fit_short, (r.args.firstOrNull() as? String).orEmpty())
+            "tonight_fit_close" -> context.getString(R.string.tonight_fit_close, (r.args.firstOrNull() as? String).orEmpty())
+            "tonight_fit_over" -> context.getString(R.string.tonight_fit_over, (r.args.firstOrNull() as? String).orEmpty())
+            "tonight_fit_long" -> context.getString(R.string.tonight_fit_long, (r.args.firstOrNull() as? String).orEmpty())
             else -> ""
         }
     }

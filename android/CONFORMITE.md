@@ -13,6 +13,7 @@ Etat au 2026-09-27, appli 1.5.0.
 |---|---|
 | `INTERNET`, `ACCESS_NETWORK_STATE` | Lire les offres, ouvrir les pages des magasins, le relais. |
 | `POST_NOTIFICATIONS` | Demandee a la premiere ouverture (Android 13+). Refusee, l'appli marche, sans prevenir. |
+| `READ_CALENDAR` | **Optionnelle (1.23.0)**, demandee seulement quand tu touches la puce « Agenda » de « Ce soir je joue a... ». Refusee, rien ne change. Lit uniquement le debut, la fin, « toute la journee », la disponibilite et ta reponse des evenements de la soiree -- jamais un titre, un lieu ou un participant --, ne garde que le creneau libre calcule, n'envoie rien. |
 | `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` | Ajoutees par WorkManager : la veille de fond, et sa reprise apres un redemarrage. |
 
 Et rien d'autre. En particulier, **jamais** : camera (le QR code du relais est

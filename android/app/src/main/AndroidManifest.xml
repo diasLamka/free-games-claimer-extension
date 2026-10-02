@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- « Ta soiree choisit le jeu » (1.23.0) : OPTIONNELLE, demandee au toucher sur « Agenda ».
+         Seuls les debuts et fins des evenements sont lus, jamais leurs titres ; rien n'est envoye. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- La mise a jour depuis l'appli (1.20.0) : passer l'APK telecharge au programme
          d'installation du systeme. L'utilisateur l'autorise une fois, dans les
          reglages Android (« Installer des applis inconnues »). Rien ne s'installe

@@ -16,8 +16,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,7 +35,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.diaslamka.freegames.R
+import io.github.diaslamka.freegames.data.CalendarReader
+import io.github.diaslamka.freegames.data.Evening
 import io.github.diaslamka.freegames.data.Tonight
+import io.github.diaslamka.freegames.model.EveningState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.TonightPick
 import io.github.diaslamka.freegames.ui.theme.Display
@@ -44,6 +58,8 @@ data class TonightActions(
     val onAnother: () -> Unit = {},
     val onPlaying: (Tonight.Scored) -> Unit = {},
     val onNotForMe: (Tonight.Scored) -> Unit = {},
+    /** Le creneau libre lu dans l'agenda (1.23.0), a enregistrer. */
+    val onEvening: (EveningState?) -> Unit = {},
 )
 
 /**
@@ -60,6 +76,20 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
     val (jeu, suivant) = remember(p, pile, state.tonightApps) { Tonight.current(state, now) }
     LaunchedEffect(suivant) { if (suivant != p) actions.onKeep(suivant) }
     val playing = Tonight.playing(p, now)
+
+    // « Agenda » (1.23.0) : la permission se demande au toucher, jamais avant.
+    var calendarOk by remember { mutableStateOf(CalendarReader.granted(context)) }
+    val askCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        calendarOk = granted
+        if (granted) actions.onSettings(Tonight.CALENDAR, p.deckOnly, p.coop)
+    }
+    // En mode agenda, on relit le creneau (hors du fil principal) a l'ouverture, puis toutes les trois heures.
+    LaunchedEffect(p.time, calendarOk) {
+        if (p.time == Tonight.CALENDAR && calendarOk && Evening.fresh(state.evening, now) == null) {
+            val e = withContext(Dispatchers.IO) { CalendarReader.evening(context, System.currentTimeMillis()) }
+            if (e != null) actions.onEvening(e)
+        }
+    }
 
     Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
         SectionHeader(stringResource(R.string.tonight_title), pile.size.takeIf { it > 0 })
@@ -80,11 +110,15 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
                         .heightIn(min = 40.dp)
                         .brut(if (on) b.accent else Color.White, shadow = if (b.dark) Color.White else Color.Black, offset = 3.dp, border = 2.dp)
                         .semantics { selected = on }
-                        .clickableNoRipple(role = Role.RadioButton) { actions.onSettings(t, p.deckOnly, p.coop) }
+                        .clickableNoRipple(role = Role.RadioButton) {
+                            if (t == Tonight.CALENDAR && !calendarOk) askCalendar.launch(android.Manifest.permission.READ_CALENDAR)
+                            else actions.onSettings(t, p.deckOnly, p.coop)
+                        }
                         .padding(horizontal = 10.dp, vertical = 10.dp),
                 )
             }
         }
+        if (p.time == Tonight.CALENDAR) EveningLine(state.evening, now, calendarOk)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp, bottom = 12.dp)) {
             Text(stringResource(R.string.tonight_deck), style = MaterialTheme.typography.bodyMedium, color = b.ink, modifier = Modifier.weight(1f))
             BrutToggle(p.deckOnly) { actions.onSettings(p.time, it, p.coop) }
@@ -167,6 +201,31 @@ private fun Body(jeu: Tonight.Scored) {
     if (raisons.isNotEmpty()) {
         Column(Modifier.padding(top = 6.dp)) {
             for (r in raisons) Text("• $r", style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        }
+    }
+}
+
+/** Ce que l'agenda dit de ta soiree, en une ligne -- ou pourquoi on ne le sait pas. */
+@Composable
+private fun EveningLine(e: EveningState?, now: Long, granted: Boolean) {
+    val b = LocalBrut.current
+    val fresh = Evening.fresh(e, now)
+    val zone = ZoneId.systemDefault()
+    val hm = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+    fun at(ms: Long) = Instant.ofEpochMilli(ms).atZone(zone).format(hm)
+    val text = when {
+        !granted -> stringResource(R.string.tonight_calendar_denied)
+        fresh == null -> stringResource(R.string.tonight_calendar_reading)
+        fresh.minutes <= 0 -> stringResource(if (fresh.tomorrow) R.string.tonight_calendar_busy_tomorrow else R.string.tonight_calendar_busy)
+        else -> stringResource(
+            if (fresh.tomorrow) R.string.tonight_calendar_free_tomorrow else R.string.tonight_calendar_free,
+            at(fresh.from), at(fresh.to), Evening.durationText(fresh.minutes),
+        )
+    }
+    Column(Modifier.padding(top = 10.dp)) {
+        Text(text, style = MaterialTheme.typography.bodySmall, color = b.ink)
+        if (granted && fresh != null && fresh.earlyWake) {
+            Text(stringResource(R.string.tonight_calendar_early), style = MaterialTheme.typography.bodySmall, color = b.mute)
         }
     }
 }

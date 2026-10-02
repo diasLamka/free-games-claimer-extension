@@ -115,6 +115,7 @@ object Watcher {
         // Les notes Steam, puis « Tes gouts » (1.14.0), AVANT d'annoncer : la notification d'un jeu dit de quoi il se rapproche.
         refreshRatings(now)
         refreshChecks(now)
+        refreshMedians(now)
         refreshTaste(now)
         val ann = Graph.store.value
 
@@ -212,6 +213,20 @@ object Watcher {
         Graph.store.update { st ->
             val all = st.ratings + found
             st.copy(ratings = if (all.size > 400) all.entries.sortedByDescending { it.value.at }.take(400).associate { it.toPair() } else all)
+        }
+    }
+
+    /** Le temps de jeu typique des jeux de la pile (1.23.0), quatre au plus par passage. */
+    suspend fun refreshMedians(now: Long) {
+        val s = Graph.store.value
+        if (!s.settings.tonight) return
+        val todo = Evening.pending(s, now)
+        if (todo.isEmpty()) return
+        val found = try { Evening.refresh(Graph.http, todo, now) } catch (_: Exception) { return }
+        if (found.isEmpty()) return
+        Graph.store.update { st ->
+            val all = st.medians + found
+            st.copy(medians = if (all.size > 600) all.entries.sortedByDescending { it.value.at }.take(600).associate { it.toPair() } else all)
         }
     }
 

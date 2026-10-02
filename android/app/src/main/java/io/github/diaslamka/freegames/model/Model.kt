@@ -290,6 +290,9 @@ data class AppState(
     val givers: Map<String, Giver> = emptyMap(),
     /** La fiche Steam de chaque souhait, par « app:<id> » ou « t:<titre> ». */
     val odds: Map<String, OddsInfo> = emptyMap(),
+    /** « Ta soiree choisit le jeu » (1.23.0) : le temps de jeu typique, par appid. */
+    val medians: Map<String, PlayMedian> = emptyMap(),
+    val evening: EveningState? = null,
     val oddsAt: Long? = null,
     /**
      * « Ce soir je joue a... » (1.8.0). Ce que l'on possede, d'apres Ma
@@ -355,6 +358,30 @@ data class TonightInfo(
     val coop: Boolean? = null,
     /** Les dix etiquettes les plus fortes (1.14.0) : « Tes gouts » les compare au profil. */
     val tags: List<TagW> = emptyList(),
+)
+
+/**
+ * Le temps de jeu typique d'un titre (1.23.0) : la mediane du temps passe par les
+ * joueurs qui ont laisse un avis Steam recent. `minutes` null : trop peu d'avis
+ * avec un temps de jeu pour en tirer quoi que ce soit.
+ */
+@Serializable
+data class PlayMedian(val at: Long, val minutes: Int? = null, val n: Int = 0)
+
+/**
+ * La soiree d'apres l'agenda (1.23.0) : le plus long creneau libre entre 18 h et 23 h 30
+ * (22 h 30 si tu te leves tot demain). Lu sur le telephone, jamais envoye nulle part ;
+ * seuls les debuts et fins des evenements sont lus, jamais leurs titres.
+ */
+@Serializable
+data class EveningState(
+    val at: Long,
+    val minutes: Int,
+    val from: Long,
+    val to: Long,
+    val earlyWake: Boolean = false,
+    /** La soiree visee est celle de demain (il est deja tard). */
+    val tomorrow: Boolean = false,
 )
 
 /** Une etiquette Steam et son poids, de 1 a 100 (celui du jeu, ramene a sa plus forte). */
