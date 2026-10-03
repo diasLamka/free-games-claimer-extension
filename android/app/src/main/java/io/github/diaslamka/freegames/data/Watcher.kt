@@ -53,9 +53,9 @@ object Watcher {
         }
     }
 
-    suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) { running.withLock { checkLocked(context) } }
+    suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) { running.withLock { checkLocked(context, reason) } }
 
-    private suspend fun checkLocked(context: Context): Summary {
+    private suspend fun checkLocked(context: Context, reason: String): Summary {
         Graph.init(context)
         val store = Graph.store
         val now = System.currentTimeMillis()
@@ -150,7 +150,8 @@ object Watcher {
         refreshTonight(now)
         runCatching { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
         runCatching { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
-        after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000) }
+        // Depuis la veille ("fond"), sans remplacer : c'est peut-etre le passage d'une ouverture, et il tourne sous ce nom.
+        after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000, replace = reason == "ecran") }
         runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
         return Summary(after.offers.size, fresh.size, errors)

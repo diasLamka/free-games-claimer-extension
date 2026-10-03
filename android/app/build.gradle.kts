@@ -157,6 +157,7 @@ dependencies {
     testImplementation(composeBom)
     testImplementation("org.robolectric:robolectric:4.16")
     testImplementation("androidx.test.ext:junit:1.3.0")
+    testImplementation("androidx.work:work-testing:2.10.5")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.52.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.52.0")

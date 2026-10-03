@@ -59,7 +59,7 @@ private suspend fun WatchWorker.checkForUpdate() {
 
 object Scheduler {
     private const val PERIODIC = "veille"
-    private const val OPENING = "ouverture-epic"
+    internal const val OPENING = "ouverture-epic"
     private const val FOLLOW_UP = "suite-recuperation"
     private const val DIGEST = "resume-du-jour"
 
@@ -118,14 +118,18 @@ object Scheduler {
     /**
      * Epic annonce l'heure de sa prochaine ouverture : on la lit, au lieu de
      * sonder a l'aveugle -- comme l'ordonnanceur de l'extension.
+     * `KEEP` depuis la veille elle-meme -- quand c'est l'ouverture qui l'a reveillee, le passage en cours
+     * tourne sous CE nom, et `REPLACE` l'annulerait, donc la recuperation de fond qui doit le suivre --,
+     * `REPLACE` quand la demande vient de l'ecran, ou une date qui a change est reprise tout de suite.
+     * Si l'ouverture suivante n'a pas pu etre posee, le prochain passage de la veille la posera.
      */
-    fun checkAt(context: Context, whenMs: Long) {
+    fun checkAt(context: Context, whenMs: Long, replace: Boolean = false) {
         val delay = whenMs - System.currentTimeMillis()
         if (delay <= 0 || delay > 8L * 24 * 3_600_000) return
         val req = OneTimeWorkRequestBuilder<WatchWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
             .setConstraints(network)
             .build()
-        manager(context)?.enqueueUniqueWork(OPENING, ExistingWorkPolicy.REPLACE, req)
+        manager(context)?.enqueueUniqueWork(OPENING, if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, req)
     }
 }
