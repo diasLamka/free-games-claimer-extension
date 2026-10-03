@@ -348,6 +348,16 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="share_from">ab %1$s</string>
     <string name="teach_help">%1$s: Ich habe den Button nicht erkannt. Tippe ihn einmal auf der Seite unten an, ich merke es mir — oder sag mir, dass du das Spiel schon hast oder dass es nicht mehr gratis ist.</string>
     <string name="verdict_teach">Zeig mir den Button</string>
+    <string name="update_banner">Version %1$s verfügbar</string>
+    <string name="update_now">Jetzt aktualisieren</string>
+    <string name="set_auto_update">Automatisch aktualisieren</string>
+    <string name="set_auto_update_hint">Lädt die neue Version selbst im Hintergrund und installiert sie. Android fragt einmal nach der Erlaubnis.</string>
+    <string name="notif_update_confirm_title">Aktualisierung bereit</string>
+    <string name="notif_update_confirm_text">Tippe, um die neue Version zu installieren.</string>
+    <string name="set_tiles">Darstellung der Spiele</string>
+    <string name="tiles_cards">Große Kacheln</string>
+    <string name="tiles_list">Liste</string>
+    <string name="tiles_grid">Raster</string>
     <string name="verdict_owned">schon in deiner Bibliothek</string>
     <string name="verdict_gone">nichts mehr abzuholen</string>
     <string name="teach_owned">Gehört mir schon</string>

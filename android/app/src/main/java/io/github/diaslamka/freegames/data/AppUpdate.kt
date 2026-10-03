@@ -32,8 +32,10 @@ import java.util.concurrent.TimeUnit
  *     surtout -- sa SIGNATURE doit etre celle de l'appli installee (`Install`
  *     le verifie avant de proposer quoi que ce soit). Android la reverifie a
  *     l'installation : un APK signe par une autre cle ne s'installe pas.
- *   - Rien ne s'installe en arriere-plan : la veille PREVIENT (notification),
- *     l'installation se declenche depuis l'ecran des reglages.
+ *   - L'installation se declenche d'un toucher (bandeau de l'accueil, Reglages)
+ *     ou, depuis la 1.25.0, toute seule par la veille de fond (reglage « Mise a
+ *     jour automatique », sur par defaut) -- jamais sans que le systeme ait
+ *     autorise l'appli a installer, et toujours apres les memes verifications.
  *
  * LE DEPOT EST PRIVE. Sans jeton, GitHub repond 404 aux versions d'un depot
  * prive. Le jeton est facultatif : un jeton a grain fin, en LECTURE SEULE, sur ce
@@ -297,18 +299,30 @@ object AppUpdate {
     private const val CHECK_EVERY_MS = 24L * 3_600_000
 
     /**
+     * La recherche de la veille de fond : au plus une fois par jour. Rend la version plus recente, ou null.
+     */
+    suspend fun latest(context: Context, net: Net, token: String?, current: String, now: Long): Release? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (now - prefs.getLong("derniere", 0L) < CHECK_EVERY_MS) return null
+        prefs.edit().putLong("derniere", now).apply()
+        return (check(net, token, current) as? Status.Available)?.release
+    }
+
+    /** Premiere fois qu'on parle de cette version ? La reponse est retenue : la notification ne sonne qu'une fois. */
+    fun firstTimeFor(context: Context, version: String): Boolean {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (prefs.getString("prevenu", null) == version) return false
+        prefs.edit().putString("prevenu", version).apply()
+        return true
+    }
+
+    /**
      * Appelee par la veille de fond. Cherche au plus une fois par jour ; si une
      * version plus recente existe et que l'utilisateur n'en a pas deja ete
      * prevenu, rend cette version (la veille envoie la notification).
      */
     suspend fun backgroundCheck(context: Context, net: Net, token: String?, current: String, now: Long): Release? {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        if (now - prefs.getLong("derniere", 0L) < CHECK_EVERY_MS) return null
-        prefs.edit().putLong("derniere", now).apply()
-        val st = check(net, token, current)
-        val release = (st as? Status.Available)?.release ?: return null
-        if (prefs.getString("prevenu", null) == release.version) return null
-        prefs.edit().putString("prevenu", release.version).apply()
-        return release
+        val release = latest(context, net, token, current, now) ?: return null
+        return if (firstTimeFor(context, release.version)) release else null
     }
 }

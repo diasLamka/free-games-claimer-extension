@@ -337,6 +337,28 @@ object Notifier {
         }
     }
 
+    /**
+     * La mise a jour automatique est telechargee et verifiee (1.25.0), mais Android veut un geste : cette
+     * notification porte sa fenetre « Mettre a jour cette appli ? ». Un toucher l'ouvre.
+     */
+    fun updateConfirm(context: Context, confirm: android.content.Intent) {
+        val pending = android.app.PendingIntent.getActivity(
+            context, 3901, confirm.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+        )
+        val b = NotificationCompat.Builder(context, CH_UPDATE)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_update_confirm_title))
+            .setContentText(context.getString(R.string.notif_update_confirm_text))
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+        if (!allowed(context)) return
+        try {
+            NotificationManagerCompat.from(context).notify(3901, b.build())
+        } catch (_: SecurityException) {
+        }
+    }
+
     /** Le moteur n'a pas reconnu le bouton (1.21.0) : toucher la notification ouvre l'appli, ou « Recuperer » le lui montre. */
     fun teach(context: Context, o: Offer) {
         val b = NotificationCompat.Builder(context, CH_ACCOUNT)

@@ -349,6 +349,16 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="share_from">from %1$s</string>
     <string name="teach_help">%1$s: I did not recognise the button. Tap it once in the page below, I will remember — or tell me you already own it, or that it is no longer free.</string>
     <string name="verdict_teach">Show me the button</string>
+    <string name="update_banner">Version %1$s available</string>
+    <string name="update_now">Update now</string>
+    <string name="set_auto_update">Automatic update</string>
+    <string name="set_auto_update_hint">Downloads and installs the new version by itself, in the background. Android asks once to allow it.</string>
+    <string name="notif_update_confirm_title">Update ready</string>
+    <string name="notif_update_confirm_text">Tap to install the new version.</string>
+    <string name="set_tiles">Games layout</string>
+    <string name="tiles_cards">Large tiles</string>
+    <string name="tiles_list">List</string>
+    <string name="tiles_grid">Grid</string>
     <string name="verdict_owned">already yours</string>
     <string name="verdict_gone">nothing left to take</string>
     <string name="teach_owned">I already own it</string>

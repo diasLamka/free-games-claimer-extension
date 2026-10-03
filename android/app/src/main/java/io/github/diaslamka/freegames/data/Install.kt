@@ -27,6 +27,10 @@ import java.io.File
 object Install {
     const val ACTION = "io.github.diaslamka.freegames.INSTALL_RESULT"
 
+    /** L'appli est a l'ecran (1.25.0) : seule alors une fenetre du systeme peut s'ouvrir d'elle-meme. */
+    @Volatile
+    var visible: Boolean = false
+
     fun allowed(context: Context): Boolean = context.packageManager.canRequestPackageInstalls()
 
     /** L'ecran du systeme ou l'utilisateur autorise cette appli a installer. */
@@ -95,7 +99,12 @@ class UpdateReceiver : BroadcastReceiver() {
                 } else {
                     intent.getParcelableExtra(Intent.EXTRA_INTENT) as? Intent
                 }
-                runCatching { confirm?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { context.startActivity(it) } }
+                /* Appli a l'ecran : la fenetre du systeme s'ouvre. En fond, Android interdit d'ouvrir une fenetre
+                   de nulle part (mise a jour automatique, 1.25.0) : une notification la porte, un toucher l'ouvre. */
+                if (confirm != null) {
+                    if (Install.visible) runCatching { context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    else io.github.diaslamka.freegames.notify.Notifier.updateConfirm(context, confirm)
+                }
             }
             PackageInstaller.STATUS_SUCCESS -> AppUpdate.status.value = AppUpdate.Status.Idle
             else -> AppUpdate.status.value = AppUpdate.Status.Failed(

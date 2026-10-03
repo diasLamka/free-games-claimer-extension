@@ -444,8 +444,11 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
   fichier est verifie (taille, SHA-256 publie avec la version, nom de paquet,
   version, certificat de signature identique a celui de l'appli installee) avant
   d'etre passe a Android, qui reverifie la signature a l'installation. Rien ne
-  s'installe en arriere-plan : la veille previent (une notification par
-  version), l'installation part d'un geste dans les reglages. Le **jeton
+  s'installe sans que le systeme l'ait autorise : la veille previent (une notification par
+  version), l'installation part d'un geste (bandeau de l'accueil, reglages) ou -- depuis la
+  1.25.0, reglage *Mise a jour automatique*, coupable -- de la veille de fond elle-meme, une
+  fois par jour, apres les recuperations, et seulement si Android a deja autorise l'appli a
+  installer des applis (un geste, une fois). Les verifications sont les memes. Le **jeton
   GitHub** (facultatif, depot prive) est un jeton a grain fin en lecture
   seule, chiffre par une cle du Keystore Android, jamais dans l'etat de l'appli,
   l'export, une sauvegarde ou le journal.

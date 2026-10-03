@@ -4,6 +4,41 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.25.0 -- 2026-10-03 (extension inchangee, 2.106.0)
+
+**L'accueil plus clair : plus de bouton « Recuperer » sur chaque jeu, la mise a jour a la une et automatique, et le choix de la facon de poser les jeux**
+
+- **Plus de « Recuperer » sur les jeux.** L'appli recupere deja toute seule ; un bouton par jeu
+  doublait l'ecran de trois boutons. Les jeux n'ont plus que leur etat (tampon, motif de l'echec) et un
+  toucher ouvre la page du magasin. Il reste UN geste : « Tout recuperer (4) », sur une ligne, quand
+  quelque chose attend. (Seul le toucher sur un jeu precis permettait de lui redemander « montre-moi le
+  bouton » : ce cas passe par « Tout recuperer ».)
+- **Trois facons de poser les jeux** (`ui/OfferTiles.kt`, `Settings.tiles`). Trois pastilles a gauche des
+  magasins -- et dans Reglages > Veille -- : **grandes tuiles** (la jaquette en 16/9, une colonne au
+  telephone, deux puis trois sur grand ecran), **liste** (une ligne par jeu : petite jaquette, titre,
+  valeur, temps qui reste -- le plus compact) et **grille** (deux colonnes au telephone, jusqu'a quatre,
+  le titre sur deux lignes). Le choix est retenu ; une sauvegarde d'avant la 1.25.0 retombe sur les
+  grandes tuiles.
+- **La mise a jour sur l'accueil** (`ui/UpdateBanner.kt`). Quand une version plus recente existe : un
+  bandeau « Version X disponible » et UN bouton « Mettre a jour » (telechargement, progression, puis
+  l'installation d'Android). La recherche se fait une fois a l'ouverture de l'appli. Rien du tout quand
+  tout va bien ou quand la recherche n'a pas pu se faire (depot prive sans jeton, pas de reseau) : cela
+  reste lisible dans Reglages > A propos. Un echec d'installation, lui, est dit sur l'accueil, avec
+  « Reessayer ». Meme chemin que les Reglages (`data/UpdateRunner.kt`).
+- **La mise a jour automatique** (reglage *Mise a jour automatique*, sur par defaut). La veille de fond --
+  une recherche par jour, APRES les recuperations pour ne couper aucune page en route -- telecharge la
+  nouvelle version, la verifie (taille, SHA-256 publie, nom de paquet, version, certificat identique a
+  l'appli installee) et la passe a Android. Condition : qu'Android ait autorise, UNE fois, l'appli a
+  installer des applis (le meme geste que pour la mise a jour a la main). Sans cela -- ou si le reglage
+  est coupe -- rien ne s'installe : la notification (une par version) et le bandeau, comme avant. Sur
+  Android 12 et plus, apres une premiere mise a jour faite par l'appli, le systeme installe sans rien
+  demander ; sinon il veut un geste, et une notification « Mise a jour prete » porte sa fenetre (Android
+  interdit d'en ouvrir une d'office depuis le fond).
+- Tests : choix d'affichage et colonnes, anciennes sauvegardes, recherche de fond (une fois par jour,
+  une notification par version) ; les trois affichages et le bandeau rendus en images.
+- Non verifie : l'installation silencieuse d'une vraie mise a jour sur un telephone (Android la decide :
+  version du systeme, installateur d'origine), et la fenetre d'autorisation sur un telephone reel.
+
 ## 2.106.0 / appli 1.24.0 -- 2026-10-02
 
 **Un jeu qu'on possede ne se recupere qu'UNE fois : le magasin est interroge avant d'ouvrir un onglet, et la question « montrez-moi le bouton » n'est posee qu'une fois**

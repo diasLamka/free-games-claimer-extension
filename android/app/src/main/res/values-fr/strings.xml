@@ -348,6 +348,16 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="share_from">à partir du %1$s</string>
     <string name="teach_help">%1$s : je n\'ai pas reconnu le bouton. Touche-le une fois dans la page ci-dessous, je m\'en souviendrai — ou dis-moi que le jeu est déjà à toi, ou qu\'il n\'est plus offert.</string>
     <string name="verdict_teach">Montre-moi le bouton</string>
+    <string name="update_banner">Version %1$s disponible</string>
+    <string name="update_now">Mettre à jour</string>
+    <string name="set_auto_update">Mise à jour automatique</string>
+    <string name="set_auto_update_hint">Télécharge et installe la nouvelle version toute seule, en fond. Android demande une seule fois de l\'autoriser.</string>
+    <string name="notif_update_confirm_title">Mise à jour prête</string>
+    <string name="notif_update_confirm_text">Touche pour installer la nouvelle version.</string>
+    <string name="set_tiles">Affichage des jeux</string>
+    <string name="tiles_cards">Grandes tuiles</string>
+    <string name="tiles_list">Liste</string>
+    <string name="tiles_grid">Grille</string>
     <string name="verdict_owned">déjà à toi</string>
     <string name="verdict_gone">plus rien à prendre</string>
     <string name="teach_owned">C\'est déjà à moi</string>

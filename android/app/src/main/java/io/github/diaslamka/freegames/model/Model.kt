@@ -218,8 +218,28 @@ data class Settings(
     val tasteQuiet: Boolean = false,
     /** Prevenir (une fois par version) quand une mise a jour de l'appli existe (1.20.0). */
     val notifyUpdate: Boolean = true,
+    /**
+     * Mise a jour automatique (1.25.0) : la veille de fond telecharge la version plus recente, la verifie
+     * (taille, SHA-256, signature) et la passe au systeme. Android demande, UNE fois, d'autoriser l'appli a
+     * installer des applis ; tant que c'est fait, rien d'autre. Sans cette autorisation : la notification
+     * et le bandeau de l'accueil, comme avant.
+     */
+    val autoUpdate: Boolean = true,
+    /** Comment les jeux sont poses sur l'accueil (1.25.0) : « cards » (grandes), « list » (liste), « grid » (grille). */
+    val tiles: String = Tiles.CARDS,
     val onboarded: Boolean = false,
 )
+
+/** Les trois facons de poser les jeux sur l'accueil (1.25.0). */
+object Tiles {
+    const val CARDS = "cards"
+    const val LIST = "list"
+    const val GRID = "grid"
+    val ALL = listOf(CARDS, LIST, GRID)
+
+    /** Une valeur lue d'une sauvegarde ou d'un reglage ancien : toujours l'une des trois. */
+    fun of(raw: String?): String = if (raw in ALL) raw!! else CARDS
+}
 
 /**
  * Ce que le relais sait, SANS le secret (1.2.0). Le secret vit a part, chiffre

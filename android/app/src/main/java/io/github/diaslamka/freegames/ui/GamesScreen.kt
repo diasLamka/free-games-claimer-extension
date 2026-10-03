@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,6 +62,7 @@ import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.Tiles
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.model.Upcoming
 import io.github.diaslamka.freegames.sources.Countries
@@ -91,9 +91,12 @@ fun GamesScreen(
     onAccounts: () -> Unit,
     /** Ecarter une demande d'aide du PC (1.4.0). */
     onHelpDismiss: (String) -> Unit = {},
+    /** Choisir comment les jeux sont poses (1.25.0) : « cards », « list » ou « grid ». */
+    onTiles: (String) -> Unit = {},
 ) {
     val b = LocalBrut.current
     val context = LocalContext.current
+    val tiles = Tiles.of(state.settings.tiles)
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -124,8 +127,13 @@ fun GamesScreen(
         if (searching) BrutField(query, { query = it }, stringResource(R.string.search_hint), Modifier.padding(horizontal = 14.dp).padding(bottom = 8.dp))
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
           BoxWithConstraints(Modifier.fillMaxSize()) {
-            // Une colonne au telephone, deux sur un pliable ou en paysage, trois sur une tablette.
-            val cols = columnsFor(maxWidth)
+            // Grandes tuiles : une colonne au telephone, deux sur un pliable ou en paysage, trois sur une tablette.
+            // Liste : une colonne (deux des 840 dp). Grille : deux colonnes au telephone, jusqu'a quatre.
+            val cols = when (tiles) {
+                Tiles.GRID -> gridColumnsFor(maxWidth)
+                Tiles.LIST -> if (maxWidth >= 840.dp) 2 else 1
+                else -> columnsFor(maxWidth)
+            }
             val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(cols),
@@ -134,6 +142,8 @@ fun GamesScreen(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                // Une mise a jour de l'appli (1.25.0) : un bandeau et un bouton, rien quand tout va bien.
+                item("update", span = full) { UpdateBanner() }
                 // Le PC a besoin de toi (1.4.0) : en tete, c'est le plus urgent.
                 val help = Relay.openHelp(state, now)
                 if (help.isNotEmpty()) item("help", span = full) {
@@ -148,10 +158,9 @@ fun GamesScreen(
                 if (next != null) item("timecode", span = full) {
                     Timecode(next.end!!, next.shownTitle, stringResource(R.string.timecode_label), { d -> context.getString(R.string.timecode_days, d.toInt()) })
                 }
+                // Un seul geste, sur une ligne (1.25.0) : « Tout recuperer (4) ». L'appli recupere deja toute seule ; ceci relance ce qui reste.
                 if (pending.isNotEmpty() && !claiming) item("claim", span = full) {
-                    Notice(pluralStringResource(R.plurals.pending_claims, pending.size, pending.size), b.accent, Modifier.padding(start = 22.dp)) {
-                        BrutButton(stringResource(R.string.claim_all) + " →", { onClaim(emptySet()) }, primary = false, icon = Icons.Rounded.Download)
-                    }
+                    BrutButton(stringResource(R.string.claim_all) + " (${pending.size})", { onClaim(emptySet()) }, icon = Icons.Rounded.Download)
                 }
                 if (needLogin.isNotEmpty()) item("login", span = full) {
                     Notice(
@@ -161,6 +170,8 @@ fun GamesScreen(
                 }
                 item("filters", span = full) {
                     Row(Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Comment poser les jeux (1.25.0) : trois pastilles, a gauche des magasins, un toucher et c'est retenu.
+                        TilePicker(tiles, onTiles, Modifier.padding(end = 6.dp))
                         FILTERS.forEach { f ->
                             val on = filter == f
                             Text(
@@ -183,12 +194,15 @@ fun GamesScreen(
                     )
                 }
                 itemsIndexed(pc, key = { _, o -> "o:" + o.key }) { i, o ->
-                    // L'asymetrie voulue : une carte sur deux decalee de l'autre cote.
-                    OfferCard(
-                        o, state, now, claiming, onClaim = { onClaim(setOf(o.key)) }, onOpen = onOpen,
-                        // En colonne unique, une carte sur deux decalee ; en grille, les colonnes font l'asymetrie.
-                        modifier = if (cols > 1) Modifier else if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
-                    )
+                    when (tiles) {
+                        Tiles.GRID -> OfferTile(o, state, now, onOpen)
+                        Tiles.LIST -> OfferRow(o, state, now, onOpen)
+                        // L'asymetrie voulue : en colonne unique, une carte sur deux decalee de l'autre cote ; en grille, les colonnes font l'asymetrie.
+                        else -> OfferCard(
+                            o, state, now, onOpen,
+                            modifier = if (cols > 1) Modifier else if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
+                        )
+                    }
                 }
                 if (soon.isNotEmpty()) {
                     item("soon-h", span = full) { SectionHeader(stringResource(R.string.section_soon), soon.size, openUpcoming, { openUpcoming = !openUpcoming }) }
@@ -207,6 +221,13 @@ fun GamesScreen(
           }
         }
     }
+}
+
+/** Les colonnes de la grille (1.25.0) : deux au telephone, puis une de plus a 600 dp et a 1000 dp. */
+fun gridColumnsFor(width: Dp): Int = when {
+    width >= 1000.dp -> 4
+    width >= 600.dp -> 3
+    else -> 2
 }
 
 /** Le nombre de colonnes pour une largeur : les seuils des classes de taille d'Android (600, 840 dp). */
@@ -228,84 +249,6 @@ private fun SourcesLine(state: AppState, now: Long) {
         style = MaterialTheme.typography.bodySmall, color = b.mute,
         modifier = Modifier.padding(top = 8.dp),
     )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun OfferCard(o: Offer, state: AppState, now: Long, claiming: Boolean, onClaim: () -> Unit, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val b = LocalBrut.current
-    val claimed = Rules.claimedEntry(o, state.library)
-    val owned = Rules.ownedOnSteam(o, state)
-    val wished = Rules.wished(o, state)
-    val attempt = state.attempts[o.key]
-    val rating = state.ratings[Ratings.key(o)]
-    val claimable = Rules.claimable(o, state.settings) && claimed == null && !owned
-    val urgent = o.end != null && o.end - now < 24 * 3_600_000L
-
-    Column(modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).ticket(coverTicket(), Color.White, b.shadow, 6.dp)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-            Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 64)
-            Row(Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                StoreChip(o.store)
-                if (o.isExtra) Tag("DLC", Color.White, Color.Black)
-                if (wished) Tag("★ " + stringResource(R.string.wished).uppercase(), b.accent, b.onAccent)
-                // Deuxieme chance (1.12.0) : deja vu passer, jamais eu.
-                if (Rules.secondChance(o, state, now) != null) Tag(stringResource(R.string.tag_second_chance).uppercase(), Color.White, Color.Black, bordered = true)
-                // Tes gouts (1.14.0) : une offre qui ressemble a ce que tu aimes.
-                if (Taste.matchFor(state, Taste.appidOf(o, state)) != null) Tag(stringResource(R.string.tag_for_you).uppercase(), Color.Black, b.accent)
-            }
-            if (rating?.percent != null) {
-                Text(
-                    stringResource(R.string.rating_short, rating.percent).uppercase(),
-                    style = MaterialTheme.typography.labelLarge, color = Color.Black,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 10.dp).rotate(4f)
-                        .brut(if (Ratings.tone(rating) == "good") b.accent else Color.White, shadow = Color.Black, offset = 3.dp)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-            /* Le tampon (1.3.0 ; un par etat depuis la 1.11.0, comme l'extension) :
-               pris, deja a toi, ou l'issue du dernier essai -- echec, en
-               attente, ignore -- de travers, sur la jaquette. */
-            val tampon = when {
-                claimed != null -> stampKindOf(claimed.status) ?: StampKind.CLAIMED
-                owned -> StampKind.OWNED
-                attempt?.verdict != null -> stampKindOf(attempt.verdict)
-                else -> null
-            }
-            tampon?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) }
-        }
-        Perforation()
-        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleLarge, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                o.worth?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.Black, textDecoration = TextDecoration.LineThrough) }
-                Tag(stringResource(R.string.free).uppercase(), b.accent, b.onAccent, bordered = true)
-                Spacer(Modifier.weight(1f))
-                Text(
-                    if (o.end != null) Fmt.left(context, o.end, now).uppercase() else "∞",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (urgent) b.accent else Color.White,
-                    modifier = Modifier.background(Color.Black).padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-            if (o.end != null) {
-                Text("> " + stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
-            }
-            // Piege ou bonne affaire ? (1.22.0) : rien a juger sur un jeu qu'on a deja.
-            if (claimed == null && !owned) BargainRow(o, state)
-            if (claimed?.ts != null) {
-                Text("> " + stringResource(R.string.claimed_on, Fmt.date(claimed.ts)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
-            } else if (attempt?.verdict != null && attempt.verdict !in Verdicts.ACQUIRED) {
-                Text("! " + verdictText(attempt.verdict, attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-            // FlowRow : en grande police, le second bouton passe a la ligne au lieu de deborder.
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
-                if (claimable) BrutButton(stringResource(R.string.action_claim), onClaim, enabled = !claiming, icon = Icons.Rounded.Download)
-                (o.url ?: o.resolveUrl)?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false, icon = Icons.AutoMirrored.Rounded.OpenInNew) }
-            }
-        }
-    }
 }
 
 @Composable

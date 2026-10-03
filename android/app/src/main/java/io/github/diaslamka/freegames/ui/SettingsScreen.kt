@@ -45,6 +45,7 @@ import io.github.diaslamka.freegames.BuildConfig
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.AppUpdate
+import io.github.diaslamka.freegames.data.UpdateRunner
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Install
 import io.github.diaslamka.freegames.data.UpdateToken
@@ -52,6 +53,7 @@ import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.model.Tiles
 import io.github.diaslamka.freegames.notify.Digest
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
@@ -148,6 +150,15 @@ fun SettingsScreen(
                     Toggle(stringResource(R.string.set_last_chance), null, s.lastChance) { v ->
                         if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
                     }
+                    Choice(
+                        stringResource(R.string.set_tiles),
+                        listOf(
+                            Tiles.CARDS to stringResource(R.string.tiles_cards),
+                            Tiles.LIST to stringResource(R.string.tiles_list),
+                            Tiles.GRID to stringResource(R.string.tiles_grid),
+                        ),
+                        Tiles.of(s.tiles),
+                    ) { v -> onSettings { it.copy(tiles = v) } }
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
@@ -255,33 +266,9 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
     var tokenOpen by remember { mutableStateOf(false) }
     var allowDialog by remember { mutableStateOf(false) }
 
-    fun net() = AppUpdate.OkNet(Graph.http.client)
-    fun search() {
-        scope.launch {
-            try {
-                AppUpdate.check(net(), UpdateToken.load(context), BuildConfig.VERSION_NAME)
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.NETWORK)
-            }
-        }
-    }
+    fun search() { scope.launch { UpdateRunner.search(context) } }
     fun install(release: AppUpdate.Release) {
-        if (!Install.allowed(context)) { allowDialog = true; return }
-        scope.launch {
-            try {
-                val file = AppUpdate.fetch(java.io.File(context.cacheDir, "maj"), net(), UpdateToken.load(context), release) {
-                    Install.sameApp(context, it, release.version)
-                } ?: return@launch
-                AppUpdate.status.value = AppUpdate.Status.Installing
-                withContext(Dispatchers.IO) { Install.start(context, file) }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.INSTALL, e.message?.take(100))
-            }
-        }
+        scope.launch { if (!UpdateRunner.install(context, release)) allowDialog = true }
     }
     // On regarde une fois en ouvrant la section : la reponse est la, sans geste de plus.
     LaunchedEffect(Unit) { if (AppUpdate.status.value is AppUpdate.Status.Idle) search() }
@@ -314,6 +301,7 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
             else -> BrutButton(stringResource(R.string.update_check), { search() }, primary = false)
         }
     }
+    Toggle(stringResource(R.string.set_auto_update), stringResource(R.string.set_auto_update_hint), settings.autoUpdate) { v -> onSettings { it.copy(autoUpdate = v) } }
     Toggle(stringResource(R.string.set_notify_update), null, settings.notifyUpdate) { v -> onSettings { it.copy(notifyUpdate = v) } }
 
     Text(

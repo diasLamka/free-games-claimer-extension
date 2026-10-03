@@ -19,11 +19,11 @@ import java.util.concurrent.TimeUnit
 class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
         Watcher.check(applicationContext, "fond")
-        // Une mise a jour de l'appli existe-t-elle ? Au plus une recherche par jour ; on previent, on n'installe rien.
-        checkForUpdate()
         // Ecran eteint (reglage coupe par defaut) : ce qui reste a prendre, sur place.
         BackgroundClaim.run(applicationContext)
         if (BackgroundClaim.more(System.currentTimeMillis())) Scheduler.soon(applicationContext)
+        // Une mise a jour de l'appli existe-t-elle ? APRES les recuperations : installer relance l'appli, et ne doit couper aucune page en route.
+        checkForUpdate()
         Result.success()
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
@@ -35,13 +35,21 @@ class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 private suspend fun WatchWorker.checkForUpdate() {
     try {
         Graph.init(applicationContext)
-        if (!Graph.store.value.settings.notifyUpdate) return
+        val settings = Graph.store.value.settings
+        if (!settings.notifyUpdate && !settings.autoUpdate) return
         val net = io.github.diaslamka.freegames.data.AppUpdate.OkNet(Graph.http.client)
-        val release = io.github.diaslamka.freegames.data.AppUpdate.backgroundCheck(
+        val release = io.github.diaslamka.freegames.data.AppUpdate.latest(
             applicationContext, net, io.github.diaslamka.freegames.data.UpdateToken.load(applicationContext),
             io.github.diaslamka.freegames.BuildConfig.VERSION_NAME, System.currentTimeMillis(),
-        )
-        if (release != null) io.github.diaslamka.freegames.notify.Notifier.updateAvailable(applicationContext, release.version)
+        ) ?: return
+        // Mise a jour automatique (1.25.0) : seulement si Android a deja autorise l'appli, et apres les memes verifications.
+        if (settings.autoUpdate && io.github.diaslamka.freegames.data.Install.allowed(applicationContext)) {
+            io.github.diaslamka.freegames.data.UpdateRunner.install(applicationContext, release)
+            return
+        }
+        if (settings.notifyUpdate && io.github.diaslamka.freegames.data.AppUpdate.firstTimeFor(applicationContext, release.version)) {
+            io.github.diaslamka.freegames.notify.Notifier.updateAvailable(applicationContext, release.version)
+        }
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
     } catch (_: Exception) {

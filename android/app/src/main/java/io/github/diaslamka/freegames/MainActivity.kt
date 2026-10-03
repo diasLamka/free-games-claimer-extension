@@ -34,6 +34,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        io.github.diaslamka.freegames.data.Install.visible = true
+    }
+
+    override fun onStop() {
+        io.github.diaslamka.freegames.data.Install.visible = false
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         // L'appli est a l'ecran : l'alarme de derniere chance a ete entendue.

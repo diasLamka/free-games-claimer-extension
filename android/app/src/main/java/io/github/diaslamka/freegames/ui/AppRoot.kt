@@ -224,6 +224,13 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         if (stale) refresh(autoClaim) else autoClaim()
     }
 
+    // Une mise a jour de l'appli existe-t-elle ? (1.25.0) Une recherche a l'ouverture : le bandeau de l'accueil en vit.
+    LaunchedEffect(Unit) {
+        if (io.github.diaslamka.freegames.data.AppUpdate.status.value is io.github.diaslamka.freegames.data.AppUpdate.Status.Idle) {
+            io.github.diaslamka.freegames.data.UpdateRunner.search(context)
+        }
+    }
+
     // Ce qu'on nous demande de l'exterieur : notification, partage.
     LaunchedEffect(intent) {
         val i = intent ?: return@LaunchedEffect
@@ -340,6 +347,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         )
                     },
                     onAccounts = { tab = 3 },
+                    onTiles = { v -> updateSettings { it.copy(tiles = v) } },
                     onHelpDismiss = { key ->
                         scope.launch { Graph.store.update { s -> s.copy(relay = s.relay?.let { r -> r.copy(help = r.help - key) }) } }
                     },
