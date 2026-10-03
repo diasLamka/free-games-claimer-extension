@@ -281,7 +281,7 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
 
     fun search() { scope.launch { UpdateRunner.search(context) } }
     fun install(release: AppUpdate.Release) {
-        scope.launch { if (!UpdateRunner.install(context, release)) allowDialog = true }
+        UpdateRunner.installInBackground(context, release) { allowDialog = true }
     }
     // On regarde une fois en ouvrant la section : la reponse est la, sans geste de plus.
     LaunchedEffect(Unit) { if (AppUpdate.status.value is AppUpdate.Status.Idle) search() }

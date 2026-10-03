@@ -2,7 +2,11 @@ package io.github.diaslamka.freegames.data
 
 import android.content.Context
 import io.github.diaslamka.freegames.BuildConfig
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -12,7 +16,12 @@ import java.io.File
  * (version lue des publications du depot, taille, SHA-256, signature identique a l'appli installee).
  */
 object UpdateRunner {
-    private fun net() = AppUpdate.OkNet(Graph.http.client)
+    /** Le reseau de la mise a jour ; les tests le remplacent. */
+    internal var net: () -> AppUpdate.Net = { AppUpdate.OkNet(Graph.http.client) }
+
+    /** La portee du telechargement lance depuis l'interface : celle du processus, pas celle d'un ecran. */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var running: Job? = null
 
     /** Cherche une version plus recente ; le resultat est dans [AppUpdate.status]. Ne leve jamais. */
     suspend fun search(context: Context) {
@@ -23,6 +32,21 @@ object UpdateRunner {
         } catch (_: Exception) {
             AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.NETWORK)
         }
+    }
+
+    /**
+     * [install] pour l'interface (bandeau, Reglages). Le bandeau est un element d'une liste : defiler ou changer
+     * d'onglet le sort de la composition et annule sa coroutine, donc le telechargement en route. Celui-ci tourne
+     * dans la portee du processus et va jusqu'au bout.
+     *
+     * Rend le travail lance, ou null s'il y en a deja un (un second appui ne relance rien). `onNotAllowed` est
+     * appele, une fois, quand Android n'a pas encore autorise l'appli a installer : l'interface propose alors le geste.
+     */
+    @Synchronized
+    fun installInBackground(context: Context, release: AppUpdate.Release, onNotAllowed: () -> Unit = {}): Job? {
+        if (running?.isActive == true) return null
+        val app = context.applicationContext
+        return scope.launch { if (!install(app, release)) onNotAllowed() }.also { running = it }
     }
 
     /**

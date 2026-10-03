@@ -276,6 +276,8 @@ object AppUpdate {
             if (code !in 200..299) return fail(file, Reason.NETWORK, "HTTP $code")
         } catch (e: kotlinx.coroutines.CancellationException) {
             file.delete()
+            // Annule en route : la version existe toujours, et l'etat ne reste pas a « telechargement » (plus de bouton).
+            status.value = Status.Available(release)
             throw e
         } catch (e: Exception) {
             return fail(file, Reason.NETWORK, e.message?.take(80))

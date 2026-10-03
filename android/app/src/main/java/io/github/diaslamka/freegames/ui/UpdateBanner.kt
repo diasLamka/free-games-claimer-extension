@@ -42,8 +42,9 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
     val status by AppUpdate.status.collectAsStateWithLifecycle()
     var allowDialog by remember { mutableStateOf(false) }
 
+    // Pas dans `scope` : ce bandeau sort de la liste quand on defile, et le telechargement irait avec lui.
     fun go(release: AppUpdate.Release) {
-        scope.launch { if (!UpdateRunner.install(context, release)) allowDialog = true }
+        UpdateRunner.installInBackground(context, release) { allowDialog = true }
     }
 
     when (val st = status) {

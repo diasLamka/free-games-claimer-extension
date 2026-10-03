@@ -6,6 +6,10 @@ import io.github.diaslamka.freegames.data.AppUpdate.Status
 import io.github.diaslamka.freegames.data.Install
 import io.github.diaslamka.freegames.data.Install.Silence
 import io.github.diaslamka.freegames.data.UpdateToken
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -170,6 +174,30 @@ class UpdateTest {
         assertEquals(Status.Failed(Reason.NETWORK, "HTTP 500"), AppUpdate.status.value)
         assertNull(AppUpdate.fetch(dir, FakeNet(fail = IOException("coupe")), null, rel()) { true })
         assertEquals(Status.Failed(Reason.NETWORK, "coupe"), AppUpdate.status.value)
+    }
+
+    @Test
+    fun aDownloadThatIsCutShortGoesBackToAvailableInsteadOfStayingOnDownloading() = runBlocking {
+        // L'ecran qui l'avait lance disparait (defilement, autre onglet) : la coroutine est annulee en route.
+        val dir = File(tmp.root, "maj")
+        val release = rel()
+        val started = CompletableDeferred<Unit>()
+        val net = object : AppUpdate.Net {
+            override suspend fun releases(token: String?) = AppUpdate.Listing(200, "[]")
+            override suspend fun download(assetId: Long, token: String?, dest: File, onProgress: (Long, Long) -> Unit): Int {
+                dest.writeBytes(apk.copyOf(3))
+                onProgress(3, apk.size.toLong())
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        val job = launch { AppUpdate.fetch(dir, net, null, release) { true } }
+        started.await()
+        assertTrue(AppUpdate.status.value is Status.Downloading)
+        job.cancelAndJoin()
+        // Sans cela, l'etat restait a « telechargement » pour tout le processus : plus de bouton, plus de recherche.
+        assertEquals(Status.Available(release), AppUpdate.status.value)
+        assertEquals(0, dir.listFiles()!!.size)
     }
 
     @Test
