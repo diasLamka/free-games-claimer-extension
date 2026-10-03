@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
@@ -117,10 +118,11 @@ class ClaimSession(
 
     private var job: Job? = null
     private var piloting = false
-    private var ready: CompletableDeferred<String>? = null
-    private var verdict: CompletableDeferred<JsonElement>? = null
-    private var pageLoad: CompletableDeferred<String>? = null
-    private var userDone: CompletableDeferred<Boolean>? = null
+    // Ce que la boucle attend de la page ; internal pour que rendererGone se teste.
+    internal var ready: CompletableDeferred<String>? = null
+    internal var verdict: CompletableDeferred<JsonElement>? = null
+    internal var pageLoad: CompletableDeferred<String>? = null
+    internal var userDone: CompletableDeferred<Boolean>? = null
     private var mainProxy: JavaScriptReplyProxy? = null
     @Volatile private var currentUrl: String? = null
 
@@ -128,7 +130,11 @@ class ClaimSession(
         get() = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
             WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
 
-    private var created = false
+    private var web: WebView? = null
+
+    /** Monte d'un a chaque fois que la page est refaite (son moteur de rendu s'est arrete) : l'ecran rattache la neuve. */
+    private val _pages = MutableStateFlow(0)
+    val pages: StateFlow<Int> = _pages
 
     /**
      * Une recuperation DEMANDEE a l'ecran (1.17.1) et non decidee par la veille :
@@ -141,7 +147,7 @@ class ClaimSession(
     private var targeted: Set<String> = emptySet()
     /** Ta reponse sur le panneau (« deja a moi », « plus offert »), en attendant que la boucle la lise. */
     private var teachAnswer: String? = null
-    val webView: WebView by lazy { created = true; build() }
+    val webView: WebView get() = web ?: build().also { web = it }
 
     private fun log(msg: String) = Log.i("FGC", msg)
 
@@ -187,7 +193,7 @@ class ClaimSession(
         jar.setAcceptCookie(true)
         jar.setAcceptThirdPartyCookies(this, true)
 
-        webViewClient = object : WebViewClient() {
+        webViewClient = object : RenderSafeClient({ didCrash -> rendererGone(this@apply, didCrash) }) {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 // Les liens vers les lanceurs (com.epicgames.launcher://, steam://) ne s'ouvrent pas ici.
                 val scheme = request.url.scheme?.lowercase()
@@ -228,6 +234,28 @@ class ClaimSession(
             measure(w, h)
             layout(0, 0, m.widthPixels, m.heightPixels)
         }
+    }
+
+    /**
+     * Le moteur de rendu de la page s'est arrete (memoire, plantage) : cette WebView est inutilisable, et si Android
+     * n'est pas prevenu qu'on l'a geree (RenderSafeClient), il arrete aussi l'appli. On la jette -- la prochaine page
+     * en aura une neuve --, et tout ce que la boucle attendait d'elle est libere avec la raison, au lieu d'attendre
+     * son delai : l'offre en cours finit en echec, les suivantes repartent d'une page saine.
+     */
+    internal fun rendererGone(dead: WebView, didCrash: Boolean) {
+        log("moteur de rendu ${if (didCrash) "plante" else "arrete"} : la page est refaite")
+        if (web === dead) web = null
+        piloting = false
+        mainProxy = null
+        (dead.parent as? ViewGroup)?.removeView(dead)
+        runCatching { dead.destroy() }
+        val why = RendererGone(didCrash)
+        ready?.completeExceptionally(why)
+        verdict?.completeExceptionally(why)
+        pageLoad?.completeExceptionally(why)
+        userDone?.complete(false)
+        _ui.value = _ui.value.copy(needsUser = false, teach = false)
+        _pages.value += 1
     }
 
     /* ------------------------------------------------------ le canal */
@@ -309,7 +337,7 @@ class ClaimSession(
         piloting = false
         userDone?.complete(false)
         _ui.value = _ui.value.copy(running = false, step = null, needsUser = false, teach = false)
-        scope.launch(Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
+        scope.launch(Dispatchers.Main) { runCatching { web?.loadUrl("about:blank") } }
     }
 
     /** Apres un defi resolu a la main : on reprend le jeu en cours. */
@@ -465,7 +493,7 @@ class ClaimSession(
             }
         } finally {
             piloting = false
-            if (created) withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { runCatching { webView.loadUrl("about:blank") } }
+            if (web != null) withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { runCatching { web?.loadUrl("about:blank") } }
             _ui.value = _ui.value.copy(running = false, step = null, title = null)
             if (headless) Notifier.doneWorking(context)
         }
@@ -646,7 +674,7 @@ class ClaimSession(
     }
 
     fun release() {
-        if (created) runCatching { webView.destroy() }
+        web?.let { runCatching { it.destroy() } }
     }
 
     companion object {

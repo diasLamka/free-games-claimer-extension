@@ -25,8 +25,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.diaslamka.freegames.R
+import io.github.diaslamka.freegames.claim.RenderSafeClient
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Family
 import androidx.webkit.WebViewCompat
@@ -59,7 +63,14 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
     val b = LocalBrut.current
     var loading by remember { mutableStateOf(true) }
     var refused by remember { mutableStateOf<String?>(null) }
-    val web = remember {
+    var attempt by remember { mutableIntStateOf(0) }
+    val closeNow by rememberUpdatedState(onClose)
+    // Le moteur de rendu de la page s'est arrete (memoire, plantage) : on la refait, deux fois au plus, puis on rend l'ecran.
+    val onGone = {
+        loading = false
+        if (attempt < 2) attempt++ else closeNow()
+    }
+    val web = remember(attempt) {
         WebView(context).apply {
             // Toute la famille (1.9.0) : la session du membre vit dans son profil, avant tout autre usage.
             if (member != null) Family.attach(this, member)
@@ -76,7 +87,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
             val jar = if (member != null && Family.supported()) WebViewCompat.getProfile(this).cookieManager else CookieManager.getInstance()
             jar.setAcceptCookie(true)
             jar.setAcceptThirdPartyCookies(this, true)
-            webViewClient = object : WebViewClient() {
+            webViewClient = object : RenderSafeClient({ onGone() }) {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val scheme = request.url.scheme?.lowercase()
                     if (scheme != "http" && scheme != "https") return true
@@ -97,7 +108,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
             loadUrl(Accounts.loginUrl(store, country))
         }
     }
-    DisposableEffect(Unit) {
+    DisposableEffect(web) {
         onDispose {
             runCatching { (if (member != null && Family.supported()) WebViewCompat.getProfile(web).cookieManager else CookieManager.getInstance()).flush() }
             web.destroy()
@@ -155,7 +166,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
             }
         } else {
             Box(Modifier.fillMaxSize().background(Color.White)) {
-                AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
+                key(web) { AndroidView(factory = { web }, modifier = Modifier.fillMaxSize()) }
             }
         }
     }

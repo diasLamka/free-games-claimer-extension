@@ -109,16 +109,8 @@ object SessionProbe {
             jar.setAcceptCookie(true)
             jar.setAcceptThirdPartyCookies(view, true)
             val finished = CompletableDeferred<Unit>()
-            view.webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
-                    val scheme = request.url.scheme?.lowercase()
-                    return scheme != "http" && scheme != "https"
-                }
-
-                override fun onPageFinished(v: WebView, u: String) {
-                    finished.complete(Unit)
-                }
-            }
+            var gone = false
+            view.webViewClient = probeClient(finished) { gone = true }
             val m = context.resources.displayMetrics
             view.measure(
                 android.view.View.MeasureSpec.makeMeasureSpec(m.widthPixels, android.view.View.MeasureSpec.EXACTLY),
@@ -127,9 +119,23 @@ object SessionProbe {
             view.layout(0, 0, m.widthPixels, m.heightPixels)
             view.loadUrl(url)
             val done = withTimeoutOrNull(TIMEOUT_MS) { finished.await(); delay(settleMs) }
-            if (done == null) null to null else view.url to view.title
+            // Une page dont le moteur de rendu s'est arrete n'a rien dit : comme une page qui ne s'est pas chargee.
+            if (done == null || gone) null to null else view.url to view.title
         } finally {
             runCatching { view.stopLoading(); view.destroy() }
         }
     }
+
+    /** Le client de la page de controle : il rend la main des que la page a fini, ou que son moteur de rendu s'arrete. */
+    internal fun probeClient(finished: CompletableDeferred<Unit>, onGone: () -> Unit): WebViewClient =
+        object : RenderSafeClient({ onGone(); finished.complete(Unit) }) {
+            override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
+                val scheme = request.url.scheme?.lowercase()
+                return scheme != "http" && scheme != "https"
+            }
+
+            override fun onPageFinished(v: WebView, u: String) {
+                finished.complete(Unit)
+            }
+        }
 }

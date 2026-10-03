@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +42,7 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
 @Composable
 fun ClaimPanel(session: ClaimSession, onStopped: () -> Unit = {}, onDismissed: () -> Unit = {}) {
     val ui by session.ui.collectAsStateWithLifecycle()
+    val pages by session.pages.collectAsStateWithLifecycle()
     if (!ui.visible) return
     ClaimPanelContent(
         ui, onToggle = null,
@@ -50,10 +52,13 @@ fun ClaimPanel(session: ClaimSession, onStopped: () -> Unit = {}, onDismissed: (
         onAnswer = { session.answer(it) },
         who = session.memberName,
     ) {
-        AndroidView(
-            factory = { session.webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
-            modifier = it,
-        )
+        // Page refaite (son moteur de rendu s'est arrete) : une vue neuve pour rattacher la WebView neuve.
+        key(pages) {
+            AndroidView(
+                factory = { session.webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
+                modifier = it,
+            )
+        }
     }
 }
 
