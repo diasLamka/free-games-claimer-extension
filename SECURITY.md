@@ -452,10 +452,15 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
   GitHub** (facultatif, depot prive) est un jeton a grain fin en lecture
   seule, chiffre par une cle du Keystore Android, jamais dans l'etat de l'appli,
   l'export, une sauvegarde ou le journal.
-- **La cle qui signe l'APK** est dans `android/keystore/`, parce que le depot
-  est prive et qu'une mise a jour doit porter la meme signature que la version
-  installee. Si le depot devenait public, elle en sortirait (secret du
-  workflow) : qui la detient peut signer une « mise a jour » de l'appli.
+- **La cle qui signe l'APK** n'est pas dans le depot : une mise a jour doit porter
+  la meme signature que la version installee, et qui detient la cle peut signer
+  une « mise a jour » de l'appli. Elle et ses mots de passe sont des secrets du
+  workflow `android.yml`, ecrits sur le disque du runner le temps du build ;
+  `android/keystore/` est ignore par git (`test/android-keystore.test.mjs` echoue
+  si un fichier de cle revient) et le workflow refuse de deposer un APK qui n'est
+  pas signe par l'empreinte attendue. **L'historique git en garde l'ancienne
+  copie** (commit `2129c04`) : sans danger tant que le depot est prive et n'a pas
+  ete partage, a changer avec une chaine de rotation (`apksigner rotate`) sinon.
 
 - **Google et Facebook** interdisent leur connexion dans une page integree a
   une appli : la page de connexion s'arrete avant de les charger

@@ -12,6 +12,14 @@
 # Un tag `app-vX.Y.Z` pousse a la main publie aussi, s'il dit la meme version
 # que `versionName`, pour la meme raison que release.yml : Android refuse
 # d'installer par-dessus une version qui se dit plus recente.
+#
+# La cle de signature n'est PAS dans le depot : elle vient des secrets
+# ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS et
+# ANDROID_KEY_PASSWORD, et n'existe sur le disque du runner que le temps du
+# build (voir test/android-keystore.test.mjs). Sans eux, le build reste
+# possible, l'APK n'est pas signe et rien n'est publie. Un APK signe par une
+# autre cle que SIGNING_SHA256 n'est jamais depose : le telephone n'installerait
+# pas la mise a jour, ou pire, elle serait signee par une cle qui n'est pas la notre.
 name: android
 
 on:
@@ -35,6 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     # Un build normal prend quelques minutes ; au-dela, quelque chose est bloque.
     timeout-minutes: 30
+    env:
+      # L'empreinte SHA-256 du certificat qui signe l'appli : la meme a chaque version.
+      SIGNING_SHA256: '72:1A:F7:EA:41:FE:5C:AF:96:A8:A7:6B:7D:70:42:74:2C:A5:37:E4:04:A4:A5:7F:23:27:17:BA:47:55:45:C5'
     steps:
       - uses: actions/checkout@v5
 
@@ -54,14 +65,47 @@ jobs:
           echo "tag : $tag / versionName : $appli"
           if [ "$tag" != "$appli" ]; then echo "::error::le tag dit $tag, l'appli dit $appli"; exit 1; fi
 
+      - name: La cle de signature
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::secrets de signature absents : l'APK ne sera pas signe"
+            exit 0
+          fi
+          mkdir -p android/keystore
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/keystore/release.jks
+          printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/keystore/keystore.properties
+
       - name: Tests et APK
         working-directory: android
         run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
 
-      - name: Renommer l'APK
+      # Signe par NOTRE cle, ou pas signe du tout (secrets absents) : jamais par une autre.
+      - name: Verifier la signature, renommer l'APK
         run: |
           v="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts)"
-          cp android/app/build/outputs/apk/release/app-release.apk "free-games-claimer-android-$v.apk"
+          apk="$(ls android/app/build/outputs/apk/release/*.apk | head -n1)"
+          case "$apk" in
+            *-unsigned.apk)
+              echo "::warning::APK non signe : il ne sera pas publie"
+              cp "$apk" "free-games-claimer-android-$v-unsigned.apk"
+              ;;
+            *)
+              apksigner="$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/apksigner | sort -V | tail -n1)"
+              got="$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ':' | tr 'A-F' 'a-f')"
+              want="$(printf '%s' "$SIGNING_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
+              if [ -z "$got" ] || [ "$got" != "$want" ]; then
+                echo "::error::l'APK n'est pas signe par la cle attendue (empreinte lue : ${got:-aucune})"
+                exit 1
+              fi
+              cp "$apk" "free-games-claimer-android-$v.apk"
+              ;;
+          esac
           sha256sum free-games-claimer-android-*.apk
 
       - uses: actions/upload-artifact@v6
@@ -81,6 +125,10 @@ jobs:
             exit 0
           fi
           apk="free-games-claimer-android-$v.apk"
+          if [ ! -f "$apk" ]; then
+            echo "::error::pas d'APK signe par la bonne cle : rien n'est publie"
+            exit 1
+          fi
           sha="$(sha256sum "$apk" | cut -d' ' -f1)"
           {
             echo "L'appli Android $v, signee : a ouvrir sur le telephone (autoriser l'installation depuis cette source la premiere fois). Elle s'installe par-dessus la version precedente sans rien perdre."
@@ -88,6 +136,6 @@ jobs:
             echo "Installation, Play Protect, mise a jour : android/README.md. Nouveautes : CHANGELOG.md."
             echo
             echo "- SHA-256 de l'APK : \`$sha\`"
-            echo "- Certificat de signature (SHA-256) : \`72:1A:F7:EA:41:FE:5C:AF:96:A8:A7:6B:7D:70:42:74:2C:A5:37:E4:04:A4:A5:7F:23:27:17:BA:47:55:45:C5\`"
+            echo "- Certificat de signature (SHA-256) : \`$SIGNING_SHA256\`"
           } > notes.md
           gh release create "$tag" --target "$GITHUB_SHA" --title "Appli Android $v" --notes-file notes.md "$apk"

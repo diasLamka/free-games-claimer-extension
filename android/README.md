@@ -146,11 +146,25 @@ Les textes des quatre langues sont generes depuis une seule table :
 
 ### La cle de signature
 
-`keystore/` contient la cle qui signe l'APK. Elle doit rester la meme d'une
-version a l'autre : c'est ce qui permet d'installer une mise a jour par-dessus
-l'ancienne sans rien perdre. Le depot est prive ; s'il devenait public, il
-faudrait sortir la cle du depot (secret du workflow) -- quiconque la detient
-peut signer une « mise a jour » de l'appli.
+La cle qui signe l'APK doit rester la meme d'une version a l'autre : c'est ce
+qui permet d'installer une mise a jour par-dessus l'ancienne sans rien perdre.
+Quiconque la detient peut signer une « mise a jour » de l'appli, donc **elle
+n'est plus dans le depot** : elle vit dans les secrets du workflow
+(`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
+`ANDROID_KEY_PASSWORD`), que `android.yml` ecrit dans `android/keystore/` le
+temps du build. Ce dossier est ignore par git, et `test/android-keystore.test.mjs`
+echoue si une cle y revient. Le workflow verifie en plus que l'APK porte
+l'empreinte attendue (`SIGNING_SHA256`) avant de rien deposer ; sans les secrets
+(un fork), il construit un APK non signe et ne publie rien.
+
+Pour signer a la main, poser `release.jks` et un `keystore.properties`
+(`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) dans `android/keystore/`.
+
+**L'historique git garde l'ancienne copie de la cle** (commit `2129c04`), sortie
+du dossier mais pas du passe. Tant que le depot reste prive et n'a jamais ete
+clone par un tiers, c'est acceptable. S'il devenait public ou s'il a ete partage,
+la cle est a changer, avec une chaine de rotation (`apksigner rotate`) pour que
+les installations existantes continuent de se mettre a jour.
 
 ## Installer
 

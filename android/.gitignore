@@ -6,3 +6,6 @@ local.properties
 .idea/
 captures/
 .kotlin/
+
+# La cle de signature vient des secrets du workflow (android.yml), jamais du depot.
+keystore/
