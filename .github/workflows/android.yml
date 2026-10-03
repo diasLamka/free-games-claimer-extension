@@ -42,6 +42,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Gradle, ses dependances et les jars Robolectric (le plus lourd) :
+          # sans cache, chaque push les retelecharge.
+          cache: gradle
 
       - name: Le tag et versionName doivent dire la meme version
         if: startsWith(github.ref, 'refs/tags/app-v')
