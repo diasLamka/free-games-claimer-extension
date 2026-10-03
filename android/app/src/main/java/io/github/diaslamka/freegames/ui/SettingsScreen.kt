@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.diaslamka.freegames.BuildConfig
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
@@ -272,7 +272,7 @@ fun SettingsScreen(
 private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val status by AppUpdate.status.collectAsState()
+    val status by AppUpdate.status.collectAsStateWithLifecycle()
     var tokenInput by remember { mutableStateOf("") }
     var hasToken by remember { mutableStateOf(UpdateToken.present(context)) }
     var tokenNote by remember { mutableStateOf<Int?>(null) }

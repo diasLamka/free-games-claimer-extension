@@ -43,8 +43,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +55,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import io.github.diaslamka.freegames.MainActivity
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.Raccourcis
@@ -78,6 +82,8 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -85,9 +91,11 @@ import kotlinx.coroutines.withContext
 fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val state by Graph.store.state.collectAsState()
-    val claim by session.ui.collectAsState()
-    val intent by intents.collectAsState()
+    val state by Graph.store.state.collectAsStateWithLifecycle()
+    // Seul `running` sert ici ; le reste de l'etat de recuperation est lu par ClaimPanel, qui se recompose seul.
+    val claiming by remember(session) { session.ui.map { it.running }.distinctUntilChanged() }
+        .collectAsStateWithLifecycle(session.ui.value.running)
+    val intent by intents.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
     var login by rememberSaveable { mutableStateOf<String?>(null) }
     // Toute la famille (1.9.0) : la connexion au nom d'un membre, et sa recuperation a l'ecran.
@@ -100,12 +108,19 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     var refreshing by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000)
-            now = System.currentTimeMillis()
+    // Au premier plan seulement, et l'heure est reprise des le retour : elle ne reste pas en retard de 30 s.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                now = System.currentTimeMillis()
+                delay(30_000)
+            }
         }
     }
+
+    // La page de la famille n'appartient qu'a cet ecran : sa WebView est detruite avec lui.
+    DisposableEffect(Unit) { onDispose { familySession?.release() } }
 
     fun refresh(then: (() -> Unit)? = null) {
         if (refreshing) return
@@ -336,7 +351,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     val screen: @Composable () -> Unit = {
             when (tab) {
                 0 -> GamesScreen(
-                    state = state, now = now, refreshing = refreshing, claiming = claim.running,
+                    state = state, now = now, refreshing = refreshing, claiming = claiming,
                     onRefresh = { refresh() },
                     onClaim = { claim(it) },
                     onOpen = { ClaimSession.openExternally(context, it) },

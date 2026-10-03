@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Verdicts
@@ -40,7 +40,7 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
  */
 @Composable
 fun ClaimPanel(session: ClaimSession, onStopped: () -> Unit = {}, onDismissed: () -> Unit = {}) {
-    val ui by session.ui.collectAsState()
+    val ui by session.ui.collectAsStateWithLifecycle()
     if (!ui.visible) return
     ClaimPanelContent(
         ui, onToggle = null,
