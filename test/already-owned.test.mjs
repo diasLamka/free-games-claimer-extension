@@ -19,7 +19,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { claimWhatCanBe, claimCandidates } from '../watch/cycle.js';
-import { makeOffer } from '../watch/offer.js';
+import { makeOffer, STATES } from '../watch/offer.js';
 import {
   VERDICTS, FINAL_VERDICTS, MAX_ATTEMPTS, MAX_ASKS, ASK_WAIT_MS, GONE_CONFIRM_MS, GONE_RECHECK_MS, alreadyAsked,
 } from '../watch/claim.js';
@@ -27,7 +27,9 @@ import { KEY_DEJA, VIA, MAX_DEJA, KEEP_MS, dejaKey, readDeja, dejaKeys, remember
 import { BACKUP_KEYS, planRestore, snapshot } from '../watch/full-backup.js';
 import {
   sameTitle, gogSearchUrl, readSearch, listHas, collectionHas, accountOwns, ORACLE_STORES, SEARCH_TIMEOUT_MS,
+  readEpicOrders, epicBook, EPIC_PAGES,
 } from '../watch/owned-check.js';
+import { epicPageUrl } from '../watch/collection-import.js';
 import { ANSWERS, settleByAnswer, resetForTeaching, teachBannerInPage, showTeachBanner } from '../watch/teach.js';
 import { CONTENT_MESSAGES, messageAllowed } from '../watch/messaging.js';
 import { retryNow } from '../watch/commands.js';
@@ -68,7 +70,7 @@ function scenario(verdicts) {
   return { appels, claim };
 }
 
-async function cycle(fc, catalog, { now = NOW, claim, ownerCheck, forced = false, library = null, collection = null, stores = ['gog', 'epic', 'amazon'] } = {}) {
+async function cycle(fc, catalog, { now = NOW, claim, ownerCheck, forced = false, library = null, collection = null, stores = ['gog', 'epic', 'amazon'], fetch = undefined, record = undefined } = {}) {
   horloge = now;
   return claimWhatCanBe({
     chrome: fc.chrome,
@@ -84,6 +86,8 @@ async function cycle(fc, catalog, { now = NOW, claim, ownerCheck, forced = false
     claim,
     ownerCheck,
     forced,
+    ...(fetch ? { fetch } : {}),
+    ...(record ? { record } : {}),
   });
 }
 
@@ -199,15 +203,119 @@ test('tout le reste est « on ne sait pas » (null), et ne bloque rien', async (
   assert.equal(await accountOwns({ store: 'gog', title: '' }, { fetch: reponseJson({ products: [] }) }), null);
 });
 
-test('seul GOG a une adresse qui repond ; les autres magasins ne recoivent aucune requete', async () => {
-  assert.deepEqual([...ORACLE_STORES], ['gog']);
+test('GOG et Epic ont une adresse qui repond ; Amazon, Steam et Epic mobile ne recoivent aucune requete', async () => {
+  assert.deepEqual([...ORACLE_STORES], ['gog', 'epic']);
   let appels = 0;
-  const fetch = async () => { appels++; return reponseJson({ products: [{ title: 'Hades' }] })(); };
-  for (const store of ['epic', 'amazon', 'steam']) {
+  const fetch = async () => { appels++; return reponseJson({ products: [{ title: 'Hades' }], orders: [{ items: [{ description: 'Hades', offerId: 'o1' }] }] })(); };
+  for (const store of ['amazon', 'steam', 'epic-mobile']) {
     assert.equal(await accountOwns({ store, title: 'Hades' }, { fetch }), null, store);
   }
   assert.equal(appels, 0);
   assert.ok(SEARCH_TIMEOUT_MS <= 20000, 'une requete du worker ne dure pas plus que celles de l\'import');
+});
+
+/* ------------------------------------------------------------------ Epic : l'historique des commandes */
+
+const commandes = (items, extra = {}) => ({ orders: [{ orderType: 'PURCHASE', items, ...extra }] });
+
+test('une page de commandes Epic se lit ; remboursee, illisible ou etrangere elle ne dit rien', () => {
+  const r = readEpicOrders({
+    orders: [
+      { orderType: 'PURCHASE', items: [{ offerId: 'a1', description: 'Hades' }, { offerId: '', description: 'Sans id' }, { offerId: 'a3' }, null, 'x'] },
+      { orderType: 'REFUND', items: [{ offerId: 'r1', description: 'Rembourse' }] },
+      { orderType: 'PURCHASE', orderStatus: 'CANCELLED', items: [{ offerId: 'r2', description: 'Annule' }] },
+      null,
+      { orderType: 'PURCHASE', items: 'pas une liste' },
+    ],
+    nextPageToken: 'p2',
+  });
+  assert.equal(r.readable, true);
+  assert.deepEqual(r.offerIds, ['a1', 'a3']);
+  assert.deepEqual(r.titles, ['Hades', 'Sans id']);
+  assert.equal(r.next, 'p2');
+  assert.equal(readEpicOrders({ orders: [] }).readable, true, 'un compte sans commande : lisible, vide');
+  for (const mauvais of [null, undefined, 'x', 3, [], {}, { orders: 'x' }, { message: 'Verification requise' }]) {
+    assert.equal(readEpicOrders(mauvais).readable, false, JSON.stringify(mauvais));
+  }
+  assert.equal(readEpicOrders({ orders: [], nextPageToken: 5 }).next, null);
+});
+
+test('le compte Epic dit « a vous » par l\'identifiant de l\'offre, ou par un titre identique', async () => {
+  const vus = [];
+  const fetch = async (url, init) => { vus.push({ url, init }); return reponseJson(commandes([{ offerId: 'abc', description: 'Autre nom' }, { offerId: 'zzz', description: 'Celeste' }]))(); };
+  const parId = await accountOwns(epicOffer('abc', 'Hades'), { fetch });
+  assert.deepEqual({ owns: parId.owns, via: parId.via }, { owns: true, via: 'account' });
+  assert.match(parId.note, /Epic/);
+  assert.equal(vus[0].url, epicPageUrl(null), 'l\'historique des commandes, sans jeton la premiere fois');
+  assert.equal(vus[0].init.credentials, 'include', 'avec VOTRE session');
+  const parTitre = await accountOwns(epicOffer('nouveau', 'Celeste'), { fetch });
+  assert.equal(parTitre.owns, true);
+  assert.equal(await accountOwns(epicOffer('nouveau', 'Celeste II'), { fetch }), null, 'un autre jeu au nom voisin');
+  assert.equal(await accountOwns(epicOffer('nouveau', 'Hades'), { fetch: reponseJson(commandes([{ offerId: 'x', description: 'Hades II' }])) }), null);
+});
+
+test('tout ce qu\'Epic repond d\'autre est « on ne sait pas », et ne bloque rien', async () => {
+  const offre = epicOffer('abc', 'Hades');
+  const cas = {
+    'verification (HTML)': reponseJson('<html><title>Verification</title></html>'),
+    'mur anti-robot (403)': reponseJson({ message: 'blocked' }, { ok: false }),
+    'forme inattendue': reponseJson({ transactions: [] }),
+    'corps vide': reponseJson(''),
+    'reseau coupe': async () => { throw new Error('Failed to fetch'); },
+    'commande remboursee': reponseJson({ orders: [{ orderType: 'REFUND', items: [{ offerId: 'abc', description: 'Hades' }] }] }),
+    'compte sans commande': reponseJson({ orders: [] }),
+  };
+  for (const [nom, fetch] of Object.entries(cas)) assert.equal(await accountOwns(offre, { fetch }), null, nom);
+  assert.equal(await accountOwns(offre, {}), null, 'sans fetch injecte : aucune requete');
+  assert.equal(await accountOwns({ ...offre, sourceId: null, title: '' }, { fetch: reponseJson(commandes([{ offerId: 'abc', description: 'Hades' }])) }), null);
+});
+
+test('l\'historique Epic est lu au plus EPIC_PAGES fois, une seule fois pour tout un cycle', async () => {
+  const vus = [];
+  let n = 0;
+  const fetch = async (url) => { vus.push(url); n++; return reponseJson({ ...commandes([{ offerId: `o${n}`, description: `Jeu ${n}` }]), nextPageToken: `t${n}` })(); };
+  const memo = new Map();
+  const notes = [];
+  const a = await accountOwns(epicOffer('o1', 'Jeu 1'), { fetch, memo, note: (t) => notes.push(t) });
+  const b = await accountOwns(epicOffer('o3', 'Jeu 3'), { fetch, memo, note: (t) => notes.push(t) });
+  const c = await accountOwns(epicOffer('o9', 'Jeu 9'), { fetch, memo, note: (t) => notes.push(t) });
+  assert.equal(a.owns, true);
+  assert.equal(b.owns, true);
+  assert.equal(c, null, 'au-dela des pages lues : on ne sait pas');
+  assert.equal(vus.length, EPIC_PAGES);
+  assert.equal(vus[1], epicPageUrl('t1'), 'la page suivante par son jeton');
+  assert.equal(notes.length, 1, 'une ligne de journal par lecture');
+  assert.match(notes[0], /3 article/);
+  // Sans table commune, chaque question relit.
+  vus.length = 0;
+  await accountOwns(epicOffer('o1', 'Jeu 1'), { fetch });
+  await accountOwns(epicOffer('o1', 'Jeu 1'), { fetch });
+  assert.equal(vus.length, EPIC_PAGES * 2);
+});
+
+test('une page suivante illisible n\'efface pas ce qui a ete lu ; la pagination ne tourne pas en rond', async () => {
+  let n = 0;
+  const fetch = async () => {
+    n++;
+    return n === 1 ? reponseJson({ ...commandes([{ offerId: 'a1', description: 'Hades' }]), nextPageToken: 't1' })() : reponseJson('<html>mur</html>')();
+  };
+  const r = await accountOwns(epicOffer('a1', 'Hades'), { fetch });
+  assert.equal(r.owns, true);
+  assert.equal(n, 2);
+  let m = 0;
+  const boucle = async () => { m++; return reponseJson({ ...commandes([]), nextPageToken: 'meme' })(); };
+  await accountOwns(epicOffer('a1', 'Hades'), { fetch: boucle });
+  assert.equal(m, 2, 'un jeton deja vu arrete la lecture');
+  const book = await epicBook(async () => null, {});
+  assert.equal(book.readable, false);
+});
+
+test('la ligne de journal dit quand Epic ne se laisse pas lire', async () => {
+  const notes = [];
+  await accountOwns(epicOffer('a', 'Hades'), { fetch: reponseJson('<html>verification</html>'), note: (t) => notes.push(t) });
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /illisible/);
+  await accountOwns(epicOffer('a', 'Hades'), { fetch: reponseJson(commandes([])), note: () => { throw new Error('journal casse'); } });
 });
 
 test('la collection importee repond d\'abord, sans requete ; une collection jamais importee ne dit rien', async () => {
@@ -286,6 +394,32 @@ test('un clic de l\'utilisateur ignore la memoire, mais le compte du magasin res
   const r = await cycle(fc2, { [hades.catalogKey]: hades }, { claim: s2.claim, forced: true, ownerCheck: async () => ({ owns: true, via: 'account', note: 'x' }) });
   assert.deepEqual(s2.appels, []);
   assert.equal(r.catalog['gog:hades'].verdict, VERDICTS.OWNED);
+});
+
+test('un jeu Epic deja dans les commandes du compte : aucun onglet, offre close, une seule lecture du cycle', async () => {
+  const fc = fakeChrome({ now: NOW });
+  const a = epicOffer('abc', 'Hades');
+  const b = epicOffer('def', 'Celeste');
+  const c = epicOffer('ghi', 'Inedit');
+  let lectures = 0;
+  const fetch = async () => { lectures++; return reponseJson(commandes([{ offerId: 'abc', description: 'Hades' }, { offerId: 'def', description: 'Celeste' }]))(); };
+  const { appels, claim } = scenario([VERDICTS.CLAIMED]);
+  const lignes = [];
+  const r = await cycle(fc, { [a.catalogKey]: a, [b.catalogKey]: b, [c.catalogKey]: c }, { claim, stores: ['epic'], fetch, record: (niveau, texte) => lignes.push(texte) });
+  assert.deepEqual(appels.map((x) => x.key), ['epic:ghi'], 'seul le jeu inconnu du compte ouvre un onglet');
+  assert.equal(lectures, 1, 'l\'historique est lu une fois pour trois offres');
+  assert.equal(r.catalog['epic:abc'].verdict, VERDICTS.OWNED);
+  assert.equal(r.catalog['epic:abc'].state, STATES.RESOLVED);
+  assert.equal(r.catalog['epic:def'].verdict, VERDICTS.OWNED);
+  assert.ok(lignes.some((t) => /Epic : \d+ article/.test(t)), 'la lecture est dans le journal');
+});
+
+test('Epic illisible : la page tranche comme avant, aucune offre n\'est close a tort', async () => {
+  const fc = fakeChrome({ now: NOW });
+  const a = epicOffer('abc', 'Hades');
+  const { appels, claim } = scenario([VERDICTS.CLAIMED]);
+  await cycle(fc, { [a.catalogKey]: a }, { claim, stores: ['epic'], fetch: reponseJson('<html>verification</html>') });
+  assert.deepEqual(appels.map((x) => x.key), ['epic:abc']);
 });
 
 test('Steam garde son propre chemin : le compte n\'est jamais interroge pour lui', async () => {

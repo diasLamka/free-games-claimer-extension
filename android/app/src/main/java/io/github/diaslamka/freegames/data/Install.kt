@@ -16,8 +16,10 @@ import java.io.File
  * du systeme (PackageInstaller) : Android reverifie la signature, et refuse un
  * APK qui n'est pas signe par la meme cle que l'appli installee.
  *
- *  - Android 12 et plus, apres une premiere installation faite par l'appli :
- *    le systeme peut mettre a jour SANS demander (USER_ACTION_NOT_REQUIRED).
+ *  - Android 12 et plus, quand l'appli est l'installateur d'origine de la version en place ET declare
+ *    UPDATE_PACKAGES_WITHOUT_USER_ACTION (manquante jusqu'a 1.25.0 : la confirmation revenait toujours) :
+ *    le systeme peut mettre a jour SANS demander (USER_ACTION_NOT_REQUIRED). La premiere mise a jour faite
+ *    depuis l'appli demande donc encore ; les suivantes, non. Voir [silence].
  *  - Sinon, il affiche sa fenetre « Mettre a jour cette appli ? » : un geste.
  *
  * Il faut que l'utilisateur ait autorise, UNE fois, cette appli a installer des
@@ -32,6 +34,43 @@ object Install {
     var visible: Boolean = false
 
     fun allowed(context: Context): Boolean = context.packageManager.canRequestPackageInstalls()
+
+    /** Ce qu'Android fera de la PROCHAINE mise a jour (1.26.0). */
+    enum class Silence {
+        /** Avant Android 12 : le systeme demande toujours. */
+        ASKS_ALWAYS,
+
+        /** L'autorisation « Installer des applis inconnues » n'est pas donnee. */
+        NEEDS_PERMISSION,
+
+        /** Installee par autre chose que cette appli (navigateur, gestionnaire de fichiers) : UNE confirmation, puis plus. */
+        FIRST_TIME,
+
+        /** Cette appli est l'installateur d'origine : Android peut mettre a jour sans demander. */
+        SILENT,
+    }
+
+    /**
+     * Android 12+ saute la confirmation quand l'installateur d'origine de la version en place est celui qui
+     * installe la suivante (et que la permission UPDATE_PACKAGES_WITHOUT_USER_ACTION est declaree). L'installateur
+     * d'origine devient cette appli des qu'elle a installe UNE mise a jour elle-meme.
+     */
+    fun silence(sdk: Int, allowed: Boolean, installer: String?, self: String): Silence = when {
+        sdk < 31 -> Silence.ASKS_ALWAYS
+        !allowed -> Silence.NEEDS_PERMISSION
+        installer == self -> Silence.SILENT
+        else -> Silence.FIRST_TIME
+    }
+
+    /** Qui a installe cette appli en dernier (le paquet de l'installateur), ou null quand Android ne le dit pas. */
+    fun installerOfRecord(context: Context): String? = try {
+        if (Build.VERSION.SDK_INT >= 30) context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+        else @Suppress("DEPRECATION") context.packageManager.getInstallerPackageName(context.packageName)
+    } catch (_: Exception) {
+        null
+    }
+
+    fun silence(context: Context): Silence = silence(Build.VERSION.SDK_INT, allowed(context), installerOfRecord(context), context.packageName)
 
     /** L'ecran du systeme ou l'utilisateur autorise cette appli a installer. */
     fun allowIntent(context: Context): Intent =

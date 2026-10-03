@@ -27,6 +27,7 @@ import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AccountState
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
+import io.github.diaslamka.freegames.model.OracleNote
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.notify.Notifier
@@ -379,6 +380,8 @@ class ClaimSession(
         val family = member != null
         // Le relais d'abord : ce que le PC vient de prendre n'est pas retente.
         if (!family) runCatching { RelayLink.sync(context, System.currentTimeMillis()) }
+        // L'historique des commandes Epic se lit UNE fois pour tout ce passage, pas une fois par offre (1.26.0).
+        val ownerMemo = OwnedCheck.Memo()
         try {
             for ((i, offer) in todo.withIndex()) {
                 if (System.currentTimeMillis() > deadline) break
@@ -394,7 +397,7 @@ class ClaimSession(
                 /* DEJA A TOI ? On le demande au magasin avant d'ouvrir la moindre page (1.24.0) : un jeu pris a la
                    main, ou que la page ne dit plus « a toi » (« Jouer »), ne rouvre rien et ne redemande rien. */
                 if (!family && offer.store in OwnedCheck.ORACLE_STORES) {
-                    val preuve = OwnedCheck.accountOwns(Graph.http, offer, st.owned)
+                    val preuve = OwnedCheck.accountOwns(Graph.http, offer, st.owned, ownerMemo) { reading -> noteReading(offer.store, reading) }
                     if (preuve != null) {
                         recordOwned(offer, preuve.note)
                         continue
@@ -468,6 +471,12 @@ class ClaimSession(
         }
         Notifier.claimed(context, won, memberName)
         return won
+    }
+
+    /** Le magasin s'est-il laisse lire ? Note pour la page « Sante » (1.26.0), sans bloquer quoi que ce soit. */
+    private suspend fun noteReading(store: String, reading: OwnedCheck.Reading) {
+        val note = OracleNote(System.currentTimeMillis(), reading == OwnedCheck.Reading.READ)
+        Graph.store.update { s -> s.copy(oracle = s.oracle + (store to note)) }
     }
 
     /** Le jeu est a toi (le compte du magasin, ou toi, l'a dit) : l'offre est close et le jeu memorise (1.24.0). */

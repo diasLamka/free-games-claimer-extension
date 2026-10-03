@@ -401,6 +401,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                         }
                     },
                     onCheckNow = { refresh() },
+                    onClaimNow = { tab = 0; claim(emptySet()) },
                     onRelayScan = { scanRelay() },
                     onRelayCode = { code -> pairRelay(code) },
                     onRelaySync = {

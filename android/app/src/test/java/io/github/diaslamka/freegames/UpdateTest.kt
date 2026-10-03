@@ -3,6 +3,8 @@ package io.github.diaslamka.freegames
 import io.github.diaslamka.freegames.data.AppUpdate
 import io.github.diaslamka.freegames.data.AppUpdate.Reason
 import io.github.diaslamka.freegames.data.AppUpdate.Status
+import io.github.diaslamka.freegames.data.Install
+import io.github.diaslamka.freegames.data.Install.Silence
 import io.github.diaslamka.freegames.data.UpdateToken
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -287,5 +289,25 @@ class UpdateNetTest {
         assertTrue(r.rateLimited)
         AppUpdate.OkNet(client, api).releases(null)
         assertNull("sans jeton, aucun en-tete d'autorisation", seen.last().headers["authorization"])
+    }
+    /* ----------------------------------------- la confirmation (1.26.0) */
+
+    @Test
+    fun androidSkipsTheConfirmationOnlyWhenTheAppIsItsOwnInstaller() {
+        val me = "io.github.diaslamka.freegames"
+        assertEquals("avant Android 12 le systeme demande toujours", Silence.ASKS_ALWAYS, Install.silence(30, true, me, me))
+        assertEquals("sans l'autorisation, rien ne s'installe", Silence.NEEDS_PERMISSION, Install.silence(34, false, me, me))
+        assertEquals("installee par le navigateur : une confirmation, une fois", Silence.FIRST_TIME, Install.silence(34, true, "com.android.chrome", me))
+        assertEquals("installateur inconnu : pareil", Silence.FIRST_TIME, Install.silence(34, true, null, me))
+        assertEquals("installee par l'appli : sans confirmation", Silence.SILENT, Install.silence(34, true, me, me))
+        assertEquals("Android 12 pile", Silence.SILENT, Install.silence(31, true, me, me))
+    }
+
+    @Test
+    fun theManifestDeclaresTheRightToUpdateWithoutAsking() {
+        // Oubliee jusqu'a 1.25.0 : Android 12+ demandait alors TOUJOURS confirmation, meme pour l'installateur d'origine.
+        val manifest = java.io.File("src/main/AndroidManifest.xml").readText()
+        assertTrue(manifest.contains("android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION"))
+        assertTrue(manifest.contains("android.permission.REQUEST_INSTALL_PACKAGES"))
     }
 }

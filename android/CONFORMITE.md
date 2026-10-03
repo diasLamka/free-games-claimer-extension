@@ -28,14 +28,17 @@ exemption d'optimisation de la batterie, installation d'autres applis.
 
 - Uniquement **WorkManager**, avec reseau requis : toutes les 1 a 12 heures,
   et a l'heure d'ouverture annoncee par Epic.
-- La **mise a jour depuis l'appli** (1.20.0 ; automatique en fond depuis la 1.25.0, coupable) demande `REQUEST_INSTALL_PACKAGES`
-  (le reglage Android « Installer des applis inconnues », que l'utilisateur
-  accorde une fois) : c'est ce qui permet de passer l'APK de la release au
-  programme d'installation du systeme. Elle est reservee a une appli
-  distribuee HORS de Google Play, comme celle-ci -- Google Play restreint cette
-  permission --, ne s'execute que sur un geste depuis les reglages, verifie la
-  signature avant de proposer quoi que ce soit, et n'installe jamais rien en
-  arriere-plan. La veille ne fait que prevenir.
+- La **mise a jour depuis l'appli** (1.20.0 ; sur l'accueil et automatique en fond depuis la 1.25.0, coupable
+  dans les Reglages) demande `REQUEST_INSTALL_PACKAGES` (le reglage Android « Installer des applis
+  inconnues », que l'utilisateur accorde une fois) : c'est ce qui permet de passer l'APK de la release au
+  programme d'installation du systeme. Depuis la 1.26.0 elle declare aussi
+  `UPDATE_PACKAGES_WITHOUT_USER_ACTION` (permission *normale*, sans fenetre) : elle laisse seulement Android
+  sauter sa confirmation quand l'appli est l'installateur d'origine de sa propre mise a jour -- elle ne
+  donne aucun pouvoir sur une autre appli. Cette installation est reservee a une appli distribuee HORS de
+  Google Play, comme celle-ci -- Google Play restreint ces permissions --, ne s'applique qu'a la release
+  publiee par le depot, et verifie la taille, le SHA-256, le nom de paquet, la version et la signature avant de
+  rien passer a Android. Sans l'autorisation d'installer, ou si le reglage est coupe, rien ne s'installe : la
+  veille ne fait que prevenir.
 - La **recuperation ecran eteint** (coupee par defaut, activee avec une
   explication) est une tache WorkManager ordinaire : dix minutes au plus, un
   jeu a la fois, aucune activite lancee depuis l'arriere-plan, aucune fenetre

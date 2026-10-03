@@ -12,7 +12,13 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.diaslamka.freegames.data.AppUpdate
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AppState
+import io.github.diaslamka.freegames.model.AccountState
+import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.model.Attempt
+import io.github.diaslamka.freegames.model.OracleNote
+import io.github.diaslamka.freegames.model.SourceStatus
+import io.github.diaslamka.freegames.ui.SECTION_HEALTH
+import io.github.diaslamka.freegames.ui.SettingsScreen
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Settings
@@ -33,8 +39,8 @@ import org.robolectric.shadows.ShadowLooper
 import java.util.Locale
 
 /**
- * L'accueil (1.25.0) en images : les trois facons de poser les jeux, sans bouton « Recuperer », et le bandeau
- * de mise a jour.
+ * L'accueil (1.25.0, 1.26.0) en images : les trois facons de poser les jeux, sans bouton de recuperation, le bandeau
+ * de mise a jour, et la page « Sante » des Reglages.
  *
  *   ./gradlew testDebugUnitTest -Pscreens=true --tests '*TilesScreenshotTest*'
  */
@@ -116,8 +122,33 @@ class TilesScreenshotTest {
     @Config(qualifiers = "fr-rFR-w411dp-h1100dp-night-xxhdpi")
     fun grilleSombreAvecMiseAJour() {
         AppUpdate.status.value = AppUpdate.Status.Available(
-            AppUpdate.Release("1.25.0", "app-v1.25.0", 1, "free-games-claimer-android-1.25.0.apk", 1, null, ""),
+            AppUpdate.Release("1.26.0", "app-v1.26.0", 1, "free-games-claimer-android-1.26.0.apk", 1, null, ""),
         )
         shoot("T-4-grille-sombre-maj", dark = true, games(state(Tiles.GRID)))
+    }
+
+    @Test
+    @Config(qualifiers = "fr-rFR-w411dp-h1500dp-xxhdpi")
+    fun sante() {
+        val base = state(Tiles.CARDS)
+        val s = base.copy(
+            accounts = mapOf(
+                Stores.EPIC to AccountState(Accounts.OK, now, name = "Lamka"),
+                Stores.GOG to AccountState(Accounts.OK, now),
+                Stores.AMAZON to AccountState(Accounts.LOGGED_OUT, now),
+                Stores.STEAM to AccountState(Accounts.PRESENT, now),
+            ),
+            oracle = mapOf(Stores.GOG to OracleNote(now - 2 * 3_600_000L, true), Stores.EPIC to OracleNote(now - 3_600_000L, false)),
+            sources = mapOf("epic-api" to SourceStatus(now, true, 2), "gamerpower" to SourceStatus(now, false, error = "HTTP 503")),
+            steamOwned = List(212) { it.toString() },
+            lastCheck = now - 12 * 60_000L,
+            library = base.library + ("gog:old" to LibraryEntry(Stores.GOG, "old", "Cuphead", null, null, null, now - 4 * 86_400_000L, status = Verdicts.CLAIMED)),
+        )
+        shoot("T-5-sante", dark = false) {
+            SettingsScreen(
+                s, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {},
+                open = listOf(SECTION_HEALTH),
+            )
+        }
     }
 }

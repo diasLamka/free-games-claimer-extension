@@ -1087,8 +1087,8 @@ export async function claimWhatCanBe({
    * injecte juste au-dessus. */
   claim = claimOffer,
   /* « Est-ce deja a vous ? », demande au magasin AVANT d'ouvrir un onglet (2.106.0).
-     Rend { owns: true, via, note } ou null. Par defaut : le compte GOG (voir
-     watch/owned-check.js). Remplacable en test, comme `claim`. */
+     Rend { owns: true, via, note } ou null. Par defaut : le compte GOG, et l'historique
+     des commandes Epic (voir watch/owned-check.js). Remplacable en test, comme `claim`. */
   ownerCheck = undefined,
 }) {
   const next = { ...catalog };
@@ -1110,7 +1110,9 @@ export async function claimWhatCanBe({
   const ownedDeja = !forced ? dejaKeys(deja) : null;
   const owned = ownedLib || (ownedDeja && ownedDeja.size) ? new Set([...(ownedLib || []), ...(ownedDeja || [])]) : null;
   const ownedIds = collection ? ownedStoreKeys(collection) : null;
-  const askOwner = ownerCheck || ((o) => accountOwns(o, { fetch: fetchImpl, collection }));
+  /* Une table par cycle : l'historique des commandes Epic se lit UNE fois, pas une fois par offre (2.107.0). */
+  const ownerMemo = new Map();
+  const askOwner = ownerCheck || ((o) => accountOwns(o, { fetch: fetchImpl, collection, memo: ownerMemo, note: (t) => record('info', t) }));
 
   const tri = claimCandidates(next, filters, {
     claimableStores, watchedStores, now, owned, ownedIds,

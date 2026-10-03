@@ -13,6 +13,10 @@
          reglages Android (« Installer des applis inconnues »). Rien ne s'installe
          en arriere-plan. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Sans cette permission (1.26.0), Android 12 et plus demandent TOUJOURS confirmation, meme quand l'appli
+         est l'installateur d'origine : c'est elle qui lui permet de mettre a jour sans geste. Normale,
+         accordee a l'installation, aucune fenetre. -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <!-- WorkManager la declare pour ses taches de premier plan. L'appli n'en
          lance jamais (la recuperation de fond est une tache ordinaire) : la

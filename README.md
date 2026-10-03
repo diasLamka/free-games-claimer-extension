@@ -123,14 +123,16 @@ referme l'onglet et reessaie. Voir le CHANGELOG 2.102.0.
 
 Depuis la 2.106.0, une offre n'est plus redemandee a l'infini. **Le magasin est
 interroge avant tout onglet** : sur GOG, la bibliotheque du compte (une page, avec
-votre session) dit si le titre -- identique, editions pres -- est deja a vous ; sinon
+votre session) dit si le titre -- identique, editions pres -- est deja a vous ; sur Epic
+(depuis la 2.107.0), l'historique des commandes du compte (trois pages au plus, une
+fois par cycle) ; Steam lit deja sa liste de jeux possedes a chaque veille ; sinon
 l'extension ne sait pas, et la page tranche comme avant. **« Montrez-moi le bouton »
 n'est pose qu'une fois par offre**, et seulement s'il y a un controle a montrer : une
 page qui n'offre plus rien (offre finie, jeu deja a vous dont la page ne dit que
 « Jouer ») donne le verdict `gone`, confirme deux fois a des heures d'ecart avant de
 clore l'offre. Le bandeau propose aussi **« C'est deja a moi »** et **« Plus offert »**.
 Ce que le magasin ou vous avez dit posseder est garde a part (`veille:deja`, hors
-bilan et hors carnet). Voir le CHANGELOG 2.106.0.
+bilan et hors carnet). Voir le CHANGELOG 2.106.0 et 2.107.0.
 
 ### Piege ou bonne affaire ?
 

@@ -435,7 +435,7 @@ export function epicPageUrl(token) {
 /* Une commande qui ANNULE une acquisition. Les valeurs reelles de `orderType`
    ne sont pas mesurees : le rapport les compte, et c'est lui qui dira si ce
    motif en oublie une. */
-const UNDONE = /refund|chargeback|revok|cancel/i;
+export const UNDONE = /refund|chargeback|revok|cancel/i;
 
 export async function importEpic({ fetch: fetchImpl = fetch, pause = defaultPause, maxPages = MAX_PAGES } = {}) {
   const lines = [`Epic -- ${EPIC_ORDERS_URL}`];

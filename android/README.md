@@ -22,7 +22,8 @@ web emballee.
 | **Navigateur adaptatif, GOG en deux pages** (1.18.0) | Sur GOG, la fiche d'un jeu en giveaway (« Go to giveaway ») mene a une seconde page (« Ajouter a la bibliotheque ») : le moteur lit maintenant la page, suit le lien dans le meme onglet, reprend sur la page suivante, ne touche jamais a ce qui coute de l'argent, ne tient une reussite que sur une preuve et retient ce qui a marche. Meme moteur que l'extension. |
 | **Le moteur se repare avec toi** (1.21.0) | Quand un magasin change son bouton et que le moteur ne le reconnait plus, la page reste ouverte dans le panneau : un toucher sur le bon bouton, et il s'en souvient (la forme du bouton aussi, pas seulement son mot). En fond, une notification te le demande. Meme moteur que l'extension. |
 | **Piège ou bonne affaire ?** (1.22.0) | Une lettre de A à D sous chaque jeu offert ; un appui donne les raisons (gratuit de toute façon, démo, DLC sans son jeu de base, valeur gonflée, avis Steam). Dans « Récupérés », le grand chiffre dit ce qui est vérifié, à confirmer, écarté. Même calcul que l'extension. |
-| **L'accueil plus clair** (1.25.0) | Plus de bouton « Récupérer » sur chaque jeu (un seul « Tout récupérer » quand quelque chose attend) ; **trois façons de poser les jeux** — grandes tuiles, liste, grille — choisies d'un toucher à gauche des magasins ; la **mise à jour** à la une de l'accueil (un bandeau, un bouton) et **automatique** en fond, une fois qu'Android l'a autorisée. |
+| **L'accueil plus clair** (1.25.0, 1.26.0) | Plus de bouton « Récupérer » sur les jeux, ni de « Tout récupérer » sur l'accueil depuis la 1.26.0 (« Récupérer maintenant » vit dans Réglages › Récupération) ; **trois façons de poser les jeux** — grandes tuiles, liste, grille — choisies d'un toucher à gauche des magasins ; la **mise à jour** à la une de l'accueil (un bandeau, un bouton) et **automatique** en fond, une fois qu'Android l'a autorisée. |
+| **Santé** (1.26.0) | Réglages › Santé : par magasin, la session, la dernière récupération, le dernier échec depuis, ce qui attend, et si le contrôle du compte (GOG, Epic) s'est laissé lire. Epic est maintenant interrogé avant l'onglet, comme GOG. |
 | **Un jeu qu'on possède ne se récupère qu'une fois** (1.24.0) | Avant d'ouvrir la page d'un jeu GOG, l'appli demande à ton compte (la session de la page de connexion de l'appli) si le titre — identique, éditions près — est déjà à toi : si oui, rien n'est ouvert. « Montre-moi le bouton » n'est posé qu'une fois par offre (et jamais en fond), une page qui n'offre plus rien est confirmée deux fois avant de clore l'offre, et le panneau propose « C'est déjà à moi » / « Plus offert ». |
 | **Ta soirée choisit le jeu** (1.23.0) | Dans « Ce soir je joue à… », la puce **Agenda** : l'appli lit les heures libres de ta soirée dans l'agenda du téléphone (début et fin des événements seulement, jamais les titres, rien ne quitte le téléphone) et propose le jeu qui y tient d'après le temps que les joueurs Steam y passent (estimation). Permission `READ_CALENDAR` demandée à ce toucher seulement. |
 | **Mise a jour depuis l'appli** (1.20.0) | *Reglages → A propos* : chercher, telecharger, verifier (taille, SHA-256, signature) et installer la derniere version sans repasser par le navigateur ; une notification previent quand elle existe. Depot prive : un jeton GitHub en lecture seule, chiffre, facultatif. |
@@ -194,10 +195,13 @@ Deux reglages, une seule fois :
   chiffre par le Keystore Android, ne part que vers `api.github.com`, n'est ni
   exporte ni sauvegarde.
 
-Sur Android 12 et plus, apres une premiere mise a jour faite par l'appli, le
-systeme peut installer les suivantes **sans demander**; ailleurs il affiche sa
-fenetre « Mettre a jour cette appli ? » : un geste. Le telechargement a la main
-(ci-dessus) reste possible.
+Sur Android 12 et plus, le systeme peut installer une mise a jour **sans demander**
+quand l'appli est l'installateur d'origine de la version en place (et, depuis la 1.26.0,
+qu'elle declare `UPDATE_PACKAGES_WITHOUT_USER_ACTION`, qui manquait). Une appli installee
+par le navigateur ou un gestionnaire de fichiers demande donc **une fois** ; la mise a jour
+suivante, faite par l'appli, peut se faire seule. Ailleurs, ou si Android en decide autrement,
+il affiche sa fenetre « Mettre a jour cette appli ? » : un geste. Reglages > Mise a jour dit
+ce qui est attendu. Le telechargement a la main (ci-dessus) reste possible.
 
 Depuis la 1.25.0, la mise a jour est **sur l'accueil** (un bandeau et un bouton) et
 **automatique** (reglage *Mise a jour automatique*, sur par defaut) : la veille de fond

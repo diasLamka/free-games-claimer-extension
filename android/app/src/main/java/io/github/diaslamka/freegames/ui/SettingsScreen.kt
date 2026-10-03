@@ -42,12 +42,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.BuildConfig
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.AppUpdate
 import io.github.diaslamka.freegames.data.UpdateRunner
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.Install
+import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.UpdateToken
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.model.AppState
@@ -71,6 +74,8 @@ fun SettingsScreen(
     onExport: () -> Unit,
     onClearSessions: () -> Unit,
     onCheckNow: () -> Unit,
+    /** Recuperer ce qui attend, maintenant (1.26.0) : l'accueil n'a plus de bouton pour cela. */
+    onClaimNow: () -> Unit = {},
     onRelayScan: () -> Unit = {},
     onRelayCode: (String) -> Unit = {},
     onRelaySync: () -> Unit = {},
@@ -91,6 +96,7 @@ fun SettingsScreen(
        a perdu sa session --, parce que c'est la qu'il y a quelque chose a faire. */
     val lost = Accounts.STORES.any { state.accounts[it]?.status == Accounts.LOGGED_OUT }
     var opened by rememberSaveable { mutableStateOf(open.ifEmpty { if (lost) listOf(SECTION_ACCOUNTS) else emptyList() }) }
+    val title_health = stringResource(R.string.section_health)
     val title_accounts = stringResource(R.string.accounts)
     val title_claiming = stringResource(R.string.section_claiming)
     val title_watch = stringResource(R.string.section_watch)
@@ -107,6 +113,11 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
+            // La page « Sante » (1.26.0), en premier : un probleme se lit avant les reglages. Le chiffre : les magasins a regarder.
+            val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
+            fold(SECTION_HEALTH, title_health, health.problems.takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
+                HealthGroup(state, now)
+            }
             fold(SECTION_ACCOUNTS, title_accounts, Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }, isOpen(SECTION_ACCOUNTS), ::toggle) {
                 Group {
                     Accounts.STORES.forEach { store -> AccountRow(store, state, now, onLogin) }
@@ -114,6 +125,8 @@ fun SettingsScreen(
             }
             fold(SECTION_CLAIMING, title_claiming, null, isOpen(SECTION_CLAIMING), ::toggle) {
                 Group {
+                    val waiting = Rules.pending(state, now).size
+                    if (waiting > 0) BrutButton(stringResource(R.string.claim_now) + " ($waiting)", onClaimNow, icon = Icons.Rounded.Download)
                     Toggle(stringResource(R.string.set_claim_on_open), null, s.claimOnOpen) { v -> onSettings { it.copy(claimOnOpen = v) } }
                     Toggle(stringResource(R.string.set_background), null, s.claimInBackground) { v ->
                         if (v) backgroundInfo = true else onSettings { it.copy(claimInBackground = false) }
@@ -302,6 +315,18 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
         }
     }
     Toggle(stringResource(R.string.set_auto_update), stringResource(R.string.set_auto_update_hint), settings.autoUpdate) { v -> onSettings { it.copy(autoUpdate = v) } }
+    // Ce qu'Android fera de la prochaine mise a jour (1.26.0) : on le lit, on ne le promet pas.
+    Text(
+        stringResource(
+            when (Install.silence(context)) {
+                Install.Silence.ASKS_ALWAYS -> R.string.update_silence_always
+                Install.Silence.NEEDS_PERMISSION -> R.string.update_silence_permission
+                Install.Silence.FIRST_TIME -> R.string.update_silence_first
+                Install.Silence.SILENT -> R.string.update_silence_ok
+            },
+        ),
+        style = MaterialTheme.typography.bodySmall, color = Color.Black,
+    )
     Toggle(stringResource(R.string.set_notify_update), null, settings.notifyUpdate) { v -> onSettings { it.copy(notifyUpdate = v) } }
 
     Text(
@@ -390,6 +415,7 @@ private fun RelayGroup(
     }
 }
 
+const val SECTION_HEALTH = "health"
 const val SECTION_ACCOUNTS = "accounts"
 const val SECTION_CLAIMING = "claiming"
 const val SECTION_WATCH = "watch"
@@ -405,7 +431,7 @@ private fun LazyListScope.fold(key: String, title: String, count: Int?, open: Bo
 }
 
 @Composable
-private fun Group(content: @Composable () -> Unit) {
+internal fun Group(content: @Composable () -> Unit) {
     val b = LocalBrut.current
     Column(
         Modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp).padding(14.dp),

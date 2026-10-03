@@ -27,7 +27,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
@@ -158,10 +157,8 @@ fun GamesScreen(
                 if (next != null) item("timecode", span = full) {
                     Timecode(next.end!!, next.shownTitle, stringResource(R.string.timecode_label), { d -> context.getString(R.string.timecode_days, d.toInt()) })
                 }
-                // Un seul geste, sur une ligne (1.25.0) : « Tout recuperer (4) ». L'appli recupere deja toute seule ; ceci relance ce qui reste.
-                if (pending.isNotEmpty() && !claiming) item("claim", span = full) {
-                    BrutButton(stringResource(R.string.claim_all) + " (${pending.size})", { onClaim(emptySet()) }, icon = Icons.Rounded.Download)
-                }
+                // Plus aucun bouton de recuperation sur l'accueil (1.26.0) : l'appli recupere a l'ouverture et en fond ;
+                // « Recuperer maintenant » vit dans Reglages > Recuperation, et dans la notification.
                 if (needLogin.isNotEmpty()) item("login", span = full) {
                     Notice(
                         stringResource(R.string.need_login, needLogin.joinToString(", ") { Stores.label(it) }),

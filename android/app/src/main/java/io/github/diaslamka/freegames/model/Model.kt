@@ -122,6 +122,10 @@ data class LibraryEntry(
 @Serializable
 data class ImportedWish(val title: String, val store: String, val id: String? = null)
 
+/** Ce que la derniere lecture du compte d'un magasin a donne (1.26.0) : a quelle heure, et si la reponse etait lisible. */
+@Serializable
+data class OracleNote(val at: Long, val readable: Boolean)
+
 /** Les essais de recuperation d'une offre. */
 @Serializable
 data class Attempt(
@@ -295,6 +299,8 @@ data class AppState(
      * le registre, donc ni dans le bilan ni dans l'annee.
      */
     val deja: Map<String, Long> = emptyMap(),
+    /** Le controle du compte, par magasin (1.26.0) : la derniere lecture s'est-elle faite ? La page « Sante » le dit. */
+    val oracle: Map<String, OracleNote> = emptyMap(),
     val ratings: Map<String, Rating> = emptyMap(),
     /** « Piege ou bonne affaire ? » (1.22.0) : la fiche de prix Steam, par « app:<id> ». */
     val checks: Map<String, PriceCheck> = emptyMap(),

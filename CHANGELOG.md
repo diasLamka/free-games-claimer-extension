@@ -4,6 +4,58 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.107.0 / appli 1.26.0 -- 2026-10-03
+
+**La mise a jour sans confirmation (une permission manquait), plus aucun bouton de recuperation sur l'accueil, le compte Epic interroge avant l'onglet, et une page « Sante » par magasin**
+
+Signale : « j'ai toujours la confirmation avant la maj ».
+
+- **Pourquoi la confirmation revenait** (`AndroidManifest.xml`, `data/Install.kt`). Depuis Android 12,
+  l'installateur d'origine d'une appli peut la mettre a jour sans rien demander, a condition de
+  declarer `UPDATE_PACKAGES_WITHOUT_USER_ACTION` (une permission *normale*, accordee a l'installation, sans
+  fenetre) -- la documentation de `setRequireUserAction` la liste parmi les conditions. L'appli ne la
+  declarait pas : meme installee par elle-meme, Android demandait toujours. La 1.25.0 annoncait le
+  contraire (« le systeme installe sans rien demander ») ; c'etait faux faute de cette ligne. Declaree
+  maintenant, et un test lit le manifeste pour qu'elle ne disparaisse pas.
+- **Ce qu'Android fera de la prochaine mise a jour, dit dans les Reglages** (`Install.silence`). Quatre
+  cas, lus et non promis : avant Android 12 (il demande toujours) ; l'autorisation « Installer des
+  applis inconnues » manque ; l'appli a ete installee par autre chose (navigateur, gestionnaire de
+  fichiers, Telegram) -- UNE confirmation, car l'installateur d'origine devient cette appli des
+  qu'elle a installe elle-meme une mise a jour ; ou l'appli est son propre installateur d'origine --
+  aucune confirmation attendue. **Donc : la mise a jour 1.25.0 -> 1.26.0 demandera encore** (c'est la 1.25.0,
+  sans la permission, qui installe). Faite PAR L'APPLI (bandeau « Mettre a jour »), la 1.26.0 devient son propre
+  installateur d'origine : la suivante peut se faire seule. Faite en ouvrant l'APK a la main, Android garde le
+  navigateur ou le gestionnaire de fichiers comme installateur et demandera encore une fois. Les Reglages
+  disent lequel des quatre cas est le bon.
+- **« Tout recuperer » quitte l'accueil.** Il restait UN bouton ; l'appli recupere deja a l'ouverture
+  et en fond. Le geste vit maintenant dans Reglages > Recuperation (« Recuperer maintenant (N) »),
+  dans la notification et sur l'icone de l'appli.
+- **Epic : le compte est interroge avant l'onglet** (`watch/owned-check.js`, `OwnedCheck.kt`). L'historique des
+  commandes du compte (la page « Transactions », ce que lit deja « Tout importer ») : au plus trois pages, lues
+  UNE fois par cycle quel que soit le nombre d'offres Epic. Un jeu offert deja reclame y figure comme une
+  commande a zero ; on le reconnait a l'identifiant de l'offre, ou a un titre IDENTIQUE (editions et casse
+  pres). Commande remboursee ou annulee : ecartee. Epic repond autre chose que du JSON (verification,
+  mur anti-robot, session absente) : on ne sait pas, rien n'est bloque, une ligne du journal le dit.
+  Meme verdict `owned` que GOG : definitif, ni onglet ni jeton du plafond horaire.
+- **Steam et Amazon : rien de neuf, et c'est dit.** Steam n'en a pas besoin : sa liste de jeux possedes
+  (`dynamicstore/userdata`, par identifiant) est lue a chaque veille et ecarte l'offre avant qu'elle soit
+  candidate. Amazon (Prime Gaming) n'a pas d'adresse que l'on sache lire d'ici -- sa page ne se laisse
+  interroger que par un jeton de page et un schema non mesure : on n'invente pas d'adresse, la page
+  tranche comme avant, avec la regle « une question, puis plus rien ».
+- **La page « Sante »** (`data/Health.kt`, `ui/HealthGroup.kt`, Reglages, en premiere section). Par magasin :
+  la session, la derniere recuperation, le dernier echec DEPUIS cette reussite (un verdict de probleme, une
+  offre jamais obtenue ensuite, au plus quatorze jours), ce qui attend, et si le controle du compte se laisse
+  lire (« lisible », « ne s'est pas laisse lire, la page tranche », « tes N jeux sont lus a chaque
+  verification » pour Steam, « aucun » pour Amazon). En tete : la derniere verification et les sources en
+  erreur. Le chiffre de la section : les magasins a regarder. Tout vient de ce que l'appli a deja note
+  (`AppState.oracle` en plus) ; la page ne mesure rien.
+- Tests : 9 Kotlin (`HealthTest`), 7 Kotlin Epic + lecture notee (`OwnedCheckTest`), 2 sur la mise a jour (cas
+  d'`Install.silence`, manifeste), 8 worker Epic (lecture des pages, identifiant, titre, remboursement,
+  illisible, trois pages au plus, une seule lecture par cycle, cycle de bout en bout) -- mutations verifiees.
+- Non verifie : la forme REELLE de l'historique des commandes Epic avec une session (jamais mesuree d'ici ;
+  Epic le garde derriere une verification), la reponse d'Epic a OkHttp depuis l'appli (Cloudflare : sans
+  doute « illisible », ce que la page Sante dira), l'installation silencieuse sur un vrai telephone.
+
 ## Appli 1.25.0 -- 2026-10-03 (extension inchangee, 2.106.0)
 
 **L'accueil plus clair : plus de bouton « Recuperer » sur chaque jeu, la mise a jour a la une et automatique, et le choix de la facon de poser les jeux**

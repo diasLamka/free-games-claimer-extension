@@ -211,7 +211,7 @@ ouvert pour un humain, en lisant l'onglet dans `sender.tab` et jamais dans le me
 **Avant d'ouvrir un onglet GOG**, le worker lit une page de la bibliotheque du compte
 (`account/getFilteredProducts?...&search=<titre>`, avec votre session, comme « Tout
 importer ») : une lecture, rien de modifie, le titre envoye est celui de l'offre,
-nettoye et borne a quatre-vingts caracteres, et une reponse illisible ne bloque rien. **Les adresses localisees**
+nettoye et borne a quatre-vingts caracteres, et une reponse illisible ne bloque rien. **Depuis la 2.107.0**, avant d'ouvrir un onglet Epic, le worker lit au plus trois pages de l'historique des commandes du compte (`accounts.epicgames.com/account/v2/payment/ajaxGetOrderHistory`, avec votre session, comme « Tout importer »), une fois par cycle : une lecture, rien de modifie, rien d'envoye ailleurs que chez Epic, et une reponse illisible ne bloque rien. **Les adresses localisees**
 (`watch/localize.js`) ne changent que la langue ou le domaine d'une adresse deja
 choisie -- jamais l'endroit ou l'on va : Steam, le http et les autres hotes sont
 rendus tels quels, et un domaine Luna n'est suivi que s'il est dans la liste
