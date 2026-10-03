@@ -16,6 +16,18 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_TAB = "onglet"
         const val EXTRA_CLAIM = "recuperer"
+
+        /**
+         * L'intent d'une ouverture, et non celui d'une recreation : Android redonne l'intent d'origine quand le
+         * processus a ete tue (savedInstanceState) et quand on revient par les Recents (LAUNCHED_FROM_HISTORY).
+         * Le rejouer relancerait une recuperation demandee par une notification, un widget ou un raccourci.
+         */
+        internal fun shouldHandle(savedInstanceState: Bundle?, intent: Intent?): Boolean =
+            savedInstanceState == null && shouldHandleNew(intent) &&
+                intent!!.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0
+
+        /** Un intent recu par une activite deja ouverte (onNewIntent) : un geste tout neuf, jamais un rejeu. */
+        internal fun shouldHandleNew(intent: Intent?): Boolean = intent != null
     }
 
     private lateinit var session: ClaimSession
@@ -26,7 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Graph.init(this)
         session = ClaimSession(this, lifecycleScope)
-        intents.value = intent
+        if (shouldHandle(savedInstanceState, intent)) intents.value = intent
         setContent {
             FreeGamesTheme {
                 AppRoot(session = session, intents = intents, onIntentHandled = { intents.value = null })
@@ -52,7 +64,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intents.value = intent
+        if (shouldHandleNew(intent)) intents.value = intent
     }
 
     override fun onDestroy() {
