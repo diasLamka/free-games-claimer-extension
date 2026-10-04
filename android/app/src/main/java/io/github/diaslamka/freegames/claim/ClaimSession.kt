@@ -61,6 +61,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.coroutines.resume
+import io.github.diaslamka.freegames.data.runCatchingSuspend
 
 /**
  * La recuperation, dans une vraie page de magasin.
@@ -317,6 +318,8 @@ class ClaimSession(
         return try {
             val r = Graph.http.get(url!!)
             buildJsonObject { put("status", r.code); put("body", r.body) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             buildJsonObject { put("error", e.message ?: "reseau") }
         }
@@ -407,7 +410,7 @@ class ClaimSession(
         if (member != null && !Family.supported()) return won
         val family = member != null
         // Le relais d'abord : ce que le PC vient de prendre n'est pas retente.
-        if (!family) runCatching { RelayLink.sync(context, System.currentTimeMillis()) }
+        if (!family) runCatchingSuspend { RelayLink.sync(context, System.currentTimeMillis()) }
         // L'historique des commandes Epic se lit UNE fois pour tout ce passage, pas une fois par offre (1.26.0).
         val ownerMemo = OwnedCheck.Memo()
         try {
@@ -433,7 +436,7 @@ class ClaimSession(
                 }
                 _ui.value = _ui.value.copy(title = offer.shownTitle, store = offer.store, index = i + 1, step = null, needsUser = false)
                 if (headless) Notifier.working(context, offer.shownTitle, i + 1, todo.size)
-                if (!family) runCatching { RelayLink.lock(context, offer, System.currentTimeMillis()) }
+                if (!family) runCatchingSuspend { RelayLink.lock(context, offer, System.currentTimeMillis()) }
                 var result = runOne(offer, steamDone)
                 if (result.first == Verdicts.CHALLENGE) {
                     if (headless) {
@@ -442,7 +445,7 @@ class ClaimSession(
                         if (family) Notifier.familyChallenge(context, m!!.name, offer)
                         else {
                             Notifier.challenge(context, offer)
-                            runCatching { RelayLink.help(context, offer, System.currentTimeMillis()) }
+                            runCatchingSuspend { RelayLink.help(context, offer, System.currentTimeMillis()) }
                         }
                     } else {
                         _ui.value = _ui.value.copy(needsUser = true, visible = true)
@@ -487,7 +490,7 @@ class ClaimSession(
                 if (result.first in Verdicts.ACQUIRED) {
                     won += offer.shownTitle
                     if (!family && result.first != Verdicts.ALREADY_REDEEMED) {
-                        runCatching { RelayLink.claimed(context, offer, result.first, System.currentTimeMillis()) }
+                        runCatchingSuspend { RelayLink.claimed(context, offer, result.first, System.currentTimeMillis()) }
                     }
                 }
             }
@@ -611,6 +614,8 @@ class ClaimSession(
             owned.first.isEmpty() && owned.second.isEmpty() -> "logged_out" to null
             else -> "ok" to owned
         }
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
     } catch (_: Exception) {
         "error" to null
     }

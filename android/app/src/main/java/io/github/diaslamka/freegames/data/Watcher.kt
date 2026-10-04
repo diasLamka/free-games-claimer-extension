@@ -60,7 +60,7 @@ object Watcher {
         val store = Graph.store
         val now = System.currentTimeMillis()
         // Le relais avant tout : un jeu deja pris par le PC n'est ni annonce ni retente.
-        runCatching { RelayLink.sync(context, now) }
+        runCatchingSuspend { RelayLink.sync(context, now) }
         val st = store.value.settings
         // La page Epic suit la langue du PAYS choisi (francais ou anglais : les deux seules que le moteur lit), pas celle du telephone.
         EpicSource.pageLang = Localize.epicPageLang(Countries.of(st.country).lang, forClaim = true)
@@ -80,7 +80,7 @@ object Watcher {
         val accounts = Accounts.STORES.associateWith { store ->
             val first = Accounts.check(store, st.country, now)
             // Un « non » des cookies ou de l'API n'est cru qu'apres la page (1.17.0) : voir claim/SessionProbe.kt.
-            runCatching { SessionProbe.confirm(context, store, st.country, first, Graph.store.value.accounts[store], now) }.getOrDefault(first)
+            runCatchingSuspend { SessionProbe.confirm(context, store, st.country, first, Graph.store.value.accounts[store], now) }.getOrDefault(first)
         }
 
         val firstRun = store.value.lastCheck == null
@@ -148,11 +148,11 @@ object Watcher {
         }
         refreshOdds(now)
         refreshTonight(now)
-        runCatching { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
-        runCatching { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
+        runCatchingSuspend { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
+        runCatchingSuspend { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
         // Depuis la veille ("fond"), sans remplacer : c'est peut-etre le passage d'une ouverture, et il tourne sous ce nom.
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000, replace = reason == "ecran") }
-        runCatching { RelayLink.alive(context, System.currentTimeMillis()) }
+        runCatchingSuspend { RelayLink.alive(context, System.currentTimeMillis()) }
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
         return Summary(after.offers.size, fresh.size, errors)
     }
@@ -207,6 +207,8 @@ object Watcher {
         val found = todo.mapNotNull { o ->
             try {
                 Ratings.key(o) to Ratings.fetch(Graph.http, o, s.settings.country, now)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (_: Exception) {
                 null
             }
@@ -223,7 +225,7 @@ object Watcher {
         if (!s.settings.tonight) return
         val todo = Evening.pending(s, now)
         if (todo.isEmpty()) return
-        val found = try { Evening.refresh(Graph.http, todo, now) } catch (_: Exception) { return }
+        val found = try { Evening.refresh(Graph.http, todo, now) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { return }
         if (found.isEmpty()) return
         Graph.store.update { st ->
             val all = st.medians + found
@@ -242,6 +244,8 @@ object Watcher {
         if (appids.isEmpty()) return
         val found = try {
             Bargain.refresh(Graph.http, appids, s.checks, now)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
             return
         }

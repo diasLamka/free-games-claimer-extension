@@ -184,7 +184,7 @@ object Taste {
     suspend fun fetchGames(fetcher: Fetcher, appids: List<String>, now: Long, country: String): Map<String, TasteGame>? {
         val ids = appids.filter { Regex("^\\d+$").matches(it) }.distinct().take(LOT)
         if (ids.isEmpty()) return emptyMap()
-        val r = runCatching { fetcher.get(itemsUrl(ids, country)) }.getOrNull()?.takeIf { it.ok } ?: return null
+        val r = runCatchingSuspend { fetcher.get(itemsUrl(ids, country)) }.getOrNull()?.takeIf { it.ok } ?: return null
         val items = parseJson(r.body)["response"]["store_items"].arr ?: return null
         val lus = items.associateBy { (it["appid"] ?: it["id"]).text }
         return ids.associateWith { id ->
@@ -237,7 +237,7 @@ object Taste {
         val retenues = (st.imported ?: profile)?.tags?.keys.orEmpty()
         val manque = retenues.any { it !in names }
         if (retenues.isNotEmpty() && (manque || namesLang != lang || namesAt == null || now - namesAt >= NAMES_FRESH_MS)) {
-            val r = runCatching { fetcher.get(tagListUrl(lang)) }.getOrNull()?.takeIf { it.ok }
+            val r = runCatchingSuspend { fetcher.get(tagListUrl(lang)) }.getOrNull()?.takeIf { it.ok }
             val list = r?.let { parseJson(it.body)["response"]["tags"].arr }
             if (list != null) {
                 names = list.mapNotNull { t ->

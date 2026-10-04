@@ -86,6 +86,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import io.github.diaslamka.freegames.data.runCatchingSuspend
 
 @Composable
 fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled: () -> Unit) {
@@ -129,6 +130,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             try {
                 val r = Watcher.check(context, "ecran")
                 if (r.errors.isNotEmpty() && r.offers == 0) Toast.makeText(context, r.errors.first(), Toast.LENGTH_LONG).show()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Toast.makeText(context, e.message ?: e.toString(), Toast.LENGTH_LONG).show()
             } finally {
@@ -211,7 +214,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 else context.getString(R.string.import_done, r.library, r.wishes + r.imported, r.owned),
                 Toast.LENGTH_LONG,
             ).show()
-            if (r != null) runCatching { TonightWidget.refresh(context) }
+            if (r != null) runCatchingSuspend { TonightWidget.refresh(context) }
         }
     }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -344,7 +347,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     fun tonightUpdate(change: (io.github.diaslamka.freegames.model.AppState) -> io.github.diaslamka.freegames.model.AppState) {
         scope.launch {
             Graph.store.update(change)
-            runCatching { TonightWidget.refresh(context) }
+            runCatchingSuspend { TonightWidget.refresh(context) }
         }
     }
 

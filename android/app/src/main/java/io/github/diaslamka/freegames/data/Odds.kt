@@ -140,12 +140,12 @@ object Odds {
     suspend fun refresh(fetcher: Fetcher, s: AppState, now: Long, country: String): Map<String, OddsInfo> {
         val next = s.odds.toMutableMap()
         for (t in targets(s).filter { needsInfo(s, it, now) }.take(PER_RUN)) {
-            val appid = t.appid ?: runCatching {
+            val appid = t.appid ?: runCatchingSuspend {
                 val r = fetcher.get(Ratings.searchUrl(t.title, country))
                 if (r.ok) Ratings.matchSearch(r.body, t.title) else null
             }.getOrNull()
             if (appid == null) { next[t.key] = OddsInfo(at = now, notFound = true); continue }
-            val info = runCatching {
+            val info = runCatchingSuspend {
                 val r = fetcher.get("https://store.steampowered.com/api/appdetails?appids=$appid&cc=$country&l=english")
                 if (r.ok) readInfo(r.body, appid, now) else null
             }.getOrNull()

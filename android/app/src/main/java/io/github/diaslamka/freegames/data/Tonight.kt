@@ -376,14 +376,14 @@ object Tonight {
         val apps = s.tonightApps.toMutableMap()
         val pile = buildPile(s)
         for (c in pile.filter { !it.ownedOnSteam }.filter { t -> titles[Titles.normalise(t.title)].let { aRelire(it?.at, it?.appid == null, now) } }.take(SEARCHES_PER_RUN)) {
-            val r = runCatching { fetcher.get(Ratings.searchUrl(c.title, country)) }.getOrNull() ?: continue
+            val r = runCatchingSuspend { fetcher.get(Ratings.searchUrl(c.title, country)) }.getOrNull() ?: continue
             if (!r.ok) continue
             titles[Titles.normalise(c.title)] = TitleMatch(now, Ratings.matchSearch(r.body, c.title))
         }
         val ids = pile.mapNotNull { it.appid ?: titles[Titles.normalise(it.title)]?.appid }.distinct()
             .filter { id -> ficheARelire(apps[id], now) }
         for (lot in ids.take(LOT * LOTS_PER_RUN).chunked(LOT)) {
-            val r = runCatching { fetcher.get(itemsUrl(lot, country, lang)) }.getOrNull() ?: continue
+            val r = runCatchingSuspend { fetcher.get(itemsUrl(lot, country, lang)) }.getOrNull() ?: continue
             if (!r.ok) continue
             val items = parseJson(r.body)["response"]["store_items"].arr ?: continue
             val lus = items.associateBy { (it["appid"] ?: it["id"]).text }

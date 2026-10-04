@@ -142,6 +142,8 @@ object Accounts {
                 owned.first.isEmpty() && owned.second.isEmpty() -> AccountState(LOGGED_OUT, now) to null
                 else -> AccountState(OK, now) to owned.first
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
             AccountState(UNKNOWN, now) to null
         }
@@ -153,6 +155,8 @@ object Accounts {
                 false -> AccountState(LOGGED_OUT, now) to null
                 null -> AccountState(UNKNOWN, now) to null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
             AccountState(UNKNOWN, now) to null
         }
