@@ -30,8 +30,12 @@ cas « ne demande rien » ont aussi ete verifies par mutation (sans le `catch` o
 - Non fait : une autre appli peut toujours declencher la recuperation en envoyant l'action de raccourci ou l'extra `recuperer` a l'activite exportee.
   C'est l'action normale de l'appli (Android interdit deja a une appli en arriere-plan d'en lancer une), et la fermer demanderait de faire passer le
   raccourci, le widget et les notifications par un alias non exporte, ce qui ne se valide que sur un telephone reel, entree par entree.
-- Non verifie : sur un telephone reel, la copie `.bak` (renommage d'Android) et les trois entrees par un raccourci (appui long sur l'icone), le widget
-  et une notification : leurs intents passent maintenant par `Incoming`, couverts par des tests mais pas encore essayes a la main.
+- Verifie sur un telephone reel (OnePlus, Android 14) : l'APK publie s'installe par-dessus la 1.27.0 en gardant les donnees ; l'appli survit a des
+  intents envoyes par `adb` (onglet hors plage, extra du mauvais type, raccourcis « Ce soir » et « Souhait », partage) ; la sentinelle se repose apres
+  la mise a jour, a 7,5 h du dernier passage (2,5 x 3 h).
+- Non verifie : la copie `.bak` sur un telephone reel (le fichier n'est pas lisible sans `run-as`), l'appui long sur l'icone, le widget et une
+  notification (leurs intents passent par `Incoming`, couverts par des tests mais pas essayes a la main), et un paquet d'extras vraiment illisible
+  (classe inconnue), que seuls les tests simulent.
 
 ## Appli 1.27.0 -- 2026-10-04 (extension inchangee, 2.107.0)
 
