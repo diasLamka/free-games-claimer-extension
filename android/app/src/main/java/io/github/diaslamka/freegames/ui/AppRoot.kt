@@ -59,9 +59,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import io.github.diaslamka.freegames.MainActivity
+import io.github.diaslamka.freegames.Incoming
 import io.github.diaslamka.freegames.R
-import io.github.diaslamka.freegames.Raccourcis
 import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.BackupIO
@@ -263,33 +262,33 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     // Ce qu'on nous demande de l'exterieur : notification, partage.
     LaunchedEffect(intent) {
         val i = intent ?: return@LaunchedEffect
-        when {
-            i.action == Intent.ACTION_VIEW && i.data?.scheme == "fgclaimer" -> {
+        // MainActivity est exportee : l'intent n'est pas fiable, `Incoming` le lit sans jamais lever.
+        when (val request = Incoming.read(i, TABS.size)) {
+            is Incoming.AppLink -> {
                 tab = 0
-                val link = io.github.diaslamka.freegames.data.Relay.parseAppLink(i.dataString)
+                val link = io.github.diaslamka.freegames.data.Relay.parseAppLink(request.data)
                 if (link != null) {
                     helpLink = link
                     // Pas encore dans les offres de l'appli : une verification, puis la reponse.
                     if (io.github.diaslamka.freegames.data.Relay.findOffer(Graph.store.value, link.store, link.id, link.title) == null) refresh()
                 }
             }
-            i.action == Intent.ACTION_SEND -> {
-                val (t, _) = Titles.titleFromShared(i.getStringExtra(Intent.EXTRA_SUBJECT), i.getStringExtra(Intent.EXTRA_TEXT))
+            is Incoming.Share -> {
+                val (t, _) = Titles.titleFromShared(request.subject, request.text)
                 shared = t
                 tab = 2
             }
-            Raccourcis.destination(i.action) != null -> {
+            is Incoming.Shortcut -> {
                 // Appui long sur l'icone (1.12.0) : l'onglet, et la recuperation pour le premier.
-                val d = Raccourcis.destination(i.action)!!
-                tab = d.tab
-                if (d.claim) claim(emptySet())
+                tab = request.destination.tab
+                if (request.destination.claim) claim(emptySet())
             }
-            i.hasExtra(MainActivity.EXTRA_CLAIM) -> {
-                val key = i.getStringExtra(MainActivity.EXTRA_CLAIM)
+            is Incoming.Claim -> {
                 tab = 0
-                claim(if (key == null || key == "*") emptySet() else setOf(key))
+                claim(if (request.key == null || request.key == "*") emptySet() else setOf(request.key))
             }
-            i.hasExtra(MainActivity.EXTRA_TAB) -> tab = i.getIntExtra(MainActivity.EXTRA_TAB, 0)
+            is Incoming.OpenTab -> tab = request.tab
+            Incoming.Nothing -> {}
         }
         onIntentHandled()
     }
