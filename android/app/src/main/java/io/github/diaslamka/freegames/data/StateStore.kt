@@ -31,22 +31,27 @@ class StateStore(private val file: File) {
         private set
 
     suspend fun update(block: (AppState) -> AppState): AppState = mutex.withLock {
-        val next = block(flow.value)
-        if (next != flow.value) {
-            flow.value = next
-            // Meme annulee, l'ecriture va au bout : sinon la memoire (ce que voient l'ecran et la veille) divergeait du
-            // fichier jusqu'a la prochaine ecriture. Et un disque qui refuse ne fait pas planter l'appelant : l'echec est
-            // retenu, le prochain changement reecrit tout l'etat.
-            withContext(NonCancellable + Dispatchers.IO) {
-                try {
-                    save(next)
-                    lastSaveError = null
-                } catch (e: Exception) {
-                    lastSaveError = e.message ?: e.javaClass.simpleName
+        // Tout d'un bloc, hors du fil de l'appelant et sans annulation possible : le bloc peut etre lourd (l'import d'une
+        // sauvegarde lit plusieurs Mo de JSON) et l'appelant est souvent l'ecran ; il est pur (etat -> etat) et le verrou
+        // le garde seul. Une mise a jour commencee va jusqu'au bout -- calcul, publication, ecriture -- : sinon la memoire
+        // (ce que voient l'ecran et la veille) divergeait du fichier. L'annulation est constatee au retour.
+        withContext(NonCancellable + Dispatchers.Default) {
+            val next = block(flow.value)
+            if (next != flow.value) {
+                flow.value = next
+                // Un disque qui refuse (plein, droits) ne fait pas planter l'appelant : l'echec est retenu, le prochain
+                // changement reecrit tout l'etat.
+                withContext(Dispatchers.IO) {
+                    try {
+                        save(next)
+                        lastSaveError = null
+                    } catch (e: Exception) {
+                        lastSaveError = e.message ?: e.javaClass.simpleName
+                    }
                 }
             }
+            next
         }
-        next
     }
 
     private fun load(): AppState = try {

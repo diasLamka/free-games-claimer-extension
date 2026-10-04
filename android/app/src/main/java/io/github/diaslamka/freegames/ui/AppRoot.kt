@@ -202,10 +202,10 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val text = withContext(Dispatchers.IO) {
-                runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
+                runCatching { context.contentResolver.openInputStream(uri)?.use { BackupIO.readLimited(it) } }.getOrNull()
             }
             var report: BackupIO.Report? = null
-            if (text != null && text.length < 8 * 1024 * 1024) {
+            if (text != null) {
                 Graph.store.update { s ->
                     val r = BackupIO.import(s, text, System.currentTimeMillis())
                     report = r?.second

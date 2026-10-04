@@ -59,6 +59,27 @@ object BackupIO {
     /** Une valeur que le moteur ecrit en texte JSON, ou deja un objet. */
     private fun lire(v: JsonElement?): JsonElement? = if (v is JsonPrimitive && v.isString) parseJson(v.content) ?: v else v
 
+    /** Taille maximale d'une sauvegarde importee. */
+    const val MAX_BYTES = 8 * 1024 * 1024
+
+    /**
+     * Lit une sauvegarde (UTF-8) ; null si elle depasse `limit` octets. On s'arrete des que la limite est franchie :
+     * un fichier enorme n'est pas charge en memoire pour etre refuse ensuite (readBytes, puis un controle de longueur).
+     */
+    fun readLimited(input: java.io.InputStream, limit: Int = MAX_BYTES): String? {
+        val out = java.io.ByteArrayOutputStream()
+        val buf = ByteArray(64 * 1024)
+        var total = 0
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            total += n
+            if (total > limit) return null
+            out.write(buf, 0, n)
+        }
+        return out.toByteArray().decodeToString()
+    }
+
     fun import(state: AppState, text: String, now: Long): Pair<AppState, Report>? {
         val bloc = backupBlock(parseJson(text)) ?: return null
 
