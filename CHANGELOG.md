@@ -4,6 +4,35 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.27.1 -- 2026-10-04 (extension inchangee, 2.107.0)
+
+**Trois points laisses de cote par l'audit de la 1.26.1 : un etat illisible repart de sa copie, un intent illisible ne plante plus l'appli, l'etat de la mise a jour n'est plus modifiable de l'exterieur**
+
+Mise a jour depuis la 1.27.0 : dans l'appli, comme d'habitude. Chaque point a ses tests, ecrits d'abord et vus echouer ; pour l'intent, les deux
+cas « ne demande rien » ont aussi ete verifies par mutation (sans le `catch` ou sans le controle de l'onglet, ils echouent).
+
+- **Un etat illisible repart de la copie precedente, plus de zero** (`data/StateStore.kt`, `data/Diagnostic.kt`). Un `etat.json` illisible faisait
+  repartir l'appli de zero (comptes, souhaits, historique) alors qu'on n'en gardait qu'une trace a cote. Chaque ecriture range maintenant la
+  generation precedente en `etat.json.bak` ; au demarrage, un fichier illisible, ou perdu entre les deux renommages d'une ecriture, est remplace par
+  la copie lisible la plus recente (le fichier temporaire s'il est complet, sinon la generation precedente). L'ancien fichier reste en
+  `etat.json.illisible`. `StateStore.origin` dit d'ou vient l'etat, et le diagnostic partageable le dit quand ce n'est pas le fichier. Le domaine des
+  fichiers est deja exclu des sauvegardes et des transferts : la copie l'est aussi. Rien n'est affiche a l'ecran quand l'etat repart de zero faute de
+  copie lisible : seul le diagnostic le dit.
+- **Un intent illisible ou invalide ne fait plus planter l'appli** (`Incoming.kt`, `ui/AppRoot.kt`). `MainActivity` est exportee : n'importe quelle appli
+  peut lui envoyer un intent. L'ecran lisait ses extras sans protection, et un paquet d'extras illisible (classe inconnue) faisait lever la lecture
+  dans la coroutine de l'ecran, donc planter l'appli ; un onglet hors des quatre qui existent etait pris tel quel (les Reglages, sans onglet
+  choisi). `Incoming.read` lit ce qu'un intent demande d'un bloc et sans jamais lever (lien, partage, raccourci, recuperation, onglet) : une demande
+  illisible ou un onglet inexistant ne demandent rien. Les demandes valides se comportent comme avant.
+- **L'etat de la mise a jour n'est plus modifiable de l'exterieur** (`data/AppUpdate.kt`). `AppUpdate.status` etait un `MutableStateFlow` public :
+  n'importe quel ecran pouvait ecrire un etat que le code de mise a jour n'avait pas produit. C'est maintenant une vue en lecture seule ;
+  les ecritures passent par `AppUpdate.publish` (`Install`, `UpdateRunner`).
+- Tests : 326 -> 346 (copie de l'etat et ses coupures, diagnostic, lecture des intents, etat de la mise a jour en lecture seule).
+- Non fait : une autre appli peut toujours declencher la recuperation en envoyant l'action de raccourci ou l'extra `recuperer` a l'activite exportee.
+  C'est l'action normale de l'appli (Android interdit deja a une appli en arriere-plan d'en lancer une), et la fermer demanderait de faire passer le
+  raccourci, le widget et les notifications par un alias non exporte, ce qui ne se valide que sur un telephone reel, entree par entree.
+- Non verifie : sur un telephone reel, la copie `.bak` (renommage d'Android) et les trois entrees par un raccourci (appui long sur l'icone), le widget
+  et une notification : leurs intents passent maintenant par `Incoming`, couverts par des tests mais pas encore essayes a la main.
+
 ## Appli 1.27.0 -- 2026-10-04 (extension inchangee, 2.107.0)
 
 **La veille se laisse surveiller : son journal, une sentinelle qui previent quand elle s'arrete, un diagnostic a partager et un test a la demande**
