@@ -69,8 +69,10 @@ data class Offer(
     val firstSeen: Long = 0,
     val lastSeen: Long = 0,
 ) {
-    val normalisedTitle: String get() = Titles.normalise(title)
-    val shownTitle: String get() = Titles.display(title)
+    // Calcules une fois par objet (l'etat est immuable : un changement cree un nouvel objet), pas a chaque acces --
+    // la normalisation (NFD et quatre regex) tournait pour chaque offre, a chaque recomposition. Hors de la sauvegarde.
+    val normalisedTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.normalise(title) }
+    val shownTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.display(title) }
 
     /** Du contenu additionnel plutot qu'un jeu (watch/filters.js, isExtraContent). */
     val isExtra: Boolean
@@ -116,7 +118,10 @@ data class LibraryEntry(
     val via: String = "app",
     /** D'ou vient la valeur (1.22.0) : « store » (le magasin) ou « aggregator » (un site tiers). Figee a la reclamation. */
     val wsrc: String? = null,
-)
+) {
+    /** Le titre normalise, une fois : Rules le compare a celui de chaque offre. */
+    val normalisedTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.normalise(title) }
+}
 
 /** Un souhait importe d'une liste Steam ou GOG. */
 @Serializable
@@ -348,7 +353,12 @@ data class AppState(
      * telephone. Le compte principal reste dans les champs ci-dessus.
      */
     val family: List<Member> = emptyList(),
-)
+) {
+    /** Les titres souhaites (a la main ou importes), normalises une fois : Rules.wished s'y reporte pour chaque offre. */
+    val wishedTitles: Set<String> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        (wishlist + importedWishes.map { it.title }).map { Titles.normalise(it) }.toSet()
+    }
+}
 
 /**
  * Un membre de la famille (1.9.0). Ses sessions vivent dans un profil

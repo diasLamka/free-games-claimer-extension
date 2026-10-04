@@ -70,7 +70,7 @@ object Rules {
         library[libraryKeyOf(o)]?.let { return it }
         val t = o.normalisedTitle
         if (t.isEmpty()) return null
-        return library.values.firstOrNull { it.store == o.store && Titles.normalise(it.title) == t }
+        return library.values.firstOrNull { it.store == o.store && it.normalisedTitle == t }
     }
 
     /**
@@ -189,9 +189,7 @@ object Rules {
     fun wished(o: Offer, s: AppState): Boolean {
         val t = o.normalisedTitle
         if (t.isEmpty()) return false
-        if (s.wishlist.any { Titles.normalise(it) == t }) return true
-        return s.importedWishes.any { w ->
-            (w.store == o.store && w.id != null && (w.id == o.storeId || w.id == o.sourceId)) || Titles.normalise(w.title) == t
-        }
+        if (t in s.wishedTitles) return true
+        return s.importedWishes.any { w -> w.store == o.store && w.id != null && (w.id == o.storeId || w.id == o.sourceId) }
     }
 }

@@ -76,9 +76,32 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.remember
 
 private val FILTERS = listOf(null, Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
 private val PC = setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
+
+/** Ce que l'ecran des jeux montre : les offres, ce qui arrive, ce qui attend, et les magasins a reconnecter. */
+private class GamesView(
+    val pc: List<Offer>, val mobile: List<Offer>, val others: List<Offer>, val soon: List<Upcoming>,
+    val pending: List<Offer>, val needLogin: List<String>,
+)
+
+private fun gamesView(state: AppState, now: Long, filter: String?, query: String): GamesView {
+    val q = Titles.normalise(query)
+    fun keep(o: Offer) = (filter == null || o.store == filter) && (q.isEmpty() || o.normalisedTitle.contains(q))
+    val open = state.offers.values.filter { it.isOpen(now) && it.keepable != false }
+    val pc = open.filter { it.store in PC && !(it.source == GamerPowerSource.NAME && it.isExtra) }
+        .filter(::keep)
+        .sortedWith(compareByDescending<Offer> { Rules.wished(it, state) }.thenBy { it.end ?: Long.MAX_VALUE })
+    val mobile = if (state.settings.showMobile) open.filter { it.source == EpicMobileSource.NAME }.filter(::keep) else emptyList()
+    val others = if (state.settings.showOthers) open.filter { it.source == GamerPowerSource.NAME && it.store !in PC }
+        .filter { filter == null && (q.isEmpty() || it.normalisedTitle.contains(q)) } else emptyList()
+    val soon = state.upcoming.filter { it.start > now && (filter == null || filter == Stores.EPIC) && (q.isEmpty() || Titles.normalise(it.title).contains(q)) }
+    val pending = Rules.pending(state, now)
+    val needLogin = pending.map { it.store }.distinct().filter { state.accounts[it]?.status == Accounts.LOGGED_OUT }
+    return GamesView(pc, mobile, others, soon, pending, needLogin)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,18 +131,15 @@ fun GamesScreen(
     var openMobile by rememberSaveable { mutableStateOf(false) }
     var openOthers by rememberSaveable { mutableStateOf(false) }
 
-    val q = Titles.normalise(query)
-    fun keep(o: Offer) = (filter == null || o.store == filter) && (q.isEmpty() || o.normalisedTitle.contains(q))
-    val open = state.offers.values.filter { it.isOpen(now) && it.keepable != false }
-    val pc = open.filter { it.store in PC && !(it.source == GamerPowerSource.NAME && it.isExtra) }
-        .filter(::keep)
-        .sortedWith(compareByDescending<Offer> { Rules.wished(it, state) }.thenBy { it.end ?: Long.MAX_VALUE })
-    val mobile = if (state.settings.showMobile) open.filter { it.source == EpicMobileSource.NAME }.filter(::keep) else emptyList()
-    val others = if (state.settings.showOthers) open.filter { it.source == GamerPowerSource.NAME && it.store !in PC }
-        .filter { filter == null && (q.isEmpty() || it.normalisedTitle.contains(q)) } else emptyList()
-    val soon = state.upcoming.filter { it.start > now && (filter == null || filter == Stores.EPIC) && (q.isEmpty() || Titles.normalise(it.title).contains(q)) }
-    val pending = Rules.pending(state, now)
-    val needLogin = pending.map { it.store }.distinct().filter { state.accounts[it]?.status == Accounts.LOGGED_OUT }
+    // Les listes sont recalculees quand l'etat, l'heure, le filtre ou la recherche changent -- pas a chaque recomposition
+    // (la veille, une recuperation en cours, un onglet qu'on ouvre).
+    val view = remember(state, now, filter, query) { gamesView(state, now, filter, query) }
+    val pc = view.pc
+    val mobile = view.mobile
+    val others = view.others
+    val soon = view.soon
+    val pending = view.pending
+    val needLogin = view.needLogin
 
     Column(Modifier.fillMaxSize().background(b.base)) {
         TopBlock(stringResource(R.string.tab_games)) {
