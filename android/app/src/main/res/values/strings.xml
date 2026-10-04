@@ -366,6 +366,17 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="health_notifications_on">Notifications are on.</string>
     <string name="health_notifications_off">Notifications are off: last-chance alerts, help from the PC and sign-in reminders cannot reach you.</string>
     <string name="health_notifications_open">Open notification settings</string>
+    <string name="health_passes_title">Watch passes</string>
+    <string name="health_passes_none">No pass recorded yet.</string>
+    <string name="health_pass_line">%1$s · %2$s · %3$d offers, %4$d new · %5$s</string>
+    <string name="pass_reason_fond">background</string>
+    <string name="pass_reason_ecran">screen</string>
+    <string name="pass_reason_test">test</string>
+    <string name="pass_screen_off">screen off</string>
+    <string name="pass_claimed">%1$d claimed</string>
+    <string name="pass_outcome_errors">some sources failed</string>
+    <string name="pass_outcome_failed">failed</string>
+    <string name="pass_outcome_cancelled">cut short</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>

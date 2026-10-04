@@ -127,6 +127,26 @@ data class LibraryEntry(
 @Serializable
 data class ImportedWish(val title: String, val store: String, val id: String? = null)
 
+/**
+ * Un passage de la veille (1.27.0) : quand, combien de temps, pour quelle raison (« fond », « ecran », « test »), comment
+ * il a fini, ce qu'il a trouve. Une passe de fond ne laissait aucune trace : impossible de dire apres coup si elle avait tourne.
+ */
+@Serializable
+data class PassRecord(
+    val at: Long,
+    val ms: Long,
+    val reason: String,
+    val outcome: String,
+    val offers: Int = 0,
+    val fresh: Int = 0,
+    /** Les jeux obtenus par la recuperation de fond de ce passage, quand elle a eu lieu. */
+    val claimed: Int? = null,
+    /** L'ecran etait eteint pendant ce passage : c'est le cas qu'on n'avait jamais vu sur un telephone. */
+    val screenOff: Boolean = false,
+    /** Trois au plus, de 160 caracteres au plus. */
+    val errors: List<String> = emptyList(),
+)
+
 /** Ce que la derniere lecture du compte d'un magasin a donne (1.26.0) : a quelle heure, et si la reponse etait lisible. */
 @Serializable
 data class OracleNote(val at: Long, val readable: Boolean)
@@ -353,6 +373,8 @@ data class AppState(
      * telephone. Le compte principal reste dans les champs ci-dessus.
      */
     val family: List<Member> = emptyList(),
+    /** Le journal de la veille (1.27.0) : les trente derniers passages, le plus recent d'abord. */
+    val watchLog: List<PassRecord> = emptyList(),
 ) {
     /** Les titres souhaites (a la main ou importes), normalises une fois : Rules.wished s'y reporte pour chaque offre. */
     val wishedTitles: Set<String> by lazy(LazyThreadSafetyMode.PUBLICATION) {

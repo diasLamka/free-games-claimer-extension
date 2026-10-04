@@ -365,6 +365,17 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="health_notifications_on">Les notifications sont activées.</string>
     <string name="health_notifications_off">Les notifications sont coupées : les alertes « dernière chance », l\'aide du PC et les rappels de connexion ne te parviennent pas.</string>
     <string name="health_notifications_open">Ouvrir les réglages de notification</string>
+    <string name="health_passes_title">Passages de la veille</string>
+    <string name="health_passes_none">Aucun passage noté pour l\'instant.</string>
+    <string name="health_pass_line">%1$s · %2$s · %3$d offres, %4$d nouveau(x) · %5$s</string>
+    <string name="pass_reason_fond">fond</string>
+    <string name="pass_reason_ecran">écran</string>
+    <string name="pass_reason_test">test</string>
+    <string name="pass_screen_off">écran éteint</string>
+    <string name="pass_claimed">%1$d récupéré(s)</string>
+    <string name="pass_outcome_errors">des sources ont échoué</string>
+    <string name="pass_outcome_failed">échec</string>
+    <string name="pass_outcome_cancelled">interrompu</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>

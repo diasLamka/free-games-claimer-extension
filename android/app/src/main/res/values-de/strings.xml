@@ -365,6 +365,17 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="health_notifications_on">Benachrichtigungen sind an.</string>
     <string name="health_notifications_off">Benachrichtigungen sind aus: Letzte-Chance-Alarme, Hilfe vom PC und Anmelde-Erinnerungen erreichen dich nicht.</string>
     <string name="health_notifications_open">Benachrichtigungseinstellungen öffnen</string>
+    <string name="health_passes_title">Durchläufe der Überwachung</string>
+    <string name="health_passes_none">Noch kein Durchlauf aufgezeichnet.</string>
+    <string name="health_pass_line">%1$s · %2$s · %3$d Angebote, %4$d neu · %5$s</string>
+    <string name="pass_reason_fond">Hintergrund</string>
+    <string name="pass_reason_ecran">Bildschirm</string>
+    <string name="pass_reason_test">Test</string>
+    <string name="pass_screen_off">Bildschirm aus</string>
+    <string name="pass_claimed">%1$d geholt</string>
+    <string name="pass_outcome_errors">einige Quellen sind ausgefallen</string>
+    <string name="pass_outcome_failed">fehlgeschlagen</string>
+    <string name="pass_outcome_cancelled">abgebrochen</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

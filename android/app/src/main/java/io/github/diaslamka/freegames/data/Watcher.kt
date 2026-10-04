@@ -53,7 +53,15 @@ object Watcher {
         }
     }
 
-    suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) { running.withLock { checkLocked(context, reason) } }
+    suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) {
+        Graph.init(context)
+        // Ecran eteint pendant le passage : le cas qu'on n'avait jamais vu sur un telephone, note pour le journal.
+        val screenOff = runCatching { context.getSystemService(android.os.PowerManager::class.java)?.isInteractive == false }.getOrDefault(false)
+        running.withLock {
+            // Chaque passage laisse une trace dans le journal de la veille (page Sante) et dans `adb logcat -s FGC`.
+            PassLog.track(Graph.store, reason, screenOff, onRecord = { android.util.Log.i("FGC", PassLog.line(it)) }) { checkLocked(context, reason) }
+        }
+    }
 
     private suspend fun checkLocked(context: Context, reason: String): Summary {
         Graph.init(context)

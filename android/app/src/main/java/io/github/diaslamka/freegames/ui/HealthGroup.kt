@@ -34,6 +34,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.diaslamka.freegames.notify.Notifier
 import android.content.Context
+import androidx.compose.foundation.layout.Row
+import io.github.diaslamka.freegames.data.PassLog
+import io.github.diaslamka.freegames.model.PassRecord
 
 /**
  * La page « Sante » (1.26.0), dans les Reglages : pour chaque magasin, la session, la derniere recuperation, le
@@ -64,6 +67,14 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
             else stringResource(R.string.health_sources_down, overview.sourcesDown.joinToString(", ")),
             style = MaterialTheme.typography.bodySmall, color = Color.Black,
         )
+        // Les derniers passages de la veille : la preuve qu'une passe de fond a tourne, et comment elle a fini.
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
+        Text(stringResource(R.string.health_passes_title).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black)
+        if (state.watchLog.isEmpty()) {
+            Text(stringResource(R.string.health_passes_none), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        } else {
+            state.watchLog.take(8).forEach { PassLine(it, now) }
+        }
         overview.lines.forEach { line ->
             Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -133,4 +144,36 @@ fun openNotificationSettings(context: Context) {
         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
+}
+
+/** Un passage de la veille : quand, pourquoi, ce qu'il a trouve, combien de temps, et comment il a fini. */
+@Composable
+private fun PassLine(r: PassRecord, now: Long) {
+    val context = LocalContext.current
+    val b = LocalBrut.current
+    val reason = stringResource(
+        when (r.reason) {
+            "fond" -> R.string.pass_reason_fond
+            "ecran" -> R.string.pass_reason_ecran
+            else -> R.string.pass_reason_test
+        },
+    )
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(
+            stringResource(R.string.health_pass_line, Fmt.ago(context, r.at, now), reason, r.offers, r.fresh, PassLog.duration(r.ms)),
+            style = MaterialTheme.typography.bodySmall, color = Color.Black,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (r.screenOff) Tag(stringResource(R.string.pass_screen_off).uppercase(), b.accent, Color.Black, bordered = true)
+            r.claimed?.let { Tag(stringResource(R.string.pass_claimed, it).uppercase(), b.accent, Color.Black, bordered = true) }
+            val outcome = when (r.outcome) {
+                PassLog.ERRORS -> R.string.pass_outcome_errors
+                PassLog.FAILED -> R.string.pass_outcome_failed
+                PassLog.CANCELLED -> R.string.pass_outcome_cancelled
+                else -> null
+            }
+            if (outcome != null) Tag(stringResource(outcome).uppercase(), Color.Black, Color.White, maxLines = 2)
+        }
+        r.errors.forEach { Text("> $it", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A)) }
+    }
 }
