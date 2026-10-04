@@ -65,6 +65,7 @@ android {
         versionCode = 33
         versionName = "1.27.1"
         buildConfigField("String", "ENGINE_VERSION", "\"$engineVersion\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -162,5 +163,11 @@ dependencies {
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.52.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.52.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    /* Les tests sur emulateur (src/androidTest) : le vrai systeme, pas Robolectric. */
+    androidTestImplementation(composeBom)
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     robolectricAndroid("org.robolectric:android-all-instrumented:15-robolectric-13954326-i7") { isTransitive = false }
 }

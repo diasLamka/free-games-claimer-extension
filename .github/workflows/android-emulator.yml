@@ -1,0 +1,84 @@
+# L'appli Android sur un VRAI Android : un emulateur.
+#
+# Les tests unitaires (android.yml) tournent sur Robolectric, une simulation :
+# ils ne voient ni le renommage de fichiers d'Android, ni ses raccourcis, ses
+# widgets, ses notifications, ni ce que le systeme fait d'un intent envoye a
+# l'activite exportee. Ceux de android/app/src/androidTest, si.
+#
+# Ce workflow est a part, et ne bloque rien : la release (android.yml) ne
+# l'attend pas. Il tourne a chaque push qui touche l'appli, et a la main.
+#
+# L'action tierce est epinglee sur le commit de sa version (v2.38.0) : un tag se
+# deplace, un commit non. Les tests ecrivent dans l'etat de l'appli et postent
+# ses notifications : ils ne tournent que sur un emulateur (EmulatorOnly).
+name: android-emulator
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'android/**'
+      - 'content/free-games-claimer.js'
+      - 'watch/steam-claim.js'
+      - 'package.json'
+      - '.github/workflows/android-emulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un emulateur est lourd : un nouveau push sur la meme branche annule le precedent.
+concurrency:
+  group: android-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator:
+    name: emulateur (Android ${{ matrix.api-level }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      # Un echec sur Android 11 ne doit pas cacher le resultat sur Android 14, ni l'inverse.
+      fail-fast: false
+      matrix:
+        # 14 : le telephone de l'auteur. 11 : un Android d'avant la lecture « paresseuse » des extras (13), ou une
+        # activite exportee plante sur un intent illisible (ExportedActivityDeviceTest).
+        api-level: [30, 34]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # Les runners Linux ont KVM, mais pas ouvert a l'utilisateur du job.
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Les tests sur emulateur
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -netdelay none -netspeed full
+          working-directory: android
+          script: ./gradlew connectedDebugAndroidTest --console=plain
+
+      - name: Le rapport des tests
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-emulator-rapport-${{ matrix.api-level }}
+          path: |
+            android/app/build/reports/androidTests
+            android/app/build/outputs/androidTest-results
+          if-no-files-found: ignore

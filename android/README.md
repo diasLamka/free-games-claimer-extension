@@ -145,6 +145,34 @@ workflow cree la release `app-vX.Y.Z`, tag compris, avec l'APK signe.
 Les textes des quatre langues sont generes depuis une seule table :
 `python3 tools/strings.py app/src/main/res`.
 
+### Tester sur emulateur
+
+Les tests unitaires tournent sur Robolectric, une simulation. Ceux de `app/src/androidTest` tournent sur un VRAI Android (un
+emulateur) : ce que le systeme fait des raccourcis, des widgets, des notifications, du travail de fond et des intents recus par
+l'activite exportee, et le renommage de fichiers d'Android. Le workflow `.github/workflows/android-emulator.yml` les lance a chaque
+push, sur Android 11 et 14 ; il ne bloque pas la release.
+
+Sur ce PC, une fois (l'accelerateur materiel de Windows, WHPX, doit etre disponible : `emulator -accel-check`) :
+
+```
+sdkmanager --install emulator "system-images;android-34;google_apis;x86_64" "system-images;android-30;google_apis;x86_64"
+avdmanager create avd -n fgc-api34 -k "system-images;android-34;google_apis;x86_64" -d pixel_6
+avdmanager create avd -n fgc-api30 -k "system-images;android-30;google_apis;x86_64" -d pixel_6
+```
+
+Dans un `.bat` ou PowerShell, le `;` du nom d'image doit etre protege : `'"system-images;android-34;google_apis;x86_64"'`.
+
+Puis, a chaque fois :
+
+```
+powershell -File android\tools\emulator.ps1                            # Android 14
+powershell -File android\tools\emulator.ps1 -Avd fgc-api30 -Port 5556  # Android 11
+```
+
+Le script demarre l'appareil s'il ne tourne pas et lance Gradle contre lui SEUL (`ANDROID_SERIAL`) : Gradle installe l'appli avant les
+tests, et un telephone branche verrait sa vraie appli remplacee et ses donnees effacees. Les tests refusent d'ailleurs de tourner
+ailleurs que sur un emulateur (`EmulatorOnly`). Ne lance jamais `connectedDebugAndroidTest` a la main avec un telephone branche.
+
 ### La cle de signature
 
 La cle qui signe l'APK doit rester la meme d'une version a l'autre : c'est ce
