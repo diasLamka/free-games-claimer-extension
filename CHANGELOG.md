@@ -30,8 +30,9 @@ tests ecrits d'abord et vus echouer.
 - Tests : 292 -> 326 (journal, sentinelle, diagnostic et sa confidentialite, partage, test a la demande, notification de test). Le test de la page
   Sante cible desormais la ligne complete d'un passage : le mot « background » est aussi dans le bouton de test.
 - Verifie sur un telephone reel (OnePlus, Android 14) : l'APK signe par la CI (ancienne et nouvelle cle) s'installe par-dessus la 1.26.1 en
-  gardant les donnees, et le bouton de test donne sa notification, ecran eteint.
-- Non verifie : la sentinelle jusqu'a son declenchement reel (alarme inexacte en Doze) et le partage du diagnostic par le menu d'Android.
+  gardant les donnees ; le bouton de test donne sa notification, ecran eteint ; la page Sante montre le passage de test ; le diagnostic part
+  par le menu « Partager ».
+- Non verifie : la sentinelle jusqu'a son declenchement reel (alarme inexacte en Doze).
 
 ## Appli 1.26.2 -- 2026-10-04 (extension inchangee, 2.107.0)
 
