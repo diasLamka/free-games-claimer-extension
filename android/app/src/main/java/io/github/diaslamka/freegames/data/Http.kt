@@ -36,10 +36,12 @@ class Http(private val userAgent: () -> String, private val cookies: (String) ->
         }
     }
 
-    /** Une image, sans cookies, bornee a 4 Mo. */
-    suspend fun bytes(url: String, max: Int = 4 * 1024 * 1024): ByteArray? = withContext(Dispatchers.IO) {
+    /** Une image, sans cookies, bornee a 4 Mo. `timeoutMs` (> 0) borne l'appel ENTIER, en dessous des delais du client. */
+    suspend fun bytes(url: String, max: Int = 4 * 1024 * 1024, timeoutMs: Long = 0L): ByteArray? = withContext(Dispatchers.IO) {
         try {
-            client.newCall(request(url, false, "image/*")).execute().use { r ->
+            val call = client.newCall(request(url, false, "image/*"))
+            if (timeoutMs > 0) call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS)
+            call.execute().use { r ->
                 if (!r.isSuccessful) return@use null
                 val len = r.body.contentLength()
                 if (len > max) return@use null

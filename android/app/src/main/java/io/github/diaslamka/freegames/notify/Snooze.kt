@@ -94,7 +94,8 @@ object Snooze {
 class SnoozeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val done = goAsync()
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        // goAsync : dix secondes en avant-plan. Six pour les jaquettes de toutes les notifications, le reste pour l'etat.
+        CoroutineScope(SupervisorJob() + Dispatchers.IO + CoverBudget(System.currentTimeMillis() + RECEIVER_COVER_MS)).launch {
             try {
                 val app = context.applicationContext
                 Graph.init(app)

@@ -86,7 +86,8 @@ object LastChance {
 class LastChanceReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val done = goAsync()
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        // goAsync : dix secondes en avant-plan. Six pour les jaquettes, le reste pour l'etat et la notification.
+        CoroutineScope(SupervisorJob() + Dispatchers.IO + CoverBudget(System.currentTimeMillis() + RECEIVER_COVER_MS)).launch {
             try {
                 Graph.init(context.applicationContext)
                 LastChance.ring(context.applicationContext, System.currentTimeMillis())

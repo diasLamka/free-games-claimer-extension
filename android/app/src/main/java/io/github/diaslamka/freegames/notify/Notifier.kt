@@ -91,7 +91,10 @@ object Notifier {
 
     private suspend fun cover(url: String?): Bitmap? {
         if (url == null) return null
-        val bytes = Graph.http.bytes(url) ?: return null
+        // Un recepteur d'alarme n'a que dix secondes : fenetre epuisee ou reseau lent, la notification sonne sans image.
+        val timeout = coverTimeoutMs(kotlin.coroutines.coroutineContext[CoverBudget]?.untilMs, System.currentTimeMillis())
+        if (timeout <= 0) return null
+        val bytes = Graph.http.bytes(url, timeoutMs = timeout) ?: return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         var sample = 1
