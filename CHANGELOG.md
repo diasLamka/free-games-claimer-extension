@@ -8,12 +8,13 @@ genere : voir `build/build.mjs`.
 
 **Cinq defauts de l'audit corriges (la cle de signature, les moteurs de rendu tues, la veille qui s'annulait, la mise a jour bloquee, les intents rejoues), et une nouvelle cle de signature**
 
-**A LIRE AVANT DE METTRE A JOUR : la 1.26.0 refusera cette version, il faut l'installer UNE fois a la main.** La
-1.26.1 est signee avec une nouvelle cle (voir plus bas). Android l'accepte par-dessus la 1.26.0 sans rien perdre, mais
-le controle de la 1.26.0 compare les certificats a l'identique et dira « le fichier n'est pas la bonne appli » dans
-le bandeau de l'accueil. Telecharger l'APK de la release `app-v1.26.1` sur le telephone et l'ouvrir : sessions,
-historique et reglages restent. A partir de la 1.26.1 les mises a jour se refont dans l'appli (elle sait lire
-une rotation de cle).
+**A LIRE AVANT DE METTRE A JOUR : sur Android 13 et plus, la 1.26.0 refusera cette version, il faut l'installer UNE
+fois a la main.** La 1.26.1 est signee avec une nouvelle cle (voir plus bas), adoptee par Android 13 et plus. Android
+l'accepte par-dessus la 1.26.0 sans rien perdre, mais le controle de la 1.26.0 compare les certificats a
+l'identique et dira « le fichier n'est pas la bonne appli » dans le bandeau de l'accueil. Telecharger l'APK de la
+release `app-v1.26.1` sur le telephone et l'ouvrir : sessions, historique et reglages restent. A partir de la
+1.26.1 les mises a jour se refont dans l'appli (elle sait lire une rotation de cle). Sur Android 9 a 12 l'APK porte
+encore l'ancienne cle : la mise a jour dans l'appli marche comme avant.
 
 - **La cle de signature sort du depot** (`.github/workflows/android.yml`, `test/android-keystore.test.mjs`).
   `android/keystore/` etait suivi par git, mots de passe compris : qui lisait le depot pouvait signer une

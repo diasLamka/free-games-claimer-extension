@@ -167,8 +167,9 @@ la rotation y ayant eu des bugs) : **l'ancienne cle doit donc rester dans les se
 pour toujours.** Elle n'a pas la capacite de retour en arriere : sur un telephone passe
 a la nouvelle, elle ne peut plus signer de mise a jour. `Install.sameApp` accepte un APK
 dont la chaine contient le certificat installe (`signersAccepted`) ; la 1.26.0, elle,
-exigeait des certificats identiques et refuse donc la 1.26.1 : **une installation a la
-main, une fois** (voir le CHANGELOG).
+exigeait des certificats identiques et refuse donc la 1.26.1 **sur Android 13 et plus** :
+une installation a la main, une fois (voir le CHANGELOG). Sur Android 9 a 12 l'APK porte
+l'ancienne cle, et la mise a jour dans l'appli marche comme avant.
 
 Pour signer a la main, poser `release.jks` et un `keystore.properties`
 (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) dans `android/keystore/` ;
