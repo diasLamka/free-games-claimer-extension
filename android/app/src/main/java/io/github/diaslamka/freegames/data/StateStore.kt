@@ -3,6 +3,7 @@ package io.github.diaslamka.freegames.data
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.sources.JSON
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -25,11 +26,25 @@ class StateStore(private val file: File) {
     val state: StateFlow<AppState> = flow
     val value: AppState get() = flow.value
 
+    /** La derniere ecriture qui a echoue (disque plein, droits), ou null : l'ecran voit le changement, le fichier non. */
+    @Volatile var lastSaveError: String? = null
+        private set
+
     suspend fun update(block: (AppState) -> AppState): AppState = mutex.withLock {
         val next = block(flow.value)
         if (next != flow.value) {
             flow.value = next
-            withContext(Dispatchers.IO) { save(next) }
+            // Meme annulee, l'ecriture va au bout : sinon la memoire (ce que voient l'ecran et la veille) divergeait du
+            // fichier jusqu'a la prochaine ecriture. Et un disque qui refuse ne fait pas planter l'appelant : l'echec est
+            // retenu, le prochain changement reecrit tout l'etat.
+            withContext(NonCancellable + Dispatchers.IO) {
+                try {
+                    save(next)
+                    lastSaveError = null
+                } catch (e: Exception) {
+                    lastSaveError = e.message ?: e.javaClass.simpleName
+                }
+            }
         }
         next
     }
