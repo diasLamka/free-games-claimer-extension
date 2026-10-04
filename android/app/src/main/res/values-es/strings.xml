@@ -299,6 +299,12 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="login_refused_why">Es una regla de seguridad de %1$s: su página de acceso solo se abre en un navegador de verdad, nunca dentro de una app. La app se detiene aquí en lugar de mandarte allí.</string>
     <string name="login_refused_epic">Tu cuenta de Epic puede tener una contraseña además de %1$s: Epic envía un código por correo, eliges la contraseña y el acceso con %1$s sigue funcionando en todo lo demás. Luego inicia sesión aquí con tu correo y esa contraseña.</string>
     <string name="login_refused_other">Inicia sesión con el correo y la contraseña de tu cuenta de %1$s.</string>
+    <string name="toggle_on">SÍ</string>
+    <string name="toggle_off">NO</string>
+    <string name="panel_expand">Ampliar la página</string>
+    <string name="panel_collapse">Reducir la página</string>
+    <string name="family_connected">conectado</string>
+    <string name="family_not_connected">no conectado</string>
     <string name="close">Cerrar</string>
     <string name="done">Listo</string>
     <string name="claim_progress">Consiguiendo %1$d/%2$d: %3$s</string>

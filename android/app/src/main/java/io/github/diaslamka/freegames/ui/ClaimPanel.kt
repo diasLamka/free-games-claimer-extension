@@ -33,6 +33,9 @@ import io.github.diaslamka.freegames.claim.ClaimSession
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.widthIn
 
 /**
  * La recuperation en cours, au-dessus de tous les onglets : la page du
@@ -79,6 +82,10 @@ fun ClaimPanelContent(
     val b = LocalBrut.current
     var expanded by remember { mutableStateOf(false) }
     val big = expanded || ui.needsUser
+    // Les boutons a glyphe seul ([+], ■, ✕) : TalkBack lisait le symbole, pas ce que le bouton fait.
+    val toggleName = stringResource(if (big) R.string.panel_collapse else R.string.panel_expand)
+    val stopName = stringResource(R.string.stop)
+    val closeName = stringResource(R.string.close)
     Column(
         Modifier.padding(start = 10.dp, end = 16.dp, top = 6.dp, bottom = 8.dp).fillMaxWidth()
             .brut(Color.White, shadow = b.shadow, offset = 6.dp).animateContentSize(),
@@ -109,16 +116,16 @@ fun ClaimPanelContent(
             if (ui.running) {
                 Text(
                     if (big) "[–]" else "[+]", style = MaterialTheme.typography.labelLarge, color = Color.Black,
-                    modifier = Modifier.background(Color.White).border(2.dp, Color.Black).clickableNoRipple { expanded = !expanded; onToggle?.invoke() }.padding(8.dp),
+                    modifier = Modifier.background(Color.White).border(2.dp, Color.Black).semantics { contentDescription = toggleName }.clickableNoRipple { expanded = !expanded; onToggle?.invoke() }.padding(8.dp),
                 )
                 Text(
                     "■ " + stringResource(R.string.stop).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White,
-                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).clickableNoRipple(onClick = onStop).padding(8.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).semantics { contentDescription = stopName }.clickableNoRipple(onClick = onStop).padding(8.dp),
                 )
             } else {
                 Text(
                     "✕", style = MaterialTheme.typography.titleMedium, color = Color.White,
-                    modifier = Modifier.background(Color.Black).clickableNoRipple(onClick = onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.background(Color.Black).semantics { contentDescription = closeName }.clickableNoRipple(onClick = onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
@@ -149,7 +156,7 @@ fun ClaimPanelContent(
             // Le tampon de l'issue (1.11.0), comme la liste « Deja recupere » de l'extension.
             Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 // Une colonne de largeur fixe : les titres s'alignent, quel que soit le tampon.
-                Box(Modifier.width(100.dp), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.widthIn(min = 100.dp), contentAlignment = Alignment.CenterStart) {
                     KindStamp(stampKindOf(o.verdict) ?: StampKind.WAITING, small = true)
                 }
                 Text(

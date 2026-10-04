@@ -54,6 +54,8 @@ fun FamilyGroup(state: AppState, supported: Boolean, actions: FamilyActions) {
     val b = LocalBrut.current
     var name by remember { mutableStateOf("") }
     var removing by remember { mutableStateOf<Member?>(null) }
+    val signedIn = stringResource(R.string.family_connected)
+    val notSignedIn = stringResource(R.string.family_not_connected)
     Column(
         Modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -83,7 +85,7 @@ fun FamilyGroup(state: AppState, supported: Boolean, actions: FamilyActions) {
                             color = if (ok) Color.Black else Color.White,
                             modifier = Modifier.padding(end = 3.dp, bottom = 3.dp).heightIn(min = 40.dp)
                                 .brut(if (ok) b.accent else Color.Black, shadow = Color.Black, offset = 3.dp, border = 2.dp)
-                                .semantics { contentDescription = "${Stores.label(store)} : ${m.name}" }
+                                .semantics { contentDescription = "${Stores.label(store)} : ${m.name}, " + (if (ok) signedIn else notSignedIn) }
                                 .clickableNoRipple { actions.onLogin(m.id, store) }
                                 .padding(horizontal = 10.dp, vertical = 10.dp),
                         )

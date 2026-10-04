@@ -87,6 +87,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import io.github.diaslamka.freegames.data.runCatchingSuspend
+import androidx.compose.foundation.layout.imePadding
 
 @Composable
 fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled: () -> Unit) {
@@ -507,7 +508,9 @@ fun AdaptiveFrame(tab: Int, onTab: (Int) -> Unit, top: @Composable () -> Unit = 
             containerColor = MaterialTheme.colorScheme.background,
         ) { padding ->
             Column(
-                Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
+                // imePadding : la branche large passe par safeDrawing, qui contient le clavier ; celle-ci non, et le clavier
+                // couvrait les champs des Reglages (jeton, code du relais, nom d'un proche).
+                Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()
                     .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)),
             ) {
                 top()

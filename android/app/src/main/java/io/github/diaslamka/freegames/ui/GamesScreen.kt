@@ -72,6 +72,10 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.widthIn
 
 private val FILTERS = listOf(null, Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
 private val PC = setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
@@ -177,7 +181,8 @@ fun GamesScreen(
                                 color = if (on && !b.dark) b.accent else Color.Black,
                                 modifier = Modifier.padding(end = 3.dp, bottom = 3.dp)
                                     .brut(if (on) (if (b.dark) b.accent else Color.Black) else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp)
-                                    .clickableNoRipple { filter = f }
+                                    .semantics { selected = on }
+                                    .clickableNoRipple(role = Role.Tab) { filter = f }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                             )
                         }
@@ -278,7 +283,7 @@ private fun UpcomingRow(w: Upcoming, onOpen: (String) -> Unit, modifier: Modifie
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            Modifier.width(78.dp).background(b.accent).padding(vertical = 10.dp),
+            Modifier.widthIn(min = 78.dp).background(b.accent).padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(DateTimeFormatter.ofPattern("dd.MM").format(at), style = MaterialTheme.typography.titleLarge, color = b.onAccent)

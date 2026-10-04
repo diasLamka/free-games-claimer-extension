@@ -62,6 +62,8 @@ import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,10 +198,11 @@ fun SettingsScreen(
                     state.importedAt?.let {
                         Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
                     }
+                    val clearName = stringResource(R.string.clear_sessions)
                     Text(
                         "✕ " + stringResource(R.string.clear_sessions).uppercase(),
                         style = MaterialTheme.typography.labelLarge, color = Color.White,
-                        modifier = Modifier.padding(top = 10.dp).background(Color.Black).clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(top = 10.dp).background(Color.Black).semantics { contentDescription = clearName }.clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                     )
                 }
             }

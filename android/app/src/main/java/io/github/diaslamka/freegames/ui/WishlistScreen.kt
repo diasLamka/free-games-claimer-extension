@@ -35,6 +35,8 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 /**
  * Les jeux attendus : quand l'un d'eux passe gratuit, sa notification passe
@@ -45,6 +47,7 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
 fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
     val b = LocalBrut.current
     var text by rememberSaveable { mutableStateOf("") }
+    val removeName = stringResource(R.string.wish_remove)
     val free = state.offers.values.filter { it.isOpen(now) }.groupBy { it.normalisedTitle }
     // « Attends, il sera offert » (1.7.0) : les chances de chaque souhait.
     val ranked = remember(state.wishlist, state.importedWishes, state.odds, state.passes, state.givers) { Odds.rank(state, now) }
@@ -101,7 +104,7 @@ fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove
                     Text(
                         "✕", style = MaterialTheme.typography.titleMedium, color = if (b.dark) Color.Black else Color.White,
                         modifier = Modifier.padding(end = 8.dp).background(if (b.dark) b.accent else Color.Black)
-                            .clickableNoRipple { onRemove(w) }.padding(horizontal = 12.dp, vertical = 6.dp),
+                            .semantics { contentDescription = removeName }.clickableNoRipple { onRemove(w) }.padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }

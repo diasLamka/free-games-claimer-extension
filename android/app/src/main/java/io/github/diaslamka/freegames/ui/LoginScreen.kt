@@ -45,6 +45,9 @@ import androidx.webkit.WebViewCompat
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 
 /**
  * Se connecter a un magasin, dans une page de l'appli. La session (les
@@ -126,7 +129,8 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
         }
     }
     val storeName = if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)
-    Column(Modifier.fillMaxSize().background(b.base)) {
+    // Bord a bord (enableEdgeToEdge) : sans cela le titre et « Terminé » passaient sous la barre d'etat, et le bas sous la barre de navigation ou le clavier.
+    Column(Modifier.fillMaxSize().background(b.base).windowInsetsPadding(WindowInsets.safeDrawing)) {
         TopBlock(stringResource(R.string.login_title, storeName) + (memberName?.let { " · " + it } ?: "")) {
             BrutButton(stringResource(R.string.done), onClose)
             SquareButton(Icons.Rounded.Close, stringResource(R.string.close), onClose)

@@ -45,6 +45,7 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Tiles
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import androidx.compose.foundation.layout.heightIn
 
 /*
  * Les trois facons de poser un jeu sur l'accueil (1.25.0) : de grandes tuiles, une liste, une grille.
@@ -172,7 +173,7 @@ fun OfferTile(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mo
             l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 8.dp), small = true) }
         }
         Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.height(40.dp))
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.heightIn(min = 40.dp))
             TimeLeft(o, now, l.urgent)
         }
     }

@@ -52,6 +52,11 @@ import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.theme.Display
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
 import io.github.diaslamka.freegames.ui.theme.Mono
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 
 /* ------------------------------------------------------------ la matiere */
 
@@ -291,20 +296,24 @@ fun TopBlock(title: String, modifier: Modifier = Modifier, actions: @Composable 
     }
 }
 
+/** L'encre des textes secondaires sur blanc : l'option inactive d'un interrupteur, le texte d'un champ vide. */
+internal val MutedInk = Color(0xFF595959)
+
 /** L'interrupteur de la charte : deux cases, OUI / NON, l'active en aplat. */
 @Composable
 fun BrutToggle(checked: Boolean, onChange: (Boolean) -> Unit) {
     val b = LocalBrut.current
-    Row(Modifier.padding(end = 3.dp, bottom = 3.dp).brut(Color.White, shadow = Color.Black, offset = 3.dp, border = 2.dp)) {
-        listOf(true to "OUI", false to "NON").forEach { (v, label) ->
+    Row(Modifier.padding(end = 3.dp, bottom = 3.dp).brut(Color.White, shadow = Color.Black, offset = 3.dp, border = 2.dp).selectableGroup()) {
+        listOf(true to R.string.toggle_on, false to R.string.toggle_off).forEach { (v, name) ->
             val on = v == checked
             Text(
-                label,
+                stringResource(name),
                 style = MaterialTheme.typography.labelMedium,
-                color = if (on) (if (v) b.onAccent else Color.White) else Color(0xFF8A8A8A),
+                color = if (on) (if (v) b.onAccent else Color.White) else MutedInk,
                 modifier = Modifier.background(if (on) (if (v) b.accent else Color.Black) else Color.White)
-                    .clickableNoRipple(role = Role.RadioButton) { onChange(v) }
-                    .heightIn(min = 44.dp).wrapContentHeight().padding(horizontal = 12.dp, vertical = 6.dp),
+                    // `selectable` : un lecteur d'ecran dit « selectionne » ; clickableNoRipple n'en disait rien.
+                    .selectable(selected = on, interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.RadioButton) { onChange(v) }
+                    .heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
     }
@@ -314,7 +323,7 @@ fun BrutToggle(checked: Boolean, onChange: (Boolean) -> Unit) {
 @Composable
 fun BrutField(value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier, onDone: (() -> Unit)? = null) {
     Box(modifier.padding(end = 4.dp, bottom = 4.dp).brut(Color.White, shadow = Color.Black, offset = 4.dp).padding(horizontal = 12.dp, vertical = 12.dp)) {
-        if (value.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF8A8A8A))
+        if (value.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = MutedInk)
         BasicTextField(
             value = value, onValueChange = onChange, singleLine = true,
             textStyle = TextStyle(fontFamily = Mono, fontSize = 14.sp, color = Color.Black),

@@ -299,6 +299,12 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="login_refused_why">Das ist eine Sicherheitsregel von %1$s: Die Anmeldeseite öffnet sich nur in einem echten Browser, nie in einer App. Die App hält hier an, statt dich dorthin zu schicken.</string>
     <string name="login_refused_epic">Dein Epic-Konto kann zusätzlich zu %1$s ein Passwort haben: Epic schickt einen Code per E-Mail, du wählst das Passwort, und die %1$s-Anmeldung funktioniert überall sonst weiter. Dann hier mit E-Mail und diesem Passwort anmelden.</string>
     <string name="login_refused_other">Melde dich mit E-Mail und Passwort deines %1$s-Kontos an.</string>
+    <string name="toggle_on">JA</string>
+    <string name="toggle_off">NEIN</string>
+    <string name="panel_expand">Seite vergrößern</string>
+    <string name="panel_collapse">Seite verkleinern</string>
+    <string name="family_connected">angemeldet</string>
+    <string name="family_not_connected">nicht angemeldet</string>
     <string name="close">Schließen</string>
     <string name="done">Fertig</string>
     <string name="claim_progress">Hole %1$d/%2$d: %3$s</string>
