@@ -4,6 +4,53 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.26.1 -- 2026-10-04 (extension inchangee, 2.107.0)
+
+**Cinq defauts de l'audit corriges (la cle de signature, les moteurs de rendu tues, la veille qui s'annulait, la mise a jour bloquee, les intents rejoues), et une nouvelle cle de signature**
+
+**A LIRE AVANT DE METTRE A JOUR : la 1.26.0 refusera cette version, il faut l'installer UNE fois a la main.** La
+1.26.1 est signee avec une nouvelle cle (voir plus bas). Android l'accepte par-dessus la 1.26.0 sans rien perdre, mais
+le controle de la 1.26.0 compare les certificats a l'identique et dira « le fichier n'est pas la bonne appli » dans
+le bandeau de l'accueil. Telecharger l'APK de la release `app-v1.26.1` sur le telephone et l'ouvrir : sessions,
+historique et reglages restent. A partir de la 1.26.1 les mises a jour se refont dans l'appli (elle sait lire
+une rotation de cle).
+
+- **La cle de signature sort du depot** (`.github/workflows/android.yml`, `test/android-keystore.test.mjs`).
+  `android/keystore/` etait suivi par git, mots de passe compris : qui lisait le depot pouvait signer une
+  « mise a jour » que l'appli installe. Les cles sont des secrets du workflow, ecrits sur le disque du runner le
+  temps du build ; le dossier est ignore, et un test echoue si un fichier de cle revient. Le workflow verifie avec
+  `apksigner` que l'APK porte nos empreintes (et la nouvelle) avant de rien deposer.
+- **Une nouvelle cle, par rotation** (`android/signing/lineage.bin`, `data/Install.kt`). L'ancienne restait dans
+  l'historique git. La chaine ancienne -> nouvelle (APK Signature Scheme v3, `apksigner rotate`, publique : des
+  certificats) est dans le depot ; le workflow signe avec l'ancienne puis resigne avec la chaine. **Android 13 et plus
+  adoptent la nouvelle cle**, et l'ancienne n'a pas la capacite de retour en arriere : elle ne pourra plus signer de
+  mise a jour pour un telephone passe a la nouvelle. **Android 9 a 12 gardent l'ancienne** (reglage prudent
+  d'apksigner : la rotation y a eu des bugs) : l'ancienne cle reste donc dans les secrets. `Install.sameApp` accepte
+  maintenant un APK dont la chaine contient le certificat installe (`signersAccepted`) ; toute autre cle reste refusee.
+- **Un moteur de rendu de WebView tue ne tue plus l'appli** (`claim/RenderSafeClient.kt`). Aucune des trois WebView
+  (recuperation, controle de session, connexion) n'avait `onRenderProcessGone` : Android arretait tout le processus,
+  et la recuperation « ecran eteint » sur un telephone a court de memoire emportait l'appli. La page morte est
+  jetee et refaite, l'offre en cours finit en echec avec la raison (au lieu d'attendre jusqu'a cinq minutes), les
+  suivantes repartent d'une page saine ; la connexion se refait deux fois puis rend l'ecran.
+- **La veille ne s'annule plus elle-meme** (`work/WatchWorker.kt`). En fin de passage elle programme l'ouverture
+  suivante d'Epic sous le nom unique de l'ouverture, avec `REPLACE` ; quand c'etait cette ouverture qui l'avait
+  reveillee, le passage en cours etait annule et supprime avant la recuperation de fond qui devait le suivre.
+  `KEEP` depuis la veille (comme le resume du jour), `REPLACE` seulement depuis l'ecran.
+- **La mise a jour ne reste plus bloquee sur « Telechargement »** (`data/UpdateRunner.kt`). Le bandeau est un
+  element d'une liste : defiler annulait sa coroutine et le telechargement, et l'etat ne revenait jamais. Il tourne
+  maintenant dans la portee du processus (un seul a la fois), et annule en route il redevient « Disponible ».
+- **Une recreation de l'activite ne rejoue plus l'intent qui l'a lancee** (`MainActivity.kt`). Processus tue puis
+  retour par les Recents, ou taille de police changee : une recuperation demandee par une notification, un widget
+  ou un raccourci repartait seule, en passant outre le recul. La taille de police est maintenant suivie par
+  l'activite (`fontScale`) : la changer ne detruit plus la recuperation en cours.
+- **La CI** : cache Gradle (8 min -> 5 min 45), et la suite complete se lance maintenant sur un poste de
+  developpement (JDK 17 + SDK 36 ; depuis un chemin sans espace, Robolectric encodant l'espace en `%20`).
+- Tests : 256 -> 260 (garde de la cle, rotation, moteur de rendu, planificateur, mise a jour, intents).
+- Non fait : l'intent exporte de `MainActivity` (une autre appli peut lancer la recuperation : l'action normale de
+  l'appli, jugee mineure) ; `AppUpdate.status` reste un `StateFlow` modifiable de partout.
+- Non verifie : l'installation reelle de la rotation sur un telephone (a faire avec l'APK de la branche avant la
+  release), et le comportement d'une page dont le moteur de rendu meurt, sur un telephone reel.
+
 ## 2.107.0 / appli 1.26.0 -- 2026-10-03
 
 **La mise a jour sans confirmation (une permission manquait), plus aucun bouton de recuperation sur l'accueil, le compte Epic interroge avant l'onglet, et une page « Sante » par magasin**
