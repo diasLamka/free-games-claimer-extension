@@ -19,9 +19,11 @@ cas « ne demande rien » ont aussi ete verifies par mutation (sans le `catch` o
   fichiers est deja exclu des sauvegardes et des transferts : la copie l'est aussi. Rien n'est affiche a l'ecran quand l'etat repart de zero faute de
   copie lisible : seul le diagnostic le dit.
 - **Un intent illisible ou invalide ne fait plus planter l'appli** (`Incoming.kt`, `ui/AppRoot.kt`). `MainActivity` est exportee : n'importe quelle appli
-  peut lui envoyer un intent. L'ecran lisait ses extras sans protection, et un paquet d'extras illisible (classe inconnue) faisait lever la lecture
-  dans la coroutine de l'ecran, donc planter l'appli ; un onglet hors des quatre qui existent etait pris tel quel (les Reglages, sans onglet
-  choisi). `Incoming.read` lit ce qu'un intent demande d'un bloc et sans jamais lever (lien, partage, raccourci, recuperation, onglet) : une demande
+  peut lui envoyer un intent. L'ecran lisait ses extras sans protection. Sur Android 12 et avant, un paquet d'extras illisible (classe inconnue)
+  fait lever BadParcelableException a la lecture de n'importe quel extra, meme d'une cle absente, dans la coroutine de l'ecran : l'appli plantait
+  (verifie sur un emulateur Android 11 : sans la protection, le processus meurt). Android 13 et apres neutralise ce cas lui-meme (verifie sur
+  Android 14 : rien ne leve), la protection y est sans effet. Un onglet hors des quatre qui existent etait aussi pris tel quel (les Reglages,
+  sans onglet choisi). `Incoming.read` lit ce qu'un intent demande d'un bloc et sans jamais lever (lien, partage, raccourci, recuperation, onglet) : une demande
   illisible ou un onglet inexistant ne demandent rien. Les demandes valides se comportent comme avant.
 - **L'etat de la mise a jour n'est plus modifiable de l'exterieur** (`data/AppUpdate.kt`). `AppUpdate.status` etait un `MutableStateFlow` public :
   n'importe quel ecran pouvait ecrire un etat que le code de mise a jour n'avait pas produit. C'est maintenant une vue en lecture seule ;
@@ -33,9 +35,10 @@ cas « ne demande rien » ont aussi ete verifies par mutation (sans le `catch` o
 - Verifie sur un telephone reel (OnePlus, Android 14) : l'APK publie s'installe par-dessus la 1.27.0 en gardant les donnees ; l'appli survit a des
   intents envoyes par `adb` (onglet hors plage, extra du mauvais type, raccourcis « Ce soir » et « Souhait », partage) ; la sentinelle se repose apres
   la mise a jour, a 7,5 h du dernier passage (2,5 x 3 h).
-- Non verifie : la copie `.bak` sur un telephone reel (le fichier n'est pas lisible sans `run-as`), l'appui long sur l'icone, le widget et une
-  notification (leurs intents passent par `Incoming`, couverts par des tests mais pas essayes a la main), et un paquet d'extras vraiment illisible
-  (classe inconnue), que seuls les tests simulent.
+- Verifie sur emulateur (Android 11 et 14, le vrai systeme) : un paquet d'extras illisible envoye a l'activite exportee, et la copie `.bak` de l'etat
+  sur le vrai systeme de fichiers d'Android.
+- Non verifie : l'appui long sur l'icone, le widget et une notification touchee a la main sur un telephone (leurs intents passent par `Incoming`,
+  couverts par des tests).
 
 ## Appli 1.27.0 -- 2026-10-04 (extension inchangee, 2.107.0)
 
