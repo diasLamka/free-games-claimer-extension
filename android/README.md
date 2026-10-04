@@ -154,17 +154,32 @@ n'est plus dans le depot** : elle vit dans les secrets du workflow
 `ANDROID_KEY_PASSWORD`), que `android.yml` ecrit dans `android/keystore/` le
 temps du build. Ce dossier est ignore par git, et `test/android-keystore.test.mjs`
 echoue si une cle y revient. Le workflow verifie en plus que l'APK porte
-l'empreinte attendue (`SIGNING_SHA256`) avant de rien deposer ; sans les secrets
-(un fork), il construit un APK non signe et ne publie rien.
+nos empreintes (`SIGNING_SHA256`, `SIGNING_ORIGIN_SHA256`) avant de rien deposer ;
+sans les secrets (un fork), il construit un APK non signe et ne publie rien.
+
+**Depuis la 1.26.1, une nouvelle cle** (secrets `ANDROID_NEXT_KEYSTORE_*`), par
+**rotation** : `android/signing/lineage.bin` (publique : des certificats) relie
+l'ancienne cle (`72:1A:F7:…:45:C5`, celle des versions jusqu'a la 1.26.0) a la
+nouvelle (`28:C8:87:…:01:A8`). Le workflow signe avec l'ancienne puis resigne avec
+la chaine (`apksigner sign --next-signer --lineage`). **Android 13 et plus adoptent la
+nouvelle cle ; Android 9 a 12 gardent l'ancienne** (reglage par defaut d'apksigner,
+la rotation y ayant eu des bugs) : **l'ancienne cle doit donc rester dans les secrets,
+pour toujours.** Elle n'a pas la capacite de retour en arriere : sur un telephone passe
+a la nouvelle, elle ne peut plus signer de mise a jour. `Install.sameApp` accepte un APK
+dont la chaine contient le certificat installe (`signersAccepted`) ; la 1.26.0, elle,
+exigeait des certificats identiques et refuse donc la 1.26.1 : **une installation a la
+main, une fois** (voir le CHANGELOG).
 
 Pour signer a la main, poser `release.jks` et un `keystore.properties`
-(`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) dans `android/keystore/`.
+(`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) dans `android/keystore/` ;
+la rotation se fait avec `release-next.jks` et `apksigner sign --ks release.jks
+--next-signer --ks release-next.jks --lineage android/signing/lineage.bin`.
+**Sauvegarder `android/keystore/` ailleurs (gestionnaire de mots de passe, cle USB) :**
+les secrets GitHub ne se relisent pas, et sans la cle plus aucune mise a jour n'est possible.
 
-**L'historique git garde l'ancienne copie de la cle** (commit `2129c04`), sortie
-du dossier mais pas du passe. Tant que le depot reste prive et n'a jamais ete
-clone par un tiers, c'est acceptable. S'il devenait public ou s'il a ete partage,
-la cle est a changer, avec une chaine de rotation (`apksigner rotate`) pour que
-les installations existantes continuent de se mettre a jour.
+**L'historique git garde l'ancienne copie de la cle** (commit `2129c04`). Avec la
+rotation, l'ancienne cle ne peut plus signer de mise a jour pour un telephone passe
+a la nouvelle (Android 13+) ; elle reste valable pour les Android 9 a 12.
 
 ## Installer
 

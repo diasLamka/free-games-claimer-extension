@@ -458,9 +458,13 @@ telephone, c'est **l'appli** qui garde les sessions des magasins.
   workflow `android.yml`, ecrits sur le disque du runner le temps du build ;
   `android/keystore/` est ignore par git (`test/android-keystore.test.mjs` echoue
   si un fichier de cle revient) et le workflow refuse de deposer un APK qui n'est
-  pas signe par l'empreinte attendue. **L'historique git en garde l'ancienne
-  copie** (commit `2129c04`) : sans danger tant que le depot est prive et n'a pas
-  ete partage, a changer avec une chaine de rotation (`apksigner rotate`) sinon.
+  pas signe par nos empreintes. **L'historique git en garde l'ancienne copie**
+  (commit `2129c04`) : depuis la 1.26.1 l'appli est signee par une nouvelle cle,
+  reliee a l'ancienne par une chaine de rotation (`android/signing/lineage.bin`,
+  APK Signature Scheme v3). Sur Android 13 et plus, l'ancienne cle n'a pas la
+  capacite de retour en arriere : elle ne peut plus signer de mise a jour pour un
+  telephone passe a la nouvelle. Sur Android 9 a 12 l'ancienne reste la cle de l'appli
+  (la rotation n'y est pas appliquee) : sa divulgation y reste un risque.
 
 - **Google et Facebook** interdisent leur connexion dans une page integree a
   une appli : la page de connexion s'arrete avant de les charger

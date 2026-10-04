@@ -13,13 +13,18 @@
 # que `versionName`, pour la meme raison que release.yml : Android refuse
 # d'installer par-dessus une version qui se dit plus recente.
 #
-# La cle de signature n'est PAS dans le depot : elle vient des secrets
-# ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS et
-# ANDROID_KEY_PASSWORD, et n'existe sur le disque du runner que le temps du
-# build (voir test/android-keystore.test.mjs). Sans eux, le build reste
-# possible, l'APK n'est pas signe et rien n'est publie. Un APK signe par une
-# autre cle que SIGNING_SHA256 n'est jamais depose : le telephone n'installerait
-# pas la mise a jour, ou pire, elle serait signee par une cle qui n'est pas la notre.
+# Les cles de signature ne sont PAS dans le depot : elles viennent des secrets
+# ANDROID_KEYSTORE_* (l'ancienne cle) et ANDROID_NEXT_KEYSTORE_* (la nouvelle),
+# et n'existent sur le disque du runner que le temps du build (voir
+# test/android-keystore.test.mjs). Sans eux, le build reste possible, l'APK n'est
+# pas signe et rien n'est publie.
+#
+# La rotation (1.26.1) : AGP signe avec l'ancienne cle, puis apksigner resigne
+# avec la chaine android/signing/lineage.bin (ancienne -> nouvelle ; APK Signature
+# Scheme v3). Android 13 et plus adoptent la nouvelle cle et acceptent la mise a jour
+# d'une appli installee avec l'ancienne ; les Android plus anciens gardent l'ancienne,
+# qui doit donc rester ici. Un APK dont une empreinte n'est ni l'une ni l'autre, ou si la
+# nouvelle manque, n'est jamais depose.
 name: android
 
 on:
@@ -44,8 +49,9 @@ jobs:
     # Un build normal prend quelques minutes ; au-dela, quelque chose est bloque.
     timeout-minutes: 30
     env:
-      # L'empreinte SHA-256 du certificat qui signe l'appli : la meme a chaque version.
-      SIGNING_SHA256: '72:1A:F7:EA:41:FE:5C:AF:96:A8:A7:6B:7D:70:42:74:2C:A5:37:E4:04:A4:A5:7F:23:27:17:BA:47:55:45:C5'
+      # Les empreintes SHA-256 des certificats : la cle courante (nouvelle) et celle d'origine (ancienne).
+      SIGNING_SHA256: '28:C8:87:95:18:3A:E1:59:38:A1:DD:30:5C:A3:37:A5:8A:55:E8:F8:D9:DA:C6:FB:74:3B:7D:01:D3:0A:01:A8'
+      SIGNING_ORIGIN_SHA256: '72:1A:F7:EA:41:FE:5C:AF:96:A8:A7:6B:7D:70:42:74:2C:A5:37:E4:04:A4:A5:7F:23:27:17:BA:47:55:45:C5'
     steps:
       - uses: actions/checkout@v5
 
@@ -85,7 +91,38 @@ jobs:
         working-directory: android
         run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
 
-      # Signe par NOTRE cle, ou pas signe du tout (secrets absents) : jamais par une autre.
+      # AGP a signe avec l'ancienne cle ; on resigne avec la chaine de rotation (ancienne -> nouvelle).
+      - name: Rotation de la cle de signature
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          NEXT_KEYSTORE_BASE64: ${{ secrets.ANDROID_NEXT_KEYSTORE_BASE64 }}
+          NEXT_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_NEXT_KEYSTORE_PASSWORD }}
+          NEXT_KEY_ALIAS: ${{ secrets.ANDROID_NEXT_KEY_ALIAS }}
+          NEXT_KEY_PASSWORD: ${{ secrets.ANDROID_NEXT_KEY_PASSWORD }}
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          if [ ! -f "$apk" ]; then
+            echo "::warning::pas d'APK signe a resigner (secrets absents)"
+            exit 0
+          fi
+          if [ -z "$NEXT_KEYSTORE_BASE64" ]; then
+            echo "::error::la cle de rotation (ANDROID_NEXT_KEYSTORE_BASE64) est absente"
+            exit 1
+          fi
+          next="$RUNNER_TEMP/release-next.jks"
+          printf '%s' "$NEXT_KEYSTORE_BASE64" | base64 -d > "$next"
+          apksigner="$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/apksigner | sort -V | tail -n1)"
+          # Les mots de passe passent par l'environnement (env:), jamais par la ligne de commande.
+          "$apksigner" sign \
+            --ks android/keystore/release.jks --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
+            --next-signer --ks "$next" --ks-key-alias "$NEXT_KEY_ALIAS" --ks-pass env:NEXT_KEYSTORE_PASSWORD --key-pass env:NEXT_KEY_PASSWORD \
+            --lineage android/signing/lineage.bin --out "$RUNNER_TEMP/rotated.apk" "$apk"
+          mv "$RUNNER_TEMP/rotated.apk" "$apk"
+          rm -f "$next"
+
+      # Nos deux cles, la nouvelle comprise, ou pas signe du tout (secrets absents) : jamais une autre.
       - name: Verifier la signature, renommer l'APK
         run: |
           v="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts)"
@@ -98,16 +135,19 @@ jobs:
             *)
               apksigner="$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/apksigner | sort -V | tail -n1)"
               # Ce que dit apksigner ne contient que des certificats (publics) : on l'imprime quand quelque chose cloche.
-              out="$("$apksigner" verify --print-certs "$apk" 2>&1)" || { printf '%s\n' "$out"; echo "::error::apksigner refuse l'APK"; exit 1; }
-              # « Signer #1 certificate… » (build-tools 36) ou « V2 Signer: certificate… » (37) : on lit l'empreinte, pas la
-              # tournure, et TOUTES celles qui sont listees doivent etre la notre (sort -u : une seule ligne, la bonne).
+              out="$("$apksigner" verify --print-certs -v "$apk" 2>&1)" || { printf '%s\n' "$out"; echo "::error::apksigner refuse l'APK"; exit 1; }
+              # « Signer #1 certificate… » (build-tools 36), « V3.1 Signer: certificate… » (37) : on lit l'empreinte, pas la
+              # tournure. Il en faut au moins une, la nouvelle, et AUCUNE qui ne soit ni la nouvelle ni l'ancienne.
               got="$(printf '%s\n' "$out" | sed -n 's/^.*certificate SHA-256 digest: //p' | tr -d ':\r' | tr 'A-F' 'a-f' | sort -u)"
-              want="$(printf '%s' "$SIGNING_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
-              if [ -z "$got" ] || [ "$got" != "$want" ]; then
+              new="$(printf '%s' "$SIGNING_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
+              old="$(printf '%s' "$SIGNING_ORIGIN_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
+              stranger="$(printf '%s\n' "$got" | grep -vxF -e "$new" -e "$old" || true)"
+              chain=0; printf '%s\n' "$out" | grep -q 'Verified using v3 scheme (APK Signature Scheme v3): true' && chain=1
+              if [ -z "$got" ] || [ -n "$stranger" ] || ! printf '%s\n' "$got" | grep -qxF "$new" || [ "$chain" != 1 ]; then
                 echo "apksigner : $apksigner"
                 ls -l android/app/build/outputs/apk/release
                 printf '%s\n' "$out"
-                echo "::error::l'APK n'est pas signe par la cle attendue (empreinte lue : ${got:-aucune})"
+                echo "::error::l'APK n'est pas signe par nos cles avec la chaine de rotation (empreintes lues : ${got:-aucune})"
                 exit 1
               fi
               cp "$apk" "free-games-claimer-android-$v.apk"
@@ -143,6 +183,6 @@ jobs:
             echo "Installation, Play Protect, mise a jour : android/README.md. Nouveautes : CHANGELOG.md."
             echo
             echo "- SHA-256 de l'APK : \`$sha\`"
-            echo "- Certificat de signature (SHA-256) : \`$SIGNING_SHA256\`"
+            echo "- Certificat de signature (SHA-256) : \`$SIGNING_SHA256\` (nouvelle cle, par rotation depuis \`$SIGNING_ORIGIN_SHA256\`)"
           } > notes.md
           gh release create "$tag" --target "$GITHUB_SHA" --title "Appli Android $v" --notes-file notes.md "$apk"
