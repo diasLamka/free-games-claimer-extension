@@ -45,7 +45,7 @@ import io.github.diaslamka.freegames.notify.Watchdog
  * que l'appli a deja note, jamais une mesure de plus.
  */
 @Composable
-fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}) {
+fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}, onShareDiagnostic: () -> Unit = {}) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val overview = Health.overview(state, now)
@@ -82,6 +82,10 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
         } else {
             state.watchLog.take(8).forEach { PassLine(it, now) }
         }
+        // Le diagnostic partageable (1.27.0) : de quoi comprendre une veille qui ne tourne pas, sans rien de personnel.
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
+        Text(stringResource(R.string.health_diag_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+        BrutButton(stringResource(R.string.health_diag_share), onShareDiagnostic, primary = false)
         overview.lines.forEach { line ->
             Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -143,6 +147,12 @@ fun rememberNotificationsAllowed(): Boolean {
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
     return allowed
+}
+
+/** Envoie un texte par le menu « Partager » d'Android. */
+fun shareText(context: Context, text: String, subject: String) {
+    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text).putExtra(Intent.EXTRA_SUBJECT, subject)
+    runCatching { context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
 
 /** Les reglages d'Android de CETTE appli : c'est la que se leve la limite d'activite en arriere-plan (batterie). */

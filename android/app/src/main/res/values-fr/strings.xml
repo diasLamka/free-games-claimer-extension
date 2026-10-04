@@ -384,6 +384,9 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="set_watchdog_hint">Une notification quand aucun passage n\'a eu lieu depuis environ deux fois et demie l\'intervalle.</string>
     <string name="health_watch_stalled">La veille ne tourne plus depuis %1$s (attendue toutes les %2$d h).</string>
     <string name="health_app_settings_open">Ouvrir les réglages de l\'appli</string>
+    <string name="health_diag_share">Partager le diagnostic</string>
+    <string name="health_diag_hint">Versions, réglages, derniers passages de la veille et état de chaque magasin. Ni cookies, ni noms de compte, ni titres de tes souhaits ou de ta bibliothèque.</string>
+    <string name="diag_subject">Diagnostic Free Games Claimer</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>

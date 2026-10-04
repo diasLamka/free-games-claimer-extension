@@ -384,6 +384,9 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="set_watchdog_hint">Una notificación cuando no ha habido ninguna pasada durante unas dos veces y media el intervalo.</string>
     <string name="health_watch_stalled">La vigilancia no se ha ejecutado desde hace %1$s (esperada cada %2$d h).</string>
     <string name="health_app_settings_open">Abrir los ajustes de la app</string>
+    <string name="health_diag_share">Compartir el diagnóstico</string>
+    <string name="health_diag_hint">Versiones, ajustes, las últimas pasadas de la vigilancia y el estado de cada tienda. Sin cookies, sin nombres de cuenta, sin títulos de tus deseos ni de tu biblioteca.</string>
+    <string name="diag_subject">Diagnóstico de Free Games Claimer</string>
     <string name="health_sources_ok">Todas las fuentes responden.</string>
     <string name="health_sources_down">Fuentes con error: %1$s</string>
     <string name="health_no_claim">Aún no se ha conseguido nada</string>

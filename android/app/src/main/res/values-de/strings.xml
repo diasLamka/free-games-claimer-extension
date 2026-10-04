@@ -384,6 +384,9 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="set_watchdog_hint">Eine Benachrichtigung, wenn etwa zweieinhalb Intervalle lang kein Durchlauf stattfand.</string>
     <string name="health_watch_stalled">Die Überwachung lief seit %1$s nicht mehr (erwartet alle %2$d Std.).</string>
     <string name="health_app_settings_open">App-Einstellungen öffnen</string>
+    <string name="health_diag_share">Diagnose teilen</string>
+    <string name="health_diag_hint">Versionen, Einstellungen, die letzten Durchläufe der Überwachung und der Zustand jedes Shops. Keine Cookies, keine Kontonamen, keine Titel deiner Wünsche oder deiner Bibliothek.</string>
+    <string name="diag_subject">Free-Games-Claimer-Diagnose</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

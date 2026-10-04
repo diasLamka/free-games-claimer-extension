@@ -385,6 +385,9 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="set_watchdog_hint">A notification when no pass has run for about two and a half times the interval.</string>
     <string name="health_watch_stalled">The watch has not run for %1$s (expected every %2$d h).</string>
     <string name="health_app_settings_open">Open the app settings</string>
+    <string name="health_diag_share">Share the diagnostic</string>
+    <string name="health_diag_hint">Versions, settings, the last watch passes and the state of each store. No cookies, no account names, no wishlist or library titles.</string>
+    <string name="diag_subject">Free Games Claimer diagnostic</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>
