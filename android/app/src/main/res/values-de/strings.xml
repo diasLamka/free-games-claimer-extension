@@ -387,6 +387,16 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="health_diag_share">Diagnose teilen</string>
     <string name="health_diag_hint">Versionen, Einstellungen, die letzten Durchläufe der Überwachung und der Zustand jedes Shops. Keine Cookies, keine Kontonamen, keine Titel deiner Wünsche oder deiner Bibliothek.</string>
     <string name="diag_subject">Free-Games-Claimer-Diagnose</string>
+    <string name="health_test_run">Hintergrund-Überwachung jetzt testen</string>
+    <string name="health_test_hint">Startet einen Durchlauf wie den echten, im Hintergrund-Worker. Sperre danach sofort das Telefon: Das Ergebnis kommt als Benachrichtigung.</string>
+    <string name="health_test_started">Test gestartet: Sperre das Telefon, das Ergebnis kommt als Benachrichtigung.</string>
+    <string name="notif_test_ok">Test der Überwachung beendet</string>
+    <string name="notif_test_failed">Test der Überwachung fehlgeschlagen</string>
+    <string name="notif_test_text">%1$d Angebote, %2$d neu, in %3$s. Bildschirm %4$s.</string>
+    <string name="screen_state_off">aus</string>
+    <string name="screen_state_on">an</string>
+    <string name="notif_test_claim_off">Das Holen im Hintergrund ist in den Einstellungen aus.</string>
+    <string name="notif_test_claimed">%1$d Spiel(e) im Hintergrund geholt.</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

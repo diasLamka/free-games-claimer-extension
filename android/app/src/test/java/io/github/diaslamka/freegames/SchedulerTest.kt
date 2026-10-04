@@ -86,6 +86,18 @@ class SchedulerTest {
         awaitState(pass.id, WorkInfo.State.SUCCEEDED)
     }
 
+    @Test
+    fun theTestRunsAsOneUniqueNetworkPassMarkedAsATest() {
+        Scheduler.testNow(context)
+        Scheduler.testNow(context)
+        // Le second appui remplace le premier : un seul test en attente.
+        val waiting = manager.getWorkInfosForUniqueWork(Scheduler.TEST).get()
+        assertEquals(1, waiting.size)
+        assertEquals(WorkInfo.State.ENQUEUED, waiting[0].state)
+        // Marque comme test : le travail le saura, et le dira en notification.
+        assertTrue(Scheduler.testRequest().workSpec.input.getBoolean(io.github.diaslamka.freegames.work.WatchWorker.KEY_TEST, false))
+    }
+
     private fun opening() = manager.getWorkInfosForUniqueWork(Scheduler.OPENING).get()
 
     @Test

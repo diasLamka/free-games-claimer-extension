@@ -344,6 +344,28 @@ object Notifier {
         post(context, 7301, b.build())
     }
 
+    /** Le resultat d'un test de la veille (1.27.0), en notification : l'ecran est eteint, c'est la seule facon de le lire. */
+    fun testDone(context: Context, r: io.github.diaslamka.freegames.model.PassRecord, claimOn: Boolean) {
+        val done = r.outcome == io.github.diaslamka.freegames.data.PassLog.OK || r.outcome == io.github.diaslamka.freegames.data.PassLog.ERRORS
+        val screen = context.getString(if (r.screenOff) R.string.screen_state_off else R.string.screen_state_on)
+        val lines = mutableListOf<String>()
+        if (done) {
+            lines += context.getString(R.string.notif_test_text, r.offers, r.fresh, io.github.diaslamka.freegames.data.PassLog.duration(r.ms), screen)
+            lines += if (claimOn) context.getString(R.string.notif_test_claimed, r.claimed ?: 0) else context.getString(R.string.notif_test_claim_off)
+        } else {
+            lines += r.errors.joinToString(" | ").ifEmpty { r.outcome }
+        }
+        val text = lines.filter { it.isNotEmpty() }.joinToString("\n")
+        val b = NotificationCompat.Builder(context, CH_HEALTH)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(if (done) R.string.notif_test_ok else R.string.notif_test_failed))
+            .setContentText(text.lineSequence().first())
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 7310, tab = 3))
+        post(context, 7310, b.build())
+    }
+
     fun updateAvailable(context: Context, version: String) {
         val b = NotificationCompat.Builder(context, CH_UPDATE)
             .setSmallIcon(R.drawable.ic_stat_ticket)

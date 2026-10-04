@@ -388,6 +388,16 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="health_diag_share">Share the diagnostic</string>
     <string name="health_diag_hint">Versions, settings, the last watch passes and the state of each store. No cookies, no account names, no wishlist or library titles.</string>
     <string name="diag_subject">Free Games Claimer diagnostic</string>
+    <string name="health_test_run">Test the background watch now</string>
+    <string name="health_test_hint">Runs a pass like the real one, in the background worker. Lock the phone right after: the result arrives as a notification.</string>
+    <string name="health_test_started">Test started: lock the phone, the result comes as a notification.</string>
+    <string name="notif_test_ok">Watch test done</string>
+    <string name="notif_test_failed">Watch test failed</string>
+    <string name="notif_test_text">%1$d offers, %2$d new, in %3$s. Screen %4$s.</string>
+    <string name="screen_state_off">off</string>
+    <string name="screen_state_on">on</string>
+    <string name="notif_test_claim_off">Background claiming is off in the settings.</string>
+    <string name="notif_test_claimed">%1$d game(s) claimed in the background.</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>

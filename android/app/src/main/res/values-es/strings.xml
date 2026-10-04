@@ -387,6 +387,16 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="health_diag_share">Compartir el diagnóstico</string>
     <string name="health_diag_hint">Versiones, ajustes, las últimas pasadas de la vigilancia y el estado de cada tienda. Sin cookies, sin nombres de cuenta, sin títulos de tus deseos ni de tu biblioteca.</string>
     <string name="diag_subject">Diagnóstico de Free Games Claimer</string>
+    <string name="health_test_run">Probar la vigilancia en segundo plano ahora</string>
+    <string name="health_test_hint">Lanza una pasada como la real, en la tarea de segundo plano. Bloquea el teléfono justo después: el resultado llega como notificación.</string>
+    <string name="health_test_started">Prueba iniciada: bloquea el teléfono, el resultado llega como notificación.</string>
+    <string name="notif_test_ok">Prueba de la vigilancia terminada</string>
+    <string name="notif_test_failed">Prueba de la vigilancia fallida</string>
+    <string name="notif_test_text">%1$d ofertas, %2$d nuevas, en %3$s. Pantalla %4$s.</string>
+    <string name="screen_state_off">apagada</string>
+    <string name="screen_state_on">encendida</string>
+    <string name="notif_test_claim_off">La recuperación en segundo plano está desactivada en los ajustes.</string>
+    <string name="notif_test_claimed">%1$d juego(s) conseguido(s) en segundo plano.</string>
     <string name="health_sources_ok">Todas las fuentes responden.</string>
     <string name="health_sources_down">Fuentes con error: %1$s</string>
     <string name="health_no_claim">Aún no se ha conseguido nada</string>

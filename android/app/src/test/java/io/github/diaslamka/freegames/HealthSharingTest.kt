@@ -43,6 +43,15 @@ class HealthSharingTest {
     }
 
     @Test
+    fun theHealthPageOffersToTestTheBackgroundWatch() {
+        var run = 0
+        compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(AppState(), 1_790_000_000_000L, onRunTest = { run++ }) } }
+        compose.onNodeWithText(str(R.string.health_test_hint), substring = true, ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.health_test_run), ignoreCase = true).performClick()
+        assertEquals(1, run)
+    }
+
+    @Test
     fun theTextGoesToTheShareSheetWithItsSubject() {
         shareText(context, "contenu du diagnostic", "Sujet")
         val chooser = shadowOf(context as Application).nextStartedActivity

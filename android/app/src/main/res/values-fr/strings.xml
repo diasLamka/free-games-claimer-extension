@@ -387,6 +387,16 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="health_diag_share">Partager le diagnostic</string>
     <string name="health_diag_hint">Versions, réglages, derniers passages de la veille et état de chaque magasin. Ni cookies, ni noms de compte, ni titres de tes souhaits ou de ta bibliothèque.</string>
     <string name="diag_subject">Diagnostic Free Games Claimer</string>
+    <string name="health_test_run">Tester la veille de fond maintenant</string>
+    <string name="health_test_hint">Lance un passage comme le vrai, dans la tâche de fond. Verrouille le téléphone juste après : le résultat arrive en notification.</string>
+    <string name="health_test_started">Test lancé : verrouille le téléphone, le résultat arrive en notification.</string>
+    <string name="notif_test_ok">Test de la veille terminé</string>
+    <string name="notif_test_failed">Test de la veille en échec</string>
+    <string name="notif_test_text">%1$d offres, %2$d nouveau(x), en %3$s. Écran %4$s.</string>
+    <string name="screen_state_off">éteint</string>
+    <string name="screen_state_on">allumé</string>
+    <string name="notif_test_claim_off">La récupération de fond est coupée dans les réglages.</string>
+    <string name="notif_test_claimed">%1$d jeu(x) récupéré(s) en fond.</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>

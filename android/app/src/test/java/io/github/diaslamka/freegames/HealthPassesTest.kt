@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.data.PassLog
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.PassRecord
@@ -61,10 +62,9 @@ class HealthPassesTest {
             PassRecord(at = now - 7_200_000, ms = 1_000, reason = "test", outcome = PassLog.FAILED, errors = listOf("reseau coupe")),
         )
         compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(AppState(watchLog = log), now) } }
-        // La ligne du passage de fond : la raison, ce qu'il a trouve, sa duree.
-        compose.onNodeWithText(str(R.string.pass_reason_fond), substring = true, ignoreCase = true).assertIsDisplayed()
-        compose.onNodeWithText("14", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("4 s", substring = true).assertIsDisplayed()
+        // La ligne du passage de fond, en entier : quand, la raison, ce qu'il a trouve, sa duree. (Le mot de la raison seul est ambigu : « background » est aussi dans le bouton de test.)
+        val ago = Fmt.ago(ApplicationProvider.getApplicationContext<Context>(), now - 600_000, now)
+        compose.onNodeWithText(str(R.string.health_pass_line, ago, str(R.string.pass_reason_fond), 14, 1, "4 s")).assertIsDisplayed()
         compose.onNodeWithText(str(R.string.pass_screen_off), substring = true, ignoreCase = true).assertIsDisplayed()
         compose.onNodeWithText(str(R.string.pass_claimed, 2), substring = true, ignoreCase = true).assertIsDisplayed()
         // Le passage en echec dit pourquoi.

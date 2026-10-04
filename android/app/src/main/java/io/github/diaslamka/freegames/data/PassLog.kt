@@ -63,6 +63,14 @@ object PassLog {
         }
     }
 
+    /** Les jeux obtenus par la recuperation de fond d'un passage : rattaches au passage le plus recent depuis `startedAt`. */
+    suspend fun noteClaimed(store: StateStore, startedAt: Long, claimed: Int) {
+        store.update { s ->
+            val i = s.watchLog.indexOfFirst { (it.reason == "fond" || it.reason == "test") && it.at >= startedAt }
+            if (i < 0) s else s.copy(watchLog = s.watchLog.toMutableList().also { it[i] = it[i].copy(claimed = claimed) })
+        }
+    }
+
     /** La duree d'un passage, lisible : « <1 s », « 4 s », « 1 min 12 s ». */
     fun duration(ms: Long): String = when {
         ms < 1_000 -> "<1 s"

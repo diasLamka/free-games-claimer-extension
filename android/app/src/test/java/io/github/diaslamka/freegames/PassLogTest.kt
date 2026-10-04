@@ -108,6 +108,21 @@ class PassLogTest {
     }
 
     @Test
+    fun theBackgroundClaimCountIsAttachedToThePassThatMadeIt() = runBlocking {
+        val s = store()
+        PassLog.track(s, "fond", clock = { 1_000L }) { Watcher.Summary(1, 0, emptyList()) }
+        PassLog.track(s, "ecran", clock = { 9_000L }) { Watcher.Summary(1, 0, emptyList()) }
+        PassLog.noteClaimed(s, startedAt = 500L, claimed = 2)
+        val log = s.value.watchLog
+        // Le plus recent d'abord : le passage « ecran » n'a pas fait de recuperation de fond, il n'est pas touche.
+        assertEquals(null, log[0].claimed)
+        assertEquals(2, log[1].claimed)
+        // Un passage anterieur au debut du travail n'est jamais choisi.
+        PassLog.noteClaimed(s, startedAt = 20_000L, claimed = 7)
+        assertEquals(listOf(null, 2), s.value.watchLog.map { it.claimed })
+    }
+
+    @Test
     fun theLogIsSavedWithTheState() = runBlocking {
         val file = File(tmp.root, "etat.json")
         PassLog.track(StateStore(file), "test") { Watcher.Summary(1, 0, emptyList()) }

@@ -45,7 +45,7 @@ import io.github.diaslamka.freegames.notify.Watchdog
  * que l'appli a deja note, jamais une mesure de plus.
  */
 @Composable
-fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}, onShareDiagnostic: () -> Unit = {}) {
+fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}, onShareDiagnostic: () -> Unit = {}, onRunTest: () -> Unit = {}) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val overview = Health.overview(state, now)
@@ -86,6 +86,9 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
         Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
         Text(stringResource(R.string.health_diag_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
         BrutButton(stringResource(R.string.health_diag_share), onShareDiagnostic, primary = false)
+        // Le test de la veille (1.27.0) : un passage comme le vrai, dans le travail de fond, dont le resultat arrive en notification.
+        Text(stringResource(R.string.health_test_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+        BrutButton(stringResource(R.string.health_test_run), onRunTest, primary = false)
         overview.lines.forEach { line ->
             Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
