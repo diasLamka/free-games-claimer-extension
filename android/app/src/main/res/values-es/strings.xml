@@ -280,6 +280,7 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="relay_unpair_confirm">Toca otra vez para desvincular</string>
     <string name="relay_paired">Vinculado al PC: ya se hablan.</string>
     <string name="relay_bad_code">Eso no es un código de vinculación (empieza por FGC1-).</string>
+    <string name="relay_not_stored">Este teléfono no pudo guardar el secreto de vinculación de forma segura (almacén de claves de Android). Inténtalo de nuevo o reinicia el teléfono.</string>
     <string name="relay_scan_failed">El lector no está disponible: pega el código.</string>
     <string name="section_about">Acerca de</string>
     <string name="section_privacy">Privacidad</string>

@@ -153,8 +153,12 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     /* Le relais avec le PC (1.2.0) : un code scanne ou colle. */
     fun pairRelay(code: String) {
         scope.launch {
-            val ok = RelayLink.pair(context, code, System.currentTimeMillis())
-            Toast.makeText(context, context.getString(if (ok) R.string.relay_paired else R.string.relay_bad_code), Toast.LENGTH_LONG).show()
+            val said = when (RelayLink.pair(context, code, System.currentTimeMillis())) {
+                RelayLink.PairResult.PAIRED -> R.string.relay_paired
+                RelayLink.PairResult.BAD_CODE -> R.string.relay_bad_code
+                RelayLink.PairResult.NOT_STORED -> R.string.relay_not_stored
+            }
+            Toast.makeText(context, context.getString(said), Toast.LENGTH_LONG).show()
         }
     }
 

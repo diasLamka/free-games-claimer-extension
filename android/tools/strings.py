@@ -279,6 +279,7 @@ S = {
  'relay_unpair_confirm': ('Tap again to unpair', 'Touche encore pour dissocier', 'Zum Entkoppeln erneut tippen', 'Toca otra vez para desvincular'),
  'relay_paired': ('Paired with the PC: they now talk to each other.', 'Associé au PC : ils se parlent désormais.', 'Mit dem PC gekoppelt: Sie sprechen jetzt miteinander.', 'Vinculado al PC: ya se hablan.'),
  'relay_bad_code': ('That is not a pairing code (it starts with FGC1-).', "Ce n'est pas un code d'association (il commence par FGC1-).", 'Das ist kein Kopplungscode (er beginnt mit FGC1-).', 'Eso no es un código de vinculación (empieza por FGC1-).'),
+ 'relay_not_stored': ('This phone could not keep the pairing secret safely (Android keystore). Try again, or restart the phone.', "Ce téléphone n'a pas pu garder le secret d'association en sécurité (coffre de clés d'Android). Réessaie, ou redémarre le téléphone.", 'Dieses Telefon konnte das Kopplungsgeheimnis nicht sicher speichern (Android-Schlüsselspeicher). Versuche es erneut oder starte das Telefon neu.', 'Este teléfono no pudo guardar el secreto de vinculación de forma segura (almacén de claves de Android). Inténtalo de nuevo o reinicia el teléfono.'),
  'relay_scan_failed': ('The scanner is unavailable: paste the code instead.', 'Le lecteur est indisponible : colle le code à la place.', 'Der Scanner ist nicht verfügbar: Code stattdessen einfügen.', 'El lector no está disponible: pega el código.'),
  'section_about': ('About', 'À propos', 'Über die App', 'Acerca de'),
  'section_privacy': ('Privacy', 'Confidentialité', 'Datenschutz', 'Privacidad'),
@@ -457,5 +458,5 @@ for i, d in enumerate(['values', 'values-fr', 'values-de', 'values-es']):
             out.append(f'        <item quantity="many">{esc(other)}</item>')
         out.append('    </plurals>')
     out.append('</resources>')
-    open(os.path.join(RES, d, 'strings.xml'), 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    open(os.path.join(RES, d, 'strings.xml'), 'w', encoding='utf-8', newline='\n').write('\n'.join(out) + '\n')
 print(len(S), 'chaines,', len(P), 'pluriels')

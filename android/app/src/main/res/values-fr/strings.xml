@@ -280,6 +280,7 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="relay_unpair_confirm">Touche encore pour dissocier</string>
     <string name="relay_paired">Associé au PC : ils se parlent désormais.</string>
     <string name="relay_bad_code">Ce n\'est pas un code d\'association (il commence par FGC1-).</string>
+    <string name="relay_not_stored">Ce téléphone n\'a pas pu garder le secret d\'association en sécurité (coffre de clés d\'Android). Réessaie, ou redémarre le téléphone.</string>
     <string name="relay_scan_failed">Le lecteur est indisponible : colle le code à la place.</string>
     <string name="section_about">À propos</string>
     <string name="section_privacy">Confidentialité</string>

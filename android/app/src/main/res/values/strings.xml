@@ -281,6 +281,7 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="relay_unpair_confirm">Tap again to unpair</string>
     <string name="relay_paired">Paired with the PC: they now talk to each other.</string>
     <string name="relay_bad_code">That is not a pairing code (it starts with FGC1-).</string>
+    <string name="relay_not_stored">This phone could not keep the pairing secret safely (Android keystore). Try again, or restart the phone.</string>
     <string name="relay_scan_failed">The scanner is unavailable: paste the code instead.</string>
     <string name="section_about">About</string>
     <string name="section_privacy">Privacy</string>

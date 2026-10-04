@@ -280,6 +280,7 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="relay_unpair_confirm">Zum Entkoppeln erneut tippen</string>
     <string name="relay_paired">Mit dem PC gekoppelt: Sie sprechen jetzt miteinander.</string>
     <string name="relay_bad_code">Das ist kein Kopplungscode (er beginnt mit FGC1-).</string>
+    <string name="relay_not_stored">Dieses Telefon konnte das Kopplungsgeheimnis nicht sicher speichern (Android-Schlüsselspeicher). Versuche es erneut oder starte das Telefon neu.</string>
     <string name="relay_scan_failed">Der Scanner ist nicht verfügbar: Code stattdessen einfügen.</string>
     <string name="section_about">Über die App</string>
     <string name="section_privacy">Datenschutz</string>

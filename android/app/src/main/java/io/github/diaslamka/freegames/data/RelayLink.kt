@@ -27,16 +27,27 @@ object RelayLink {
         return Ctx(p, Relay.topic(p.secret), Relay.key(p.secret))
     }
 
-    /** Associe ce telephone a partir du code scanne ou colle. Rend faux si le code n'en est pas un. */
-    suspend fun pair(context: Context, code: String, now: Long): Boolean {
-        val (secret, server) = Relay.parsePairingCode(code) ?: return false
+    /** Ce que donne une association : faite, un code qui n'en est pas un, ou un secret que le telephone n'a pas pu garder. */
+    enum class PairResult { PAIRED, BAD_CODE, NOT_STORED }
+
+    /** Associe ce telephone a partir du code scanne ou colle. */
+    suspend fun pair(context: Context, code: String, now: Long): PairResult {
+        val (secret, server) = Relay.parsePairingCode(code) ?: return PairResult.BAD_CODE
         val dev = Relay.newDeviceId()
-        withContext(Dispatchers.IO) { RelaySecret.save(context, Relay.Pairing(secret, server, dev)) }
+        // Le Keystore d'Android echoue chez certains constructeurs (ProviderException, KeyStoreException) : sans secret
+        // garde, pas d'association -- et pas de plantage de l'interface qui a lance l'appel.
+        try {
+            withContext(Dispatchers.IO) { RelaySecret.save(context, Relay.Pairing(secret, server, dev)) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return PairResult.NOT_STORED
+        }
         Graph.store.update { it.copy(relay = RelayState(dev = dev, pairedAt = now)) }
         // Le PC l'apprend tout de suite : son popup attend ce premier signe.
         sync(context, now)
         alive(context, now, force = true)
-        return true
+        return PairResult.PAIRED
     }
 
     suspend fun unpair(context: Context) {
