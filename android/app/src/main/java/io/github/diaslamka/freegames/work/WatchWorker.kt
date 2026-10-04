@@ -18,9 +18,11 @@ import java.util.concurrent.TimeUnit
 /** La veille de fond : un passage, ecran eteint ou non. */
 class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
+        // Les dix minutes du systeme courent depuis ici : la recuperation de fond en tient compte.
+        val startedAt = System.currentTimeMillis()
         Watcher.check(applicationContext, "fond")
         // Ecran eteint (reglage coupe par defaut) : ce qui reste a prendre, sur place.
-        BackgroundClaim.run(applicationContext)
+        BackgroundClaim.run(applicationContext, startedAt)
         if (BackgroundClaim.more(System.currentTimeMillis())) Scheduler.soon(applicationContext)
         // Une mise a jour de l'appli existe-t-elle ? APRES les recuperations : installer relance l'appli, et ne doit couper aucune page en route.
         checkForUpdate()

@@ -52,8 +52,11 @@ object BackgroundClaim {
      * Rend le nombre de jeux obtenus. Ne fait rien si l'ecran recupere deja.
      * Le compte principal d'abord, puis chaque membre de la famille, dans sa
      * propre page et son propre profil -- dans le meme budget de temps.
+     *
+     * `startedAt` : le debut du passage de la veille, pas de cette fonction. Les dix minutes du systeme courent
+     * depuis lui, et la lecture des magasins qui precede peut durer plusieurs minutes.
      */
-    suspend fun run(context: Context): Int {
+    suspend fun run(context: Context, startedAt: Long = System.currentTimeMillis()): Int {
         Graph.init(context)
         val start = System.currentTimeMillis()
         val list = todo(Graph.store.value, start)
@@ -62,7 +65,7 @@ object BackgroundClaim {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         var session: ClaimSession? = null
         var won = 0
-        val deadline = start + ClaimSession.HEADLESS_START_WINDOW_MS
+        val deadline = startedAt + ClaimSession.HEADLESS_START_WINDOW_MS
         try {
             if (list.isNotEmpty()) {
                 session = withContext(Dispatchers.Main) { ClaimSession(context.applicationContext, scope, headless = true) }
