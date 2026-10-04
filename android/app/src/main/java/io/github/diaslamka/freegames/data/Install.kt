@@ -93,14 +93,25 @@ object Install {
             val theirs = archive.signingInfo?.apkContentsSigners?.map { it.toByteArray().toList() }?.toSet()
             val mine = pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
                 .signingInfo?.apkContentsSigners?.map { it.toByteArray().toList() }?.toSet()
-            // Illisible d'un cote : le systeme tranchera a l'installation. Lisible des deux : identiques, ou rien.
-            theirs == null || mine == null || theirs.isEmpty() || mine.isEmpty() || theirs == mine
+            // Une rotation de cle (APK Signature Scheme v3) : la chaine des certificats que l'APK prouve descendre de l'ancien.
+            val history = archive.signingInfo?.takeIf { it.hasPastSigningCertificates() }
+                ?.signingCertificateHistory?.map { it.toByteArray().toList() }?.toSet()
+            signersAccepted(theirs, mine, history)
         } else {
             true
         }
     } catch (_: Exception) {
         false
     }
+
+    /**
+     * Les signataires de l'APK et ceux de l'appli installee. Illisible d'un cote : le systeme tranchera a
+     * l'installation. Lisible des deux : identiques, ou -- rotation de cle -- la chaine de l'APK (`history`)
+     * contient le signataire installe : Android accepte alors la nouvelle cle, et nous aussi. Toute autre cle, non.
+     */
+    internal fun signersAccepted(theirs: Set<List<Byte>>?, mine: Set<List<Byte>>?, history: Set<List<Byte>>?): Boolean =
+        theirs == null || mine == null || theirs.isEmpty() || mine.isEmpty() || theirs == mine ||
+            (history != null && history.containsAll(mine))
 
     /** Passe l'APK au systeme. Le resultat arrive a [UpdateReceiver]. */
     fun start(context: Context, file: File) {
