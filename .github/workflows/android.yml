@@ -97,9 +97,14 @@ jobs:
               ;;
             *)
               apksigner="$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/apksigner | sort -V | tail -n1)"
-              got="$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ':' | tr 'A-F' 'a-f')"
+              # Ce que dit apksigner ne contient que des certificats (publics) : on l'imprime quand quelque chose cloche.
+              out="$("$apksigner" verify --print-certs "$apk" 2>&1)" || { printf '%s\n' "$out"; echo "::error::apksigner refuse l'APK"; exit 1; }
+              got="$(printf '%s\n' "$out" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ':\r' | tr 'A-F' 'a-f')"
               want="$(printf '%s' "$SIGNING_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
               if [ -z "$got" ] || [ "$got" != "$want" ]; then
+                echo "apksigner : $apksigner"
+                ls -l android/app/build/outputs/apk/release
+                printf '%s\n' "$out"
                 echo "::error::l'APK n'est pas signe par la cle attendue (empreinte lue : ${got:-aucune})"
                 exit 1
               fi
