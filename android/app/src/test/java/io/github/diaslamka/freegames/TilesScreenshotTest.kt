@@ -63,7 +63,7 @@ class TilesScreenshotTest {
     }
 
     @After
-    fun reset() { AppUpdate.status.value = AppUpdate.Status.Idle }
+    fun reset() { AppUpdate.publish(AppUpdate.Status.Idle) }
 
     private fun offer(id: String, title: String, store: String, worth: String?, hours: Long) = Offer(
         key = "$store:$id", source = if (store == Stores.EPIC) "epic-api" else "gog", store = store, storeId = id, title = title, worth = worth,
@@ -121,9 +121,9 @@ class TilesScreenshotTest {
     @Test
     @Config(qualifiers = "fr-rFR-w411dp-h1100dp-night-xxhdpi")
     fun grilleSombreAvecMiseAJour() {
-        AppUpdate.status.value = AppUpdate.Status.Available(
+        AppUpdate.publish(AppUpdate.Status.Available(
             AppUpdate.Release("1.26.0", "app-v1.26.0", 1, "free-games-claimer-android-1.26.0.apk", 1, null, ""),
-        )
+        ))
         shoot("T-4-grille-sombre-maj", dark = true, games(state(Tiles.GRID)))
     }
 

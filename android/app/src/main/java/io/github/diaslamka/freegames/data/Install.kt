@@ -156,11 +156,11 @@ class UpdateReceiver : BroadcastReceiver() {
                     else io.github.diaslamka.freegames.notify.Notifier.updateConfirm(context, confirm)
                 }
             }
-            PackageInstaller.STATUS_SUCCESS -> AppUpdate.status.value = AppUpdate.Status.Idle
-            else -> AppUpdate.status.value = AppUpdate.Status.Failed(
+            PackageInstaller.STATUS_SUCCESS -> AppUpdate.publish(AppUpdate.Status.Idle)
+            else -> AppUpdate.publish(AppUpdate.Status.Failed(
                 AppUpdate.Reason.INSTALL,
                 intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)?.take(120),
-            )
+            ))
         }
     }
 }

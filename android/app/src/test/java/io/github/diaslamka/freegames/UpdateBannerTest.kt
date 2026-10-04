@@ -32,7 +32,7 @@ class UpdateBannerTest {
     // L'etat de la mise a jour est unique pour tout le processus : on le rend comme on l'a trouve.
     @After
     fun reset() {
-        AppUpdate.status.value = AppUpdate.Status.Idle
+        AppUpdate.publish(AppUpdate.Status.Idle)
     }
 
     private fun show() = compose.setContent { FreeGamesTheme(dark = false) { UpdateBanner() } }
@@ -41,14 +41,14 @@ class UpdateBannerTest {
 
     @Test
     fun nothingShowsWhenThereIsNothingToSay() {
-        AppUpdate.status.value = AppUpdate.Status.Idle
+        AppUpdate.publish(AppUpdate.Status.Idle)
         show()
         compose.onNodeWithText(text(R.string.update_now), ignoreCase = true).assertDoesNotExist()
     }
 
     @Test
     fun aNewerVersionShowsTheBannerAndItsButton() {
-        AppUpdate.status.value = AppUpdate.Status.Available(release)
+        AppUpdate.publish(AppUpdate.Status.Available(release))
         show()
         compose.onNodeWithText(text(R.string.update_banner, "1.27.0"), ignoreCase = true).assertExists()
         compose.onNodeWithText(text(R.string.update_now), ignoreCase = true).assertExists()
@@ -56,12 +56,12 @@ class UpdateBannerTest {
 
     @Test
     fun theBannerFollowsTheStateWhileTheScreenIsOn() {
-        AppUpdate.status.value = AppUpdate.Status.Idle
+        AppUpdate.publish(AppUpdate.Status.Idle)
         show()
-        AppUpdate.status.value = AppUpdate.Status.Downloading(release, 42)
+        AppUpdate.publish(AppUpdate.Status.Downloading(release, 42))
         compose.waitForIdle()
         compose.onNodeWithText(text(R.string.update_downloading, 42), ignoreCase = true).assertExists()
-        AppUpdate.status.value = AppUpdate.Status.Installing
+        AppUpdate.publish(AppUpdate.Status.Installing)
         compose.waitForIdle()
         compose.onNodeWithText(text(R.string.update_installing), ignoreCase = true).assertExists()
     }

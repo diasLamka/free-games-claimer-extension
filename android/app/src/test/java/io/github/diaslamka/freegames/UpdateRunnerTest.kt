@@ -47,13 +47,13 @@ class UpdateRunnerTest {
     @Before
     fun allowInstalls() {
         shadowOf(context.packageManager).setCanRequestPackageInstalls(true)
-        AppUpdate.status.value = Status.Idle
+        AppUpdate.publish(Status.Idle)
     }
 
     @After
     fun reset() {
         UpdateRunner.net = { throw IllegalStateException("le reseau n'est pas remplace") }
-        AppUpdate.status.value = Status.Idle
+        AppUpdate.publish(Status.Idle)
     }
 
     private fun join(job: kotlinx.coroutines.Job?) = runBlocking { withTimeout(10_000) { job!!.join() } }

@@ -9,6 +9,8 @@ import io.github.diaslamka.freegames.sources.parseJson
 import io.github.diaslamka.freegames.sources.str
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -72,7 +74,13 @@ object AppUpdate {
     }
 
     /** Ce que l'ecran affiche ; un seul etat pour toute l'appli. */
-    val status = MutableStateFlow<Status>(Status.Idle)
+    private val mutableStatus = MutableStateFlow<Status>(Status.Idle)
+    val status: StateFlow<Status> = mutableStatus.asStateFlow()
+
+    /** Le seul chemin d'ecriture hors de ce fichier : les ecrans lisent `status`, ils ne le modifient pas. */
+    internal fun publish(s: Status) {
+        mutableStatus.value = s
+    }
 
     /* ------------------------------------------------------------ versions */
 
@@ -228,7 +236,7 @@ object AppUpdate {
 
     /** Cherche une version plus recente que `current`. Le resultat est aussi publie dans `status`. */
     suspend fun check(net: Net, token: String?, current: String): Status {
-        status.value = Status.Checking
+        mutableStatus.value = Status.Checking
         val result: Status = try {
             val r = net.releases(token)
             when {
@@ -251,7 +259,7 @@ object AppUpdate {
         } catch (e: Exception) {
             Status.Failed(Reason.NETWORK, e.message?.take(80))
         }
-        status.value = result
+        mutableStatus.value = result
         return result
     }
 
@@ -265,19 +273,19 @@ object AppUpdate {
         dir.mkdirs()
         dir.listFiles()?.forEach { it.delete() }
         val file = File(dir, release.name)
-        status.value = Status.Downloading(release, 0)
+        mutableStatus.value = Status.Downloading(release, 0)
         try {
             var last = -1
             val code = net.download(release.assetId, token, file) { done, total ->
                 val pct = if (total > 0) (done * 100 / total).toInt() else 0
-                if (pct != last) { last = pct; status.value = Status.Downloading(release, pct) }
+                if (pct != last) { last = pct; mutableStatus.value = Status.Downloading(release, pct) }
             }
             if (code == 404 || code == 401 || code == 403) return fail(file, Reason.PRIVATE)
             if (code !in 200..299) return fail(file, Reason.NETWORK, "HTTP $code")
         } catch (e: kotlinx.coroutines.CancellationException) {
             file.delete()
             // Annule en route : la version existe toujours, et l'etat ne reste pas a « telechargement » (plus de bouton).
-            status.value = Status.Available(release)
+            mutableStatus.value = Status.Available(release)
             throw e
         } catch (e: Exception) {
             return fail(file, Reason.NETWORK, e.message?.take(80))
@@ -291,7 +299,7 @@ object AppUpdate {
 
     private fun fail(file: File, reason: Reason, detail: String? = null): File? {
         file.delete()
-        status.value = Status.Failed(reason, detail)
+        mutableStatus.value = Status.Failed(reason, detail)
         return null
     }
 

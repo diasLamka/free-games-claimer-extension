@@ -30,7 +30,7 @@ object UpdateRunner {
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (_: Exception) {
-            AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.NETWORK)
+            AppUpdate.publish(AppUpdate.Status.Failed(AppUpdate.Reason.NETWORK))
         }
     }
 
@@ -60,12 +60,12 @@ object UpdateRunner {
             val file = AppUpdate.fetch(File(context.cacheDir, "maj"), net(), UpdateToken.load(context), release) {
                 Install.sameApp(context, it, release.version)
             } ?: return true
-            AppUpdate.status.value = AppUpdate.Status.Installing
+            AppUpdate.publish(AppUpdate.Status.Installing)
             withContext(Dispatchers.IO) { Install.start(context, file) }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            AppUpdate.status.value = AppUpdate.Status.Failed(AppUpdate.Reason.INSTALL, e.message?.take(100))
+            AppUpdate.publish(AppUpdate.Status.Failed(AppUpdate.Reason.INSTALL, e.message?.take(100)))
         }
         return true
     }

@@ -220,15 +220,15 @@ class ScreenshotTest {
     @Test
     @Config(qualifiers = "+h2300dp")
     fun reglagesMiseAJour() {
-        io.github.diaslamka.freegames.data.AppUpdate.status.value = io.github.diaslamka.freegames.data.AppUpdate.Status.Available(
+        io.github.diaslamka.freegames.data.AppUpdate.publish(io.github.diaslamka.freegames.data.AppUpdate.Status.Available(
             io.github.diaslamka.freegames.data.AppUpdate.Release("1.21.0", "app-v1.21.0", 1, "free-games-claimer-android-1.21.0.apk", 2_300_000, null, ""),
-        )
+        ))
         try {
             shoot("C-reglages-mise-a-jour", Accent.JAUNE, dark = true, tabs = 3) {
                 SettingsScreen(live, now, onLogin = {}, onSettings = {}, onImport = {}, onExport = {}, onClearSessions = {}, onCheckNow = {}, open = listOf(SECTION_ABOUT))
             }
         } finally {
-            io.github.diaslamka.freegames.data.AppUpdate.status.value = io.github.diaslamka.freegames.data.AppUpdate.Status.Idle
+            io.github.diaslamka.freegames.data.AppUpdate.publish(io.github.diaslamka.freegames.data.AppUpdate.Status.Idle)
         }
     }
 
