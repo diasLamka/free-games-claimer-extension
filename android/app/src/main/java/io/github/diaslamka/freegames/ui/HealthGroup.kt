@@ -22,6 +22,18 @@ import io.github.diaslamka.freegames.data.Health
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import android.content.Intent
+import android.provider.Settings
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.diaslamka.freegames.notify.Notifier
+import android.content.Context
 
 /**
  * La page « Sante » (1.26.0), dans les Reglages : pour chaque magasin, la session, la derniere recuperation, le
@@ -29,11 +41,20 @@ import io.github.diaslamka.freegames.ui.theme.LocalBrut
  * que l'appli a deja note, jamais une mesure de plus.
  */
 @Composable
-fun HealthGroup(state: AppState, now: Long) {
+fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val overview = Health.overview(state, now)
     Group {
+        // Notifications refusees : les alertes « derniere chance », l'aide du PC, les defis et les connexions disparaissent
+        // sans un mot (Notifier.allowed). C'est ici qu'on le voit, avec le chemin pour y remedier.
+        if (notificationsAllowed) {
+            Text("> " + stringResource(R.string.health_notifications_on), style = MaterialTheme.typography.labelLarge, color = Color.Black)
+        } else {
+            Notice(stringResource(R.string.health_notifications_off), b.accent) {
+                BrutButton(stringResource(R.string.health_notifications_open), onNotificationSettings)
+            }
+        }
         Text(
             "> " + (overview.lastCheck?.let { stringResource(R.string.health_last_check, Fmt.ago(context, it, now)) } ?: stringResource(R.string.health_never_checked)).uppercase(),
             style = MaterialTheme.typography.labelLarge, color = Color.Black,
@@ -90,4 +111,26 @@ fun HealthGroup(state: AppState, now: Long) {
             }
         }
     }
+}
+
+/** Les notifications sont-elles permises ? Relu au retour des reglages d'Android : l'utilisateur les y change. */
+@Composable
+fun rememberNotificationsAllowed(): Boolean {
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf(Notifier.allowed(context)) }
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) allowed = Notifier.allowed(context) }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    return allowed
+}
+
+/** Les reglages de notification de CETTE appli, dans Android. */
+fun openNotificationSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }

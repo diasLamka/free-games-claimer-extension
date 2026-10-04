@@ -362,6 +362,9 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="section_health">Zustand</string>
     <string name="health_last_check">Letzte Prüfung: %1$s</string>
     <string name="health_never_checked">Noch keine Prüfung</string>
+    <string name="health_notifications_on">Benachrichtigungen sind an.</string>
+    <string name="health_notifications_off">Benachrichtigungen sind aus: Letzte-Chance-Alarme, Hilfe vom PC und Anmelde-Erinnerungen erreichen dich nicht.</string>
+    <string name="health_notifications_open">Benachrichtigungseinstellungen öffnen</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

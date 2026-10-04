@@ -93,6 +93,8 @@ fun SettingsScreen(
     var backgroundInfo by remember { mutableStateOf(false) }
     var lastChanceInfo by remember { mutableStateOf(false) }
     val b = LocalBrut.current
+    val context = LocalContext.current
+    val notificationsAllowed = rememberNotificationsAllowed()
     /* Toutes les sections sont pliees : un ecran de reglages est un sommaire, pas
        une page a lire. Une seule s'ouvre d'office -- les comptes, quand l'un d'eux
        a perdu sa session --, parce que c'est la qu'il y a quelque chose a faire. */
@@ -117,8 +119,8 @@ fun SettingsScreen(
         ) {
             // La page « Sante » (1.26.0), en premier : un probleme se lit avant les reglages. Le chiffre : les magasins a regarder.
             val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
-            fold(SECTION_HEALTH, title_health, health.problems.takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
-                HealthGroup(state, now)
+            fold(SECTION_HEALTH, title_health, (health.problems + if (notificationsAllowed) 0 else 1).takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
+                HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) })
             }
             fold(SECTION_ACCOUNTS, title_accounts, Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }, isOpen(SECTION_ACCOUNTS), ::toggle) {
                 Group {

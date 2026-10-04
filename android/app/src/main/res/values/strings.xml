@@ -363,6 +363,9 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="section_health">Health</string>
     <string name="health_last_check">Last check: %1$s</string>
     <string name="health_never_checked">No check yet</string>
+    <string name="health_notifications_on">Notifications are on.</string>
+    <string name="health_notifications_off">Notifications are off: last-chance alerts, help from the PC and sign-in reminders cannot reach you.</string>
+    <string name="health_notifications_open">Open notification settings</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>
