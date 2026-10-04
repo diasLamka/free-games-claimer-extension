@@ -62,8 +62,8 @@ android {
         applicationId = "io.github.diaslamka.freegames"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30
-        versionName = "1.26.1"
+        versionCode = 31
+        versionName = "1.26.2"
         buildConfigField("String", "ENGINE_VERSION", "\"$engineVersion\"")
     }
 

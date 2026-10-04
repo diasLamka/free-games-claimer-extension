@@ -4,6 +4,55 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.26.2 -- 2026-10-04 (extension inchangee, 2.107.0)
+
+**Treize defauts de l'audit corriges : l'annulation, l'etat sur disque, le budget du fond, le jumelage du relais, les jaquettes lentes, l'accessibilite, les calculs repetes, les notifications refusees et l'import**
+
+Mise a jour depuis la 1.26.1 : dans l'appli, comme d'habitude (meme cle de signature). Les points sont ceux du rapport d'audit
+de la 1.26.1 qui n'avaient pas encore ete traites ; chacun a son test, ecrit d'abord et vu echouer.
+
+- **Une coroutine annulee ne continue plus comme si son appel avait echoue** (`data/Safe.kt`). `runCatching` et `catch (Exception)`
+  attrapent aussi l'annulation : la veille annulee gardait « inconnu » comme reponse d'un magasin, ecrivait « introuvable » pour une
+  fiche qu'elle n'avait pas fini de lire (`Odds`), ou croyait un « non » de session que `SessionProbe` devait justement confirmer.
+  `runCatchingSuspend` rend l'annulation ; les `catch` autour d'appels suspendus font de meme (ClaimSession, Watcher, Accounts,
+  Tonight, Taste, Odds, AppRoot).
+- **L'etat est ecrit meme si l'appelant est annule, et un disque en echec ne plante plus** (`data/StateStore.kt`). `update` publiait
+  puis ecrivait dans un `withContext` : annule d'emblee, le fichier gardait l'ancien etat pendant que l'ecran voyait le nouveau ; et
+  une `IOException` (disque plein) remontait jusqu'aux `scope.launch` de l'interface. Calcul, publication et ecriture se font maintenant
+  d'un bloc, hors du fil de l'appelant (le parse JSON d'une sauvegarde importee n'est plus sur l'ecran), sans annulation possible ; un
+  echec d'ecriture est retenu (`lastSaveError`).
+- **Les dix minutes du fond courent depuis le debut du passage** (`claim/BackgroundClaim.kt`, `work/WatchWorker.kt`). La recuperation
+  ancrait ses trois minutes sur sa propre entree, apres la lecture des magasins (jusqu'a plusieurs minutes) : un jeu entame tard depassait
+  la limite de WorkManager et le travail etait coupe en plein jeu.
+- **Associer le telephone au PC ne plante plus quand le Keystore echoue** (`data/RelayLink.kt`). `pair` rend `PAIRED`, `BAD_CODE` ou
+  `NOT_STORED` ; l'ecran dit pourquoi au lieu de planter, ou de dire a tort « ce n'est pas un code » (une chaine de plus, en quatre langues).
+- **Une jaquette lente ne retarde plus les notifications d'alarme** (`notify/CoverBudget.kt`, `data/Http.kt`). « Derniere chance » et « Plus
+  tard » telechargent la jaquette dans les dix secondes de `goAsync`, avec des delais d'appli de 15, 25 et 40 s. `Http.bytes` accepte un
+  delai qui borne l'appel entier ; la notification dispose d'un plafond par image (5 s) et d'une fenetre de 6 s partagee par toutes celles du
+  recepteur, puis sonne sans image. Elle n'est jamais annulee.
+- **Interface : cibles de 48 dp, noms accessibles, interrupteur lisible, marges systeme et clavier** (`ui/Modifiers.kt`, `Components.kt`,
+  `LoginScreen.kt`, `AppRoot.kt`). `clickableNoRipple` donne une cible d'au moins 48 dp (le clic avant la taille, pour que toute la cible
+  reagisse) ; le « ✕ » du panneau et des souhaits, `[+]`, `■` et « Se deconnecter » ont un nom (6 chaines) ; le filtre de magasin et le choix
+  de l'interrupteur disent s'ils sont actifs ; l'interrupteur lit ses libelles dans les ressources (il etait en dur en francais) et son option
+  inactive passe de `#8A8A8A` (3,45:1) a `#595959` (7:1) ; la pastille d'un proche dit s'il est connecte. Le titre d'une tuile gardait **une seule
+  ligne** (`height(40.dp)` + `Ellipsis` retire en silence les lignes qui ne tiennent pas) : `heightIn`. La page de connexion se garde des barres du
+  systeme, la mise en page etroite du clavier, comme la large.
+- **Le titre normalise n'est plus recalcule a chaque acces** (`model/Model.kt`, `data/Rules.kt`). Decomposition Unicode et quatre regex tournaient
+  pour chaque offre, chaque entree de la bibliotheque et chaque souhait, a chaque recomposition. Une fois par objet maintenant (l'etat est
+  immuable), hors de la sauvegarde ; l'ecran des jeux ne recalcule ses listes que si l'etat, l'heure, le filtre ou la recherche changent.
+- **La page Sante dit quand les notifications sont refusees** (`ui/HealthGroup.kt`). Les alertes « derniere chance », l'aide du PC, les defis et
+  les connexions disparaissaient sans un mot ; un avis et un bouton vers les reglages de notification de l'appli, relus au retour des reglages
+  d'Android, et le chiffre de la section compte l'avis (trois chaines).
+- **Importer une sauvegarde ne charge plus un fichier sans limite** (`data/BackupIO.kt`). Le fichier etait lu en entier avant que sa taille soit
+  controlee ; la lecture s'arrete maintenant a 8 Mo.
+- **Outil** : `tools/strings.py` ecrit en LF meme sous Windows (il reecrivait les quatre `strings.xml` en CRLF : 1 770 lignes changees pour une chaine).
+- Tests : 260 -> 292 (annulation, budget du fond, etat, jumelage, jaquette lente, accessibilite, marges et clavier, cache des titres, notifications,
+  import). Toute la suite se lance sur un poste de developpement.
+- Non fait : l'intent exporte de `MainActivity` (une autre appli peut lancer la recuperation : l'action normale de l'appli, jugee mineure) ; le
+  `StateStore.load` qui repart de zero si le fichier est illisible (une copie `.illisible` est gardee) ; `AppUpdate.status` reste un `StateFlow` modifiable.
+- Non verifie : une jaquette lente dans un recepteur reel en Doze, un moteur de rendu qui meurt pendant une recuperation, et le clavier en portrait
+  sur un telephone reel (les marges et le clavier sont testes avec des incrustations simulees).
+
 ## Appli 1.26.1 -- 2026-10-04 (extension inchangee, 2.107.0)
 
 **Cinq defauts de l'audit corriges (la cle de signature, les moteurs de rendu tues, la veille qui s'annulait, la mise a jour bloquee, les intents rejoues), et une nouvelle cle de signature**
