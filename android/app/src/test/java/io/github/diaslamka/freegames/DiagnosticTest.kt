@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import io.github.diaslamka.freegames.data.StateStore
 
 /**
  * Le diagnostic partageable (1.27.0) : ce qu'il faut pour comprendre une veille qui ne tourne pas, SANS rien de personnel.
@@ -60,6 +61,17 @@ class DiagnosticTest {
     }
 
     private val text = Diagnostic.build(secretive, env, now)
+
+    @Test
+    fun aStateThatWasRestoredOrResetIsSaid() {
+        val restored = Diagnostic.build(secretive, env.copy(stateOrigin = StateStore.Origin.COPY), now)
+        assertTrue(restored, restored.contains("state file: unreadable, restored from the previous copy"))
+        val reset = Diagnostic.build(secretive, env.copy(stateOrigin = StateStore.Origin.RESET), now)
+        assertTrue(reset, reset.contains("state file: unreadable, started empty"))
+        // Un fichier en bon etat, ou une premiere ouverture : rien a dire.
+        assertFalse(text.contains("state file"))
+        assertFalse(Diagnostic.build(secretive, env.copy(stateOrigin = StateStore.Origin.NEW), now).contains("state file"))
+    }
 
     @Test
     fun itSaysWhatIsNeededToUnderstandAWatchThatDoesNotRun() {

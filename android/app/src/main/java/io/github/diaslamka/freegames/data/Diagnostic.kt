@@ -24,6 +24,7 @@ object Diagnostic {
         val notificationsAllowed: Boolean,
         val ignoringBatteryOptimizations: Boolean?,
         val updateSilence: String?,
+        val stateOrigin: StateStore.Origin = StateStore.Origin.FILE,
     )
 
     fun env(context: Context): Env = Env(
@@ -32,6 +33,7 @@ object Diagnostic {
         notificationsAllowed = Notifier.allowed(context),
         ignoringBatteryOptimizations = runCatching { context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) }.getOrNull(),
         updateSilence = runCatching { Install.silence(context).name }.getOrNull(),
+        stateOrigin = Graph.store.origin,
     )
 
     private fun iso(t: Long): String = java.time.Instant.ofEpochMilli(t).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
@@ -59,6 +61,11 @@ object Diagnostic {
         line("notifications: ${if (env.notificationsAllowed) "on" else "off"}")
         line("battery optimisation: " + when (env.ignoringBatteryOptimizations) { true -> "exempt"; false -> "restricted"; null -> "unknown" })
         env.updateSilence?.let { line("update install: $it") }
+        when (env.stateOrigin) {
+            StateStore.Origin.COPY -> line("state file: unreadable, restored from the previous copy")
+            StateStore.Origin.RESET -> line("state file: unreadable, started empty (the old file is kept as etat.json.illisible)")
+            else -> {}
+        }
         line()
         val c = s.settings
         line("== settings")
