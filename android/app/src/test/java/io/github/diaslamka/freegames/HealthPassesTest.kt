@@ -16,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
 
 /** La page Sante montre les derniers passages de la veille : c'est la preuve qu'une passe de fond a tourne. */
 @RunWith(AndroidJUnit4::class)
@@ -32,6 +34,24 @@ class HealthPassesTest {
     fun anEmptyLogSaysSo() {
         compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(AppState(), now) } }
         compose.onNodeWithText(str(R.string.health_passes_none)).assertIsDisplayed()
+    }
+
+    @Test
+    fun aStalledWatchIsSaidWithAWayToTheAppSettings() {
+        var opened = 0
+        // Dernier passage il y a neuf heures, pour une veille attendue toutes les trois : plus de deux fois et demie.
+        val state = AppState(lastCheck = now - 9 * 3_600_000L)
+        compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(state, now, onAppSettings = { opened++ }) } }
+        compose.onNodeWithText(str(R.string.health_watch_stalled, "9 h", 3), ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.health_app_settings_open), ignoreCase = true).performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun aWatchThatRunsSaysNothingOfTheKind() {
+        val state = AppState(lastCheck = now - 3_600_000L)
+        compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(state, now) } }
+        compose.onNodeWithText(str(R.string.health_app_settings_open), ignoreCase = true).assertDoesNotExist()
     }
 
     @Test

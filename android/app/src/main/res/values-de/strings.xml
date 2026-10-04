@@ -376,6 +376,14 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="pass_outcome_errors">einige Quellen sind ausgefallen</string>
     <string name="pass_outcome_failed">fehlgeschlagen</string>
     <string name="pass_outcome_cancelled">abgebrochen</string>
+    <string name="channel_health">App-Zustand</string>
+    <string name="notif_watchdog_title">Die Überwachung läuft nicht mehr</string>
+    <string name="notif_watchdog_text">Seit %1$s kein Durchlauf. Android schränkt die App womöglich im Hintergrund ein: erlaube ihr, dort zu laufen.</string>
+    <string name="action_app_settings">App-Einstellungen</string>
+    <string name="set_watchdog">Warnen, wenn die Überwachung stoppt</string>
+    <string name="set_watchdog_hint">Eine Benachrichtigung, wenn etwa zweieinhalb Intervalle lang kein Durchlauf stattfand.</string>
+    <string name="health_watch_stalled">Die Überwachung lief seit %1$s nicht mehr (erwartet alle %2$d Std.).</string>
+    <string name="health_app_settings_open">App-Einstellungen öffnen</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

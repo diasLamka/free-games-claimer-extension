@@ -86,6 +86,11 @@
             android:name=".notify.LastChanceReceiver"
             android:exported="false" />
 
+        <!-- La sentinelle de la veille (1.27.0) : l'alarme que chaque passage repousse, posee par l'appli elle-meme. -->
+        <receiver
+            android:name=".notify.WatchdogReceiver"
+            android:exported="false" />
+
         <!-- « Plus tard » (1.12.0) : le bouton d'une notification et son alarme. -->
         <receiver
             android:name=".notify.SnoozeReceiver"

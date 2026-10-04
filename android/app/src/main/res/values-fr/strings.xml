@@ -376,6 +376,14 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="pass_outcome_errors">des sources ont échoué</string>
     <string name="pass_outcome_failed">échec</string>
     <string name="pass_outcome_cancelled">interrompu</string>
+    <string name="channel_health">Santé de l\'appli</string>
+    <string name="notif_watchdog_title">La veille ne tourne plus</string>
+    <string name="notif_watchdog_text">Aucun passage depuis %1$s. Android limite peut-être l\'appli en arrière-plan : autorise-la à y tourner.</string>
+    <string name="action_app_settings">Réglages de l\'appli</string>
+    <string name="set_watchdog">Me prévenir si la veille s\'arrête</string>
+    <string name="set_watchdog_hint">Une notification quand aucun passage n\'a eu lieu depuis environ deux fois et demie l\'intervalle.</string>
+    <string name="health_watch_stalled">La veille ne tourne plus depuis %1$s (attendue toutes les %2$d h).</string>
+    <string name="health_app_settings_open">Ouvrir les réglages de l\'appli</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>

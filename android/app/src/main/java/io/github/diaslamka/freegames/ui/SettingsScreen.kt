@@ -120,7 +120,7 @@ fun SettingsScreen(
             // La page « Sante » (1.26.0), en premier : un probleme se lit avant les reglages. Le chiffre : les magasins a regarder.
             val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
             fold(SECTION_HEALTH, title_health, (health.problems + if (notificationsAllowed) 0 else 1).takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
-                HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) })
+                HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) }, onAppSettings = { openAppSettings(context) })
             }
             fold(SECTION_ACCOUNTS, title_accounts, Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }, isOpen(SECTION_ACCOUNTS), ::toggle) {
                 Group {
@@ -164,6 +164,7 @@ fun SettingsScreen(
                         ) { v -> onSettings { it.copy(digestHour = v) } }
                     }
                     Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
+                    Toggle(stringResource(R.string.set_watchdog), stringResource(R.string.set_watchdog_hint), s.watchdog) { v -> onSettings { it.copy(watchdog = v) } }
                     Toggle(stringResource(R.string.set_last_chance), null, s.lastChance) { v ->
                         if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
                     }

@@ -161,6 +161,8 @@ object Watcher {
         // Depuis la veille ("fond"), sans remplacer : c'est peut-etre le passage d'une ouverture, et il tourne sous ce nom.
         after.upcoming.firstOrNull()?.let { Scheduler.checkAt(context, it.start + 90_000, replace = reason == "ecran") }
         runCatchingSuspend { RelayLink.alive(context, System.currentTimeMillis()) }
+        // La sentinelle (1.27.0) : la veille vient de tourner, son alarme est repoussee.
+        io.github.diaslamka.freegames.notify.Watchdog.arm(context, Graph.store.value, System.currentTimeMillis())
         val errors = results.flatMap { r -> r.errors.map { "${r.name} : $it" } }
         return Summary(after.offers.size, fresh.size, errors)
     }

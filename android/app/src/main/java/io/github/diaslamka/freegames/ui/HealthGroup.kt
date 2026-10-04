@@ -37,6 +37,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Row
 import io.github.diaslamka.freegames.data.PassLog
 import io.github.diaslamka.freegames.model.PassRecord
+import io.github.diaslamka.freegames.notify.Watchdog
 
 /**
  * La page « Sante » (1.26.0), dans les Reglages : pour chaque magasin, la session, la derniere recuperation, le
@@ -44,7 +45,7 @@ import io.github.diaslamka.freegames.model.PassRecord
  * que l'appli a deja note, jamais une mesure de plus.
  */
 @Composable
-fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}) {
+fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val overview = Health.overview(state, now)
@@ -67,6 +68,12 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
             else stringResource(R.string.health_sources_down, overview.sourcesDown.joinToString(", ")),
             style = MaterialTheme.typography.bodySmall, color = Color.Black,
         )
+        // La sentinelle (1.27.0) : la veille ne tourne plus -- Android la bride sans doute en arriere-plan.
+        Watchdog.silentFor(state, now)?.let { silent ->
+            Notice(stringResource(R.string.health_watch_stalled, Watchdog.hoursText(silent), state.settings.checkHours), b.accent) {
+                BrutButton(stringResource(R.string.health_app_settings_open), onAppSettings)
+            }
+        }
         // Les derniers passages de la veille : la preuve qu'une passe de fond a tourne, et comment elle a fini.
         Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
         Text(stringResource(R.string.health_passes_title).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black)
@@ -136,6 +143,13 @@ fun rememberNotificationsAllowed(): Boolean {
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
     return allowed
+}
+
+/** Les reglages d'Android de CETTE appli : c'est la que se leve la limite d'activite en arriere-plan (batterie). */
+fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + context.packageName))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }
 
 /** Les reglages de notification de CETTE appli, dans Android. */

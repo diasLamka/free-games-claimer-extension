@@ -377,6 +377,14 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="pass_outcome_errors">some sources failed</string>
     <string name="pass_outcome_failed">failed</string>
     <string name="pass_outcome_cancelled">cut short</string>
+    <string name="channel_health">App health</string>
+    <string name="notif_watchdog_title">The watch has stopped</string>
+    <string name="notif_watchdog_text">No pass for %1$s. Android may be limiting the app in the background: allow it to run there.</string>
+    <string name="action_app_settings">App settings</string>
+    <string name="set_watchdog">Warn me if the watch stops</string>
+    <string name="set_watchdog_hint">A notification when no pass has run for about two and a half times the interval.</string>
+    <string name="health_watch_stalled">The watch has not run for %1$s (expected every %2$d h).</string>
+    <string name="health_app_settings_open">Open the app settings</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>

@@ -39,6 +39,7 @@ object Notifier {
     const val CH_HELP = "aide"
     const val CH_LAST_CHANCE = "derniere-chance"
     const val CH_UPDATE = "mise-a-jour"
+    const val CH_HEALTH = "sante"
     private const val TAG_LAST_CHANCE = "derniere-chance"
 
     fun createChannels(context: Context) {
@@ -51,6 +52,7 @@ object Notifier {
                 NotificationChannel(CH_ACCOUNT, context.getString(R.string.channel_account), NotificationManager.IMPORTANCE_DEFAULT),
                 NotificationChannel(CH_HELP, context.getString(R.string.channel_help), NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CH_UPDATE, context.getString(R.string.channel_update), NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CH_HEALTH, context.getString(R.string.channel_health), NotificationManager.IMPORTANCE_DEFAULT),
                 // Le son des alarmes, sur le flux des alarmes : il sonne meme en mode silencieux.
                 NotificationChannel(CH_LAST_CHANCE, context.getString(R.string.channel_last_chance), NotificationManager.IMPORTANCE_HIGH).apply {
                     description = context.getString(R.string.channel_last_chance_hint)
@@ -326,6 +328,22 @@ object Notifier {
     }
 
     /** Une version plus recente existe (1.20.0) : un clic mene aux reglages, ou elle s'installe. */
+    /** La sentinelle (1.27.0) : la veille ne tourne plus. Un toucher ouvre les Reglages (la page Sante), un bouton les reglages d'Android de l'appli. */
+    fun watchdog(context: Context, silentMs: Long) {
+        val text = context.getString(R.string.notif_watchdog_text, Watchdog.hoursText(silentMs))
+        val settings = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val b = NotificationCompat.Builder(context, CH_HEALTH)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_watchdog_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 7301, tab = 3))
+            .addAction(0, context.getString(R.string.action_app_settings), PendingIntent.getActivity(context, 7302, settings, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        post(context, 7301, b.build())
+    }
+
     fun updateAvailable(context: Context, version: String) {
         val b = NotificationCompat.Builder(context, CH_UPDATE)
             .setSmallIcon(R.drawable.ic_stat_ticket)

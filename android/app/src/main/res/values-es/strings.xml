@@ -376,6 +376,14 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="pass_outcome_errors">algunas fuentes fallaron</string>
     <string name="pass_outcome_failed">fallido</string>
     <string name="pass_outcome_cancelled">interrumpido</string>
+    <string name="channel_health">Estado de la app</string>
+    <string name="notif_watchdog_title">La vigilancia se ha detenido</string>
+    <string name="notif_watchdog_text">Ninguna pasada desde hace %1$s. Android quizá limita la app en segundo plano: permítele ejecutarse allí.</string>
+    <string name="action_app_settings">Ajustes de la app</string>
+    <string name="set_watchdog">Avisarme si la vigilancia se detiene</string>
+    <string name="set_watchdog_hint">Una notificación cuando no ha habido ninguna pasada durante unas dos veces y media el intervalo.</string>
+    <string name="health_watch_stalled">La vigilancia no se ha ejecutado desde hace %1$s (esperada cada %2$d h).</string>
+    <string name="health_app_settings_open">Abrir los ajustes de la app</string>
     <string name="health_sources_ok">Todas las fuentes responden.</string>
     <string name="health_sources_down">Fuentes con error: %1$s</string>
     <string name="health_no_claim">Aún no se ha conseguido nada</string>

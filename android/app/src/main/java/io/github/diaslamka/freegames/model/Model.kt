@@ -254,6 +254,8 @@ data class Settings(
      * et le bandeau de l'accueil, comme avant.
      */
     val autoUpdate: Boolean = true,
+    /** Prevenir quand la veille ne tourne plus (1.27.0) : une alarme que chaque passage repousse. */
+    val watchdog: Boolean = true,
     /** Comment les jeux sont poses sur l'accueil (1.25.0) : « cards » (grandes), « list » (liste), « grid » (grille). */
     val tiles: String = Tiles.CARDS,
     val onboarded: Boolean = false,
@@ -375,6 +377,8 @@ data class AppState(
     val family: List<Member> = emptyList(),
     /** Le journal de la veille (1.27.0) : les trente derniers passages, le plus recent d'abord. */
     val watchLog: List<PassRecord> = emptyList(),
+    /** Quand la sentinelle a prevenu pour la derniere fois (1.27.0) : une fois par jour au plus. */
+    val watchdogAt: Long? = null,
 ) {
     /** Les titres souhaites (a la main ou importes), normalises une fois : Rules.wished s'y reporte pour chaque offre. */
     val wishedTitles: Set<String> by lazy(LazyThreadSafetyMode.PUBLICATION) {

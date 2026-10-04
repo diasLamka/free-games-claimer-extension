@@ -179,6 +179,10 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             val before = Graph.store.value.settings
             val after = Graph.store.update { it.copy(settings = block(it.settings)) }.settings
             if (after.checkHours != before.checkHours) Scheduler.periodic(context, after.checkHours, replace = true)
+            // La sentinelle (1.27.0) : son delai suit l'intervalle de la veille, et elle se coupe d'un reglage.
+            if (after.checkHours != before.checkHours || after.watchdog != before.watchdog) {
+                io.github.diaslamka.freegames.notify.Watchdog.arm(context, Graph.store.value, System.currentTimeMillis())
+            }
             if (after.lastChance && !before.lastChance) {
                 val t = System.currentTimeMillis()
                 io.github.diaslamka.freegames.notify.LastChance.ring(context, t)
@@ -235,6 +239,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
 
     // Premiere ouverture : les notifications, puis un premier passage.
     LaunchedEffect(Unit) {
+        // L'appli est ouverte : la sentinelle est reposee (une alarme ne survit pas a un redemarrage du telephone).
+        io.github.diaslamka.freegames.notify.Watchdog.arm(context, Graph.store.value, System.currentTimeMillis())
         if (Build.VERSION.SDK_INT >= 33 && !state.settings.onboarded) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         if (!state.settings.onboarded) Graph.store.update { it.copy(settings = it.settings.copy(onboarded = true)) }
         val stale = state.lastCheck == null || System.currentTimeMillis() - state.lastCheck!! > 20 * 60_000
