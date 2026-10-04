@@ -4,6 +4,35 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.27.0 -- 2026-10-04 (extension inchangee, 2.107.0)
+
+**La veille se laisse surveiller : son journal, une sentinelle qui previent quand elle s'arrete, un diagnostic a partager et un test a la demande**
+
+Mise a jour depuis la 1.26.2 ou la 1.26.1 : dans l'appli, comme d'habitude (meme cle de signature). Quand Android bridait l'appli en
+arriere-plan, plus rien ne le disait : la veille etait justement ce qui devait prevenir. Quatre ajouts, tous dans Reglages > Sante, chacun avec ses
+tests ecrits d'abord et vus echouer.
+
+- **Le journal des passages** (`data/PassLog.kt`, `data/Watcher.kt`). Chaque passage de la veille laisse une ligne : quand, pourquoi (fond, ecran,
+  test), combien d'offres lues et combien de nouvelles, en combien de temps, ecran eteint ou non, ce que la recuperation de fond a pris, et comment il
+  a fini (ok, avec erreurs, en echec, annule). Les trente derniers sont gardes dans l'etat, les huit derniers affiches dans la page Sante, et la meme
+  ligne part dans `adb logcat -s FGC`. Un passage annule est note avant que l'annulation ne se propage.
+- **Une sentinelle qui previent quand la veille ne tourne plus** (`notify/Watchdog.kt`, reglage *Sentinelle*, sur par defaut). Une alarme que chaque
+  passage repousse : elle ne sonne que si plus aucun passage n'a eu lieu depuis deux fois et demie l'intervalle (trois heures au moins). La
+  notification dit depuis quand et ouvre les reglages de l'appli ; elle ne se repete qu'au bout d'une journee. Alarme inexacte qui traverse le Doze :
+  pas d'autorisation de plus. La page Sante dit aussi qu'une veille est arretee et propose d'aller aux reglages d'Android, et compte les
+  notifications refusees parmi ce qu'il faut regarder.
+- **Un diagnostic a partager** (`data/Diagnostic.kt`). Un bouton l'envoie par le menu « Partager » d'Android : versions, reglages, derniers
+  passages, etat de chaque magasin, heures en UTC. Rien de personnel : ni cookies, ni memoire du moteur, ni noms de compte ou de famille, ni titres de
+  souhaits ou de bibliotheque, ni identifiant ou erreurs du relais. Un test verrouille cette liste d'exclusions.
+- **Un test de la veille a la demande** (`work/WatchWorker.kt`, `notify/Notifier.kt`). Un bouton lance un passage comme le vrai, dans le travail de
+  fond de WorkManager (pas un appel depuis l'ecran) ; on verrouille le telephone et le resultat arrive en notification : ce qui a ete trouve, la
+  duree, si l'ecran etait eteint, ce que la recuperation de fond a pris. Un test qui echoue le dit une fois au lieu d'etre rejoue.
+- Tests : 292 -> 326 (journal, sentinelle, diagnostic et sa confidentialite, partage, test a la demande, notification de test). Le test de la page
+  Sante cible desormais la ligne complete d'un passage : le mot « background » est aussi dans le bouton de test.
+- Verifie sur un telephone reel (OnePlus, Android 14) : l'APK signe par la CI (ancienne et nouvelle cle) s'installe par-dessus la 1.26.1 en
+  gardant les donnees, et le bouton de test donne sa notification, ecran eteint.
+- Non verifie : la sentinelle jusqu'a son declenchement reel (alarme inexacte en Doze) et le partage du diagnostic par le menu d'Android.
+
 ## Appli 1.26.2 -- 2026-10-04 (extension inchangee, 2.107.0)
 
 **Treize defauts de l'audit corriges : l'annulation, l'etat sur disque, le budget du fond, le jumelage du relais, les jaquettes lentes, l'accessibilite, les calculs repetes, les notifications refusees et l'import**
