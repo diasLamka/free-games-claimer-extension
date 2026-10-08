@@ -217,6 +217,8 @@ data class Settings(
     /** La sauvegarde automatique (1.28.0) : le dossier choisi (une adresse SAF), propre a CE telephone, et quand elle a eu lieu. */
     val backupFolder: String? = null,
     val backupAt: Long? = null,
+    /** Pourquoi la derniere sauvegarde automatique a echoue (un code : AutoBackup.ERR_*), ou null. */
+    val backupError: String? = null,
     val notifyNew: Boolean = true,
     val notifyEnding: Boolean = true,
     val claimOnOpen: Boolean = true,

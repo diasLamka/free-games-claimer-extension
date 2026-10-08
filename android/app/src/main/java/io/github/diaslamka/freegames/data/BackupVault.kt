@@ -54,7 +54,7 @@ object BackupVault {
         deja = state.deja,
         steamOwned = state.steamOwned,
         // Le dossier et l'heure de la sauvegarde automatique sont a CE telephone : une adresse de stockage n'a pas de sens ailleurs.
-        settings = state.settings.copy(backupFolder = null, backupAt = null),
+        settings = state.settings.copy(backupFolder = null, backupAt = null, backupError = null),
         engine = state.engine.filterKeys { BackupIO.ENGINE_KEYS.matches(it) },
         importedAt = state.importedAt,
         taste = state.taste,
@@ -71,28 +71,34 @@ object BackupVault {
      * Remet un instantane dans l'etat courant : les reglages sont remplaces (sauf ce qui tient a CE telephone), tout le reste est
      * fusionne et ce qui est deja la l'emporte -- rien de local n'est perdu. Restaurer deux fois ne change plus rien.
      */
-    fun restore(current: AppState, snapshot: AppState): AppState = current.copy(
-        library = snapshot.library + current.library,
-        wishlist = (current.wishlist + snapshot.wishlist).distinct(),
-        importedWishes = (current.importedWishes + snapshot.importedWishes).distinct(),
-        deja = snapshot.deja + current.deja,
-        steamOwned = (current.steamOwned + snapshot.steamOwned).distinct(),
-        settings = snapshot.settings.copy(
-            backupFolder = current.settings.backupFolder,
-            backupAt = current.settings.backupAt,
-            // « Premiere ouverture faite » : sur un telephone neuf, la permission de notifications doit encore etre demandee.
-            onboarded = current.settings.onboarded,
-        ),
-        engine = snapshot.engine + current.engine,
-        importedAt = current.importedAt ?: snapshot.importedAt,
-        taste = if (current.taste == TasteState()) snapshot.taste else current.taste,
-        passes = (snapshot.passes.keys + current.passes.keys).associateWith { k -> ((snapshot.passes[k] ?: emptyList()) + (current.passes[k] ?: emptyList())).distinct() },
-        givers = snapshot.givers + current.givers,
-        owned = snapshot.owned + current.owned,
-        marks = snapshot.marks + current.marks,
-        tonight = if (current.tonight == TonightPick()) snapshot.tonight else current.tonight,
-        family = current.family + snapshot.family.filter { m -> current.family.none { it.id == m.id } },
-    )
+    fun restore(current: AppState, incoming: AppState): AppState {
+        // Le fichier est une ENTREE : venu d'ailleurs, il peut porter plus que ce que cette appli ecrit (une cle du moteur, une session,
+        // le relais d'un autre). La liste blanche s'applique donc a la restauration comme a la sauvegarde.
+        val snapshot = snapshot(incoming)
+        return current.copy(
+            library = snapshot.library + current.library,
+            wishlist = (current.wishlist + snapshot.wishlist).distinct(),
+            importedWishes = (current.importedWishes + snapshot.importedWishes).distinct(),
+            deja = snapshot.deja + current.deja,
+            steamOwned = (current.steamOwned + snapshot.steamOwned).distinct(),
+            settings = snapshot.settings.copy(
+                backupFolder = current.settings.backupFolder,
+                backupAt = current.settings.backupAt,
+                backupError = current.settings.backupError,
+                // « Premiere ouverture faite » : sur un telephone neuf, la permission de notifications doit encore etre demandee.
+                onboarded = current.settings.onboarded,
+            ),
+            engine = snapshot.engine + current.engine,
+            importedAt = current.importedAt ?: snapshot.importedAt,
+            taste = if (current.taste == TasteState()) snapshot.taste else current.taste,
+            passes = (snapshot.passes.keys + current.passes.keys).associateWith { k -> ((snapshot.passes[k] ?: emptyList()) + (current.passes[k] ?: emptyList())).distinct() },
+            givers = snapshot.givers + current.givers,
+            owned = snapshot.owned + current.owned,
+            marks = snapshot.marks + current.marks,
+            tonight = if (current.tonight == TonightPick()) snapshot.tonight else current.tonight,
+            family = current.family + snapshot.family.filter { m -> current.family.none { it.id == m.id } },
+        )
+    }
 
     fun acceptable(passphrase: String): Boolean = passphrase.length >= MIN_PASSPHRASE
 

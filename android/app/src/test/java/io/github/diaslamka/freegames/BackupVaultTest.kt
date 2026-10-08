@@ -170,6 +170,34 @@ class BackupVaultTest {
     }
 
     @Test
+    fun aBackupFromElsewhereCannotBringBackWhatTheAllowlistKeepsOut() {
+        // Un fichier venu d'ailleurs (chiffre avec une phrase qu'on vous a donnee) est une ENTREE : la liste blanche
+        // s'applique a la restauration comme a la sauvegarde, pas seulement quand c'est cette appli qui l'a ecrit.
+        val crafted = AppState(
+            library = mapOf("epic:x" to entry("X")),
+            engine = mapOf("FGC_history_epic" to JsonPrimitive("[]"), "FGC_cookie" to JsonPrimitive("SESSION=injectee"), "autre" to JsonPrimitive("x")),
+            accounts = mapOf("epic" to AccountState("ok", now, name = "Faux")),
+            relay = RelayState(dev = "pirate", pairedAt = now),
+            watchLog = listOf(PassRecord(at = now, ms = 1, reason = "fond", outcome = "ok")),
+            lastCheck = now,
+            settings = Settings(backupFolder = "content://tree/pirate", backupAt = now, backupError = "x"),
+            family = listOf(Member(id = "p", name = "P", accounts = mapOf("epic" to AccountState("ok", now)), engine = mapOf("FGC_cookie" to JsonPrimitive("y")), attempts = emptyMap())),
+        )
+        val phone = AppState(settings = Settings(backupFolder = "content://tree/ici"))
+        val back = BackupVault.restore(phone, crafted)
+        assertEquals(setOf("FGC_history_epic"), back.engine.keys)
+        assertTrue(back.accounts.isEmpty())
+        assertNull(back.relay)
+        assertTrue(back.watchLog.isEmpty())
+        assertNull(back.lastCheck)
+        assertEquals("content://tree/ici", back.settings.backupFolder)
+        assertNull(back.settings.backupError)
+        assertEquals(listOf("p"), back.family.map { it.id })
+        assertTrue(back.family[0].accounts.isEmpty())
+        assertTrue(back.family[0].engine.isEmpty())
+    }
+
+    @Test
     fun restoringTwiceChangesNothingMore() {
         val snap = BackupVault.snapshot(lived)
         val once = BackupVault.restore(AppState(), snap)
