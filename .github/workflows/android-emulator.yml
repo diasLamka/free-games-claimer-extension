@@ -68,6 +68,9 @@ jobs:
           arch: x86_64
           profile: pixel_6
           ram-size: 4096M
+          # La partition de donnees par defaut (plus de 7 Go) ne tient pas toujours sur le disque d'un runner (« Not enough space to
+          # create userdata partition », 2026-10-08) ; les tests n'y ecrivent que quelques Mo.
+          disk-size: 3072M
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -netdelay none -netspeed full
           working-directory: android
