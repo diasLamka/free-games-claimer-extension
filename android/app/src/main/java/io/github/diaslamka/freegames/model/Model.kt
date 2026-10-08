@@ -214,6 +214,9 @@ data class Settings(
     val wifiOnly: Boolean = false,
     /** La veille de fond attend que le telephone soit en charge (1.28.0). */
     val chargingOnly: Boolean = false,
+    /** La sauvegarde automatique (1.28.0) : le dossier choisi (une adresse SAF), propre a CE telephone, et quand elle a eu lieu. */
+    val backupFolder: String? = null,
+    val backupAt: Long? = null,
     val notifyNew: Boolean = true,
     val notifyEnding: Boolean = true,
     val claimOnOpen: Boolean = true,

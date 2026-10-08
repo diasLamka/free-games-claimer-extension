@@ -321,14 +321,20 @@ fun BrutToggle(checked: Boolean, onChange: (Boolean) -> Unit) {
 
 /** Un champ de saisie : un rectangle cerne, texte monospace. */
 @Composable
-fun BrutField(value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier, onDone: (() -> Unit)? = null) {
+fun BrutField(value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier, onDone: (() -> Unit)? = null, secret: Boolean = false) {
     Box(modifier.padding(end = 4.dp, bottom = 4.dp).brut(Color.White, shadow = Color.Black, offset = 4.dp).padding(horizontal = 12.dp, vertical = 12.dp)) {
         if (value.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = MutedInk)
         BasicTextField(
             value = value, onValueChange = onChange, singleLine = true,
             textStyle = TextStyle(fontFamily = Mono, fontSize = 14.sp, color = Color.Black),
             cursorBrush = SolidColor(Color.Black),
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+            // Un secret : masque, sans correction ni suggestion (le clavier ne retient pas une phrase de passe).
+            visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                keyboardType = if (secret) androidx.compose.ui.text.input.KeyboardType.Password else androidx.compose.ui.text.input.KeyboardType.Text,
+                autoCorrectEnabled = !secret,
+            ),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone?.invoke() }),
             modifier = Modifier.fillMaxWidth(),
         )

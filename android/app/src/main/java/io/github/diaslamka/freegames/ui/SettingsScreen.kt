@@ -79,6 +79,9 @@ fun SettingsScreen(
     onCheckNow: () -> Unit,
     /** Recuperer ce qui attend, maintenant (1.26.0) : l'accueil n'a plus de bouton pour cela. */
     onClaimNow: () -> Unit = {},
+    /** La sauvegarde complete et chiffree (1.28.0). */
+    onVaultExport: () -> Unit = {},
+    onVaultRestore: () -> Unit = {},
     onRelayScan: () -> Unit = {},
     onRelayCode: (String) -> Unit = {},
     onRelaySync: () -> Unit = {},
@@ -209,6 +212,12 @@ fun SettingsScreen(
                     }
                     state.importedAt?.let {
                         Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
+                    }
+                    // La sauvegarde complete et chiffree (1.28.0) : changer de telephone sans tout refaire.
+                    Text(stringResource(R.string.backup_vault_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), modifier = Modifier.padding(top = 12.dp))
+                    Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        BrutButton(stringResource(R.string.backup_vault_export), onVaultExport)
+                        BrutButton(stringResource(R.string.backup_vault_restore), onVaultRestore, primary = false)
                     }
                     val clearName = stringResource(R.string.clear_sessions)
                     Text(

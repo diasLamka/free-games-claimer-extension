@@ -173,10 +173,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         }.onFailure { Toast.makeText(context, context.getString(R.string.relay_scan_failed), Toast.LENGTH_LONG).show() }
     }
 
-    fun updateSettings(block: (Settings) -> Settings) {
-        scope.launch {
-            val before = Graph.store.value.settings
-            val after = Graph.store.update { it.copy(settings = block(it.settings)) }.settings
+    /** Ce qu'un reglage change dans le reste de l'appli : la veille, la sentinelle, le resume du jour, la derniere chance. */
+    suspend fun settingsChanged(before: Settings, after: Settings) {
+        run {
             // La veille repart avec ses nouvelles contraintes (Wi-Fi, charge) comme avec son nouvel intervalle.
             if (after.checkHours != before.checkHours || after.wifiOnly != before.wifiOnly || after.chargingOnly != before.chargingOnly) {
                 Scheduler.periodic(context, after.checkHours, replace = true)
@@ -200,6 +199,14 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 } else Scheduler.cancelDigest(context)
             }
             if (after.country != before.country || after.showMobile != before.showMobile) refresh()
+        }
+    }
+
+    fun updateSettings(block: (Settings) -> Settings) {
+        scope.launch {
+            val before = Graph.store.value.settings
+            val after = Graph.store.update { it.copy(settings = block(it.settings)) }.settings
+            settingsChanged(before, after)
         }
     }
 
@@ -238,6 +245,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             Toast.makeText(context, context.getString(if (ok) R.string.export_done else R.string.export_failed), Toast.LENGTH_LONG).show()
         }
     }
+
+    // La sauvegarde complete et chiffree (1.28.0).
+    val vault = rememberVaultFlow(onSettingsChanged = ::settingsChanged)
 
     // Premiere ouverture : les notifications, puis un premier passage.
     LaunchedEffect(Unit) {
@@ -418,6 +428,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onSettings = { updateSettings(it) },
                     onImport = { importer.launch(arrayOf("application/json", "text/plain", "*/*")) },
                     onExport = { exporter.launch("free-games-claimer-android.json") },
+                    onVaultExport = vault.export,
+                    onVaultRestore = vault.restore,
                     onClearSessions = {
                         CookieManager.getInstance().removeAllCookies(null)
                         CookieManager.getInstance().flush()

@@ -46,7 +46,7 @@ object BackupIO {
     private val STATUTS = setOf("toTry", "playing", "done", "dropped", "notForMe")
 
     /** Ce que le moteur garde et relit : l'historique par magasin, les libelles appris. */
-    private val ENGINE_KEYS = Regex("^FGC_(history_.+|taught_labels|seen_labels)$")
+    internal val ENGINE_KEYS = Regex("^FGC_(history_.+|taught_labels|seen_labels)$")
 
     data class Report(val library: Int, val wishes: Int, val imported: Int, val engine: Int, val owned: Int = 0, val marks: Int = 0)
 
