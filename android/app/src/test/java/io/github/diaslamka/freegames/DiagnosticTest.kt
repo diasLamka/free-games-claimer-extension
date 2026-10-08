@@ -21,6 +21,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import io.github.diaslamka.freegames.data.StateStore
+import io.github.diaslamka.freegames.data.Restrictions
 
 /**
  * Le diagnostic partageable (1.27.0) : ce qu'il faut pour comprendre une veille qui ne tourne pas, SANS rien de personnel.
@@ -61,6 +62,26 @@ class DiagnosticTest {
     }
 
     private val text = Diagnostic.build(secretive, env, now)
+
+    @Test
+    fun whatAndroidDidToTheAppIsSaid() {
+        val s = Restrictions.Snapshot(
+            bucket = 40, backgroundRestricted = true,
+            exits = listOf(
+                Restrictions.Exit(now - 2 * hour, Restrictions.REASON_FREEZER, 300),
+                Restrictions.Exit(now - 3 * hour, Restrictions.REASON_USER_REQUESTED, 400),
+                Restrictions.Exit(now - 9 * 24 * hour, Restrictions.REASON_LOW_MEMORY, 300),
+            ),
+        )
+        val t = Diagnostic.build(secretive, env.copy(restrictions = s), now)
+        for (needle in listOf("standby bucket: rare (40)", "background restricted: yes", "freezer", "user-requested")) {
+            assertTrue("$needle dans : $t", t.contains(needle))
+        }
+        // Un arret vieux de neuf jours n'est plus dans la semaine : il ne figure pas.
+        assertFalse(t, t.contains("low-memory"))
+        // Sans lecture du systeme (avant Android 9), rien d'invente.
+        assertFalse(text.contains("standby bucket"))
+    }
 
     @Test
     fun theWorkOfTheLastDayIsSaid() {

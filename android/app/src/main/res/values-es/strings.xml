@@ -142,11 +142,7 @@
     <string name="login_hint_epic">Correo y contraseña de Epic. ¿Cuenta creada con Google o Facebook? Ponle antes una contraseña de Epic: Epic la envía por correo y el acceso con Google sigue funcionando.</string>
     <string name="set_background">También con la pantalla apagada</string>
     <string name="background_title">¿Conseguir con la pantalla apagada?</string>
-    <string name="background_text">En cada comprobación en segundo plano, la app abre ella misma la página de la tienda, sin mostrarla, y consigue lo que queda — el mismo motor que en pantalla, un juego a la vez, diez minutos como máximo.
-
-Si una tienda pide una verificación humana (captcha), la app nunca la resuelve: una notificación te avisa y un toque termina ese juego en pantalla.
-
-Una notificación discreta se muestra mientras trabaja. Nada más sale del teléfono.</string>
+    <string name="background_text">En cada comprobación en segundo plano, la app abre ella misma la página de la tienda, sin mostrarla, y consigue lo que queda — el mismo motor que en pantalla, un juego a la vez, diez minutos como máximo.\n\nSi una tienda pide una verificación humana (captcha), la app nunca la resuelve: una notificación te avisa y un toque termina ese juego en pantalla.\n\nUna notificación discreta se muestra mientras trabaja. Nada más sale del teléfono.</string>
     <string name="background_ok">Activar</string>
     <string name="busy_background">Ya hay una obtención en segundo plano: terminará sola.</string>
     <string name="notif_working_title">Consiguiendo %1$d/%2$d</string>
@@ -401,8 +397,24 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="set_wifi_only_hint">La vigilancia en segundo plano espera una red sin límite de datos. Al abrir la app se comprueba igualmente con datos móviles.</string>
     <string name="set_charging_only">Vigilar solo mientras carga</string>
     <string name="set_charging_only_hint">Ahorra batería, pero un juego gratis durante pocas horas puede perderse. La comprobación a la hora exacta de Epic también espera.</string>
-    <string name="health_cost">Últimas 24 h: %1$d pasadas, %2$s de trabajo</string>
-    <string name="health_cost_least">Últimas 24 h: al menos %1$d pasadas, %2$s de trabajo</string>
+    <string name="health_cost">Últimas 24 h: %1$d pasada(s), %2$s de trabajo</string>
+    <string name="health_cost_least">Últimas 24 h: al menos %1$d pasada(s), %2$s de trabajo</string>
+    <string name="health_bucket_limited">Android clasifica la app como «%1$s»: retrasa las pasadas de la vigilancia.</string>
+    <string name="bucket_rare">rara</string>
+    <string name="bucket_restricted">restringida</string>
+    <string name="health_background_restricted">El uso de la batería está en «restringido»: Android bloquea la vigilancia en segundo plano.</string>
+    <string name="health_killed">Android detuvo la app %1$d veces en los últimos 7 días mientras trabajaba (la última hace %2$s).</string>
+    <string name="health_stopped_by_user">La app se detuvo a mano %1$d veces en los últimos 7 días (forzar detención o quitarla de las apps recientes). La vigilancia solo se reanuda al abrir la app (la última hace %2$s).</string>
+    <string name="health_guide_open">Evitar que Android limite la vigilancia</string>
+    <string name="health_guide_title">Mantener la vigilancia en marcha</string>
+    <string name="health_guide_intro">Pasos para tu teléfono (%1$s). Los nombres de los menús cambian según la versión: busca el más parecido.</string>
+    <string name="health_battery_open">Abrir los ajustes de batería</string>
+    <string name="guide_oplus">1. Ajustes › Batería (o Aplicaciones › Gestión de aplicaciones) › Free Games Claimer › permitir actividad en segundo plano y activar «Permitir inicio automático».\n2. En la lista de apps recientes, bloquea la app (menú de su tarjeta › Bloquear) para que «Borrar todo» la respete.\n3. No cierres la app deslizándola: en este sistema la detiene, y sus alarmas con ella.</string>
+    <string name="guide_xiaomi">1. Ajustes › Aplicaciones › Administrar aplicaciones › Free Games Claimer › activar «Inicio automático».\n2. Misma pantalla › Ahorro de batería › «Sin restricciones».\n3. En la lista de apps recientes, bloquea la app (mantén pulsada su tarjeta › icono de candado).</string>
+    <string name="guide_samsung">1. Ajustes › Batería › Límites de uso en segundo plano › Apps que nunca se suspenden › añadir Free Games Claimer.\n2. Ajustes › Aplicaciones › Free Games Claimer › Batería › «Sin restricciones».</string>
+    <string name="guide_huawei">1. Ajustes › Batería › Inicio de aplicaciones › Free Games Claimer › pasar a «Administrar manualmente».\n2. Activar «Inicio automático», «Inicio secundario» y «Ejecución en segundo plano».</string>
+    <string name="guide_google">Ajustes › Aplicaciones › Free Games Claimer › Uso de batería de la app › «Sin restricciones». Los Pixel no detienen la app de otra forma.</string>
+    <string name="guide_other">Ajustes › Aplicaciones › Free Games Claimer › Batería: elige «Sin restricciones» (o «No optimizar»). Si tu teléfono ofrece «Inicio automático» o «Actividad en segundo plano», actívalos, y bloquea la app en la lista de recientes si se puede.</string>
     <string name="health_sources_ok">Todas las fuentes responden.</string>
     <string name="health_sources_down">Fuentes con error: %1$s</string>
     <string name="health_no_claim">Aún no se ha conseguido nada</string>

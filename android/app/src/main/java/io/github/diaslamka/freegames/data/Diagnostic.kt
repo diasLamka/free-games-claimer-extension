@@ -25,6 +25,7 @@ object Diagnostic {
         val ignoringBatteryOptimizations: Boolean?,
         val updateSilence: String?,
         val stateOrigin: StateStore.Origin = StateStore.Origin.FILE,
+        val restrictions: Restrictions.Snapshot? = null,
     )
 
     fun env(context: Context): Env = Env(
@@ -34,6 +35,7 @@ object Diagnostic {
         ignoringBatteryOptimizations = runCatching { context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) }.getOrNull(),
         updateSilence = runCatching { Install.silence(context).name }.getOrNull(),
         stateOrigin = Graph.store.origin,
+        restrictions = Restrictions.read(context),
     )
 
     private fun iso(t: Long): String = java.time.Instant.ofEpochMilli(t).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString()
@@ -61,6 +63,14 @@ object Diagnostic {
         line("notifications: ${if (env.notificationsAllowed) "on" else "off"}")
         line("battery optimisation: " + when (env.ignoringBatteryOptimizations) { true -> "exempt"; false -> "restricted"; null -> "unknown" })
         env.updateSilence?.let { line("update install: $it") }
+        env.restrictions?.let { r ->
+            line("standby bucket: ${Restrictions.bucketName(r.bucket)}" + (r.bucket?.let { " ($it)" } ?: ""))
+            line("background restricted: " + when (r.backgroundRestricted) { true -> "yes"; false -> "no"; null -> "unknown" })
+            val week = r.exits.filter { now - it.at <= Restrictions.WEEK_MS }
+            line("process exits (last 7 d, ${week.size}):")
+            if (week.isEmpty()) line("- none")
+            for (e in week.take(10)) line("- ${iso(e.at)} ${Restrictions.reasonName(e.reason)} importance ${e.importance}")
+        }
         when (env.stateOrigin) {
             StateStore.Origin.COPY -> line("state file: unreadable, restored from the previous copy")
             StateStore.Origin.RESET -> line("state file: unreadable, started empty (the old file is kept as etat.json.illisible)")

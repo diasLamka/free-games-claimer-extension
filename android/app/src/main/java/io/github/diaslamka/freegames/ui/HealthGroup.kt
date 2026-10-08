@@ -38,6 +38,11 @@ import androidx.compose.foundation.layout.Row
 import io.github.diaslamka.freegames.data.PassLog
 import io.github.diaslamka.freegames.model.PassRecord
 import io.github.diaslamka.freegames.notify.Watchdog
+import io.github.diaslamka.freegames.data.Restrictions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /**
  * La page « Sante » (1.26.0), dans les Reglages : pour chaque magasin, la session, la derniere recuperation, le
@@ -45,7 +50,7 @@ import io.github.diaslamka.freegames.notify.Watchdog
  * que l'appli a deja note, jamais une mesure de plus.
  */
 @Composable
-fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}, onShareDiagnostic: () -> Unit = {}, onRunTest: () -> Unit = {}) {
+fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true, onNotificationSettings: () -> Unit = {}, onAppSettings: () -> Unit = {}, onShareDiagnostic: () -> Unit = {}, onRunTest: () -> Unit = {}, restrictions: Restrictions.Snapshot? = null, maker: Restrictions.Maker = Restrictions.Maker.OTHER, manufacturer: String = "", onBatterySettings: () -> Unit = {}) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val overview = Health.overview(state, now)
@@ -74,6 +79,13 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
                 BrutButton(stringResource(R.string.health_app_settings_open), onAppSettings)
             }
         }
+        // Ce qu'Android fait de la veille (1.28.0) : classe de veille, batterie restreinte, arrets du processus -- et le guide pour l'en empecher.
+        var guideOpen by remember { mutableStateOf(false) }
+        restrictions?.let { snapshot ->
+            Restrictions.findings(snapshot, now).forEach { Notice(limitText(it, now), b.accent) }
+        }
+        BrutButton(stringResource(R.string.health_guide_open), { guideOpen = true }, primary = false)
+        if (guideOpen) LimitsGuide(maker, manufacturer, onAppSettings, onBatterySettings) { guideOpen = false }
         // Les derniers passages de la veille : la preuve qu'une passe de fond a tourne, et comment elle a fini.
         Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
         Text(stringResource(R.string.health_passes_title).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black)
@@ -146,6 +158,52 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
     }
 }
 
+/** Ce que dit un constat sur ce qu'Android fait de la veille. */
+@Composable
+private fun limitText(f: Restrictions.Finding, now: Long): String = when (f) {
+    is Restrictions.Finding.BucketLimited ->
+        stringResource(R.string.health_bucket_limited, stringResource(if (f.bucket >= Restrictions.BUCKET_RESTRICTED) R.string.bucket_restricted else R.string.bucket_rare))
+    Restrictions.Finding.BackgroundRestricted -> stringResource(R.string.health_background_restricted)
+    is Restrictions.Finding.KilledBySystem -> stringResource(R.string.health_killed, f.count, Watchdog.hoursText(now - f.lastAt))
+    is Restrictions.Finding.StoppedByUser -> stringResource(R.string.health_stopped_by_user, f.count, Watchdog.hoursText(now - f.lastAt))
+}
+
+/** La marche a suivre pour que le fabricant du telephone laisse la veille tourner : chacun cache ce reglage ailleurs. */
+@Composable
+private fun LimitsGuide(maker: Restrictions.Maker, manufacturer: String, onAppSettings: () -> Unit, onBatterySettings: () -> Unit, onDismiss: () -> Unit) {
+    val name = when (maker) {
+        Restrictions.Maker.OPLUS -> "OnePlus / OPPO / realme"
+        Restrictions.Maker.XIAOMI -> "Xiaomi / Redmi / POCO"
+        Restrictions.Maker.SAMSUNG -> "Samsung"
+        Restrictions.Maker.HUAWEI -> "Huawei / Honor"
+        Restrictions.Maker.GOOGLE -> "Google Pixel"
+        Restrictions.Maker.OTHER -> manufacturer.ifBlank { "Android" }
+    }
+    val steps = stringResource(
+        when (maker) {
+            Restrictions.Maker.OPLUS -> R.string.guide_oplus
+            Restrictions.Maker.XIAOMI -> R.string.guide_xiaomi
+            Restrictions.Maker.SAMSUNG -> R.string.guide_samsung
+            Restrictions.Maker.HUAWEI -> R.string.guide_huawei
+            Restrictions.Maker.GOOGLE -> R.string.guide_google
+            Restrictions.Maker.OTHER -> R.string.guide_other
+        },
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.health_guide_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.health_guide_intro, name), style = MaterialTheme.typography.bodySmall)
+                Text(steps)
+                BrutButton(stringResource(R.string.health_battery_open), onBatterySettings)
+                BrutButton(stringResource(R.string.health_app_settings_open), onAppSettings, primary = false)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
+}
+
 /** Les notifications sont-elles permises ? Relu au retour des reglages d'Android : l'utilisateur les y change. */
 @Composable
 fun rememberNotificationsAllowed(): Boolean {
@@ -171,6 +229,26 @@ fun openAppSettings(context: Context) {
     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + context.packageName))
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
+}
+
+/** La liste des applis que la batterie d'Android a le droit de limiter : sans permission, et presente depuis Android 6. */
+fun openBatterySettings(context: Context) {
+    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }.onFailure { openAppSettings(context) }
+}
+
+/** Ce qu'Android dit de l'appli, relu au retour des reglages : c'est la que l'utilisateur change tout cela. */
+@Composable
+fun rememberRestrictions(): Restrictions.Snapshot {
+    val context = LocalContext.current
+    var snapshot by remember { mutableStateOf(Restrictions.read(context)) }
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) snapshot = Restrictions.read(context) }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    return snapshot
 }
 
 /** Les reglages de notification de CETTE appli, dans Android. */

@@ -142,11 +142,7 @@
     <string name="login_hint_epic">E-Mail und Epic-Passwort. Konto mit Google oder Facebook erstellt? Gib ihm zuerst ein Epic-Passwort: Epic schickt es per E-Mail, die Google-Anmeldung bleibt.</string>
     <string name="set_background">Auch bei ausgeschaltetem Bildschirm</string>
     <string name="background_title">Bei ausgeschaltetem Bildschirm holen?</string>
-    <string name="background_text">Bei jeder Hintergrundprüfung öffnet die App die Shopseite selbst, unsichtbar, und holt, was übrig ist — dieselbe Engine wie auf dem Bildschirm, ein Spiel nach dem anderen, höchstens zehn Minuten.
-
-Verlangt ein Shop eine menschliche Prüfung (Captcha), löst die App sie nie: Eine Benachrichtigung ruft dich, ein Tippen beendet das Spiel auf dem Bildschirm.
-
-Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nichts das Handy.</string>
+    <string name="background_text">Bei jeder Hintergrundprüfung öffnet die App die Shopseite selbst, unsichtbar, und holt, was übrig ist — dieselbe Engine wie auf dem Bildschirm, ein Spiel nach dem anderen, höchstens zehn Minuten.\n\nVerlangt ein Shop eine menschliche Prüfung (Captcha), löst die App sie nie: Eine Benachrichtigung ruft dich, ein Tippen beendet das Spiel auf dem Bildschirm.\n\nWährenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nichts das Handy.</string>
     <string name="background_ok">Einschalten</string>
     <string name="busy_background">Im Hintergrund wird schon geholt: Das endet von selbst.</string>
     <string name="notif_working_title">Hole %1$d/%2$d</string>
@@ -401,8 +397,24 @@ Währenddessen ist eine dezente Benachrichtigung sichtbar. Sonst verlässt nicht
     <string name="set_wifi_only_hint">Die Überwachung im Hintergrund wartet auf ein Netz ohne Datenlimit. Beim Öffnen der App wird trotzdem über mobile Daten geprüft.</string>
     <string name="set_charging_only">Nur beim Laden überwachen</string>
     <string name="set_charging_only_hint">Spart Akku, aber ein nur wenige Stunden kostenloses Spiel kann verpasst werden. Auch die Prüfung zur genauen Epic-Zeit wartet.</string>
-    <string name="health_cost">Letzte 24 h: %1$d Durchläufe, %2$s Arbeit</string>
-    <string name="health_cost_least">Letzte 24 h: mindestens %1$d Durchläufe, %2$s Arbeit</string>
+    <string name="health_cost">Letzte 24 h: %1$d Durchlauf/-läufe, %2$s Arbeit</string>
+    <string name="health_cost_least">Letzte 24 h: mindestens %1$d Durchlauf/-läufe, %2$s Arbeit</string>
+    <string name="health_bucket_limited">Android stuft die App als „%1$s“ ein: Die Durchläufe der Überwachung werden verzögert.</string>
+    <string name="bucket_rare">selten</string>
+    <string name="bucket_restricted">eingeschränkt</string>
+    <string name="health_background_restricted">Der Akkuverbrauch ist auf „eingeschränkt“ gestellt: Android blockiert die Überwachung im Hintergrund.</string>
+    <string name="health_killed">Android hat die App in den letzten 7 Tagen %1$d Mal beendet, während sie arbeitete (zuletzt vor %2$s).</string>
+    <string name="health_stopped_by_user">Die App wurde in den letzten 7 Tagen %1$d Mal von Hand beendet (Beenden erzwingen oder aus den letzten Apps entfernt). Die Überwachung startet erst beim nächsten Öffnen der App wieder (zuletzt vor %2$s).</string>
+    <string name="health_guide_open">Android daran hindern, die Überwachung zu begrenzen</string>
+    <string name="health_guide_title">Die Überwachung am Laufen halten</string>
+    <string name="health_guide_intro">Schritte für dein Telefon (%1$s). Die Menünamen ändern sich je nach Version: Suche den ähnlichsten.</string>
+    <string name="health_battery_open">Akku-Einstellungen öffnen</string>
+    <string name="guide_oplus">1. Einstellungen › Akku (oder Apps › App-Verwaltung) › Free Games Claimer › Aktivität im Hintergrund erlauben und „Automatischen Start erlauben“ einschalten.\n2. Sperre die App in der Liste der letzten Apps (Menü ihrer Karte › Sperren), damit „Alle löschen“ sie verschont.\n3. Schließe die App nicht durch Wegwischen: Auf diesem System beendet das sie samt ihren Alarmen.</string>
+    <string name="guide_xiaomi">1. Einstellungen › Apps › Apps verwalten › Free Games Claimer › „Autostart“ einschalten.\n2. Gleicher Bildschirm › Energiesparmodus › „Keine Einschränkungen“.\n3. Sperre die App in der Liste der letzten Apps (Karte lange drücken › Schloss-Symbol).</string>
+    <string name="guide_samsung">1. Einstellungen › Akku › Hintergrundnutzungsbeschränkungen › Apps, die nie in den Ruhezustand wechseln › Free Games Claimer hinzufügen.\n2. Einstellungen › Apps › Free Games Claimer › Akku › „Unbeschränkt“.</string>
+    <string name="guide_huawei">1. Einstellungen › Akku › App-Start › Free Games Claimer › auf „Manuell verwalten“ stellen.\n2. „Automatischer Start“, „Sekundärer Start“ und „Im Hintergrund ausführen“ einschalten.</string>
+    <string name="guide_google">Einstellungen › Apps › Free Games Claimer › Akkunutzung der App › „Unbeschränkt“. Pixel-Telefone beenden die App sonst nicht.</string>
+    <string name="guide_other">Einstellungen › Apps › Free Games Claimer › Akku: „Unbeschränkt“ (oder „Nicht optimieren“) wählen. Bietet dein Telefon „Autostart“ oder „Hintergrundaktivität“, schalte sie ein und sperre die App in der Liste der letzten Apps, falls möglich.</string>
     <string name="health_sources_ok">Alle Quellen antworten.</string>
     <string name="health_sources_down">Quellen mit Fehler: %1$s</string>
     <string name="health_no_claim">Noch nichts geholt</string>

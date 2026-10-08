@@ -96,6 +96,7 @@ fun SettingsScreen(
     val b = LocalBrut.current
     val context = LocalContext.current
     val notificationsAllowed = rememberNotificationsAllowed()
+    val restrictions = rememberRestrictions()
     /* Toutes les sections sont pliees : un ecran de reglages est un sommaire, pas
        une page a lire. Une seule s'ouvre d'office -- les comptes, quand l'un d'eux
        a perdu sa session --, parce que c'est la qu'il y a quelque chose a faire. */
@@ -121,7 +122,7 @@ fun SettingsScreen(
             // La page « Sante » (1.26.0), en premier : un probleme se lit avant les reglages. Le chiffre : les magasins a regarder.
             val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
             fold(SECTION_HEALTH, title_health, (health.problems + if (notificationsAllowed) 0 else 1).takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
-                HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) }, onAppSettings = { openAppSettings(context) }, onRunTest = {
+                HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) }, onAppSettings = { openAppSettings(context) }, restrictions = restrictions, maker = io.github.diaslamka.freegames.data.Restrictions.Maker.of(android.os.Build.MANUFACTURER, android.os.Build.BRAND), manufacturer = android.os.Build.MANUFACTURER, onBatterySettings = { openBatterySettings(context) }, onRunTest = {
                     Scheduler.testNow(context)
                     android.widget.Toast.makeText(context, context.getString(R.string.health_test_started), android.widget.Toast.LENGTH_LONG).show()
                 }, onShareDiagnostic = {

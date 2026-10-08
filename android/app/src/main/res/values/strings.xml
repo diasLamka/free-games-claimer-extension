@@ -143,11 +143,7 @@
     <string name="login_hint_epic">Epic email and password. Account made with Google or Facebook? Give it an Epic password first: Epic emails it, and Google sign-in keeps working.</string>
     <string name="set_background">Also with the screen off</string>
     <string name="background_title">Claim with the screen off?</string>
-    <string name="background_text">During each background check, the app opens the store page itself, invisibly, and claims what is left — the same engine as on screen, one game at a time, ten minutes at most.
-
-If a store asks for a human check (captcha), the app never solves it: a notification calls you, and one tap finishes that game on screen.
-
-A discreet notification shows while it works. Nothing else leaves the phone.</string>
+    <string name="background_text">During each background check, the app opens the store page itself, invisibly, and claims what is left — the same engine as on screen, one game at a time, ten minutes at most.\n\nIf a store asks for a human check (captcha), the app never solves it: a notification calls you, and one tap finishes that game on screen.\n\nA discreet notification shows while it works. Nothing else leaves the phone.</string>
     <string name="background_ok">Turn on</string>
     <string name="busy_background">A claim is already running in the background: it will finish on its own.</string>
     <string name="notif_working_title">Claiming %1$d/%2$d</string>
@@ -402,8 +398,24 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="set_wifi_only_hint">The background watch waits for a network without a data limit. Opening the app still checks over mobile data.</string>
     <string name="set_charging_only">Watch only while charging</string>
     <string name="set_charging_only_hint">Saves battery, but a game that is free for a few hours can be missed. Epic\'s exact-time check waits too.</string>
-    <string name="health_cost">Last 24 h: %1$d passes, %2$s of work</string>
-    <string name="health_cost_least">Last 24 h: at least %1$d passes, %2$s of work</string>
+    <string name="health_cost">Last 24 h: %1$d pass(es), %2$s of work</string>
+    <string name="health_cost_least">Last 24 h: at least %1$d pass(es), %2$s of work</string>
+    <string name="health_bucket_limited">Android ranks the app « %1$s »: it delays the watch passes.</string>
+    <string name="bucket_rare">rare</string>
+    <string name="bucket_restricted">restricted</string>
+    <string name="health_background_restricted">Battery usage is set to « restricted »: Android blocks the background watch.</string>
+    <string name="health_killed">Android stopped the app %1$d time(s) in the last 7 days while it was working (last one %2$s ago).</string>
+    <string name="health_stopped_by_user">The app was stopped by hand %1$d time(s) in the last 7 days (force stop, or removed from recent apps). The watch only restarts when you open the app (last one %2$s ago).</string>
+    <string name="health_guide_open">Keep the watch from being limited</string>
+    <string name="health_guide_title">Keep the watch running</string>
+    <string name="health_guide_intro">Steps for your phone (%1$s). Menu names change between versions: look for the closest one.</string>
+    <string name="health_battery_open">Open battery settings</string>
+    <string name="guide_oplus">1. Settings › Battery (or Apps › App management) › Free Games Claimer › allow background activity, and turn on « Allow auto-launch ».\n2. In the recent apps list, lock the app (menu of its card › Lock) so « clear all » spares it.\n3. Do not swipe the app away to close it: on this system that stops it, and its alarms with it.</string>
+    <string name="guide_xiaomi">1. Settings › Apps › Manage apps › Free Games Claimer › turn on « Autostart ».\n2. Same screen › Battery saver › « No restrictions ».\n3. In the recent apps list, lock the app (long press its card › lock icon).</string>
+    <string name="guide_samsung">1. Settings › Battery › Background usage limits › Never sleeping apps › add Free Games Claimer.\n2. Settings › Apps › Free Games Claimer › Battery › « Unrestricted ».</string>
+    <string name="guide_huawei">1. Settings › Battery › App launch › Free Games Claimer › switch to « Manage manually ».\n2. Turn on « Auto-launch », « Secondary launch » and « Run in background ».</string>
+    <string name="guide_google">Settings › Apps › Free Games Claimer › App battery usage › « Unrestricted ». Pixel phones do not stop the app otherwise.</string>
+    <string name="guide_other">Settings › Apps › Free Games Claimer › Battery: choose « Unrestricted » (or « Don\'t optimise »). If your phone has « Autostart » or « Background activity » options, turn them on, and lock the app in the recent apps list if it offers that.</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>

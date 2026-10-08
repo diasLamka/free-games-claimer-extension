@@ -142,11 +142,7 @@
     <string name="login_hint_epic">E-mail et mot de passe Epic. Compte créé avec Google ou Facebook ? Donne-lui d\'abord un mot de passe Epic : Epic l\'envoie par e-mail, et la connexion Google continue de marcher.</string>
     <string name="set_background">Aussi écran éteint</string>
     <string name="background_title">Récupérer écran éteint ?</string>
-    <string name="background_text">À chaque passage de la veille de fond, l\'appli ouvre elle-même la page du magasin, sans l\'afficher, et récupère ce qui reste — le même moteur qu\'à l\'écran, un jeu à la fois, dix minutes au plus.
-
-Si un magasin demande une vérification humaine (captcha), l\'appli ne la résout jamais : une notification t\'appelle, et un appui finit ce jeu à l\'écran.
-
-Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitte le téléphone.</string>
+    <string name="background_text">À chaque passage de la veille de fond, l\'appli ouvre elle-même la page du magasin, sans l\'afficher, et récupère ce qui reste — le même moteur qu\'à l\'écran, un jeu à la fois, dix minutes au plus.\n\nSi un magasin demande une vérification humaine (captcha), l\'appli ne la résout jamais : une notification t\'appelle, et un appui finit ce jeu à l\'écran.\n\nUne notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitte le téléphone.</string>
     <string name="background_ok">Activer</string>
     <string name="busy_background">Une récupération tourne déjà en arrière-plan : elle finira seule.</string>
     <string name="notif_working_title">Récupération %1$d/%2$d</string>
@@ -401,8 +397,24 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="set_wifi_only_hint">La veille de fond attend un réseau sans limite de données. L\'ouverture de l\'appli vérifie quand même en données mobiles.</string>
     <string name="set_charging_only">Veiller seulement en charge</string>
     <string name="set_charging_only_hint">Économise la batterie, mais un jeu gratuit pendant quelques heures peut être manqué. La vérification d\'Epic à l\'heure exacte attend aussi.</string>
-    <string name="health_cost">Dernières 24 h : %1$d passages, %2$s de travail</string>
-    <string name="health_cost_least">Dernières 24 h : au moins %1$d passages, %2$s de travail</string>
+    <string name="health_cost">Dernières 24 h : %1$d passage(s), %2$s de travail</string>
+    <string name="health_cost_least">Dernières 24 h : au moins %1$d passage(s), %2$s de travail</string>
+    <string name="health_bucket_limited">Android classe l\'appli « %1$s » : il retarde les passages de la veille.</string>
+    <string name="bucket_rare">rare</string>
+    <string name="bucket_restricted">restreinte</string>
+    <string name="health_background_restricted">L\'usage de la batterie est réglé sur « restreint » : Android bloque la veille de fond.</string>
+    <string name="health_killed">Android a arrêté l\'appli %1$d fois en 7 jours pendant qu\'elle travaillait (la dernière il y a %2$s).</string>
+    <string name="health_stopped_by_user">L\'appli a été arrêtée à la main %1$d fois en 7 jours (arrêt forcé, ou retirée des applis récentes). La veille ne repart qu\'à la prochaine ouverture de l\'appli (la dernière il y a %2$s).</string>
+    <string name="health_guide_open">Empêcher Android de limiter la veille</string>
+    <string name="health_guide_title">Garder la veille en marche</string>
+    <string name="health_guide_intro">Marche à suivre pour ton téléphone (%1$s). Les noms des menus changent d\'une version à l\'autre : cherche le plus proche.</string>
+    <string name="health_battery_open">Ouvrir les réglages de batterie</string>
+    <string name="guide_oplus">1. Réglages › Batterie (ou Applis › Gestion des applis) › Free Games Claimer › autoriser l\'activité en arrière-plan, et activer « Autoriser le lancement automatique ».\n2. Dans la liste des applis récentes, verrouille l\'appli (menu de sa carte › Verrouiller) pour que « Tout effacer » l\'épargne.\n3. Ne ferme pas l\'appli en la balayant : sur ce système, cela l\'arrête, et ses alarmes avec.</string>
+    <string name="guide_xiaomi">1. Réglages › Applications › Gérer les applications › Free Games Claimer › activer « Démarrage automatique ».\n2. Même écran › Économiseur de batterie › « Aucune restriction ».\n3. Dans la liste des applis récentes, verrouille l\'appli (appui long sur sa carte › icône de cadenas).</string>
+    <string name="guide_samsung">1. Réglages › Batterie › Limites d\'utilisation en arrière-plan › Applis jamais en veille › ajouter Free Games Claimer.\n2. Réglages › Applications › Free Games Claimer › Batterie › « Sans restriction ».</string>
+    <string name="guide_huawei">1. Réglages › Batterie › Lancement des applications › Free Games Claimer › passer en « Gérer manuellement ».\n2. Activer « Lancement automatique », « Lancement secondaire » et « Exécution en arrière-plan ».</string>
+    <string name="guide_google">Réglages › Applications › Free Games Claimer › Utilisation de la batterie de l\'appli › « Sans restriction ». Les Pixel n\'arrêtent pas l\'appli autrement.</string>
+    <string name="guide_other">Réglages › Applications › Free Games Claimer › Batterie : choisis « Sans restriction » (ou « Ne pas optimiser »). Si ton téléphone propose « Démarrage automatique » ou « Activité en arrière-plan », active-les, et verrouille l\'appli dans la liste des applis récentes s\'il le permet.</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>
