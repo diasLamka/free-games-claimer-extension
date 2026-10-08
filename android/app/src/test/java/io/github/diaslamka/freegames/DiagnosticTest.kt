@@ -63,6 +63,12 @@ class DiagnosticTest {
     private val text = Diagnostic.build(secretive, env, now)
 
     @Test
+    fun theWorkOfTheLastDayIsSaid() {
+        // Deux passages dans le jour : 4,2 s + 0,9 s.
+        assertTrue(text, text.contains("work last 24 h: 2 passes, 5 s"))
+    }
+
+    @Test
     fun aStateThatWasRestoredOrResetIsSaid() {
         val restored = Diagnostic.build(secretive, env.copy(stateOrigin = StateStore.Origin.COPY), now)
         assertTrue(restored, restored.contains("state file: unreadable, restored from the previous copy"))

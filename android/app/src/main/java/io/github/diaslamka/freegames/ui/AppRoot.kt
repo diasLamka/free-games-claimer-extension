@@ -177,7 +177,10 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
         scope.launch {
             val before = Graph.store.value.settings
             val after = Graph.store.update { it.copy(settings = block(it.settings)) }.settings
-            if (after.checkHours != before.checkHours) Scheduler.periodic(context, after.checkHours, replace = true)
+            // La veille repart avec ses nouvelles contraintes (Wi-Fi, charge) comme avec son nouvel intervalle.
+            if (after.checkHours != before.checkHours || after.wifiOnly != before.wifiOnly || after.chargingOnly != before.chargingOnly) {
+                Scheduler.periodic(context, after.checkHours, replace = true)
+            }
             // La sentinelle (1.27.0) : son delai suit l'intervalle de la veille, et elle se coupe d'un reglage.
             if (after.checkHours != before.checkHours || after.watchdog != before.watchdog) {
                 io.github.diaslamka.freegames.notify.Watchdog.arm(context, Graph.store.value, System.currentTimeMillis())

@@ -397,6 +397,12 @@ Una notificación discreta se muestra mientras trabaja. Nada más sale del telé
     <string name="screen_state_on">encendida</string>
     <string name="notif_test_claim_off">La recuperación en segundo plano está desactivada en los ajustes.</string>
     <string name="notif_test_claimed">%1$d juego(s) conseguido(s) en segundo plano.</string>
+    <string name="set_wifi_only">Vigilar solo con Wi-Fi</string>
+    <string name="set_wifi_only_hint">La vigilancia en segundo plano espera una red sin límite de datos. Al abrir la app se comprueba igualmente con datos móviles.</string>
+    <string name="set_charging_only">Vigilar solo mientras carga</string>
+    <string name="set_charging_only_hint">Ahorra batería, pero un juego gratis durante pocas horas puede perderse. La comprobación a la hora exacta de Epic también espera.</string>
+    <string name="health_cost">Últimas 24 h: %1$d pasadas, %2$s de trabajo</string>
+    <string name="health_cost_least">Últimas 24 h: al menos %1$d pasadas, %2$s de trabajo</string>
     <string name="health_sources_ok">Todas las fuentes responden.</string>
     <string name="health_sources_down">Fuentes con error: %1$s</string>
     <string name="health_no_claim">Aún no se ha conseguido nada</string>

@@ -210,6 +210,10 @@ data class AccountState(
 data class Settings(
     val country: String = "FR",
     val checkHours: Int = 3,
+    /** La veille de fond attend un reseau sans limite de donnees (1.28.0). */
+    val wifiOnly: Boolean = false,
+    /** La veille de fond attend que le telephone soit en charge (1.28.0). */
+    val chargingOnly: Boolean = false,
     val notifyNew: Boolean = true,
     val notifyEnding: Boolean = true,
     val claimOnOpen: Boolean = true,

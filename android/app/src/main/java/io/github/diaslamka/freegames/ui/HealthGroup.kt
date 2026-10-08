@@ -81,6 +81,14 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
             Text(stringResource(R.string.health_passes_none), style = MaterialTheme.typography.bodySmall, color = Color.Black)
         } else {
             state.watchLog.take(8).forEach { PassLine(it, now) }
+            // Ce que la veille a coute sur le dernier jour (1.28.0).
+            val cost = PassLog.cost(state.watchLog, now)
+            if (cost.passes > 0) {
+                Text(
+                    stringResource(if (cost.atLeast) R.string.health_cost_least else R.string.health_cost, cost.passes, PassLog.duration(cost.ms)),
+                    style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A),
+                )
+            }
         }
         // Le diagnostic partageable (1.27.0) : de quoi comprendre une veille qui ne tourne pas, sans rien de personnel.
         Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))

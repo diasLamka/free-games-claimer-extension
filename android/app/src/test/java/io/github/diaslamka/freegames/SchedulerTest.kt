@@ -98,6 +98,31 @@ class SchedulerTest {
         assertTrue(Scheduler.testRequest().workSpec.input.getBoolean(io.github.diaslamka.freegames.work.WatchWorker.KEY_TEST, false))
     }
 
+    @Test
+    fun theWatchWaitsForAnUnmeteredNetworkAndForChargingWhenAsked() {
+        val plain = Scheduler.constraintsFor(io.github.diaslamka.freegames.model.Settings())
+        assertEquals(androidx.work.NetworkType.CONNECTED, plain.requiredNetworkType)
+        assertTrue(!plain.requiresCharging())
+        assertEquals(androidx.work.NetworkType.UNMETERED, Scheduler.constraintsFor(io.github.diaslamka.freegames.model.Settings(wifiOnly = true)).requiredNetworkType)
+        assertTrue(Scheduler.constraintsFor(io.github.diaslamka.freegames.model.Settings(chargingOnly = true)).requiresCharging())
+    }
+
+    @Test
+    fun theEnqueuedPeriodicWatchCarriesTheConstraintsOfTheSettings() {
+        Scheduler.periodic(context, 3, replace = true, constraints = Scheduler.constraintsFor(io.github.diaslamka.freegames.model.Settings(wifiOnly = true, chargingOnly = true)))
+        val info = manager.getWorkInfosForUniqueWork("veille").get().single()
+        assertEquals(androidx.work.NetworkType.UNMETERED, info.constraints.requiredNetworkType)
+        assertTrue(info.constraints.requiresCharging())
+    }
+
+    @Test
+    fun aTestRunIgnoresTheConstraintsOfTheSettings() {
+        // Un test lance a la main doit partir maintenant : seul le reseau compte.
+        val c = Scheduler.testRequest().workSpec.constraints
+        assertEquals(androidx.work.NetworkType.CONNECTED, c.requiredNetworkType)
+        assertTrue(!c.requiresCharging())
+    }
+
     private fun opening() = manager.getWorkInfosForUniqueWork(Scheduler.OPENING).get()
 
     @Test

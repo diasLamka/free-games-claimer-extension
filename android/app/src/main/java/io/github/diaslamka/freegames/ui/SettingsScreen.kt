@@ -156,6 +156,8 @@ fun SettingsScreen(
                         listOf(1, 3, 6, 12).map { it to stringResource(R.string.every_hours, it) },
                         s.checkHours,
                     ) { v -> onSettings { it.copy(checkHours = v) } }
+                    Toggle(stringResource(R.string.set_wifi_only), stringResource(R.string.set_wifi_only_hint), s.wifiOnly) { v -> onSettings { it.copy(wifiOnly = v) } }
+                    Toggle(stringResource(R.string.set_charging_only), stringResource(R.string.set_charging_only_hint), s.chargingOnly) { v -> onSettings { it.copy(chargingOnly = v) } }
                     Choice(
                         stringResource(R.string.set_country),
                         Countries.ALL.map { it.code to it.label },

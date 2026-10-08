@@ -398,6 +398,12 @@ A discreet notification shows while it works. Nothing else leaves the phone.</st
     <string name="screen_state_on">on</string>
     <string name="notif_test_claim_off">Background claiming is off in the settings.</string>
     <string name="notif_test_claimed">%1$d game(s) claimed in the background.</string>
+    <string name="set_wifi_only">Watch on Wi-Fi only</string>
+    <string name="set_wifi_only_hint">The background watch waits for a network without a data limit. Opening the app still checks over mobile data.</string>
+    <string name="set_charging_only">Watch only while charging</string>
+    <string name="set_charging_only_hint">Saves battery, but a game that is free for a few hours can be missed. Epic\'s exact-time check waits too.</string>
+    <string name="health_cost">Last 24 h: %1$d passes, %2$s of work</string>
+    <string name="health_cost_least">Last 24 h: at least %1$d passes, %2$s of work</string>
     <string name="health_sources_ok">Every source answers.</string>
     <string name="health_sources_down">Sources in error: %1$s</string>
     <string name="health_no_claim">Nothing claimed yet</string>

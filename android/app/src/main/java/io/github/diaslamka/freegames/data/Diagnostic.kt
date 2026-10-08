@@ -80,6 +80,9 @@ object Diagnostic {
         val silent = Watchdog.silentFor(s, now)
         line("last check: " + (s.lastCheck?.let { "${iso(it)} (${age(it, now)} ago)" } ?: "never"))
         line("silent: " + (silent?.let { "yes, ${Watchdog.hoursText(it)} (threshold ${Watchdog.hoursText(Watchdog.thresholdMs(c.checkHours))})" } ?: "no"))
+        PassLog.cost(s.watchLog, now).takeIf { it.passes > 0 }?.let { c ->
+            line("work last 24 h: " + (if (c.atLeast) "at least " else "") + "${c.passes} passes, ${PassLog.duration(c.ms)}")
+        }
         line("passes (newest first, ${s.watchLog.size}):")
         if (s.watchLog.isEmpty()) line("- none recorded")
         for (r in s.watchLog) {

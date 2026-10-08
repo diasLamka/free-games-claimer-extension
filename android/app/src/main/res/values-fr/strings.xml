@@ -397,6 +397,12 @@ Une notification discrète s\'affiche pendant le travail. Rien d\'autre ne quitt
     <string name="screen_state_on">allumé</string>
     <string name="notif_test_claim_off">La récupération de fond est coupée dans les réglages.</string>
     <string name="notif_test_claimed">%1$d jeu(x) récupéré(s) en fond.</string>
+    <string name="set_wifi_only">Veiller seulement en Wi-Fi</string>
+    <string name="set_wifi_only_hint">La veille de fond attend un réseau sans limite de données. L\'ouverture de l\'appli vérifie quand même en données mobiles.</string>
+    <string name="set_charging_only">Veiller seulement en charge</string>
+    <string name="set_charging_only_hint">Économise la batterie, mais un jeu gratuit pendant quelques heures peut être manqué. La vérification d\'Epic à l\'heure exacte attend aussi.</string>
+    <string name="health_cost">Dernières 24 h : %1$d passages, %2$s de travail</string>
+    <string name="health_cost_least">Dernières 24 h : au moins %1$d passages, %2$s de travail</string>
     <string name="health_sources_ok">Toutes les sources répondent.</string>
     <string name="health_sources_down">Sources en erreur : %1$s</string>
     <string name="health_no_claim">Rien de récupéré pour l\'instant</string>

@@ -71,6 +71,17 @@ object PassLog {
         }
     }
 
+    /** Ce que la veille a coute sur le dernier jour, d'apres le journal (1.28.0). `atLeast` : le journal est plein et son plus ancien passage est encore dans le jour. */
+    data class Cost(val passes: Int, val ms: Long, val atLeast: Boolean)
+
+    fun cost(log: List<PassRecord>, now: Long): Cost {
+        val from = now - 24 * 3_600_000L
+        val inside = log.filter { it.at >= from }
+        // Le journal garde MAX passages, le plus recent d'abord : plein, avec son plus ancien encore dans le jour, il a peut-etre jete des passages de ce jour.
+        val atLeast = log.size >= MAX && (log.lastOrNull()?.at ?: 0L) >= from
+        return Cost(inside.size, inside.sumOf { it.ms }, atLeast)
+    }
+
     /** La duree d'un passage, lisible : « <1 s », « 4 s », « 1 min 12 s ». */
     fun duration(ms: Long): String = when {
         ms < 1_000 -> "<1 s"

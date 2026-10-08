@@ -15,6 +15,7 @@ import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.PassLog
 import io.github.diaslamka.freegames.data.Watcher
 import java.util.concurrent.TimeUnit
+import io.github.diaslamka.freegames.model.Settings
 
 /** La veille de fond : un passage, ecran eteint ou non. */
 class WatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -107,10 +108,19 @@ object Scheduler {
 
     private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    /** Toutes les `hours` heures, tant qu'il y a du reseau. */
-    fun periodic(context: Context, hours: Int, replace: Boolean = false) {
+    /** Les contraintes de la veille de fond (1.28.0) : un reseau sans limite de donnees et/ou le telephone en charge, selon les reglages. */
+    fun constraintsFor(s: Settings): Constraints = Constraints.Builder()
+        .setRequiredNetworkType(if (s.wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
+        .setRequiresCharging(s.chargingOnly)
+        .build()
+
+    /** Celles des reglages courants ; sans etat charge (environnement de test), le simple reseau. */
+    private fun current(): Constraints = runCatching { constraintsFor(Graph.store.value.settings) }.getOrDefault(network)
+
+    /** Toutes les `hours` heures, quand les contraintes des reglages sont reunies. */
+    fun periodic(context: Context, hours: Int, replace: Boolean = false, constraints: Constraints = current()) {
         val req = PeriodicWorkRequestBuilder<WatchWorker>(hours.coerceIn(1, 24).toLong(), TimeUnit.HOURS)
-            .setConstraints(network)
+            .setConstraints(constraints)
             .build()
         manager(context)?.enqueueUniquePeriodicWork(
             PERIODIC,
@@ -123,7 +133,7 @@ object Scheduler {
     fun soon(context: Context) {
         val req = OneTimeWorkRequestBuilder<WatchWorker>()
             .setInitialDelay(15, TimeUnit.MINUTES)
-            .setConstraints(network)
+            .setConstraints(current())
             .build()
         manager(context)?.enqueueUniqueWork(FOLLOW_UP, ExistingWorkPolicy.KEEP, req)
     }
@@ -139,7 +149,7 @@ object Scheduler {
         if (delay <= 0 || delay > 36L * 3_600_000) return
         val req = OneTimeWorkRequestBuilder<WatchWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .setConstraints(network)
+            .setConstraints(current())
             .build()
         manager(context)?.enqueueUniqueWork(DIGEST, if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, req)
     }
@@ -162,7 +172,7 @@ object Scheduler {
         if (delay <= 0 || delay > 8L * 24 * 3_600_000) return
         val req = OneTimeWorkRequestBuilder<WatchWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .setConstraints(network)
+            .setConstraints(current())
             .build()
         manager(context)?.enqueueUniqueWork(OPENING, if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, req)
     }

@@ -56,6 +56,22 @@ class HealthPassesTest {
     }
 
     @Test
+    fun theWorkOfTheLastDayIsSaid() {
+        val log = listOf(
+            PassRecord(at = now - 600_000, ms = 4_000, reason = "fond", outcome = PassLog.OK),
+            PassRecord(at = now - 7_200_000, ms = 2_000, reason = "fond", outcome = PassLog.OK),
+        )
+        compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(AppState(watchLog = log), now) } }
+        compose.onNodeWithText(str(R.string.health_cost, 2, "6 s")).assertIsDisplayed()
+    }
+
+    @Test
+    fun anEmptyLogSaysNothingOfCost() {
+        compose.setContent { FreeGamesTheme(dark = false) { HealthGroup(AppState(), now) } }
+        compose.onNodeWithText(str(R.string.health_cost, 0, "<1 s")).assertDoesNotExist()
+    }
+
+    @Test
     fun theLatestPassesAreListedWithTheirOutcome() {
         val log = listOf(
             PassRecord(at = now - 600_000, ms = 4_200, reason = "fond", outcome = PassLog.OK, offers = 14, fresh = 1, screenOff = true, claimed = 2),

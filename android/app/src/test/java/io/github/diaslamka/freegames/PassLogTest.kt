@@ -122,6 +122,33 @@ class PassLogTest {
         assertEquals(listOf(null, 2), s.value.watchLog.map { it.claimed })
     }
 
+    private val hour = 3_600_000L
+    private fun passAt(at: Long, ms: Long) = PassRecord(at = at, ms = ms, reason = "fond", outcome = PassLog.OK)
+
+    @Test
+    fun theLastDayOfWorkIsCountedFromTheLog() {
+        val now = 1_790_000_000_000L
+        // Deux passages dans le jour (4 s et 2 s), un d'hier soir : hors fenetre.
+        val log = listOf(passAt(now - hour, 4_000), passAt(now - 5 * hour, 2_000), passAt(now - 30 * hour, 9_000))
+        assertEquals(PassLog.Cost(passes = 2, ms = 6_000, atLeast = false), PassLog.cost(log, now))
+    }
+
+    @Test
+    fun anEmptyLogCostsNothing() {
+        assertEquals(PassLog.Cost(0, 0, false), PassLog.cost(emptyList(), 1_790_000_000_000L))
+    }
+
+    @Test
+    fun aFullLogWhoseOldestPassIsStillInsideTheDayOnlyGivesALowerBound() {
+        val now = 1_790_000_000_000L
+        val log = (0 until PassLog.MAX).map { passAt(now - it * 30 * 60_000L, 1_000) }
+        val cost = PassLog.cost(log, now)
+        assertEquals(PassLog.MAX, cost.passes)
+        assertTrue(cost.atLeast)
+        // Un journal plein dont le plus ancien passage est deja hors du jour n'a rien perdu.
+        assertEquals(false, PassLog.cost((0 until PassLog.MAX).map { passAt(now - it * hour, 1_000) }, now).atLeast)
+    }
+
     @Test
     fun theLogIsSavedWithTheState() = runBlocking {
         val file = File(tmp.root, "etat.json")
