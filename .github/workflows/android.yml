@@ -155,10 +155,15 @@ jobs:
           esac
           sha256sum free-games-claimer-android-*.apk
 
+      # Une commodite (l'APK de chaque push, a telecharger), pas une etape de la release : « Deposer la release » prend l'APK sur le
+      # disque du runner. Un envoi refuse (quota d'artefacts atteint, 2026-10-08) ne doit donc pas empecher de publier ; et sept
+      # jours suffisent, les versions publiees gardent leur APK dans la release.
       - uses: actions/upload-artifact@v6
+        continue-on-error: true
         with:
           name: apk
           path: free-games-claimer-android-*.apk
+          retention-days: 7
 
       - name: Deposer la release
         if: startsWith(github.ref, 'refs/tags/app-v') || github.ref == 'refs/heads/main'

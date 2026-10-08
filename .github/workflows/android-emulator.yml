@@ -73,10 +73,13 @@ jobs:
           working-directory: android
           script: ./gradlew connectedDebugAndroidTest --console=plain
 
+      # Le rapport ne sert qu'a comprendre un echec : il ne part que dans ce cas, trois jours (le quota d'artefacts est partage).
       - name: Le rapport des tests
-        if: always()
+        if: failure()
+        continue-on-error: true
         uses: actions/upload-artifact@v6
         with:
+          retention-days: 3
           name: android-emulator-rapport-${{ matrix.api-level }}
           path: |
             android/app/build/reports/androidTests
