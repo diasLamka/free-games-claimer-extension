@@ -4,6 +4,48 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.28.0 -- 2026-10-09 (extension inchangee, 2.107.0)
+
+**La veille se regle, la page Sante dit ce qu'Android lui fait, et une sauvegarde chiffree -- a la main ou automatique -- permet de changer de telephone**
+
+Mise a jour depuis la 1.27.1 : dans l'appli, comme d'habitude. Chaque point a ses tests, ecrits d'abord et vus echouer, et la plupart ont ete
+essayes sur un emulateur Android (11 et 14), pas seulement sur la simulation des tests unitaires.
+
+- **Veille : seulement en Wi-Fi, seulement en charge** (Reglages > Veille, `work/WatchWorker.kt`). La veille periodique, la reprise d'un quart d'heure, le
+  resume du jour et l'ouverture annoncee par Epic attendent un reseau sans limite de donnees et/ou le telephone branche. Un test lance a la main part
+  toujours maintenant. Verifie sur emulateur : les contraintes arrivent jusqu'au planificateur d'Android (`dumpsys jobscheduler`). Un reglage change pendant
+  qu'un passage tourne est pris en compte au passage suivant (comportement de WorkManager).
+- **Ce que la veille coute** (page Sante et diagnostic). Le nombre de passages et le temps de travail des dernieres 24 h, tires du journal ; « au moins » quand
+  le journal (30 passages) est plein. Pas d'estimation de batterie : rien ne la mesure.
+- **Ce qu'Android fait de la veille, et un guide pour l'en empecher** (`data/Restrictions.kt`, page Sante et diagnostic). Les arrets recents du processus
+  (arret force ou appli retiree des recentes : plus de travail ni d'alarme jusqu'a la prochaine ouverture ; tuee pendant qu'elle travaillait), la classe de
+  veille (rare ou restreinte retarde les passages) et la batterie restreinte. Un processus en cache qui meurt n'est pas compte (vie normale d'Android), ni
+  les processus du moteur de pages : l'historique d'Android les melange, et un essai sur emulateur a montre que leur mort « plus necessaire » faisait crier
+  au loup. Un guide par fabricant (OnePlus / OPPO / realme, Xiaomi, Samsung, Huawei / Honor, Pixel, autres) donne les etapes et ouvre les reglages de batterie
+  et de l'appli.
+- **Une sauvegarde complete et chiffree** (`data/BackupVault.kt`). Reglages, bibliotheque, souhaits, etats des jeux, ce que le moteur a appris, proches :
+  un fichier `.fgcbak` que seule la phrase de passe ouvre (AES-256-GCM, cle PBKDF2-HMAC-SHA256 a 210 000 iterations, en-tete authentifie). Jamais de session de
+  magasin, de secret du relais ni de jeton : apres une restauration, on se reconnecte et on re-associe le PC. La restauration fusionne (les reglages sont
+  remplaces, tout le reste est fusionne, ce qui est deja la l'emporte). **La liste blanche s'applique aussi a la restauration** : un fichier venu d'ailleurs
+  pouvait apporter une cle du moteur, des comptes ou le relais d'un autre (signale par la revue de securite automatique des commits).
+- **Une sauvegarde automatique** (`data/AutoBackup.kt`, `work/BackupWorker.kt`). Une fois par jour, dans un dossier choisi avec le selecteur du systeme (sans
+  permission de stockage), les sept dernieres gardees ; rien n'est supprime avant qu'une ecriture ait reussi. La phrase de passe est chiffree par le
+  Keystore. La page Sante previent quand elle ne reussit plus depuis trois jours.
+- **Textes a plusieurs paragraphes** (`tools/strings.py`). Un vrai saut de ligne dans le XML devient une espace a la compilation : les paragraphes de
+  `background_text` etaient perdus depuis toujours. Le generateur ecrit maintenant `\n` ; ces textes retrouvent leurs paragraphes.
+- **Des tests sur un vrai Android** (`src/androidTest`, `android/tools/emulator.ps1`, `.github/workflows/android-emulator.yml`). 21 tests sur emulateur Android 14
+  et 11 : le manifeste, les raccourcis, les widgets, les notifications, les intents, le renommage de fichiers, le Keystore, le planificateur, le chiffrement
+  a son cout reel. Ils ont montre en chemin qu'un extra illisible fait planter l'appli sur Android 12 et avant et pas sur 13 et apres, et que le premier test
+  d'une suite passait a cote de la boite de permission. Le workflow ne bloque pas la release.
+- La CI : un quota d'artefacts atteint ne bloque plus la release (l'envoi est une commodite, sept jours de conservation) ; l'emulateur libere de la place
+  sur le runner.
+- Tests : 346 -> 413 (unitaires), plus les 21 sur emulateur.
+- Non verifie : les etapes du guide sur les telephones des fabricants (elles suivent leur documentation, les noms de menus changent d'une version a
+  l'autre) ; la sauvegarde automatique avec un fournisseur de cloud (Drive...) ; la duree du chiffrement sur un vrai telephone (environ une seconde sur
+  emulateur) ; la restauration sur un telephone neuf ; le declenchement reel de la sentinelle.
+- Non fait : les jeux gratuits de Humble Store et de Fab (a mesurer d'abord, comme l'exige la feuille de route : ils demandent une session de magasin que
+  les tests ne peuvent pas ouvrir).
+
 ## Appli 1.27.1 -- 2026-10-04 (extension inchangee, 2.107.0)
 
 **Trois points laisses de cote par l'audit de la 1.26.1 : un etat illisible repart de sa copie, un intent illisible ne plante plus l'appli, l'etat de la mise a jour n'est plus modifiable de l'exterieur**
