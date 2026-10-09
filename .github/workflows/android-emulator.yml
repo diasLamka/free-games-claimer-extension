@@ -60,6 +60,14 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # La partition de donnees de l'appareil virtuel demande plus de 7 Go (« Not enough space to create userdata partition »,
+      # 2026-10-08 : 6,6 Go libres) ; `disk-size` n'y change rien. On rend de la place au runner avec ce dont ce job n'a pas besoin :
+      # le NDK, .NET, GHC et CodeQL, qu'il embarque pour d'autres.
+      - name: Liberer de la place
+        run: |
+          sudo rm -rf /usr/local/lib/android/sdk/ndk /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h / | tail -1
+
       - name: Les tests sur emulateur
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -68,9 +76,6 @@ jobs:
           arch: x86_64
           profile: pixel_6
           ram-size: 4096M
-          # La partition de donnees par defaut (plus de 7 Go) ne tient pas toujours sur le disque d'un runner (« Not enough space to
-          # create userdata partition », 2026-10-08) ; les tests n'y ecrivent que quelques Mo.
-          disk-size: 3072M
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -netdelay none -netspeed full
           working-directory: android
