@@ -430,6 +430,9 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onExport = { exporter.launch("free-games-claimer-android.json") },
                     onVaultExport = vault.export,
                     onVaultRestore = vault.restore,
+                    onAutoEnable = vault.enableAuto,
+                    onAutoNow = vault.autoNow,
+                    onAutoDisable = vault.disableAuto,
                     onClearSessions = {
                         CookieManager.getInstance().removeAllCookies(null)
                         CookieManager.getInstance().flush()

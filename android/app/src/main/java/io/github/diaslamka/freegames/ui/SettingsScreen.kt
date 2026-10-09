@@ -82,6 +82,10 @@ fun SettingsScreen(
     /** La sauvegarde complete et chiffree (1.28.0). */
     onVaultExport: () -> Unit = {},
     onVaultRestore: () -> Unit = {},
+    /** La sauvegarde automatique (1.28.0) : l'activer (phrase, puis dossier), la lancer maintenant, la couper. */
+    onAutoEnable: () -> Unit = {},
+    onAutoNow: () -> Unit = {},
+    onAutoDisable: () -> Unit = {},
     onRelayScan: () -> Unit = {},
     onRelayCode: (String) -> Unit = {},
     onRelaySync: () -> Unit = {},
@@ -219,6 +223,7 @@ fun SettingsScreen(
                         BrutButton(stringResource(R.string.backup_vault_export), onVaultExport)
                         BrutButton(stringResource(R.string.backup_vault_restore), onVaultRestore, primary = false)
                     }
+                    AutoBackupBlock(s, now, onAutoEnable, onAutoNow, onAutoDisable)
                     val clearName = stringResource(R.string.clear_sessions)
                     Text(
                         "✕ " + stringResource(R.string.clear_sessions).uppercase(),

@@ -43,6 +43,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import io.github.diaslamka.freegames.data.AutoBackup
 
 /**
  * La page « Sante » (1.26.0), dans les Reglages : pour chaque magasin, la session, la derniere recuperation, le
@@ -78,6 +79,10 @@ fun HealthGroup(state: AppState, now: Long, notificationsAllowed: Boolean = true
             Notice(stringResource(R.string.health_watch_stalled, Watchdog.hoursText(silent), state.settings.checkHours), b.accent) {
                 BrutButton(stringResource(R.string.health_app_settings_open), onAppSettings)
             }
+        }
+        // La sauvegarde automatique qui ne reussit plus depuis trois jours : sans cet avertissement, personne ne le saurait avant d'en avoir besoin.
+        AutoBackup.overdueMs(state.settings, now)?.let {
+            Notice(stringResource(R.string.health_auto_backup_overdue, Fmt.ago(context, now - it, now)), b.accent)
         }
         // Ce qu'Android fait de la veille (1.28.0) : classe de veille, batterie restreinte, arrets du processus -- et le guide pour l'en empecher.
         var guideOpen by remember { mutableStateOf(false) }

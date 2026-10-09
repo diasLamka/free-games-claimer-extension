@@ -11,5 +11,7 @@ class App : Application() {
         Graph.init(this)
         Notifier.createChannels(this)
         Scheduler.periodic(this, Graph.store.value.settings.checkHours)
+        // La sauvegarde automatique, si elle est activee : le travail periodique survit, on le repose au cas ou.
+        if (Graph.store.value.settings.backupFolder != null) Scheduler.backup(this, true)
     }
 }

@@ -93,6 +93,27 @@ object Scheduler {
         manager(context)?.enqueueUniqueWork(TEST, ExistingWorkPolicy.REPLACE, testRequest())
     }
 
+    private const val BACKUP = "sauvegarde"
+    private const val BACKUP_NOW = "sauvegarde-maintenant"
+
+    /** La sauvegarde automatique (1.28.0) : une fois par jour, sans reseau, pas sur batterie faible ; coupee, plus rien a reveiller. */
+    fun backup(context: Context, enabled: Boolean) {
+        val m = manager(context) ?: return
+        if (!enabled) {
+            m.cancelUniqueWork(BACKUP)
+            return
+        }
+        val req = PeriodicWorkRequestBuilder<BackupWorker>(24, TimeUnit.HOURS)
+            .setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).build())
+            .build()
+        m.enqueueUniquePeriodicWork(BACKUP, ExistingPeriodicWorkPolicy.KEEP, req)
+    }
+
+    /** Une sauvegarde maintenant (« Sauvegarder maintenant », et a l'activation) : un second appui remplace le premier. */
+    fun backupNow(context: Context) {
+        manager(context)?.enqueueUniqueWork(BACKUP_NOW, ExistingWorkPolicy.REPLACE, OneTimeWorkRequestBuilder<BackupWorker>().build())
+    }
+
     private const val PERIODIC = "veille"
     internal const val OPENING = "ouverture-epic"
     private const val FOLLOW_UP = "suite-recuperation"
