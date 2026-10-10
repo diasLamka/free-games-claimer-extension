@@ -134,7 +134,8 @@ fun StoreChip(store: String?, modifier: Modifier = Modifier, onImage: Boolean = 
     androidx.compose.foundation.layout.Box(modifier.background(Color.Black).padding(horizontal = 6.dp, vertical = 4.dp)) {
         Icon(
             androidx.compose.ui.res.painterResource(logo), name, tint = Color.White,
-            modifier = Modifier.size(16.dp),
+            // L'ecusson d'Epic porte son nom : il lui faut plus de place pour rester lisible.
+            modifier = Modifier.size(if (logo == R.drawable.logo_epic) 34.dp else 16.dp),
         )
     }
 }

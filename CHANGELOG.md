@@ -4,6 +4,12 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.33.2 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Le vrai logo d'Epic Games, en plus grand**
+
+L'ecusson redessine de la 1.33.1 est retire : c'est le logo officiel (ecusson, « EPIC », « GAMES ») de Simple Icons qui revient, affiche plus grand que les autres logos (34 dp sur les jaquettes, 42 dp dans les filtres) pour qu'on lise « EPIC ». Le mot « GAMES », tout en bas, reste minuscule : c'est le logo qui est ainsi dessine.
+
 ## Appli 1.33.1 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Le logo Epic redessine, et Amazon prend le triangle de Luna**

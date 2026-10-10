@@ -216,7 +216,7 @@ fun GamesScreen(
                             if (logo != null) {
                                 Icon(
                                     androidx.compose.ui.res.painterResource(logo), Stores.label(f), tint = if (on && !b.dark) b.accent else Color.Black,
-                                    modifier = chip.size(24.dp + 0.dp),
+                                    modifier = chip.size(if (logo == R.drawable.logo_epic) 42.dp else 24.dp),
                                 )
                             } else Text(
                                 if (f == null) stringResource(R.string.filter_all).uppercase() else shortStore(f),
