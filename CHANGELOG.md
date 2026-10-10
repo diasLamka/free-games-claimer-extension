@@ -4,6 +4,14 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.33.1 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Le logo Epic redessine, et Amazon prend le triangle de Luna**
+
+- **Epic** : le logo de Simple Icons porte l'ecusson, « EPIC » et « GAMES » ; a 16 dp, c'etait une tache. Il est remplace par un ecusson et son E, dessines pour rester lisibles en petit.
+- **Amazon** : le triangle d'Amazon Luna, extrait du fichier « Amazon Luna logo.svg » de Wikimedia Commons (telecharge le 2026-10-10 avec ton accord ; Simple Icons n'a pas Amazon). Il sert pour tout Amazon (Luna et Prime Gaming). La marque reste a son proprietaire.
+- Verifie sur emulateur Android 14 : les filtres de l'accueil montrent l'ecusson Epic, GOG, Steam et le triangle Luna.
+
 ## Appli 1.33.0 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Les logos des magasins, et le choix d'afficher ou non les DLC et ce qui demande un jeu de base**

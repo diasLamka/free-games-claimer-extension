@@ -107,10 +107,11 @@ fun shortStore(store: String?): String = when (store) {
     else -> Stores.label(store).uppercase()
 }
 
-/** Le logo d'un magasin (1.33.0), ou null : les icones de Simple Icons, en domaine public ; Amazon, Fab et les autres gardent leur nom. */
+/** Le logo d'un magasin (1.33.0), ou null : les icones de Simple Icons, en domaine public ; Amazon est Luna (Wikimedia Commons) ; Fab et les autres gardent leur nom. */
 fun storeLogo(store: String?): Int? = when (store) {
     Stores.EPIC, Stores.EPIC_MOBILE -> R.drawable.logo_epic
     Stores.GOG -> R.drawable.logo_gog
+    Stores.AMAZON -> R.drawable.logo_luna
     Stores.STEAM -> R.drawable.logo_steam
     Stores.HUMBLE -> R.drawable.logo_humble
     Stores.ITCHIO -> R.drawable.logo_itchio
