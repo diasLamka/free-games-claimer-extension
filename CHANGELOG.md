@@ -4,6 +4,26 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.30.0 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**La mise a jour se lance depuis la notification, et on en voit la progression**
+
+Mise a jour depuis la 1.29.0 : dans l'appli, comme d'habitude. Chaque point a ses tests, ecrits d'abord ; les deux verifications principales aussi par mutation.
+
+- **Un appui sur « Mise a jour disponible » telecharge** (`notify/Notifier.kt`, `Incoming.kt`, `data/UpdateRunner.kt`). Il ouvrait les Reglages ; il ouvre maintenant l'accueil et
+  lance la recherche puis le telechargement de la version annoncee (`UpdateRunner.fromNotification`). L'intent ne porte qu'un numero de version bien forme, jamais une adresse :
+  l'APK vient toujours des publications du depot et passe les memes verifications (taille, SHA-256, signature). Si Android n'a pas encore autorise l'appli a installer,
+  l'ecran de cette autorisation s'ouvre (le geste unique).
+- **Une notification de progression** : une barre, non balayable pendant le telechargement, qui part quand Android prend le relais (fenetre d'installation) ou en cas d'echec.
+  La notification « Mise a jour disponible » s'efface des que le telechargement commence. Elle sert aussi pour le bouton du bandeau et celui des Reglages.
+- **Une vraie barre de progression sur l'accueil** (`ui/UpdateBanner.kt`, `BrutProgress`) sous le pourcentage, lisible par TalkBack comme un controle de progression.
+- Le texte de la notification dit ce que l'appui fait (« Appuie pour la telecharger et l'installer »).
+- Rien de nouveau a regler : la notification existait deja (Reglages > Notifications > mise a jour), elle n'arrive que si la mise a jour automatique ne s'est pas faite toute seule
+  (reglage « Mise a jour automatique », actif par defaut et seulement quand Android a deja autorise l'appli), et la veille ne cherche qu'une fois par jour.
+- Tests : 442 -> 451 (unitaires).
+- Non verifie sur un vrai systeme : le depot est prive, la recherche exige le jeton de lecture de l'utilisateur, que ni les tests ni l'emulateur n'ont ; le parcours
+  complet (appui, telechargement, barre, fenetre d'installation) n'a donc ete exerce qu'avec un faux reseau, dans la simulation d'Android (Robolectric).
+
 ## 2.108.0 / appli 1.29.0 -- 2026-10-10
 
 **Fab : les assets gratuits d'Epic (modeles 3D, plugins, assets Unreal et Unity) sont detectes et annonces**

@@ -51,7 +51,9 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
         is AppUpdate.Status.Available -> Notice(stringResource(R.string.update_banner, st.release.version), b.accent, modifier) {
             BrutButton(stringResource(R.string.update_now), { go(st.release) }, icon = Icons.Rounded.SystemUpdate)
         }
-        is AppUpdate.Status.Downloading -> Notice(stringResource(R.string.update_downloading, st.percent), b.accent, modifier)
+        is AppUpdate.Status.Downloading -> Notice(stringResource(R.string.update_downloading, st.percent), b.accent, modifier) {
+            BrutProgress(st.percent)
+        }
         is AppUpdate.Status.Installing -> Notice(stringResource(R.string.update_installing), b.accent, modifier)
         is AppUpdate.Status.Failed -> if (st.reason in SHOWN_ON_HOME) {
             Notice(

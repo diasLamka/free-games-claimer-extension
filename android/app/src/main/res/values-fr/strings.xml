@@ -475,7 +475,8 @@
     <string name="notif_teach_text">Je n\'ai pas reconnu le bouton de %1$s. Ouvre l\'appli et touche Récupérer : tu pourras me le montrer d\'un seul toucher.</string>
     <string name="channel_update">Mises à jour de l\'appli</string>
     <string name="notif_update_title">Mise à jour %1$s disponible</string>
-    <string name="notif_update_text">Ouvre Réglages › À propos pour l\'installer.</string>
+    <string name="notif_update_text">Appuie pour la télécharger et l\'installer.</string>
+    <string name="notif_update_downloading">Téléchargement de la mise à jour %1$s</string>
     <string name="set_notify_update">Me prévenir quand une mise à jour existe</string>
     <string name="update_check">Chercher une mise à jour</string>
     <string name="update_checking">Recherche en cours…</string>

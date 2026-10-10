@@ -475,7 +475,8 @@
     <string name="notif_teach_text">Ich habe den Button von %1$s nicht erkannt. Öffne die App und tippe auf Holen: Du kannst ihn mir mit einem Tipp zeigen.</string>
     <string name="channel_update">App-Updates</string>
     <string name="notif_update_title">Update %1$s verfügbar</string>
-    <string name="notif_update_text">Öffne Einstellungen › Über die App, um es zu installieren.</string>
+    <string name="notif_update_text">Tippen, um sie herunterzuladen und zu installieren.</string>
+    <string name="notif_update_downloading">Update %1$s wird heruntergeladen</string>
     <string name="set_notify_update">Bescheid geben, wenn es ein Update gibt</string>
     <string name="update_check">Nach Update suchen</string>
     <string name="update_checking">Suche läuft…</string>

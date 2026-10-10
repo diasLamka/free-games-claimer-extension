@@ -33,6 +33,10 @@ import io.github.diaslamka.freegames.model.Titles
  */
 object Notifier {
     const val CH_NEW = "nouveaux"
+
+    /** « Mise a jour disponible » et, une fois lancee, sa progression (1.29.0). */
+    const val ID_UPDATE = 3900
+    const val ID_UPDATE_PROGRESS = 3901
     const val CH_ENDING = "fins"
     const val CH_CLAIMS = "recuperations"
     const val CH_ACCOUNT = "comptes"
@@ -76,10 +80,11 @@ object Notifier {
         (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) &&
             NotificationManagerCompat.from(context).areNotificationsEnabled()
 
-    private fun openApp(context: Context, code: Int, claimKey: String? = null, tab: Int = 0): PendingIntent {
+    private fun openApp(context: Context, code: Int, claimKey: String? = null, tab: Int = 0, update: String? = null): PendingIntent {
         val i = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_TAB, tab)
+        if (update != null) i.putExtra(MainActivity.EXTRA_UPDATE, update).setAction("update:$update")
         if (claimKey != null) i.putExtra(MainActivity.EXTRA_CLAIM, claimKey).setAction("claim:$claimKey")
         return PendingIntent.getActivity(context, code, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
@@ -372,12 +377,36 @@ object Notifier {
             .setContentTitle(context.getString(R.string.notif_update_title, version))
             .setContentText(context.getString(R.string.notif_update_text))
             .setAutoCancel(true)
-            .setContentIntent(openApp(context, 3900, tab = 3))
-        if (!allowed(context)) return
-        try {
-            NotificationManagerCompat.from(context).notify(3900, b.build())
-        } catch (_: SecurityException) {
-        }
+            // Un appui ouvre l'accueil ET lance le telechargement (1.29.0) ; avant, il ouvrait les Reglages.
+            .setContentIntent(openApp(context, ID_UPDATE, tab = 0, update = version))
+        post(context, ID_UPDATE, b.build())
+    }
+
+    /** Le telechargement de la mise a jour, en cours : une barre, qu'on ne balaie pas (1.29.0). */
+    fun updateProgress(context: Context, version: String, percent: Int) {
+        val pct = percent.coerceIn(0, 100)
+        val b = NotificationCompat.Builder(context, CH_UPDATE)
+            .setSmallIcon(R.drawable.ic_stat_ticket)
+            .setContentTitle(context.getString(R.string.notif_update_downloading, version))
+            .setContentText(context.getString(R.string.update_downloading, pct))
+            .setProgress(100, pct, false)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(openApp(context, ID_UPDATE_PROGRESS, tab = 0))
+        post(context, ID_UPDATE_PROGRESS, b.build())
+    }
+
+    /** La progression s'en va : fini, echoue ou repris par le systeme (1.29.0). */
+    fun updateProgressClear(context: Context) {
+        NotificationManagerCompat.from(context).cancel(ID_UPDATE_PROGRESS)
+    }
+
+    /** « Mise a jour disponible » n'a plus lieu d'etre : le telechargement a commence (1.29.0). */
+    fun updateAvailableClear(context: Context) {
+        NotificationManagerCompat.from(context).cancel(ID_UPDATE)
     }
 
     /**

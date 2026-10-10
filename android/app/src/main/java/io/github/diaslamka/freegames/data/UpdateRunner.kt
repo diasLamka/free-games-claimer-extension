@@ -4,7 +4,9 @@ import android.content.Context
 import io.github.diaslamka.freegames.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import io.github.diaslamka.freegames.notify.Notifier
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,7 +48,45 @@ object UpdateRunner {
     fun installInBackground(context: Context, release: AppUpdate.Release, onNotAllowed: () -> Unit = {}): Job? {
         if (running?.isActive == true) return null
         val app = context.applicationContext
-        return scope.launch { if (!install(app, release)) onNotAllowed() }.also { running = it }
+        return scope.launch {
+            // Une notification dit la progression (1.29.0) : on peut quitter l'appli, le telechargement continue.
+            val follower = launch { follow(app, release.version) }
+            try {
+                if (!install(app, release)) onNotAllowed()
+            } finally {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    follower.cancelAndJoin()
+                    Notifier.updateProgressClear(app)
+                }
+            }
+        }.also { running = it }
+    }
+
+    /**
+     * L'appui sur la notification « Mise a jour disponible » (1.29.0) : on cherche, et si une version plus recente existe
+     * on la telecharge. Rend le travail lance, ou null (rien de nouveau, ou un telechargement deja en route). Quand Android
+     * n'a pas encore autorise l'appli a installer, l'ecran de cette autorisation s'ouvre : c'est le geste unique.
+     */
+    suspend fun fromNotification(context: Context): Job? {
+        search(context)
+        val release = (AppUpdate.status.value as? AppUpdate.Status.Available)?.release ?: return null
+        val app = context.applicationContext
+        return installInBackground(app, release) { runCatching { app.startActivity(Install.allowIntent(app)) } }
+    }
+
+    /** Suit l'etat du telechargement dans la notification de progression. */
+    private suspend fun follow(context: Context, version: String) {
+        AppUpdate.status.collect { st ->
+            when (st) {
+                is AppUpdate.Status.Downloading -> {
+                    Notifier.updateAvailableClear(context)
+                    Notifier.updateProgress(context, version, st.percent)
+                }
+                // Le systeme prend le relais (fenetre d'installation), ou ca a echoue (le bandeau le dit) : plus de barre.
+                is AppUpdate.Status.Installing, is AppUpdate.Status.Failed -> Notifier.updateProgressClear(context)
+                else -> {}
+            }
+        }
     }
 
     /**

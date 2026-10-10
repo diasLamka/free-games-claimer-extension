@@ -300,6 +300,11 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 tab = 0
                 claim(if (request.key == null || request.key == "*") emptySet() else setOf(request.key))
             }
+            is Incoming.Update -> {
+                // La notification de mise a jour (1.29.0) : l'accueil montre la progression, la recherche et le telechargement suivent.
+                tab = 0
+                io.github.diaslamka.freegames.data.UpdateRunner.fromNotification(context)
+            }
             is Incoming.OpenTab -> tab = request.tab
             Incoming.Nothing -> {}
         }

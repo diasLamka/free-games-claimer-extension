@@ -13,6 +13,9 @@ sealed interface Incoming {
     data class Share(val subject: String?, val text: String?) : Incoming
     data class Shortcut(val destination: Raccourcis.Destination) : Incoming
     data class Claim(val key: String?) : Incoming
+
+    /** Telecharger la mise a jour annoncee par la notification (1.29.0) : la version, jamais une adresse. */
+    data class Update(val version: String) : Incoming
     data class OpenTab(val tab: Int) : Incoming
 
     companion object {
@@ -22,6 +25,10 @@ sealed interface Incoming {
                 i.action == Intent.ACTION_VIEW && i.data?.scheme == "fgclaimer" -> AppLink(i.dataString)
                 i.action == Intent.ACTION_SEND -> Share(i.getStringExtra(Intent.EXTRA_SUBJECT), i.getStringExtra(Intent.EXTRA_TEXT))
                 Raccourcis.destination(i.action) != null -> Shortcut(Raccourcis.destination(i.action)!!)
+                // Avant l'onglet : la notification porte aussi le sien.
+                i.hasExtra(MainActivity.EXTRA_UPDATE) -> i.getStringExtra(MainActivity.EXTRA_UPDATE)
+                    ?.takeIf { it.length <= 20 && io.github.diaslamka.freegames.data.AppUpdate.parseVersion(it) != null }
+                    ?.let(::Update) ?: Nothing
                 i.hasExtra(MainActivity.EXTRA_CLAIM) -> Claim(i.getStringExtra(MainActivity.EXTRA_CLAIM))
                 i.hasExtra(MainActivity.EXTRA_TAB) -> i.getIntExtra(MainActivity.EXTRA_TAB, 0).takeIf { it in 0 until tabs }?.let(::OpenTab) ?: Nothing
                 else -> Nothing

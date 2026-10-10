@@ -84,4 +84,16 @@ class IncomingTest {
             override fun getStringExtra(name: String?): String = throw BadParcelableException("classe inconnue")
         }))
     }
+
+    @Test
+    fun theUpdateNotificationAsksForTheUpdateOfAWellFormedVersion() {
+        assertEquals(Incoming.Update("1.30.0"), read(Intent().putExtra(MainActivity.EXTRA_UPDATE, "1.30.0")))
+    }
+
+    @Test
+    fun anUpdateRequestWithAnOddVersionAsksNothing() {
+        assertEquals(Incoming.Nothing, read(Intent().putExtra(MainActivity.EXTRA_UPDATE, "pas une version")))
+        assertEquals(Incoming.Nothing, read(Intent().putExtra(MainActivity.EXTRA_UPDATE, 7)))
+        assertEquals(Incoming.Nothing, read(Intent().putExtra(MainActivity.EXTRA_UPDATE, "../../1.0")))
+    }
 }

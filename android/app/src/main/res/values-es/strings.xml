@@ -475,7 +475,8 @@
     <string name="notif_teach_text">No reconocí el botón de %1$s. Abre la app y pulsa Conseguir: puedes enseñármelo con un solo toque.</string>
     <string name="channel_update">Actualizaciones de la app</string>
     <string name="notif_update_title">Actualización %1$s disponible</string>
-    <string name="notif_update_text">Abre Ajustes › Acerca de para instalarla.</string>
+    <string name="notif_update_text">Toca para descargarla e instalarla.</string>
+    <string name="notif_update_downloading">Descargando la actualización %1$s</string>
     <string name="set_notify_update">Avisarme cuando haya una actualización</string>
     <string name="update_check">Buscar actualización</string>
     <string name="update_checking">Buscando…</string>

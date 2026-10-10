@@ -17,6 +17,9 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_TAB = "onglet"
         const val EXTRA_CLAIM = "recuperer"
 
+        /** La version a telecharger : la notification « Mise a jour disponible » (1.29.0). */
+        const val EXTRA_UPDATE = "mettre_a_jour"
+
         /**
          * L'intent d'une ouverture, et non celui d'une recreation : Android redonne l'intent d'origine quand le
          * processus a ete tue (savedInstanceState) et quand on revient par les Recents (LAUNCHED_FROM_HISTORY).

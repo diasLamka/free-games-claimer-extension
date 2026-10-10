@@ -1,6 +1,8 @@
 package io.github.diaslamka.freegames
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
@@ -9,6 +11,7 @@ import io.github.diaslamka.freegames.data.AppUpdate
 import io.github.diaslamka.freegames.ui.UpdateBanner
 import io.github.diaslamka.freegames.ui.theme.FreeGamesTheme
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,5 +67,27 @@ class UpdateBannerTest {
         AppUpdate.publish(AppUpdate.Status.Installing)
         compose.waitForIdle()
         compose.onNodeWithText(text(R.string.update_installing), ignoreCase = true).assertExists()
+    }
+
+    private val hasProgress = SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)
+
+    private fun progress() = compose.onNode(hasProgress).fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current
+
+    @Test
+    fun theDownloadHasARealProgressBarThatFollowsThePercentage() {
+        AppUpdate.publish(AppUpdate.Status.Downloading(release, 42))
+        show()
+        compose.onNode(hasProgress).assertExists()
+        assertEquals(0.42f, progress(), 0.001f)
+        AppUpdate.publish(AppUpdate.Status.Downloading(release, 80))
+        compose.waitForIdle()
+        assertEquals(0.80f, progress(), 0.001f)
+    }
+
+    @Test
+    fun noBarWhenNothingIsDownloading() {
+        AppUpdate.publish(AppUpdate.Status.Available(release))
+        show()
+        compose.onNode(hasProgress).assertDoesNotExist()
     }
 }

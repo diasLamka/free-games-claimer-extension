@@ -476,7 +476,8 @@
     <string name="notif_teach_text">I did not recognise %1$s\'s button. Open the app and tap Claim: you can show it to me with one tap.</string>
     <string name="channel_update">App updates</string>
     <string name="notif_update_title">Update %1$s available</string>
-    <string name="notif_update_text">Open Settings › About to install it.</string>
+    <string name="notif_update_text">Tap to download and install it.</string>
+    <string name="notif_update_downloading">Downloading update %1$s</string>
     <string name="set_notify_update">Tell me when an update exists</string>
     <string name="update_check">Check for an update</string>
     <string name="update_checking">Checking…</string>
