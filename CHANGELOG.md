@@ -4,6 +4,12 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.33.3 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Les « figures bizarres » du logo Epic : un defaut de lecture d'Android, corrige**
+
+Ce n'etait pas le logo : les icones SVG ecrivent leurs arcs avec des drapeaux colles (« 0 00.02.433 »), et le lecteur de dessins vectoriels d'Android les lit de travers, ce qui deformait les lettres et le chevron. Les trace des dix logos sont reecrits avec des separateurs explicites (« 0 0 .02 .433 »). Verifie sur emulateur : l'ecusson affiche proprement « EPIC » et « GAMES ».
+
 ## Appli 1.33.2 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Le vrai logo d'Epic Games, en plus grand**
