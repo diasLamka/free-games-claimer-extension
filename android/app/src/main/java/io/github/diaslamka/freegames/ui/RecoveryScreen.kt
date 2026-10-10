@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.asImageBitmap
+import io.github.diaslamka.freegames.data.Proofs
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -50,8 +54,12 @@ fun RecoveryScreen(
     onClaim: (Set<String>) -> Unit,
     onOpen: (String) -> Unit,
     onAccounts: () -> Unit,
+    /** Effacer toutes les captures du carnet de preuves (1.34.0). */
+    onClearProofs: () -> Unit = {},
 ) {
     val plan = remember(state, now) { Recovery.plan(state, now) }
+    var simulating by remember { mutableStateOf(false) }
+    var proofOf by remember { mutableStateOf<LibraryEntry?>(null) }
     var openSkipped by rememberSaveable { mutableStateOf(false) }
     var openRecent by rememberSaveable { mutableStateOf(true) }
     val context = LocalContext.current
@@ -64,7 +72,7 @@ fun RecoveryScreen(
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            item("status") { StatusBlock(plan, claiming, now, onClaimAll = { onClaim(emptySet()) }) }
+            item("status") { StatusBlock(plan, claiming, now, onClaimAll = { onClaim(emptySet()) }, onSimulate = { simulating = true }) }
 
             if (plan.ready.isNotEmpty()) {
                 item("ready-h") { SectionHeader(stringResource(R.string.rec_section_ready), plan.ready.size) }
@@ -121,15 +129,21 @@ fun RecoveryScreen(
             item("recent-h") { SectionHeader(stringResource(R.string.rec_section_recent), plan.recent.size, openRecent, { openRecent = !openRecent }) }
             if (openRecent) {
                 if (plan.recent.isEmpty()) item("recent-empty") { Text(stringResource(R.string.rec_recent_empty), style = MaterialTheme.typography.bodyMedium, color = b.mute, modifier = Modifier.padding(vertical = 8.dp)) }
-                items(plan.recent, key = { "p:" + it.store + it.id }) { entry -> ProofRow(entry, onOpen) }
+                items(plan.recent, key = { "p:" + it.store + it.id }) { entry -> ProofRow(entry, onOpen, onProof = { proofOf = it }) }
+                if (plan.recent.any { it.proof != null }) item("proofs-clear") {
+                    BrutButton(stringResource(R.string.rec_proofs_clear), onClearProofs, Modifier.padding(top = 4.dp), primary = false)
+                }
             }
         }
     }
+
+    if (simulating) SimulationDialog(Recovery.simulate(state, now), now, onDismiss = { simulating = false })
+    proofOf?.let { ProofDialog(it, onOpen, onDismiss = { proofOf = null }) }
 }
 
 /** L'etat, et le geste : « Tout recuperer » quand il y a quelque chose a prendre. Un bloc d'accent, ombre dure. */
 @Composable
-private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onClaimAll: () -> Unit) {
+private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onClaimAll: () -> Unit, onSimulate: () -> Unit) {
     val b = LocalBrut.current
     val context = LocalContext.current
     val title = when {
@@ -150,7 +164,12 @@ private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onCla
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, color = Color.Black)
         if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodySmall, color = Color.Black)
-        if (!claiming && plan.ready.isNotEmpty()) BrutButton(stringResource(R.string.rec_claim_all), onClaimAll, Modifier.padding(top = 4.dp), primary = false)
+        if (!claiming && (plan.ready.isNotEmpty() || plan.needsYou.isNotEmpty())) {
+            Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (plan.ready.isNotEmpty()) BrutButton(stringResource(R.string.rec_claim_all), onClaimAll, primary = false)
+                BrutButton(stringResource(R.string.rec_simulate), onSimulate, primary = false)
+            }
+        }
     }
 }
 
@@ -173,7 +192,7 @@ private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled:
 
 /** Une preuve : ce qui a ete pris, quand, par quoi, et pour combien. */
 @Composable
-private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit) {
+private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit, onProof: (LibraryEntry) -> Unit) {
     val b = LocalBrut.current
     val line = listOfNotNull(
         Stores.label(e.store),
@@ -189,8 +208,62 @@ private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit) {
             Text(e.title ?: e.id, style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(line, style = MaterialTheme.typography.bodySmall, color = MutedInk, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        e.url?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false) }
+        if (e.proof != null) BrutButton(stringResource(R.string.rec_proof), { onProof(e) }, primary = false)
+        else e.url?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false) }
     }
+}
+
+/** La simulation : ce que « Tout recuperer » ferait maintenant, dans l'ordre, sans rien ouvrir ni cliquer. */
+@Composable
+private fun SimulationDialog(sim: Recovery.Simulation, now: Long, onDismiss: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rec_sim_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    if (sim.steps.isEmpty()) stringResource(R.string.rec_status_quiet) else stringResource(R.string.rec_sim_summary, sim.likely, sim.blocked),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                sim.steps.forEachIndexed { i, step ->
+                    val line = when (step.outcome) {
+                        Recovery.Outcome.CLAIM -> stringResource(R.string.rec_sim_claim)
+                        Recovery.Outcome.LOGIN -> stringResource(R.string.rec_sim_login)
+                        Recovery.Outcome.HELP -> stringResource(R.string.rec_sim_help)
+                    }
+                    Column {
+                        Text("${i + 1}. ${step.offer.shownTitle}", style = MaterialTheme.typography.titleSmall)
+                        Text("${Stores.label(step.offer.store)} — $line", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Text(stringResource(R.string.rec_sim_nothing), style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
+}
+
+/** Une preuve : la capture de la page de confirmation, prise au moment ou le jeu a ete recupere. */
+@Composable
+private fun ProofDialog(e: LibraryEntry, onOpen: (String) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val image = remember(e.proof) {
+        Proofs.file(Proofs.dir(context), e.proof)?.let { f -> android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(e.title ?: e.id) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(listOfNotNull(Stores.label(e.store), e.ts?.let { Fmt.dateTime(it) }).joinToString(" / "), style = MaterialTheme.typography.bodySmall)
+                if (image != null) androidx.compose.foundation.Image(image, e.title, Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.FillWidth)
+                else Text(stringResource(R.string.rec_proof_missing), style = MaterialTheme.typography.bodyMedium)
+                e.proofUrl?.let { Text(stringResource(R.string.rec_proof_page, it), style = MaterialTheme.typography.bodySmall) }
+            }
+        },
+        dismissButton = e.proofUrl?.let { u -> { androidx.compose.material3.TextButton(onClick = { onOpen(u) }) { Text(stringResource(R.string.action_open)) } } },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }
 
 /** Pourquoi cette offre n'est pas prise, en toutes lettres. */

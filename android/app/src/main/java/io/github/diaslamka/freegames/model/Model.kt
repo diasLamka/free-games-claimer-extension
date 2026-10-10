@@ -121,6 +121,9 @@ data class LibraryEntry(
     val via: String = "app",
     /** D'ou vient la valeur (1.22.0) : « store » (le magasin) ou « aggregator » (un site tiers). Figee a la reclamation. */
     val wsrc: String? = null,
+    /** La preuve (1.34.0) : le fichier de la capture de la page de confirmation (data/Proofs.kt), et l'adresse ou elle a ete prise. */
+    val proof: String? = null,
+    val proofUrl: String? = null,
 ) {
     /** Le titre normalise, une fois : Rules le compare a celui de chaque offre. */
     val normalisedTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.normalise(title) }
@@ -245,6 +248,8 @@ data class Settings(
     val showDlc: Boolean = true,
     /** Montrer ce qui demande le jeu de base, que tu n'as pas (1.33.0). */
     val showNeedsBase: Boolean = true,
+    /** Garder une capture de la page de confirmation de chaque jeu recupere (1.34.0). */
+    val keepProofs: Boolean = true,
     val steamRatings: Boolean = true,
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */
     val tonight: Boolean = true,

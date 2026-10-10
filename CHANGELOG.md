@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.34.0 -- 2026-10-11 (extension inchangee, 2.108.0)
+
+**Simuler une recuperation, et garder une preuve de chacune**
+
+Mise a jour depuis la 1.33.3 : dans l'appli, comme d'habitude. Tests ecrits d'abord.
+
+- **La simulation** (`data/Recovery.kt`, onglet Recuperation, bouton « Simuler »). Elle liste, dans l'ordre, ce que « Tout recuperer » ferait MAINTENANT -- la liste de `Rules.pending`, celle du bouton --, et juge chaque jeu : sera ouvert et recupere, s'arrete ici faute de connexion au magasin (la session perdue, connue de la page Comptes), ou a besoin de toi (une verification). Un resume dit combien seront probablement pris et combien sont bloques. Elle n'ouvre ni ne clique rien. Sur l'emulateur, avec les vraies donnees, elle a montre que les deux jeux Epic s'arreteraient a la connexion.
+- **Le carnet de preuves** (`data/Proofs.kt`, `claim/ClaimSession.kt`). Quand un jeu est recupere, l'appli garde une capture de la page de confirmation, avant de passer a l'offre suivante : 540 px de large, JPEG, dans un dossier prive de l'appli, les quarante dernieres. **Elle reste sur ce telephone** : la sauvegarde chiffree n'en emporte pas le nom, l'export et le diagnostic non plus. Un bouton « Preuve » dans « Recuperes recemment » l'ouvre avec sa date, son magasin et l'adresse de la page ; « Effacer les preuves » les supprime toutes ; Reglages > Donnees > « Garder une preuve de chaque recuperation » la coupe. Les noms de fichier sont relus avec une liste blanche (un nom venu d'une restauration ne peut pas sortir du dossier).
+- Tests : 476 -> 489 (la simulation, le dossier de preuves -- nom, taille, un fichier par jeu, quarante au plus, nom hors dossier refuse, effacement --, la sauvegarde sans preuve, l'ecran).
+- Verifie sur emulateur Android 14 : le bouton « Simuler » et sa fenetre, avec les vraies donnees.
+- Non verifie : la CAPTURE elle-meme. Elle demande une vraie recuperation, donc une session de magasin ; les tests tiennent le fichier, pas la page. Une recuperation de fond (sans fenetre) ne prend pas de capture : la vue n'est pas a l'ecran, et mieux vaut pas de preuve qu'une image vide. A confirmer au premier jeu recupere avec l'appli ouverte.
+
 ## Appli 1.33.3 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Les « figures bizarres » du logo Epic : un defaut de lecture d'Android, corrige**

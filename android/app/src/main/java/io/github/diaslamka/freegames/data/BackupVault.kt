@@ -48,7 +48,8 @@ object BackupVault {
 
     /** Ce qui merite d'etre garde, et rien d'autre : une liste blanche, pour qu'un champ ajoute demain ne parte pas par megarde. */
     fun snapshot(state: AppState): AppState = AppState(
-        library = state.library,
+        // L'image d'une preuve reste sur ce telephone : la sauvegarde n'en garde pas le nom.
+        library = state.library.mapValues { it.value.copy(proof = null) },
         wishlist = state.wishlist,
         importedWishes = state.importedWishes,
         deja = state.deja,

@@ -21,6 +21,7 @@ import io.github.diaslamka.freegames.data.Bargain
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.OwnedCheck
+import io.github.diaslamka.freegames.data.Proofs
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
@@ -524,6 +525,16 @@ class ClaimSession(
             Graph.store.update { Family.record(it, member, o, verdictName, details, now, unattended = headless, count = count, confirmed = confirmed) }
             return
         }
+        // La preuve (1.34.0) : la page de confirmation, tant qu'elle est affichee -- avant de passer a l'offre suivante.
+        val settings = Graph.store.value.settings
+        var proof: String? = null
+        var proofUrl: String? = null
+        if (verdictName in Verdicts.ACQUIRED && settings.keepProofs) {
+            web?.let { view ->
+                proof = runCatching { Proofs.capture(context, Rules.libraryKeyOf(o), view, now) }.getOrNull()
+                proofUrl = withContext(Dispatchers.Main) { runCatching { Titles.webUrl(view.url) }.getOrNull() }
+            }
+        }
         Graph.store.update { s ->
             val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key]
             var lib = s.library
@@ -532,7 +543,7 @@ class ClaimSession(
                 val entry = LibraryEntry(
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
-                    wsrc = Bargain.worthSource(o),
+                    wsrc = Bargain.worthSource(o), proof = proof, proofUrl = proofUrl,
                 )
                 lib = lib + (Rules.libraryKeyOf(o) to entry)
                 accounts = accounts + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.diaslamka.freegames.model.AppState
+import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.RecoveryScreen
@@ -63,5 +64,27 @@ class RecoveryScreenTest {
         show(AppState(offers = mapOf(offer.key to offer)), claiming = true)
         compose.onNodeWithText(str(R.string.rec_status_busy)).assertExists()
         compose.onNodeWithText(str(R.string.rec_claim_all), ignoreCase = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun theSimulationButtonExplainsWhatWouldHappen() {
+        show(AppState(offers = mapOf(offer.key to offer)))
+        compose.onNodeWithText(str(R.string.rec_simulate), ignoreCase = true).performClick()
+        compose.onNodeWithText(str(R.string.rec_sim_title), ignoreCase = true).assertExists()
+        compose.onNodeWithText(str(R.string.rec_sim_claim), substring = true, ignoreCase = true).assertExists()
+    }
+
+    @Test
+    fun aClaimedGameWithAProofOffersIt() {
+        val entry = LibraryEntry(store = Stores.EPIC, id = "a", title = "Hades", ts = now - 3_600_000, proof = "epic-a.jpg")
+        show(AppState(library = mapOf("epic:a" to entry)))
+        compose.onNodeWithText(str(R.string.rec_proof), ignoreCase = true).assertExists()
+    }
+
+    @Test
+    fun aClaimedGameWithoutAProofOffersNone() {
+        val entry = LibraryEntry(store = Stores.EPIC, id = "a", title = "Hades", ts = now - 3_600_000)
+        show(AppState(library = mapOf("epic:a" to entry)))
+        compose.onNodeWithText(str(R.string.rec_proof), ignoreCase = true).assertDoesNotExist()
     }
 }

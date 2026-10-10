@@ -387,6 +387,12 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onClaim = { claim(it) },
                     onOpen = { ClaimSession.openExternally(context, it) },
                     onAccounts = { tab = 3 },
+                    onClearProofs = {
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.dir(context))
+                            Graph.store.update { s -> s.copy(library = s.library.mapValues { it.value.copy(proof = null) }) }
+                        }
+                    },
                 )
                 0 -> GamesScreen(
                     state = state, now = now, refreshing = refreshing, claiming = claiming,
