@@ -59,7 +59,7 @@ fun HelpBanner(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Stamp(stringResource(R.string.help_banner_title), Modifier.semantics { heading() })
-        Text(stringResource(R.string.help_banner_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.inverseOnSurface)
+        Text(stringResource(R.string.help_banner_text), style = MaterialTheme.typography.bodySmall, color = Color.White)
         requests.forEach { (key, h) ->
             val offer = Relay.findOffer(state, h.store, h.id, h.title)
             FlowRow(
@@ -69,8 +69,8 @@ fun HelpBanner(
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.widthIn(min = 140.dp).weight(1f)) {
-                    Text(h.title, style = MaterialTheme.typography.titleSmall, color = b.accent, maxLines = 2)
-                    Text(Stores.label(h.store), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.inverseOnSurface)
+                    Text(h.title.uppercase(), style = MaterialTheme.typography.titleSmall, color = b.accent, maxLines = 2)
+                    Text(Stores.label(h.store), style = MaterialTheme.typography.labelSmall, color = Color.White)
                 }
                 if (offer != null && Rules.claimedEntry(offer, state.library) == null) {
                     BrutButton(stringResource(R.string.help_finish), { onFinish(offer) }, enabled = !claiming)

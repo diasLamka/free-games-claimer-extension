@@ -26,12 +26,6 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.role
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
@@ -196,7 +190,7 @@ fun GamesScreen(
                 if (needLogin.isNotEmpty()) item("login", span = full) {
                     Notice(
                         stringResource(R.string.need_login, needLogin.joinToString(", ") { Stores.label(it) }),
-                        b.ink, Modifier, inverted = true,
+                        b.ink, Modifier.padding(end = 22.dp), inverted = true,
                     ) { BrutButton(stringResource(R.string.accounts), onAccounts) }
                 }
                 item("filters", span = full) {
@@ -204,11 +198,16 @@ fun GamesScreen(
                         // Comment poser les jeux (1.25.0) : trois pastilles, a gauche des magasins, un toucher et c'est retenu.
                         TilePicker(tiles, onTiles, Modifier.padding(end = 6.dp))
                         FILTERS.forEach { f ->
-                            FilterChip(
-                                selected = filter == f,
-                                onClick = { filter = f },
-                                label = { Text(if (f == null) stringResource(R.string.filter_all) else shortStore(f)) },
-                                modifier = Modifier.semantics { role = Role.Tab },
+                            val on = filter == f
+                            Text(
+                                if (f == null) stringResource(R.string.filter_all).uppercase() else shortStore(f),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (on && !b.dark) b.accent else Color.Black,
+                                modifier = Modifier.padding(end = 3.dp, bottom = 3.dp)
+                                    .brut(if (on) (if (b.dark) b.accent else Color.Black) else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp)
+                                    .semantics { selected = on }
+                                    .clickableNoRipple(role = Role.Tab) { filter = f }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                             )
                         }
                     }
@@ -224,15 +223,16 @@ fun GamesScreen(
                     when (tiles) {
                         Tiles.GRID -> OfferTile(o, state, now, onOpen)
                         Tiles.LIST -> OfferRow(o, state, now, onOpen)
-                                                else -> OfferCard(
+                        // L'asymetrie voulue : en colonne unique, une carte sur deux decalee de l'autre cote ; en grille, les colonnes font l'asymetrie.
+                        else -> OfferCard(
                             o, state, now, onOpen,
-                            modifier = Modifier,
+                            modifier = if (cols > 1) Modifier else if (i % 2 == 0) Modifier.padding(end = 20.dp) else Modifier.padding(start = 20.dp),
                         )
                     }
                 }
                 if (soon.isNotEmpty()) {
                     item("soon-h", span = full) { SectionHeader(stringResource(R.string.section_soon), soon.size, openUpcoming, { openUpcoming = !openUpcoming }) }
-                    if (openUpcoming) itemsIndexed(soon, key = { _, w -> "u:" + w.title + w.start }) { _, w -> UpcomingRow(w, onOpen) }
+                    if (openUpcoming) itemsIndexed(soon, key = { _, w -> "u:" + w.title + w.start }) { i, w -> UpcomingRow(w, onOpen, Modifier.padding(start = if (cols > 1 || i % 2 == 0) 0.dp else 26.dp)) }
                 }
                 if (mobile.isNotEmpty()) {
                     item("mob-h", span = full) { SectionHeader(stringResource(R.string.section_mobile), mobile.size, openMobile, { openMobile = !openMobile }) }
@@ -272,10 +272,10 @@ private fun SourcesLine(state: AppState, now: Long) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val last = state.lastCheck ?: return
-    val names = mapOf("epic-api" to "Epic", "gog" to "GOG", "steam" to "Steam", "gamerpower" to "GamerPower", "epic-mobile" to "Epic mobile", "fab" to "Fab")
-    val parts = names.mapNotNull { (k, label) -> state.sources[k]?.let { "$label ${if (it.ok) "✓" else "✗"}" } }
+    val names = mapOf("epic-api" to "EPIC", "gog" to "GOG", "steam" to "STEAM", "gamerpower" to "GAMERPOWER", "epic-mobile" to "MOBILE", "fab" to "FAB")
+    val parts = names.mapNotNull { (k, label) -> state.sources[k]?.let { "$label[${if (it.ok) "OK" else "KO"}]" } }
     Text(
-        stringResource(R.string.checked_ago, Fmt.ago(context, last, now)) + "\n" + parts.joinToString("  ·  "),
+        "> " + stringResource(R.string.checked_ago, Fmt.ago(context, last, now)).uppercase() + "\n> " + parts.joinToString(" "),
         style = MaterialTheme.typography.bodySmall, color = b.mute,
         modifier = Modifier.padding(top = 8.dp),
     )
@@ -300,27 +300,27 @@ fun verdictText(verdict: String, details: String?): String {
     return if (!details.isNullOrBlank() && verdict != Verdicts.NEEDS_BASE && verdict != Verdicts.OUT_OF_SCOPE) "$base — $details" else base
 }
 
-
-/** Une ouverture annoncee : la date dans une pastille, la jaquette, le titre. */
+/** Une ouverture annoncee : la date en gros bloc d'accent, a gauche. */
 @Composable
 private fun UpcomingRow(w: Upcoming, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
-    val s = LocalBrut.current.scheme
+    val b = LocalBrut.current
     val at = Instant.ofEpochMilli(w.start).atZone(ZoneId.systemDefault())
     Row(
-        modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(16.dp)).background(s.surfaceContainerLow)
-            .then(if (w.url != null) Modifier.clickableNoRipple { onOpen(w.url) } else Modifier).padding(10.dp),
+        modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp)
+            .then(if (w.url != null) Modifier.clickableNoRipple { onOpen(w.url) } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            Modifier.widthIn(min = 64.dp).clip(RoundedCornerShape(12.dp)).background(s.primaryContainer).padding(vertical = 8.dp, horizontal = 8.dp),
+            Modifier.widthIn(min = 78.dp).background(b.accent).padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(DateTimeFormatter.ofPattern("dd.MM").format(at), style = MaterialTheme.typography.titleMedium, color = s.onPrimaryContainer)
-            Text(DateTimeFormatter.ofPattern("HH:mm").format(at), style = MaterialTheme.typography.labelMedium, color = s.onPrimaryContainer)
+            Text(DateTimeFormatter.ofPattern("dd.MM").format(at), style = MaterialTheme.typography.titleLarge, color = b.onAccent)
+            Text(DateTimeFormatter.ofPattern("HH:mm").format(at), style = MaterialTheme.typography.labelMedium, color = b.onAccent)
         }
-        Cover(w.image, w.title, Stores.EPIC, Modifier.padding(start = 10.dp).width(78.dp).height(44.dp), radius = 8.dp, letterSize = 18)
+        Box(Modifier.width(3.dp).height(64.dp).background(Color.Black))
+        Cover(w.image, w.title, Stores.EPIC, Modifier.padding(start = 10.dp).width(78.dp).height(44.dp), letterSize = 18)
         Text(
-            w.title, style = MaterialTheme.typography.titleSmall, color = s.onSurface,
+            w.title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black,
             maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
         )
     }
@@ -329,18 +329,18 @@ private fun UpcomingRow(w: Upcoming, onOpen: (String) -> Unit, modifier: Modifie
 @Composable
 private fun CompactRow(o: Offer, now: Long, hint: String, onOpen: (String) -> Unit) {
     val context = LocalContext.current
-    val s = LocalBrut.current.scheme
+    val b = LocalBrut.current
     Row(
-        Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(16.dp)).background(s.surfaceContainerLow)
-            .then((o.url ?: o.resolveUrl)?.let { u -> Modifier.clickableNoRipple { onOpen(u) } } ?: Modifier).padding(10.dp),
+        Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(8.dp)
+            .then((o.url ?: o.resolveUrl)?.let { u -> Modifier.clickableNoRipple { onOpen(u) } } ?: Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Cover(o.image, o.shownTitle, o.store, Modifier.width(92.dp).height(52.dp), radius = 10.dp, letterSize = 20)
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(o.shownTitle, style = MaterialTheme.typography.titleSmall, color = s.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val extra = listOfNotNull(o.worth, o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" · ")
-            Text(extra, style = MaterialTheme.typography.bodySmall, color = s.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Cover(o.image, o.shownTitle, o.store, Modifier.width(92.dp).height(52.dp), letterSize = 20)
+        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val extra = listOfNotNull(o.worth, o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" / ")
+            Text(extra, style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, tint = s.onSurfaceVariant)
+        Text("↗", style = MaterialTheme.typography.titleLarge, color = Color.Black)
     }
 }

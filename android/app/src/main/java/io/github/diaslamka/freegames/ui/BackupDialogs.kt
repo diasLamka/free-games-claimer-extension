@@ -70,7 +70,7 @@ fun PassphraseDialog(confirm: Boolean, onOk: (String) -> Unit, onDismiss: () -> 
 @Composable
 fun AutoBackupBlock(settings: Settings, now: Long, onEnable: () -> Unit, onNow: () -> Unit, onOff: () -> Unit) {
     val context = LocalContext.current
-    val ink = MaterialTheme.colorScheme.onSurfaceVariant
+    val ink = Color(0xFF4A4A4A)
     val folder = settings.backupFolder
     Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (folder == null) {
@@ -78,8 +78,8 @@ fun AutoBackupBlock(settings: Settings, now: Long, onEnable: () -> Unit, onNow: 
             BrutButton(stringResource(R.string.auto_backup_enable), onEnable, primary = false)
         } else {
             Text(
-                "> " + stringResource(R.string.auto_backup_on, AutoBackup.folderLabel(folder)),
-                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface,
+                "> " + stringResource(R.string.auto_backup_on, AutoBackup.folderLabel(folder)).uppercase(),
+                style = MaterialTheme.typography.labelLarge, color = Color.Black,
             )
             Text(
                 settings.backupAt?.let { stringResource(R.string.auto_backup_last, Fmt.ago(context, it, now)) } ?: stringResource(R.string.auto_backup_never),
@@ -93,7 +93,7 @@ fun AutoBackupBlock(settings: Settings, now: Long, onEnable: () -> Unit, onNow: 
                         else -> R.string.auto_backup_err_write
                     },
                 )
-                Text(stringResource(R.string.auto_backup_error, reason), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.auto_backup_error, reason), style = MaterialTheme.typography.bodySmall, color = Color.Black)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrutButton(stringResource(R.string.auto_backup_now), onNow)

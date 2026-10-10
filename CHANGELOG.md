@@ -4,6 +4,17 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.31.1 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**La charte de l'appli est gardee ; seul le centre de recuperation reste de la 1.31.0**
+
+La 1.31.0 avait remplace toute la charte (jaune, bordures noires, ombres dures, majuscules) par Material 3. Ce n'etait pas demande : l'appli garde sa charte, et seuls les changements necessaires sont faits. Les ecrans, le theme, les composants et les tests de la 1.30.0 sont restaures tels quels.
+
+- **Reste de la 1.31.0** : l'onglet « Recuperation » (`data/Recovery.kt`, `ui/RecoveryScreen.kt`), maintenant dessine dans la charte (blocs cernes, ombre dure, accent jaune, boutons de la charte), et la cinquieme case de la barre du bas. Le contenu est celui decrit en 1.31.0 : ce que l'appli prendrait maintenant (la liste de `Rules.pending`, celle du bouton), ce qui attend et quand elle reessaie, ce qui demande ton aide, ce qu'elle ne prend pas et pourquoi, les derniers jeux recuperes.
+- Tests : 475 -> 467 (les tests du theme Material ne sont plus la), dont le calcul du plan de recuperation et l'ecran.
+- Verifie sur emulateur Android 14 avec les vraies donnees : l'onglet s'affiche dans la charte.
+- Si la 1.31.0 est deja installee, la 1.31.1 la remplace par la mise a jour habituelle.
+
 ## Appli 1.31.0 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Une appli Material standard, et un centre de recuperation**

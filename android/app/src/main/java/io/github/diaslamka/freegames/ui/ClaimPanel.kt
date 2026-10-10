@@ -93,16 +93,16 @@ fun ClaimPanelContent(
         Row(Modifier.fillMaxWidth().background(if (ui.needsUser) Color.Black else b.accent), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)) {
                 Text(
-                    if (ui.running) stringResource(R.string.claim_count, ui.index, ui.total)
-                    else stringResource(R.string.claim_done),
+                    if (ui.running) stringResource(R.string.claim_count, ui.index, ui.total).uppercase()
+                    else stringResource(R.string.claim_done).uppercase(),
                     style = MaterialTheme.typography.labelLarge, color = if (ui.needsUser) b.accent else b.onAccent,
                 )
                 if (who != null) Text(
-                    stringResource(R.string.family_for, who), style = MaterialTheme.typography.labelMedium,
+                    stringResource(R.string.family_for, who).uppercase(), style = MaterialTheme.typography.labelMedium,
                     color = if (ui.needsUser) Color.White else Color.Black,
                 )
                 if (ui.running && ui.title != null) Text(
-                    ui.title, style = MaterialTheme.typography.titleMedium,
+                    ui.title.uppercase(), style = MaterialTheme.typography.titleMedium,
                     color = if (ui.needsUser) Color.White else Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 val step = when (ui.step) {
@@ -115,25 +115,25 @@ fun ClaimPanelContent(
             }
             if (ui.running) {
                 Text(
-                    if (big) "[–]" else "[+]", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background).border(2.dp, MaterialTheme.colorScheme.outlineVariant).semantics { contentDescription = toggleName }.clickableNoRipple { expanded = !expanded; onToggle?.invoke() }.padding(8.dp),
+                    if (big) "[–]" else "[+]", style = MaterialTheme.typography.labelLarge, color = Color.Black,
+                    modifier = Modifier.background(Color.White).border(2.dp, Color.Black).semantics { contentDescription = toggleName }.clickableNoRipple { expanded = !expanded; onToggle?.invoke() }.padding(8.dp),
                 )
                 Text(
-                    "■ " + stringResource(R.string.stop), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.padding(horizontal = 8.dp).background(MaterialTheme.colorScheme.inverseSurface).semantics { contentDescription = stopName }.clickableNoRipple(onClick = onStop).padding(8.dp),
+                    "■ " + stringResource(R.string.stop).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White,
+                    modifier = Modifier.padding(horizontal = 8.dp).background(Color.Black).semantics { contentDescription = stopName }.clickableNoRipple(onClick = onStop).padding(8.dp),
                 )
             } else {
                 Text(
-                    "✕", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.inverseSurface).semantics { contentDescription = closeName }.clickableNoRipple(onClick = onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
+                    "✕", style = MaterialTheme.typography.titleMedium, color = Color.White,
+                    modifier = Modifier.background(Color.Black).semantics { contentDescription = closeName }.clickableNoRipple(onClick = onDismiss).padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
-        Box(Modifier.fillMaxWidth().height(3.dp).background(MaterialTheme.colorScheme.inverseSurface))
+        Box(Modifier.fillMaxWidth().height(3.dp).background(Color.Black))
         if (ui.needsUser) {
             Text(
-                (if (ui.teach) stringResource(R.string.teach_help, Stores.label(ui.store)) else stringResource(R.string.challenge_help, Stores.label(ui.store))),
-                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface,
+                (if (ui.teach) stringResource(R.string.teach_help, Stores.label(ui.store)) else stringResource(R.string.challenge_help, Stores.label(ui.store))).uppercase(),
+                style = MaterialTheme.typography.labelMedium, color = Color.Black,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             )
             Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -149,7 +149,7 @@ fun ClaimPanelContent(
             }
         }
         if (ui.running) {
-            page(Modifier.fillMaxWidth().height(if (big) 480.dp else 170.dp).padding(8.dp).border(3.dp, MaterialTheme.colorScheme.outlineVariant).padding(3.dp))
+            page(Modifier.fillMaxWidth().height(if (big) 480.dp else 170.dp).padding(8.dp).border(3.dp, Color.Black).padding(3.dp))
         }
         ui.outcomes.takeLast(6).forEach { o ->
             val ok = o.verdict in Verdicts.ACQUIRED
@@ -161,8 +161,8 @@ fun ClaimPanelContent(
                 }
                 Text(
                     // Le tampon dit l'etat ; le texte ne dit que ce qu'il ajoute (connexion requise, raison de l'echec...).
-                    o.title + (if (ok || (o.verdict == Verdicts.SKIPPED && o.details.isNullOrBlank())) "" else " — " + verdictText(o.verdict, o.details)),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    o.title.uppercase() + (if (ok || (o.verdict == Verdicts.SKIPPED && o.details.isNullOrBlank())) "" else " — " + verdictText(o.verdict, o.details)),
+                    style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }

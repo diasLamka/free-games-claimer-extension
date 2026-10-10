@@ -102,9 +102,9 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
             for (t in Tonight.TIMES) {
                 val on = t == p.time
                 Text(
-                    stringResource(TonightWidget.timeLabel(t)),
+                    stringResource(TonightWidget.timeLabel(t)).uppercase(),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color.Black,
                     maxLines = 1,
                     modifier = Modifier.padding(end = 3.dp, bottom = 3.dp)
                         .heightIn(min = 40.dp)
@@ -133,7 +133,7 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
                 Column(Modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(b.accent, shadow = if (b.dark) Color.White else Color.Black, offset = 6.dp).padding(14.dp)) {
                     Kicker()
                     Title(p.playingTitle.orEmpty())
-                    Text(stringResource(R.string.tonight_started), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.tonight_started), style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
                     p.playingPage?.let { page -> BrutButton(stringResource(R.string.tonight_open), { onOpen(page) }) }
@@ -178,12 +178,12 @@ fun TonightCard(state: AppState, now: Long, actions: TonightActions, onOpen: (St
 
 @Composable
 private fun Kicker() {
-    Text(stringResource(R.string.tonight_kicker), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+    Text(stringResource(R.string.tonight_kicker).uppercase(), style = MaterialTheme.typography.labelMedium, color = Color.Black)
 }
 
 @Composable
 private fun Title(text: String) {
-    Text(text, fontFamily = Display, fontSize = 24.sp, lineHeight = 26.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(vertical = 2.dp))
+    Text(text.uppercase(), fontFamily = Display, fontSize = 24.sp, lineHeight = 26.sp, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(vertical = 2.dp))
 }
 
 @Composable
@@ -192,15 +192,15 @@ private fun Body(jeu: Tonight.Scored) {
     Kicker()
     Title(jeu.c.title)
     val magasins = listOf("steam", "gog", "epic", "amazon").filter { it in jeu.c.stores }.joinToString(" · ") { shortStore(it) }
-    if (magasins.isNotEmpty()) Text(magasins, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .75f))
+    if (magasins.isNotEmpty()) Text(magasins, style = MaterialTheme.typography.labelSmall, color = Color.Black.copy(alpha = .75f))
     // Ce que le jeu est, en deux ou trois lignes : la description courte de sa fiche Steam.
     jeu.info?.description?.let {
-        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+        Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
     }
     val raisons = jeu.reasons.map { TonightWidget.reasonText(context, it) }.filter { it.isNotEmpty() }
     if (raisons.isNotEmpty()) {
         Column(Modifier.padding(top = 6.dp)) {
-            for (r in raisons) Text("• $r", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            for (r in raisons) Text("• $r", style = MaterialTheme.typography.bodySmall, color = Color.Black)
         }
     }
 }

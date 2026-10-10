@@ -91,13 +91,13 @@ object YearCard {
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
         p.typeface = monoBold; p.textSize = 26f; p.color = ACCENT
-        c.drawText(t.kicker, m, 104f, p)
+        c.drawText(t.kicker.uppercase(), m, 104f, p)
         p.typeface = display; p.color = BLANC
-        val title = t.title
+        val title = t.title.uppercase()
         fit(p, title, W - 2 * m, 118f, 60f)
         c.drawText(title, m, 230f, p)
         p.color = ACCENT
-        val sub = t.subtitle
+        val sub = t.subtitle.uppercase()
         fit(p, sub, W - 2 * m, 64f, 34f)
         c.drawText(sub, m, 306f, p)
 
@@ -105,18 +105,18 @@ object YearCard {
         val hh = 240f
         block(c, m, hy, W - 2 * m - 14, hh, ACCENT, BLANC)
         p.color = NOIR; p.typeface = monoBold; p.textSize = 26f
-        c.drawText(t.valueLabel, m + 36, hy + 64, p)
+        c.drawText(t.valueLabel.uppercase(), m + 36, hy + 64, p)
         p.typeface = display
         fit(p, t.value, W - 2 * m - 90, 132f, 56f)
         c.drawText(t.value, m + 36, hy + 200, p)
-        stamp(c, t.gamesStamp, W - m - 150, hy + hh + 6, -6f, 40f, BLANC, display)
+        stamp(c, t.gamesStamp.uppercase(), W - m - 150, hy + hh + 6, -6f, 40f, BLANC, display)
 
         var x = m
         val py = hy + hh + 100
         p.typeface = monoBold; p.textSize = 26f
         val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = BLANC }
         for (s in t.stores.take(5)) {
-            val text = s
+            val text = s.uppercase()
             val w = p.measureText(text) + 36
             if (x + w > W - m) break
             c.drawRect(x + 2, py - 38, x + w - 2, py + 18, stroke)
@@ -136,12 +136,12 @@ object YearCard {
         }
         c.drawLine(m + 30, ty + 58, W - m - 44, ty + 58, dash)
         p.typeface = monoBold; p.textSize = 24f
-        c.drawText(t.topLabel, m + 36, ty + 42, p)
+        c.drawText(t.topLabel.uppercase(), m + 36, ty + 42, p)
         t.top.forEachIndexed { i, (name, worth) ->
             val y = ty + 120 + i * 70
             p.typeface = display; p.textSize = 28f
             val lp = p.measureText(worth)
-            c.drawText(cut(p, "${i + 1}. ${name}", W - 2 * m - 110 - lp), m + 36, y, p)
+            c.drawText(cut(p, "${i + 1}. ${name.uppercase()}", W - 2 * m - 110 - lp), m + 36, y, p)
             p.textAlign = Paint.Align.RIGHT
             c.drawText(worth, W - m - 50, y, p)
             p.textAlign = Paint.Align.LEFT
@@ -159,7 +159,7 @@ object YearCard {
 
         p.typeface = mono; p.textSize = 24f; p.color = BLANC
         c.drawText(t.footer, m, H - 60f, p)
-        stamp(c, t.stamp, W - m - 150, H - 100f, -10f, 34f, ACCENT, display)
+        stamp(c, t.stamp.uppercase(), W - m - 150, H - 100f, -10f, 34f, ACCENT, display)
         return bmp
     }
 }

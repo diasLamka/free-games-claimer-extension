@@ -1,239 +1,235 @@
 package io.github.diaslamka.freegames.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import coil3.compose.AsyncImage
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.model.Stores
+import io.github.diaslamka.freegames.ui.theme.Display
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
+import io.github.diaslamka.freegames.ui.theme.Mono
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 
 /* ------------------------------------------------------------ la matiere */
 
 /**
- * Une surface standard : un aplat arrondi, sans bordure ni ombre. Le nom vient de l'ancienne charte ; les ecrans qui l'utilisent
- * encore (blanc = « un bloc », noir = « l'inverse ») prennent les couleurs du theme.
+ * Le bloc de la charte : un aplat, une bordure noire epaisse, une ombre
+ * PLEINE decalee en bas a droite. Aucun flou, aucun arrondi.
  */
 fun Modifier.brut(
     fill: Color,
-    @Suppress("UNUSED_PARAMETER") shadow: Color? = null,
-    @Suppress("UNUSED_PARAMETER") offset: Dp = 0.dp,
-    @Suppress("UNUSED_PARAMETER") border: Dp = 0.dp,
-    @Suppress("UNUSED_PARAMETER") line: Color = Color.Black,
-): Modifier = composed {
-    val b = LocalBrut.current
-    val shown = when (fill) {
-        Color.White -> b.block
-        Color.Black -> b.scheme.inverseSurface
-        else -> fill
+    shadow: Color? = null,
+    offset: Dp = 5.dp,
+    border: Dp = 3.dp,
+    line: Color = Color.Black,
+): Modifier = this
+    .drawBehind {
+        if (shadow != null) {
+            val o = offset.toPx()
+            drawRect(shadow, topLeft = Offset(o, o), size = size)
+        }
     }
-    clip(RoundedCornerShape(16.dp)).background(shown)
-}
+    .background(fill)
+    .border(border, line)
 
-/** Une barre de progression standard, lisible par TalkBack comme un controle de progression. */
+/** Une barre de progression a la charte : un cadre noir, un remplissage noir -- et un vrai controle pour TalkBack (1.29.0). */
 @Composable
 fun BrutProgress(percent: Int, modifier: Modifier = Modifier) {
     val p = percent.coerceIn(0, 100) / 100f
-    LinearProgressIndicator(
-        progress = { p },
-        modifier = modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
+    Box(
+        modifier.fillMaxWidth().height(16.dp).border(2.dp, Color.Black)
             .semantics { progressBarRangeInfo = androidx.compose.ui.semantics.ProgressBarRangeInfo(p, 0f..1f) },
-    )
-}
-
-/** Le nom court d'un magasin. */
-fun shortStore(store: String?): String = when (store) {
-    Stores.EPIC -> "Epic"
-    Stores.EPIC_MOBILE -> "Epic mobile"
-    Stores.FAB -> "Fab"
-    Stores.GOG -> "GOG"
-    Stores.STEAM -> "Steam"
-    Stores.AMAZON -> "Amazon"
-    null, Stores.UNKNOWN -> "?"
-    else -> Stores.label(store)
-}
-
-/** Le magasin : une petite etiquette sombre, lisible sur une jaquette comme sur une carte. */
-@Composable
-fun StoreChip(store: String?, modifier: Modifier = Modifier, @Suppress("UNUSED_PARAMETER") onImage: Boolean = false) {
-    val b = LocalBrut.current
-    Tag(shortStore(store), b.scheme.inverseSurface, b.scheme.inverseOnSurface, modifier)
-}
-
-/** Une etiquette arrondie. */
-@Composable
-fun Tag(text: String, fill: Color, ink: Color, modifier: Modifier = Modifier, @Suppress("UNUSED_PARAMETER") bordered: Boolean = false, maxLines: Int = 1) {
-    val b = LocalBrut.current
-    // Les anciens appels disent « blanc » ou « noir » : le fond suit le theme, et l'encre le contraste (clair sur sombre, sombre sur clair).
-    val shown = when (fill) {
-        Color.White -> b.scheme.surfaceContainerHighest
-        Color.Black -> b.scheme.inverseSurface
-        else -> fill
+    ) {
+        Box(Modifier.fillMaxHeight().fillMaxWidth(p).background(Color.Black))
     }
-    val shownInk = if (ink == Color.Black || ink == Color.White) (if (shown.luminance() > 0.5f) Color(0xFF1C1B20) else Color(0xFFF4F0F8)) else ink
+}
+
+/** Le nom court d'un magasin, en capitales. */
+fun shortStore(store: String?): String = when (store) {
+    Stores.EPIC -> "EPIC"
+    Stores.EPIC_MOBILE -> "EPIC MOBILE"
+    Stores.FAB -> "FAB"
+    Stores.GOG -> "GOG"
+    Stores.STEAM -> "STEAM"
+    Stores.AMAZON -> "AMAZON"
+    null, Stores.UNKNOWN -> "?"
+    else -> Stores.label(store).uppercase()
+}
+
+/** Le magasin : une etiquette noire, texte blanc. Plus de pastilles de couleur. */
+@Composable
+fun StoreChip(store: String?, modifier: Modifier = Modifier, onImage: Boolean = false) {
+    Tag("[${shortStore(store)}]", Color.Black, Color.White, modifier)
+}
+
+/** Une etiquette rectangulaire. */
+@Composable
+fun Tag(text: String, fill: Color, ink: Color, modifier: Modifier = Modifier, bordered: Boolean = false, maxLines: Int = 1) {
     Text(
         text,
-        style = MaterialTheme.typography.labelMedium,
-        color = shownInk,
+        style = MaterialTheme.typography.labelSmall,
+        color = ink,
         maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(shown).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = modifier
+            .then(if (bordered) Modifier.brut(fill, border = 2.dp) else Modifier.background(fill))
+            .padding(horizontal = 7.dp, vertical = 3.dp),
     )
 }
 
-/** Une petite etiquette de texte (DLC, note...), sur la couleur donnee. */
+/** Compatibilite : une petite etiquette de texte (DLC, note...). */
 @Composable
-fun Pill(text: String, color: Color, modifier: Modifier = Modifier, @Suppress("UNUSED_PARAMETER") onImage: Boolean = false) {
-    Tag(text, color, Color.Black, modifier)
+fun Pill(text: String, color: Color, modifier: Modifier = Modifier, onImage: Boolean = false) {
+    Tag(text.uppercase(), color, Color.Black, modifier, bordered = true)
 }
 
-/** La jaquette, aux angles arrondis. Tant qu'elle n'est pas la : l'initiale du titre. */
+/**
+ * La jaquette, cernee de noir. Tant qu'elle n'est pas la : l'initiale, en
+ * police d'affichage, sur blanc.
+ */
 @Composable
-fun Cover(url: String?, title: String, @Suppress("UNUSED_PARAMETER") store: String?, modifier: Modifier = Modifier, radius: Dp = 12.dp, letterSize: Int = 28) {
-    val b = LocalBrut.current
-    Box(modifier.clip(RoundedCornerShape(radius)).background(b.scheme.surfaceContainerHighest), contentAlignment = Alignment.Center) {
-        Text(title.trim().take(1).uppercase(), fontSize = letterSize.sp, color = b.scheme.onSurfaceVariant)
-        if (url != null) AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+fun Cover(url: String?, title: String, store: String?, modifier: Modifier = Modifier, radius: Dp = 0.dp, letterSize: Int = 28) {
+    Box(modifier.background(Color.White).border(3.dp, Color.Black).clipToBounds(), contentAlignment = Alignment.Center) {
+        Text(title.trim().take(1).uppercase(), fontFamily = Display, fontSize = letterSize.sp, color = Color.Black)
+        if (url != null) AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().padding(3.dp))
     }
 }
 
 /**
- * Le titre d'une section : le nom, son compte, et -- quand la section se replie -- un chevron. Toute la ligne se touche
- * (48 dp au moins).
+ * Le titre d'une section : une barre pleine de la couleur du texte, le
+ * compte dans une case d'accent qui deborde a droite.
  */
 @Composable
 fun SectionHeader(title: String, count: Int?, open: Boolean? = null, onToggle: (() -> Unit)? = null, modifier: Modifier = Modifier) {
     val b = LocalBrut.current
     Row(
-        modifier.fillMaxWidth().padding(top = 12.dp)
-            .then(if (onToggle != null) Modifier.heightIn(min = 48.dp).clickableNoRipple(onClick = onToggle) else Modifier.heightIn(min = 40.dp)),
+        modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)
+            .then(if (onToggle != null) Modifier.heightIn(min = 48.dp).clickableNoRipple(onClick = onToggle) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            title,
-            style = MaterialTheme.typography.titleMedium,
-            color = b.ink,
-            modifier = Modifier.weight(1f).semantics { heading() },
+            "// " + title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = b.base,
+            modifier = Modifier.weight(1f).background(b.ink).padding(horizontal = 10.dp, vertical = 7.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (count != null) {
             Text(
-                count.toString(),
+                count.toString().padStart(2, '0'),
                 style = MaterialTheme.typography.labelLarge,
                 color = b.onAccent,
-                modifier = Modifier.padding(start = 8.dp).clip(RoundedCornerShape(50)).background(b.accent).padding(horizontal = 10.dp, vertical = 2.dp),
+                modifier = Modifier.brut(b.accent, border = 3.dp, line = b.ink).padding(horizontal = 9.dp, vertical = 4.dp),
             )
         }
         if (open != null) {
-            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = b.mute, modifier = Modifier.padding(start = 4.dp))
+            Text(if (open) " [–]" else " [+]", style = MaterialTheme.typography.labelLarge, color = b.ink)
         }
     }
 }
 
-/** Un bandeau : une carte de la couleur principale -- ou, `inverted`, celle de l'erreur --, son texte et son geste. */
+/** Un bandeau : aplat d'accent, bordure, ombre dure. */
 @Composable
-fun Notice(text: String, @Suppress("UNUSED_PARAMETER") color: Color, modifier: Modifier = Modifier, inverted: Boolean = false, action: (@Composable () -> Unit)? = null) {
-    val s = LocalBrut.current.scheme
-    Card(
-        modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (inverted) s.errorContainer else s.primaryContainer,
-            contentColor = if (inverted) s.onErrorContainer else s.onPrimaryContainer,
-        ),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyLarge)
-            if (action != null) Box(Modifier.padding(top = 12.dp)) { action() }
-        }
+fun Notice(text: String, color: Color, modifier: Modifier = Modifier, inverted: Boolean = false, action: (@Composable () -> Unit)? = null) {
+    val b = LocalBrut.current
+    val fill = when {
+        inverted -> b.ink
+        b.dark -> Color.White
+        else -> b.accent
+    }
+    val ink = if (inverted) b.base else Color.Black
+    Column(modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(fill, shadow = if (inverted || b.dark) b.accent else b.shadow, line = if (inverted) b.ink else Color.Black).padding(14.dp)) {
+        Text(text.uppercase(), style = MaterialTheme.typography.titleSmall, color = ink)
+        if (action != null) Box(Modifier.padding(top = 10.dp)) { action() }
     }
 }
 
-/** Le grand chiffre de l'accueil : la valeur recuperee, et combien de jeux. */
+/**
+ * Le grand chiffre, decale : un bloc inverse qui laisse une marge a droite,
+ * la valeur en police d'affichage, et le compte en etiquette de travers qui
+ * deborde du bloc.
+ */
 @Composable
 fun Hero(value: String?, count: Int, caption: String, modifier: Modifier = Modifier) {
-    val s = LocalBrut.current.scheme
-    Card(
-        modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = s.primaryContainer, contentColor = s.onPrimaryContainer),
-    ) {
-        Column(Modifier.padding(20.dp)) {
-            Text(caption, style = MaterialTheme.typography.labelLarge)
+    val b = LocalBrut.current
+    Box(modifier.fillMaxWidth().padding(end = 36.dp, bottom = 14.dp)) {
+        val fill = if (b.dark) b.accent else Color.Black
+        val ink = if (b.dark) Color.Black else Color.White
+        Column(
+            Modifier.fillMaxWidth().brut(fill, shadow = if (b.dark) Color.White else b.accent, offset = 7.dp).padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 22.dp),
+        ) {
+            Text(caption.uppercase(), style = MaterialTheme.typography.labelSmall, color = ink)
             // Taille ajustee : en grande police (accessibilite), le chiffre retrecit au lieu d'etre coupe.
             BasicText(
                 value ?: "0",
-                style = MaterialTheme.typography.displaySmall.copy(color = s.onPrimaryContainer),
+                style = MaterialTheme.typography.displayMedium.copy(color = if (b.dark) Color.Black else b.accent),
                 maxLines = 1,
-                autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = MaterialTheme.typography.displaySmall.fontSize),
-                modifier = Modifier.padding(top = 4.dp),
+                autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = MaterialTheme.typography.displayMedium.fontSize),
+                modifier = Modifier.padding(top = 6.dp),
             )
-            Text(pluralStringResource(R.plurals.games_count, count, count), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
         }
+        Text(
+            pluralStringResource(R.plurals.games_count, count, count).uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.Black,
+            modifier = Modifier.align(Alignment.BottomEnd).offset(x = 26.dp, y = 10.dp).rotate(-5f)
+                .brut(Color.White, shadow = Color.Black, offset = 3.dp).padding(horizontal = 10.dp, vertical = 5.dp),
+        )
     }
 }
 
-/** Un bouton standard : plein pour le geste principal, tonal pour les autres. */
+/** Un bouton de la charte : rectangle, bordure, ombre dure. */
 @Composable
 fun BrutButton(
     text: String,
@@ -243,21 +239,37 @@ fun BrutButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
 ) {
-    val content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
-        if (icon != null) Icon(icon, null, modifier = Modifier.size(18.dp))
-        if (icon != null) androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
-        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val b = LocalBrut.current
+    val fill = when {
+        !enabled -> Color(0xFFD6D6D6)
+        primary -> b.accent
+        else -> Color.White
     }
-    if (primary) Button(onClick, modifier.heightIn(min = 48.dp), enabled = enabled, content = content)
-    else FilledTonalButton(onClick, modifier.heightIn(min = 48.dp), enabled = enabled, content = content)
+    Row(
+        modifier.padding(end = 4.dp, bottom = 4.dp)
+            .heightIn(min = 48.dp)
+            .brut(fill, shadow = if (enabled) (if (b.dark) Color.White else Color.Black) else null, offset = 4.dp)
+            .then(if (enabled) Modifier.clickableNoRipple(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (icon != null) Icon(icon, null, tint = Color.Black, modifier = Modifier.size(18.dp))
+        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, maxLines = 1)
+    }
 }
 
-/** Un bouton a icone, pour la barre du haut. */
+/** Un bouton carre a icone, pour la barre du haut. */
 @Composable
 fun SquareButton(icon: ImageVector, description: String, onClick: () -> Unit, enabled: Boolean = true) {
-    FilledTonalIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp).semantics { contentDescription = description }) {
-        Icon(icon, null, modifier = Modifier.size(24.dp))
-    }
+    val b = LocalBrut.current
+    Box(
+        Modifier.padding(end = 4.dp, bottom = 4.dp).size(48.dp)
+            .brut(Color.White, shadow = if (b.dark) b.accent else Color.Black, offset = 4.dp)
+            .then(if (enabled) Modifier.clickableNoRipple(onClick = onClick) else Modifier)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, null, tint = if (enabled) Color.Black else Color(0xFF9A9A9A), modifier = Modifier.size(24.dp)) }
 }
 
 /**
@@ -283,53 +295,66 @@ data class WholeWords(val min: TextUnit, val max: TextUnit, val step: TextUnit =
     }
 }
 
-/** Le haut d'un ecran : son titre, et ses gestes a droite. */
+/** Le haut d'un ecran : un titre massif, a gauche, sur deux lignes au besoin. */
 @Composable
 fun TopBlock(title: String, modifier: Modifier = Modifier, actions: @Composable () -> Unit = {}) {
     val b = LocalBrut.current
-    Row(modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        val style = MaterialTheme.typography.headlineMedium
+    Row(modifier.fillMaxWidth().padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 10.dp), verticalAlignment = Alignment.Top) {
+        val style = MaterialTheme.typography.displaySmall
         BasicText(
-            title,
+            title.uppercase(),
             style = style.copy(color = b.ink),
             maxLines = 2,
             autoSize = WholeWords(min = 20.sp, max = style.fontSize),
             modifier = Modifier.weight(1f).semantics { heading() },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { actions() }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) { actions() }
     }
 }
 
-/** L'encre des textes secondaires : l'option inactive d'un choix, le texte d'un champ vide. */
-internal val MutedInk: Color get() = Color(0xFF595959)
+/** L'encre des textes secondaires sur blanc : l'option inactive d'un interrupteur, le texte d'un champ vide. */
+internal val MutedInk = Color(0xFF595959)
 
-/** L'interrupteur standard de Material 3, avec sa cible de 48 dp et son role pour les lecteurs d'ecran. */
+/** L'interrupteur de la charte : deux cases, OUI / NON, l'active en aplat. */
 @Composable
 fun BrutToggle(checked: Boolean, onChange: (Boolean) -> Unit) {
-    Switch(
-        checked = checked,
-        onCheckedChange = onChange,
-        modifier = Modifier.minTouchTarget(),
-    )
+    val b = LocalBrut.current
+    Row(Modifier.padding(end = 3.dp, bottom = 3.dp).brut(Color.White, shadow = Color.Black, offset = 3.dp, border = 2.dp).selectableGroup()) {
+        listOf(true to R.string.toggle_on, false to R.string.toggle_off).forEach { (v, name) ->
+            val on = v == checked
+            Text(
+                stringResource(name),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (on) (if (v) b.onAccent else Color.White) else MutedInk,
+                modifier = Modifier.background(if (on) (if (v) b.accent else Color.Black) else Color.White)
+                    // `selectable` : un lecteur d'ecran dit « selectionne » ; clickableNoRipple n'en disait rien.
+                    .selectable(selected = on, interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.RadioButton) { onChange(v) }
+                    .heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+    }
 }
 
-/** Un champ de saisie standard : contour arrondi, texte du systeme. */
+/** Un champ de saisie : un rectangle cerne, texte monospace. */
 @Composable
 fun BrutField(value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier, onDone: (() -> Unit)? = null, secret: Boolean = false) {
-    OutlinedTextField(
-        value = value, onValueChange = onChange, singleLine = true,
-        placeholder = { Text(placeholder) },
-        shape = RoundedCornerShape(12.dp),
-        // Un secret : masque, sans correction ni suggestion (le clavier ne retient pas une phrase de passe).
-        visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done,
-            keyboardType = if (secret) KeyboardType.Password else KeyboardType.Text,
-            autoCorrectEnabled = !secret,
-        ),
-        keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
-        modifier = modifier.fillMaxWidth(),
-    )
+    Box(modifier.padding(end = 4.dp, bottom = 4.dp).brut(Color.White, shadow = Color.Black, offset = 4.dp).padding(horizontal = 12.dp, vertical = 12.dp)) {
+        if (value.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = MutedInk)
+        BasicTextField(
+            value = value, onValueChange = onChange, singleLine = true,
+            textStyle = TextStyle(fontFamily = Mono, fontSize = 14.sp, color = Color.Black),
+            cursorBrush = SolidColor(Color.Black),
+            // Un secret : masque, sans correction ni suggestion (le clavier ne retient pas une phrase de passe).
+            visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                keyboardType = if (secret) androidx.compose.ui.text.input.KeyboardType.Password else androidx.compose.ui.text.input.KeyboardType.Text,
+                autoCorrectEnabled = !secret,
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone?.invoke() }),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 /**

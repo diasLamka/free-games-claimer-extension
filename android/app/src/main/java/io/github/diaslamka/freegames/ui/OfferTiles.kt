@@ -17,18 +17,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.ViewAgenda
 import androidx.compose.material.icons.rounded.ViewList
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.semantics.role
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -86,78 +82,78 @@ private fun Modifier.opens(url: String?, onOpen: (String) -> Unit): Modifier =
 @Composable
 private fun TimeLeft(o: Offer, now: Long, urgent: Boolean, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val s = LocalBrut.current.scheme
+    val b = LocalBrut.current
     Text(
-        if (o.end != null) Fmt.left(context, o.end, now) else "∞",
+        if (o.end != null) Fmt.left(context, o.end, now).uppercase() else "∞",
         style = MaterialTheme.typography.labelLarge,
-        color = if (urgent) s.onErrorContainer else s.onSecondaryContainer,
+        color = if (urgent) b.accent else Color.White,
         maxLines = 1,
-        modifier = modifier.clip(RoundedCornerShape(50)).background(if (urgent) s.errorContainer else s.secondaryContainer).padding(horizontal = 10.dp, vertical = 4.dp),
+        modifier = modifier.background(Color.Black).padding(horizontal = 8.dp, vertical = 4.dp),
     )
 }
 
 /** Les etiquettes posees sur la jaquette : le magasin, DLC, souhait, deuxieme chance, tes gouts. */
 @Composable
 private fun CoverTags(l: Look, compact: Boolean = false) {
-    val s = LocalBrut.current.scheme
-    Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    val b = LocalBrut.current
+    Row(Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
         StoreChip(l.o.store)
-        if (l.o.isExtra) Tag("DLC", s.inverseSurface, s.inverseOnSurface)
-        if (l.wished) Tag(if (compact) "★" else "★ " + stringResource(R.string.wished), s.primaryContainer, s.onPrimaryContainer)
+        if (l.o.isExtra) Tag("DLC", Color.White, Color.Black)
+        if (l.wished) Tag(if (compact) "★" else "★ " + stringResource(R.string.wished).uppercase(), b.accent, b.onAccent)
         if (!compact) {
             // Deuxieme chance (1.12.0) : deja vu passer, jamais eu.
-            if (l.secondChance) Tag(stringResource(R.string.tag_second_chance), s.tertiaryContainer, s.onTertiaryContainer)
+            if (l.secondChance) Tag(stringResource(R.string.tag_second_chance).uppercase(), Color.White, Color.Black, bordered = true)
             // Tes gouts (1.14.0) : une offre qui ressemble a ce que tu aimes.
-            if (l.forYou) Tag(stringResource(R.string.tag_for_you), s.primaryContainer, s.onPrimaryContainer)
+            if (l.forYou) Tag(stringResource(R.string.tag_for_you).uppercase(), Color.Black, b.accent)
         }
     }
 }
 
 /* ------------------------------------------------------------- grandes tuiles */
 
-/** La grande carte : la jaquette en 16/9, le titre, la valeur et le temps qui reste. Un toucher ouvre le magasin. */
+/** La grande tuile : la jaquette en 16/9, le titre, la valeur et le temps qui reste. Un toucher ouvre le magasin. */
 @Composable
 fun OfferCard(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
-    val s = LocalBrut.current.scheme
+    val context = LocalContext.current
+    val b = LocalBrut.current
     val l = Look(o, state, now)
 
-    ElevatedCard(
-        modifier.fillMaxWidth().padding(bottom = 12.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = s.surfaceContainerLow),
-    ) {
-        Column(Modifier.opens(l.url, onOpen)) {
-            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-                Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), radius = 0.dp, letterSize = 64)
-                CoverTags(l)
-                if (l.rating?.percent != null) {
-                    Tag(
-                        stringResource(R.string.rating_short, l.rating.percent),
-                        if (Ratings.tone(l.rating) == "good") s.primaryContainer else s.inverseSurface,
-                        if (Ratings.tone(l.rating) == "good") s.onPrimaryContainer else s.inverseOnSurface,
-                        Modifier.align(Alignment.TopEnd).padding(8.dp),
-                    )
-                }
-                l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(10.dp)) }
+    Column(modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).ticket(coverTicket(), Color.White, b.shadow, 6.dp).opens(l.url, onOpen)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+            Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 64)
+            CoverTags(l)
+            if (l.rating?.percent != null) {
+                Text(
+                    stringResource(R.string.rating_short, l.rating.percent).uppercase(),
+                    style = MaterialTheme.typography.labelLarge, color = Color.Black,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 10.dp).rotate(4f)
+                        .brut(if (Ratings.tone(l.rating) == "good") b.accent else Color.White, shadow = Color.Black, offset = 3.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
             }
-            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(o.shownTitle, style = MaterialTheme.typography.titleLarge, color = s.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    o.worth?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = s.onSurfaceVariant, textDecoration = TextDecoration.LineThrough) }
-                    Tag(stringResource(R.string.free), s.primaryContainer, s.onPrimaryContainer)
-                    Spacer(Modifier.weight(1f))
-                    TimeLeft(o, now, l.urgent)
-                }
-                if (o.end != null) {
-                    Text(stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = s.onSurfaceVariant)
-                }
-                // Piege ou bonne affaire ? (1.22.0) : rien a juger sur un jeu qu'on a deja.
-                if (l.claimed == null && !l.owned) BargainRow(o, state)
-                if (l.claimed?.ts != null) {
-                    Text(stringResource(R.string.claimed_on, Fmt.date(l.claimed.ts)), style = MaterialTheme.typography.bodySmall, color = s.onSurfaceVariant)
-                } else if (l.attempt?.verdict != null && l.attempt.verdict !in Verdicts.ACQUIRED) {
-                    Text(verdictText(l.attempt.verdict, l.attempt.details), style = MaterialTheme.typography.bodySmall, color = s.error, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
+            l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) }
+        }
+        Perforation()
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleLarge, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                if (l.url != null) Text(" ↗", style = MaterialTheme.typography.titleLarge, color = Color.Black)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                o.worth?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.Black, textDecoration = TextDecoration.LineThrough) }
+                Tag(stringResource(R.string.free).uppercase(), b.accent, b.onAccent, bordered = true)
+                Spacer(Modifier.weight(1f))
+                TimeLeft(o, now, l.urgent)
+            }
+            if (o.end != null) {
+                Text("> " + stringResource(R.string.until, Fmt.dateTime(o.end)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+            }
+            // Piege ou bonne affaire ? (1.22.0) : rien a juger sur un jeu qu'on a deja.
+            if (l.claimed == null && !l.owned) BargainRow(o, state)
+            if (l.claimed?.ts != null) {
+                Text("> " + stringResource(R.string.claimed_on, Fmt.date(l.claimed.ts)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+            } else if (l.attempt?.verdict != null && l.attempt.verdict !in Verdicts.ACQUIRED) {
+                Text("! " + verdictText(l.attempt.verdict, l.attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -165,26 +161,20 @@ fun OfferCard(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mo
 
 /* --------------------------------------------------------------------- grille */
 
-/** La carte de la grille : la jaquette, le titre sur deux lignes, le temps qui reste. Beaucoup de jeux d'un coup d'oeil. */
+/** La tuile de la grille : la jaquette, le titre sur deux lignes, le temps qui reste. Beaucoup de jeux d'un coup d'oeil. */
 @Composable
 fun OfferTile(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
-    val s = LocalBrut.current.scheme
+    val b = LocalBrut.current
     val l = Look(o, state, now)
-    ElevatedCard(
-        modifier.fillMaxWidth().padding(bottom = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = s.surfaceContainerLow),
-    ) {
-        Column(Modifier.opens(l.url, onOpen)) {
-            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-                Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), radius = 0.dp, letterSize = 40)
-                CoverTags(l, compact = true)
-                l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(6.dp), small = true) }
-            }
-            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(o.shownTitle, style = MaterialTheme.typography.titleSmall, color = s.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.heightIn(min = 40.dp))
-                TimeLeft(o, now, l.urgent)
-            }
+    Column(modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).opens(l.url, onOpen)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+            Cover(o.image, o.shownTitle, o.store, Modifier.fillMaxSize(), letterSize = 40)
+            CoverTags(l, compact = true)
+            l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 8.dp), small = true) }
+        }
+        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.heightIn(min = 40.dp))
+            TimeLeft(o, now, l.urgent)
         }
     }
 }
@@ -194,25 +184,26 @@ fun OfferTile(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mo
 /** La ligne de la liste : une petite jaquette, le titre, la valeur et le temps qui reste. Le plus compact. */
 @Composable
 fun OfferRow(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
-    val s = LocalBrut.current.scheme
+    val context = LocalContext.current
+    val b = LocalBrut.current
     val l = Look(o, state, now)
     Row(
-        modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(16.dp)).background(s.surfaceContainerLow).opens(l.url, onOpen).padding(10.dp),
+        modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(8.dp).opens(l.url, onOpen),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box {
-            Cover(o.image, o.shownTitle, o.store, Modifier.width(96.dp).height(54.dp), radius = 10.dp, letterSize = 20)
-            l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(3.dp), small = true) }
+            Cover(o.image, o.shownTitle, o.store, Modifier.width(96.dp).height(54.dp), letterSize = 20)
+            l.stamp?.let { KindStamp(it, Modifier.align(Alignment.BottomEnd).padding(end = 3.dp, bottom = 3.dp), small = true) }
         }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(o.shownTitle, style = MaterialTheme.typography.titleSmall, color = s.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Tag(shortStore(o.store), s.inverseSurface, s.inverseOnSurface)
-                if (l.wished) Tag("★", s.primaryContainer, s.onPrimaryContainer)
-                o.worth?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = s.onSurfaceVariant, textDecoration = TextDecoration.LineThrough, maxLines = 1) }
+                Tag("[${shortStore(o.store)}]", Color.Black, Color.White)
+                if (l.wished) Tag("★", b.accent, b.onAccent)
+                o.worth?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, textDecoration = TextDecoration.LineThrough, maxLines = 1) }
             }
             if (l.attempt?.verdict != null && l.claimed == null && l.attempt.verdict !in Verdicts.ACQUIRED) {
-                Text(verdictText(l.attempt.verdict, l.attempt.details), style = MaterialTheme.typography.bodySmall, color = s.error, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("! " + verdictText(l.attempt.verdict, l.attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         TimeLeft(o, now, l.urgent)
@@ -221,17 +212,21 @@ fun OfferRow(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mod
 
 /* ---------------------------------------------------------------- le choix */
 
-/** Trois boutons de choix : comment poser les jeux. L'actif est rempli ; un toucher change, et c'est retenu. */
+/** Trois pastilles : comment poser les jeux. L'active est pleine ; un toucher change, et c'est retenu. */
 @Composable
 fun TilePicker(selected: String, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    val b = LocalBrut.current
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Tiles.ALL.forEach { t ->
             val on = t == selected
             val (icon, label) = tileLook(t)
-            FilledIconToggleButton(
-                checked = on, onCheckedChange = { onPick(t) },
-                modifier = Modifier.size(48.dp).semantics { contentDescription = label; this.selected = on; role = Role.RadioButton },
-            ) { Icon(icon, null, modifier = Modifier.size(22.dp)) }
+            Box(
+                Modifier.padding(end = 3.dp, bottom = 3.dp).size(40.dp)
+                    .brut(if (on) b.ink else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp, border = 2.dp)
+                    .clickableNoRipple(Role.RadioButton) { onPick(t) }
+                    .semantics { contentDescription = label; this.selected = on },
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, null, tint = if (on) b.base else Color.Black, modifier = Modifier.size(22.dp)) }
         }
     }
 }

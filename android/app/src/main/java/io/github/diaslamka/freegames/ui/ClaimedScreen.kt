@@ -115,12 +115,12 @@ private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Uni
             }
         }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 StoreChip(e.store)
                 Text(
                     listOfNotNull(e.ts?.let { Fmt.short(it) }, if (e.via == "extension") "EXT" else null).joinToString(" / "),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
         }

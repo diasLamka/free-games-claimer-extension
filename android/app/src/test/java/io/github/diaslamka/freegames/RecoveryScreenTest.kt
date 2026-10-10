@@ -39,7 +39,7 @@ class RecoveryScreenTest {
         val asked = mutableListOf<Set<String>>()
         show(AppState(offers = mapOf(offer.key to offer)), onClaim = { asked += it })
         compose.onNodeWithText("Hades").assertExists()
-        compose.onNodeWithText(str(R.string.rec_claim_all)).performClick()
+        compose.onNodeWithText(str(R.string.rec_claim_all), ignoreCase = true).performClick()
         assertEquals(listOf(emptySet<String>()), asked)
     }
 
@@ -47,7 +47,7 @@ class RecoveryScreenTest {
     fun aRowCanBeClaimedOnItsOwn() {
         val asked = mutableListOf<Set<String>>()
         show(AppState(offers = mapOf(offer.key to offer)), onClaim = { asked += it })
-        compose.onNodeWithText(str(R.string.rec_claim)).performClick()
+        compose.onNodeWithText(str(R.string.rec_claim), ignoreCase = true).performClick()
         assertEquals(listOf(setOf("epic:a")), asked)
     }
 
@@ -55,13 +55,13 @@ class RecoveryScreenTest {
     fun nothingToTakeSaysSoWithoutAButton() {
         show(AppState())
         compose.onNodeWithText(str(R.string.rec_status_quiet)).assertExists()
-        compose.onNodeWithText(str(R.string.rec_claim_all)).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.rec_claim_all), ignoreCase = true).assertDoesNotExist()
     }
 
     @Test
     fun whileClaimingTheButtonGivesWayToTheProgress() {
         show(AppState(offers = mapOf(offer.key to offer)), claiming = true)
         compose.onNodeWithText(str(R.string.rec_status_busy)).assertExists()
-        compose.onNodeWithText(str(R.string.rec_claim_all)).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.rec_claim_all), ignoreCase = true).assertDoesNotExist()
     }
 }
