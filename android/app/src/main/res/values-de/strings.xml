@@ -161,6 +161,9 @@
     <string name="set_mobile">Epic-Handyspiele zeigen</string>
     <string name="set_fab">Gratis-Assets von Fab zeigen</string>
     <string name="set_fab_hint">3D-Modelle und Unreal/Unity-Assets. Antippen öffnet die Seite.</string>
+    <string name="set_dlc">DLC und Extras zeigen</string>
+    <string name="set_needs_base">Zeigen, was das Hauptspiel braucht</string>
+    <string name="set_needs_base_hint">DLC, deren Hauptspiel nicht in deiner Bibliothek ist.</string>
     <string name="set_others">Andere Shops zeigen</string>
     <string name="set_ratings">Steam-Bewertung und „Falle oder Schnäppchen?“</string>
     <string name="check_now">Jetzt prüfen</string>

@@ -161,6 +161,9 @@
     <string name="set_mobile">Montrer les jeux mobiles Epic</string>
     <string name="set_fab">Montrer les assets gratuits Fab</string>
     <string name="set_fab_hint">Modèles 3D et assets Unreal/Unity. Un appui ouvre la fiche.</string>
+    <string name="set_dlc">Montrer les DLC et contenus en plus</string>
+    <string name="set_needs_base">Montrer ce qui demande le jeu de base</string>
+    <string name="set_needs_base_hint">DLC dont le jeu de base n’est pas dans ta bibliothèque.</string>
     <string name="set_others">Montrer les autres magasins</string>
     <string name="set_ratings">Note Steam et « piège ou bonne affaire ? »</string>
     <string name="check_now">Vérifier maintenant</string>

@@ -101,6 +101,13 @@ object Rules {
     fun ownedOnSteam(o: Offer, s: AppState): Boolean =
         o.store == Stores.STEAM && o.storeId != null && s.steamOwned.contains(o.storeId)
 
+    /**
+     * Cette offre demande un jeu de base que tu n'as pas (1.33.0) : un DLC Steam dont le jeu de base n'est pas dans ta
+     * bibliotheque, ou une offre que le dernier essai a refusee faute de jeu de base.
+     */
+    fun needsBase(o: Offer, s: AppState): Boolean =
+        (o.parentAppid != null && o.parentAppid !in s.steamOwned) || s.attempts[o.key]?.verdict == Verdicts.NEEDS_BASE
+
     /** Un magasin que l'appli sait recuperer, et que l'utilisateur a laisse actif. */
     fun storeEnabled(store: String, st: Settings): Boolean = when (store) {
         Stores.EPIC -> st.claimEpic

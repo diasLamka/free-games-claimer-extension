@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -93,6 +95,9 @@ private fun gamesView(state: AppState, now: Long, filter: String?, query: String
     fun keep(o: Offer) = (filter == null || o.store == filter) && (q.isEmpty() || o.normalisedTitle.contains(q))
     val open = state.offers.values.filter { it.isOpen(now) && it.keepable != false }
     val pc = open.filter { it.store in PC && !(it.source == GamerPowerSource.NAME && it.isExtra) }
+        // Les DLC, et ce qui demande un jeu de base qu'on n'a pas : au choix (1.33.0).
+        .filter { state.settings.showDlc || !it.isExtra }
+        .filter { state.settings.showNeedsBase || !Rules.needsBase(it, state) }
         .filter(::keep)
         .sortedWith(compareByDescending<Offer> { Rules.wished(it, state) }.thenBy { it.end ?: Long.MAX_VALUE })
     val mobile = if (state.settings.showMobile) open.filter { it.source == EpicMobileSource.NAME }.filter(::keep) else emptyList()
@@ -200,15 +205,24 @@ fun GamesScreen(
                         TilePicker(tiles, onTiles, Modifier.padding(end = 6.dp))
                         FILTERS.forEach { f ->
                             val on = filter == f
-                            Text(
+                            val ink = if (on && !b.dark) b.accent else Color.Black
+                            val logo = storeLogo(f)
+                            val chip = Modifier.padding(end = 3.dp, bottom = 3.dp)
+                                .brut(if (on) (if (b.dark) b.accent else Color.Black) else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp)
+                                .semantics { selected = on }
+                                .clickableNoRipple(role = Role.Tab) { filter = f }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                            // Le logo du magasin quand on l'a (1.33.0), son nom sinon.
+                            if (logo != null) {
+                                Icon(
+                                    androidx.compose.ui.res.painterResource(logo), Stores.label(f), tint = if (on && !b.dark) b.accent else Color.Black,
+                                    modifier = chip.size(24.dp + 0.dp),
+                                )
+                            } else Text(
                                 if (f == null) stringResource(R.string.filter_all).uppercase() else shortStore(f),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = if (on && !b.dark) b.accent else Color.Black,
-                                modifier = Modifier.padding(end = 3.dp, bottom = 3.dp)
-                                    .brut(if (on) (if (b.dark) b.accent else Color.Black) else Color.White, shadow = if (on) null else (if (b.dark) b.accent else Color.Black), offset = 3.dp)
-                                    .semantics { selected = on }
-                                    .clickableNoRipple(role = Role.Tab) { filter = f }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                color = ink,
+                                modifier = chip,
                             )
                         }
                     }

@@ -230,6 +230,8 @@ fun SettingsScreen(
                 Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
                 Toggle(stringResource(R.string.set_fab), stringResource(R.string.set_fab_hint), s.showFab) { v -> onSettings { it.copy(showFab = v) } }
                 Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
+                Toggle(stringResource(R.string.set_dlc), null, s.showDlc) { v -> onSettings { it.copy(showDlc = v) } }
+                Toggle(stringResource(R.string.set_needs_base), stringResource(R.string.set_needs_base_hint), s.showNeedsBase) { v -> onSettings { it.copy(showNeedsBase = v) } }
                 Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
                 Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
                 Toggle(stringResource(R.string.set_taste), null, s.taste) { v -> onSettings { it.copy(taste = v) } }

@@ -104,7 +104,7 @@ class AccessibilityTest {
             )
         }
         compose.onNodeWithText(str(R.string.filter_all).uppercase()).assertIsSelected()
-        compose.onNodeWithText("EPIC").assertIsNotSelected()
+        compose.onNodeWithContentDescription("Epic Games Store").assertIsNotSelected()
     }
 
     @Test

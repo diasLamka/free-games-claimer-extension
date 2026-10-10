@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.33.0 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Les logos des magasins, et le choix d'afficher ou non les DLC et ce qui demande un jeu de base**
+
+Mise a jour depuis la 1.32.0 : dans l'appli, comme d'habitude.
+
+- **Les logos** (`res/drawable/logo_*.xml`, `ui/Components.kt`). Neuf icones de Simple Icons (CC0, telechargees le 2026-10-10 avec ton accord) -- Epic (aussi pour Epic mobile), GOG, Steam, Humble, itch.io, Ubisoft, EA, Battle.net, Legacy Games -- converties en images vectorielles. Elles remplacent le nom sur les jaquettes, dans les listes et dans les filtres de l'accueil ; le nom reste lu par TalkBack. Simple Icons n'a pas Amazon, Microsoft, IndieGala, Fanatical ni Fab : ceux-la gardent leur nom. Les marques appartiennent a leurs proprietaires.
+- **Deux reglages** (Reglages > Affichage). « Montrer les DLC et contenus en plus » et « Montrer ce qui demande le jeu de base » (un DLC dont le jeu de base n'est pas dans ta bibliotheque Steam, ou une offre que le dernier essai a refusee faute de jeu de base). Tous deux actifs par defaut : rien ne change tant qu'on ne les coupe pas. `Rules.needsBase`.
+- Tests : 471 -> 476 (le filtrage des DLC et du jeu de base, sur l'ecran des jeux).
+- Verifie sur emulateur Android 14 : le logo Steam s'affiche sur la jaquette.
+- Non verifie : les autres logos sur un ecran reel (seul Steam apparaissait dans les offres de l'emulateur), et les deux reglages sur l'emulateur (testes en simulation seulement).
+
 ## Appli 1.32.0 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Les Reglages en menu, des textes courts, un accueil moins encombre -- dans la charte de l'appli**

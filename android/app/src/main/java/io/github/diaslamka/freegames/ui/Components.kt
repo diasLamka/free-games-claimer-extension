@@ -107,10 +107,35 @@ fun shortStore(store: String?): String = when (store) {
     else -> Stores.label(store).uppercase()
 }
 
-/** Le magasin : une etiquette noire, texte blanc. Plus de pastilles de couleur. */
+/** Le logo d'un magasin (1.33.0), ou null : les icones de Simple Icons, en domaine public ; Amazon, Fab et les autres gardent leur nom. */
+fun storeLogo(store: String?): Int? = when (store) {
+    Stores.EPIC, Stores.EPIC_MOBILE -> R.drawable.logo_epic
+    Stores.GOG -> R.drawable.logo_gog
+    Stores.STEAM -> R.drawable.logo_steam
+    Stores.HUMBLE -> R.drawable.logo_humble
+    Stores.ITCHIO -> R.drawable.logo_itchio
+    Stores.UBISOFT -> R.drawable.logo_ubisoft
+    Stores.EA -> R.drawable.logo_ea
+    Stores.BLIZZARD -> R.drawable.logo_blizzard
+    Stores.LEGACY -> R.drawable.logo_legacy
+    else -> null
+}
+
+/** Le magasin : son logo blanc sur noir -- avec son nom pour le lecteur d'ecran --, ou son nom en texte quand on n'a pas son logo. */
 @Composable
 fun StoreChip(store: String?, modifier: Modifier = Modifier, onImage: Boolean = false) {
-    Tag("[${shortStore(store)}]", Color.Black, Color.White, modifier)
+    val logo = storeLogo(store)
+    if (logo == null) {
+        Tag("[${shortStore(store)}]", Color.Black, Color.White, modifier)
+        return
+    }
+    val name = Stores.label(store)
+    androidx.compose.foundation.layout.Box(modifier.background(Color.Black).padding(horizontal = 6.dp, vertical = 4.dp)) {
+        Icon(
+            androidx.compose.ui.res.painterResource(logo), name, tint = Color.White,
+            modifier = Modifier.size(16.dp),
+        )
+    }
 }
 
 /** Une etiquette rectangulaire. */

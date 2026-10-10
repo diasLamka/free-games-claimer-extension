@@ -241,6 +241,10 @@ data class Settings(
     /** Suivre les assets gratuits de Fab (1.29.0) : coupe par defaut, c'est un autre public que les jeux. */
     val showFab: Boolean = false,
     val showOthers: Boolean = true,
+    /** Montrer les DLC et le contenu additionnel offerts par les magasins (1.33.0). */
+    val showDlc: Boolean = true,
+    /** Montrer ce qui demande le jeu de base, que tu n'as pas (1.33.0). */
+    val showNeedsBase: Boolean = true,
     val steamRatings: Boolean = true,
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */
     val tonight: Boolean = true,

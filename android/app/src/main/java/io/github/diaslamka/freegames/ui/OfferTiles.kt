@@ -198,7 +198,7 @@ fun OfferRow(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mod
         Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Tag("[${shortStore(o.store)}]", Color.Black, Color.White)
+                StoreChip(o.store)
                 if (l.wished) Tag("★", b.accent, b.onAccent)
                 o.worth?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, textDecoration = TextDecoration.LineThrough, maxLines = 1) }
             }
