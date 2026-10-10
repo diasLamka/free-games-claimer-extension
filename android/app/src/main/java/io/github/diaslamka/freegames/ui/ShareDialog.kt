@@ -45,13 +45,13 @@ fun ShareDialog(initial: String, state: AppState, now: Long, onAdd: (String) -> 
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true, label = { Text(stringResource(R.string.share_dialog_game)) })
                 val facts = buildList {
-                    if (free != null) add(stringResource(R.string.fact_free, Stores.label(free.store)) to Color.Black)
+                    if (free != null) add(stringResource(R.string.fact_free, Stores.label(free.store)) to MaterialTheme.colorScheme.onSurface)
                     owned.forEach { e ->
                         val date = e.ts?.let { Fmt.date(it) } ?: "—"
-                        add(stringResource(if (e.via == "pc") R.string.fact_owned_by_pc else R.string.fact_owned_on, Stores.label(e.store), date) to Color.Black)
+                        add(stringResource(if (e.via == "pc") R.string.fact_owned_by_pc else R.string.fact_owned_on, Stores.label(e.store), date) to MaterialTheme.colorScheme.onSurface)
                     }
-                    if (wished) add(stringResource(R.string.fact_wished) to Color(0xFF4A4A4A))
-                    if (isEmpty() && key.isNotEmpty()) add(stringResource(R.string.fact_unknown) to Color(0xFF4A4A4A))
+                    if (wished) add(stringResource(R.string.fact_wished) to MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (isEmpty() && key.isNotEmpty()) add(stringResource(R.string.fact_unknown) to MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 facts.forEach { (t, c) -> Text(t, color = c, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp)) }
             }

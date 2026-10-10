@@ -4,6 +4,20 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.31.0 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Une appli Material standard, et un centre de recuperation**
+
+Mise a jour depuis la 1.30.0 : dans l'appli, comme d'habitude. Un changement visible partout : l'ancienne charte « brute » (aplats criards, bordures noires, ombres decalees, majuscules, police monospace) est remplacee par Material 3.
+
+- **Le theme** (`ui/theme/Theme.kt`). Couleurs dynamiques sur Android 12 et plus (celles du fond d'ecran), palette violette de repli en dessous, clair et sombre, typographie du systeme, angles arrondis. Les composants maison (`ui/Components.kt`) gardent leurs noms mais sont des composants Material : `Button`, `Card`, `Switch`, `OutlinedTextField`, `FilterChip`, `LinearProgressIndicator`, `ListItem`.
+- **La navigation** : une barre Material a cinq destinations (Jeux, Recuperation, Recuperes, Souhaits, Reglages), un rail sur grand ecran. Les numeros d'onglets que lisent les intents, raccourcis et notifications ne changent pas.
+- **L'accueil** : cartes arrondies avec jaquette, puces de filtre standard, section repliable avec chevron, pastilles d'etat avec icone (a la place des « tampons »), ondes au toucher.
+- **Le centre de recuperation** (`data/Recovery.kt`, `ui/RecoveryScreen.kt`, nouvel onglet). En haut l'etat (« 2 jeux a recuperer ») et le geste « Tout recuperer » ; dessous, ce que l'appli prendrait maintenant (la liste est exactement celle de `Rules.pending`, donc celle du bouton), ce qui attend un nouvel essai (avec le delai et le numero d'essai), ce qui demande ton aide (connexion, verification), **ce qu'elle ne prend pas, et pourquoi** (coupe dans les reglages, pas de module pour ce magasin, rien a garder, deja recupere, deja a toi, abandonne apres cinq essais), et un carnet des derniers jeux recuperes (date, magasin, appli ou extension, valeur). Chaque ligne a son geste : recuperer, reessayer, se connecter, ouvrir.
+- Tests : 451 -> 475 (unitaires), dont le calcul du plan de recuperation et l'ecran. Cinq tests de l'ancien look ont ete adaptes (interrupteur, filtres, majuscules).
+- Verifie sur emulateur Android 14 avec les vraies donnees : l'accueil, le centre de recuperation, les Reglages et les Souhaits s'affichent dans le nouveau style.
+- Non fait, a suivre : les Reglages restent une liste de sections repliables (a refaire en menu a sous-ecrans), le panneau de recuperation, les cartes de la page Sante, du « Ce soir » et de la carte de l'annee n'ont recu que la peinture du theme, pas une refonte ; les captures d'ecran de test (ScreenshotTest) ne sont pas regenerees ; l'emulateur de test n'a pas verifie le mode sombre ni les grandes polices.
+
 ## Appli 1.30.0 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **La mise a jour se lance depuis la notification, et on en voit la progression**

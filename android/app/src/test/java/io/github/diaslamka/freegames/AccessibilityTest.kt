@@ -14,6 +14,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasText
@@ -103,8 +106,8 @@ class AccessibilityTest {
                 onRefresh = {}, onClaim = {}, onOpen = {}, onShare = {}, onAccounts = {},
             )
         }
-        compose.onNodeWithText(str(R.string.filter_all).uppercase()).assertIsSelected()
-        compose.onNodeWithText("EPIC").assertIsNotSelected()
+        compose.onNodeWithText(str(R.string.filter_all)).assertIsSelected()
+        compose.onNodeWithText("Epic").assertIsNotSelected()
     }
 
     @Test
@@ -119,15 +122,14 @@ class AccessibilityTest {
     /* ------------------------------------------------------------ l'interrupteur */
 
     @Test
-    fun theToggleSpeaksTheAppLanguageAndSaysWhichSideIsOn() {
+    fun theToggleIsAStandardSwitchThatSaysItsState() {
         var value by mutableStateOf(false)
         show { BrutToggle(value) { value = it } }
-        // « OUI » / « NON » etaient en dur : l'appli est livree en quatre langues.
-        compose.onNodeWithText(str(R.string.toggle_off)).assertIsSelected()
-        compose.onNodeWithText(str(R.string.toggle_on)).assertIsNotSelected()
-        compose.onNodeWithText(str(R.string.toggle_on)).performClick()
+        // Un vrai interrupteur Material : le lecteur d'ecran dit « active » / « desactive » dans la langue du telephone.
+        compose.onNode(isToggleable()).assertIsOff()
+        compose.onNode(isToggleable()).performClick()
         assertTrue(value)
-        compose.onNodeWithText(str(R.string.toggle_on)).assertIsSelected()
+        compose.onNode(isToggleable()).assertIsOn()
     }
 
     @Test
@@ -155,7 +157,7 @@ class AccessibilityTest {
         }
         val results = mutableListOf<TextLayoutResult>()
         // Dans l'arbre non fusionne : la tuile est cliquable, elle fusionne ses textes (la lettre de la jaquette comprise).
-        val node = compose.onNode(hasText("HADES\nHADES"), useUnmergedTree = true).fetchSemanticsNode()
+        val node = compose.onNode(hasText("Hades\nHades"), useUnmergedTree = true).fetchSemanticsNode()
         node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
         assertEquals(1, results.size)
         // Avec height(40.dp) et Ellipsis, Compose retire les lignes qui ne tiennent pas dans la boite : la seconde ligne du

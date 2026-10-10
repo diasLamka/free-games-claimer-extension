@@ -100,7 +100,7 @@ fun YearDialog(state: AppState, onDismiss: () -> Unit) {
                 if (bmp != null) {
                     Image(
                         bmp.asImageBitmap(), contentDescription = stringResource(R.string.year_title, year),
-                        modifier = Modifier.fillMaxWidth().aspectRatio(YearCard.W / YearCard.H.toFloat()).border(3.dp, Color.Black),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(YearCard.W / YearCard.H.toFloat()).border(3.dp, MaterialTheme.colorScheme.outlineVariant),
                     )
                 } else {
                     Text(stringResource(R.string.year_empty), style = MaterialTheme.typography.bodyMedium)

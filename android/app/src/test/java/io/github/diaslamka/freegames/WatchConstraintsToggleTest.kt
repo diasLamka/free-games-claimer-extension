@@ -3,7 +3,7 @@ package io.github.diaslamka.freegames
 import android.app.Application
 import android.content.Context
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
@@ -42,12 +42,12 @@ class WatchConstraintsToggleTest {
         }
     }
 
-    /** L'interrupteur n'est pas la ligne : c'est la paire « ON / OFF » a sa droite, a la hauteur du titre et de son explication. */
+    /** L'interrupteur n'est pas la ligne : c'est le Switch a sa droite, a la hauteur du titre et de son explication. */
     private fun turnOn(title: Int, hint: Int) {
         val top = compose.onNodeWithText(str(title), ignoreCase = true).fetchSemanticsNode().boundsInRoot.top
         val bottom = compose.onNodeWithText(str(hint), ignoreCase = true).fetchSemanticsNode().boundsInRoot.bottom
         val inRow = SemanticsMatcher("a la hauteur de la ligne") { node: SemanticsNode -> node.boundsInRoot.center.y in top..bottom }
-        compose.onAllNodes(hasText(str(R.string.toggle_on), ignoreCase = true) and inRow).onFirst().performClick()
+        compose.onAllNodes(isToggleable() and inRow).onFirst().performClick()
     }
 
     @Test

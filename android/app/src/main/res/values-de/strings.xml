@@ -65,6 +65,34 @@
     <string name="section_others">Andere Shops</string>
     <string name="mobile_hint">in der Epic Games Store-App</string>
     <string name="fab_hint">auf fab.com hinzufügen</string>
+    <string name="tab_recovery">Einlösen</string>
+    <string name="rec_title">Einlöse-Zentrale</string>
+    <string name="rec_status_busy">Einlösen läuft…</string>
+    <string name="rec_status_quiet">Gerade nichts einzulösen</string>
+    <string name="rec_claim_all">Alles einlösen</string>
+    <string name="rec_next_retry">Nächster automatischer Versuch in %1$s</string>
+    <string name="rec_simulation_hint">Das würde „Alles einlösen“ jetzt tun.</string>
+    <string name="rec_section_ready">Bereit zum Einlösen</string>
+    <string name="rec_section_needs">Du wirst gebraucht</string>
+    <string name="rec_section_waiting">Wartet auf neuen Versuch</string>
+    <string name="rec_section_skipped">Nicht geholt, und warum</string>
+    <string name="rec_section_recent">Kürzlich geholt</string>
+    <string name="rec_claim">Einlösen</string>
+    <string name="rec_retry_now">Jetzt erneut</string>
+    <string name="rec_sign_in">Anmelden</string>
+    <string name="rec_retry_in">Neuer Versuch in %1$s · Versuch %2$d von %3$d</string>
+    <string name="rec_skipped_hint">Gratisspiele, die die App sieht, aber nicht für dich holt.</string>
+    <string name="rec_recent_empty">Noch nichts geholt.</string>
+    <string name="rec_via_app">durch die App</string>
+    <string name="rec_via_extension">durch die Erweiterung</string>
+    <string name="rec_why_store_off">In den Einstellungen ausgeschaltet</string>
+    <string name="rec_why_no_engine">Hier kann die App nicht einlösen: öffne es selbst</string>
+    <string name="rec_why_nothing">Nichts zu behalten (ohnehin gratis)</string>
+    <string name="rec_why_claimed">Schon geholt</string>
+    <string name="rec_why_steam">Schon in deiner Steam-Bibliothek</string>
+    <string name="rec_why_marked">Du sagtest, es gehört dir schon</string>
+    <string name="rec_why_gave_up">Nach %1$d Versuchen aufgegeben: „Einlösen“ versucht es erneut</string>
+    <string name="rec_why_closed">Abgeschlossen</string>
     <string name="first_check">Erste Prüfung läuft…</string>
     <string name="nothing_free">Gerade ist nichts Passendes gratis.</string>
     <string name="checked_ago">Geprüft %1$s</string>
@@ -518,6 +546,10 @@
     <plurals name="notif_digest_title">
         <item quantity="one">Tageszusammenfassung: %d Gratisspiel</item>
         <item quantity="other">Tageszusammenfassung: %d Gratisspiele</item>
+    </plurals>
+    <plurals name="rec_needs_you_count">
+        <item quantity="one">%d Spiel braucht dich</item>
+        <item quantity="other">%d Spiele brauchen dich</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d Spiel zu holen</item>

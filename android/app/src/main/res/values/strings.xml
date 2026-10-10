@@ -66,6 +66,34 @@
     <string name="section_others">Other stores</string>
     <string name="mobile_hint">in the Epic Games Store app</string>
     <string name="fab_hint">add it on fab.com</string>
+    <string name="tab_recovery">Claiming</string>
+    <string name="rec_title">Claiming center</string>
+    <string name="rec_status_busy">Claiming in progress…</string>
+    <string name="rec_status_quiet">Nothing to claim right now</string>
+    <string name="rec_claim_all">Claim all</string>
+    <string name="rec_next_retry">Next automatic try in %1$s</string>
+    <string name="rec_simulation_hint">This is what “Claim all” would do right now.</string>
+    <string name="rec_section_ready">Ready to claim</string>
+    <string name="rec_section_needs">Needs you</string>
+    <string name="rec_section_waiting">Waiting to retry</string>
+    <string name="rec_section_skipped">Not claimed, and why</string>
+    <string name="rec_section_recent">Claimed recently</string>
+    <string name="rec_claim">Claim</string>
+    <string name="rec_retry_now">Retry now</string>
+    <string name="rec_sign_in">Sign in</string>
+    <string name="rec_retry_in">Retry in %1$s · try %2$d of %3$d</string>
+    <string name="rec_skipped_hint">Free games the app sees but does not take for you.</string>
+    <string name="rec_recent_empty">Nothing claimed yet.</string>
+    <string name="rec_via_app">by the app</string>
+    <string name="rec_via_extension">by the extension</string>
+    <string name="rec_why_store_off">Turned off in Settings</string>
+    <string name="rec_why_no_engine">The app can’t claim here: open it yourself</string>
+    <string name="rec_why_nothing">Nothing to keep (free anyway)</string>
+    <string name="rec_why_claimed">Already claimed</string>
+    <string name="rec_why_steam">Already in your Steam library</string>
+    <string name="rec_why_marked">You said it is already yours</string>
+    <string name="rec_why_gave_up">Gave up after %1$d tries: “Claim” tries again</string>
+    <string name="rec_why_closed">Closed</string>
     <string name="first_check">First check in progress…</string>
     <string name="nothing_free">Nothing free right now matches.</string>
     <string name="checked_ago">Checked %1$s</string>
@@ -519,6 +547,10 @@
     <plurals name="notif_digest_title">
         <item quantity="one">Today\'s summary: %d free game</item>
         <item quantity="other">Today\'s summary: %d free games</item>
+    </plurals>
+    <plurals name="rec_needs_you_count">
+        <item quantity="one">%d game needs you</item>
+        <item quantity="other">%d games need you</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d game to claim</item>

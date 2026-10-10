@@ -169,7 +169,7 @@ fun LoginScreen(store: String, country: String, onClose: () -> Unit, member: Str
                 BrutButton(stringResource(R.string.login_back), { backToLogin() }, primary = false)
             }
         } else {
-            Box(Modifier.fillMaxSize().background(Color.White)) {
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                 key(web) { AndroidView(factory = { web }, modifier = Modifier.fillMaxSize()) }
             }
         }

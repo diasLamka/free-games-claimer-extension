@@ -60,7 +60,7 @@ fun FamilyGroup(state: AppState, supported: Boolean, actions: FamilyActions) {
         Modifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp).brut(Color.White, shadow = b.shadow, offset = 6.dp).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(stringResource(R.string.family_hint), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        Text(stringResource(R.string.family_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
         if (!supported) {
             Notice(stringResource(R.string.family_unsupported), b.accent)
             return@Column
@@ -71,8 +71,8 @@ fun FamilyGroup(state: AppState, supported: Boolean, actions: FamilyActions) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(m.name.uppercase(), fontFamily = Display, fontSize = 20.sp, color = Color.Black, modifier = Modifier.weight(1f))
-                    Tag(stringResource(R.string.family_games, m.library.size).uppercase(), b.accent, Color.Black, bordered = true)
+                    Text(m.name, fontFamily = Display, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Tag(stringResource(R.string.family_games, m.library.size), b.accent, Color.Black, bordered = true)
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (store in Family.STORES) {

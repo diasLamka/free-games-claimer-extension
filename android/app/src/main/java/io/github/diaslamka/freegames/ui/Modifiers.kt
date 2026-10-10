@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.constrainHeight
  */
 fun Modifier.clickableNoRipple(role: Role = Role.Button, onClick: () -> Unit): Modifier = composed {
     // Le clic AVANT la taille : toute la cible de 48 dp reagit au toucher, pas seulement le contenu centre.
-    clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = role, onClick = onClick)
+    clickable(role = role, onClick = onClick)
         .minTouchTarget()
 }
 

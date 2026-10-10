@@ -65,6 +65,34 @@
     <string name="section_others">Autres magasins</string>
     <string name="mobile_hint">dans l\'appli Epic Games Store</string>
     <string name="fab_hint">à ajouter sur fab.com</string>
+    <string name="tab_recovery">Récupération</string>
+    <string name="rec_title">Centre de récupération</string>
+    <string name="rec_status_busy">Récupération en cours…</string>
+    <string name="rec_status_quiet">Rien à récupérer pour l’instant</string>
+    <string name="rec_claim_all">Tout récupérer</string>
+    <string name="rec_next_retry">Prochain essai automatique dans %1$s</string>
+    <string name="rec_simulation_hint">Voilà ce que « Tout récupérer » ferait maintenant.</string>
+    <string name="rec_section_ready">Prêts à récupérer</string>
+    <string name="rec_section_needs">Ton aide est nécessaire</string>
+    <string name="rec_section_waiting">En attente d’un nouvel essai</string>
+    <string name="rec_section_skipped">Pas pris, et pourquoi</string>
+    <string name="rec_section_recent">Récupérés récemment</string>
+    <string name="rec_claim">Récupérer</string>
+    <string name="rec_retry_now">Réessayer</string>
+    <string name="rec_sign_in">Se connecter</string>
+    <string name="rec_retry_in">Nouvel essai dans %1$s · essai %2$d sur %3$d</string>
+    <string name="rec_skipped_hint">Des jeux gratuits que l’appli voit mais ne prend pas pour toi.</string>
+    <string name="rec_recent_empty">Rien de récupéré pour l’instant.</string>
+    <string name="rec_via_app">par l’appli</string>
+    <string name="rec_via_extension">par l’extension</string>
+    <string name="rec_why_store_off">Coupé dans les réglages</string>
+    <string name="rec_why_no_engine">L’appli ne peut pas récupérer ici : à ouvrir toi-même</string>
+    <string name="rec_why_nothing">Rien à garder (gratuit de toute façon)</string>
+    <string name="rec_why_claimed">Déjà récupéré</string>
+    <string name="rec_why_steam">Déjà dans ta bibliothèque Steam</string>
+    <string name="rec_why_marked">Tu as dit qu’il est déjà à toi</string>
+    <string name="rec_why_gave_up">Abandonné après %1$d essais : « Récupérer » relance</string>
+    <string name="rec_why_closed">Clos</string>
     <string name="first_check">Première vérification en cours…</string>
     <string name="nothing_free">Rien de gratuit ne correspond en ce moment.</string>
     <string name="checked_ago">Vérifié %1$s</string>
@@ -522,6 +550,11 @@
         <item quantity="one">Résumé du jour : %d jeu gratuit</item>
         <item quantity="other">Résumé du jour : %d jeux gratuits</item>
         <item quantity="many">Résumé du jour : %d jeux gratuits</item>
+    </plurals>
+    <plurals name="rec_needs_you_count">
+        <item quantity="one">%d jeu demande ton aide</item>
+        <item quantity="other">%d jeux demandent ton aide</item>
+        <item quantity="many">%d jeux demandent ton aide</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d jeu à récupérer</item>

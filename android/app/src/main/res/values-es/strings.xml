@@ -65,6 +65,34 @@
     <string name="section_others">Otras tiendas</string>
     <string name="mobile_hint">en la app de Epic Games Store</string>
     <string name="fab_hint">añádelo en fab.com</string>
+    <string name="tab_recovery">Reclamar</string>
+    <string name="rec_title">Centro de reclamación</string>
+    <string name="rec_status_busy">Reclamando…</string>
+    <string name="rec_status_quiet">Nada que reclamar ahora</string>
+    <string name="rec_claim_all">Reclamar todo</string>
+    <string name="rec_next_retry">Próximo intento automático en %1$s</string>
+    <string name="rec_simulation_hint">Esto es lo que haría «Reclamar todo» ahora.</string>
+    <string name="rec_section_ready">Listos para reclamar</string>
+    <string name="rec_section_needs">Te necesita</string>
+    <string name="rec_section_waiting">Esperando un reintento</string>
+    <string name="rec_section_skipped">No reclamados, y por qué</string>
+    <string name="rec_section_recent">Reclamados recientemente</string>
+    <string name="rec_claim">Reclamar</string>
+    <string name="rec_retry_now">Reintentar</string>
+    <string name="rec_sign_in">Iniciar sesión</string>
+    <string name="rec_retry_in">Reintento en %1$s · intento %2$d de %3$d</string>
+    <string name="rec_skipped_hint">Juegos gratis que la app ve pero no reclama por ti.</string>
+    <string name="rec_recent_empty">Nada reclamado todavía.</string>
+    <string name="rec_via_app">por la app</string>
+    <string name="rec_via_extension">por la extensión</string>
+    <string name="rec_why_store_off">Desactivado en Ajustes</string>
+    <string name="rec_why_no_engine">La app no puede reclamar aquí: ábrelo tú</string>
+    <string name="rec_why_nothing">Nada que conservar (gratis de todos modos)</string>
+    <string name="rec_why_claimed">Ya reclamado</string>
+    <string name="rec_why_steam">Ya está en tu biblioteca de Steam</string>
+    <string name="rec_why_marked">Dijiste que ya es tuyo</string>
+    <string name="rec_why_gave_up">Abandonado tras %1$d intentos: «Reclamar» lo reintenta</string>
+    <string name="rec_why_closed">Cerrado</string>
     <string name="first_check">Primera comprobación en curso…</string>
     <string name="nothing_free">Ahora mismo no hay nada gratis que coincida.</string>
     <string name="checked_ago">Comprobado %1$s</string>
@@ -522,6 +550,11 @@
         <item quantity="one">Resumen del día: %d juego gratis</item>
         <item quantity="other">Resumen del día: %d juegos gratis</item>
         <item quantity="many">Resumen del día: %d juegos gratis</item>
+    </plurals>
+    <plurals name="rec_needs_you_count">
+        <item quantity="one">%d juego te necesita</item>
+        <item quantity="other">%d juegos te necesitan</item>
+        <item quantity="many">%d juegos te necesitan</item>
     </plurals>
     <plurals name="pending_claims">
         <item quantity="one">%d juego por conseguir</item>

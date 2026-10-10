@@ -79,7 +79,7 @@ fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(Titles.display(t.title).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(Titles.display(t.title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             OddsReasons(e)
                         }
                         OddsBadge(e.level)
@@ -95,10 +95,10 @@ fun WishlistScreen(state: AppState, now: Long, onAdd: (String) -> Unit, onRemove
                         .brut(if (hit != null) b.accent else Color.White, shadow = b.shadow, offset = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(if (hit != null) "★" else "☆", style = MaterialTheme.typography.titleLarge, color = Color.Black, modifier = Modifier.padding(horizontal = 12.dp))
+                    Text(if (hit != null) "★" else "☆", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 12.dp))
                     Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                        Text(w.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        if (hit != null) Text(stringResource(R.string.wish_free_now, Stores.label(hit.store)).uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.Black)
+                        Text(w, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        if (hit != null) Text(stringResource(R.string.wish_free_now, Stores.label(hit.store)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
                         else byTitle[Titles.normalise(w)]?.let { e -> OddsReasons(e); OddsBadge(e.level, Modifier.padding(top = 4.dp)) }
                     }
                     Text(
@@ -125,11 +125,11 @@ fun OddsBadge(level: String, modifier: Modifier = Modifier) {
     val (label, fill, ink) = when (level) {
         Odds.HIGH -> Triple(R.string.odds_high, b.accent, Color.Black)
         Odds.MEDIUM -> Triple(R.string.odds_medium, Color.Black, Color.White)
-        Odds.LOW -> Triple(R.string.odds_low, Color.White, Color(0xFF4A4A4A))
-        Odds.F2P -> Triple(R.string.odds_f2p, Color.White, Color(0xFF4A4A4A))
-        else -> Triple(R.string.odds_unknown, Color.White, Color(0xFF4A4A4A))
+        Odds.LOW -> Triple(R.string.odds_low, Color.White, MaterialTheme.colorScheme.onSurfaceVariant)
+        Odds.F2P -> Triple(R.string.odds_f2p, Color.White, MaterialTheme.colorScheme.onSurfaceVariant)
+        else -> Triple(R.string.odds_unknown, Color.White, MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    Tag(stringResource(label).uppercase(), fill, ink, modifier, bordered = fill == Color.White)
+    Tag(stringResource(label), fill, ink, modifier, bordered = fill == Color.White)
 }
 
 /** Les raisons de l'estimation, sur une ligne. */
@@ -149,5 +149,5 @@ fun OddsReasons(e: Odds.Estimate) {
             else -> stringResource(R.string.odds_pending)
         }
     }
-    if (lines.isNotEmpty()) Text(lines.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+    if (lines.isNotEmpty()) Text(lines.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

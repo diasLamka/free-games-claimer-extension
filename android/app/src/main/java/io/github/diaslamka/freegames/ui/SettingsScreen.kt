@@ -216,10 +216,10 @@ fun SettingsScreen(
                         BrutButton(stringResource(R.string.export_backup), onExport, primary = false)
                     }
                     state.importedAt?.let {
-                        Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
+                        Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 6.dp))
                     }
                     // La sauvegarde complete et chiffree (1.28.0) : changer de telephone sans tout refaire.
-                    Text(stringResource(R.string.backup_vault_hint), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), modifier = Modifier.padding(top = 12.dp))
+                    Text(stringResource(R.string.backup_vault_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
                     Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         BrutButton(stringResource(R.string.backup_vault_export), onVaultExport)
                         BrutButton(stringResource(R.string.backup_vault_restore), onVaultRestore, primary = false)
@@ -227,9 +227,9 @@ fun SettingsScreen(
                     AutoBackupBlock(s, now, onAutoEnable, onAutoNow, onAutoDisable)
                     val clearName = stringResource(R.string.clear_sessions)
                     Text(
-                        "✕ " + stringResource(R.string.clear_sessions).uppercase(),
-                        style = MaterialTheme.typography.labelLarge, color = Color.White,
-                        modifier = Modifier.padding(top = 10.dp).background(Color.Black).semantics { contentDescription = clearName }.clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        "✕ " + stringResource(R.string.clear_sessions),
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.inverseOnSurface,
+                        modifier = Modifier.padding(top = 10.dp).background(MaterialTheme.colorScheme.inverseSurface).semantics { contentDescription = clearName }.clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                     )
                 }
             }
@@ -238,11 +238,11 @@ fun SettingsScreen(
                 Group {
                     Text(
                         stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
-                        style = MaterialTheme.typography.titleSmall, color = Color.Black,
+                        style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Text(stringResource(R.string.section_privacy).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
+                    Text(stringResource(R.string.section_privacy), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 6.dp))
                     listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5, R.string.privacy_6).forEach { id ->
-                        Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+                        Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                     }
                     UpdateGroup(s, onSettings)
                 }
@@ -316,7 +316,7 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
     // On regarde une fois en ouvrant la section : la reponse est la, sans geste de plus.
     LaunchedEffect(Unit) { if (AppUpdate.status.value is AppUpdate.Status.Idle) search() }
 
-    Text(stringResource(R.string.update_section).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 10.dp))
+    Text(stringResource(R.string.update_section), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 10.dp))
     Text(
         when (val st = status) {
             is AppUpdate.Status.Idle -> ""
@@ -335,7 +335,7 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
                 AppUpdate.Reason.INSTALL -> stringResource(R.string.update_fail_install, st.detail.orEmpty())
             }
         },
-        style = MaterialTheme.typography.bodySmall, color = Color.Black,
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface,
     )
     Box(Modifier.padding(top = 6.dp)) {
         when (val st = status) {
@@ -355,19 +355,19 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
                 Install.Silence.SILENT -> R.string.update_silence_ok
             },
         ),
-        style = MaterialTheme.typography.bodySmall, color = Color.Black,
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface,
     )
     Toggle(stringResource(R.string.set_notify_update), null, settings.notifyUpdate) { v -> onSettings { it.copy(notifyUpdate = v) } }
 
     Text(
-        (if (tokenOpen) "▾ " else "▸ ") + stringResource(R.string.update_token_title).uppercase(),
-        style = MaterialTheme.typography.labelLarge, color = Color.Black,
+        (if (tokenOpen) "▾ " else "▸ ") + stringResource(R.string.update_token_title),
+        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(top = 8.dp).clickableNoRipple { tokenOpen = !tokenOpen },
     )
     if (tokenOpen) {
-        Text(stringResource(R.string.update_token_hint), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        Text(stringResource(R.string.update_token_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
         if (hasToken) {
-            Text("> " + stringResource(R.string.update_token_saved), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+            Text("> " + stringResource(R.string.update_token_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
             BrutButton(stringResource(R.string.update_token_clear), {
                 UpdateToken.clear(context); hasToken = false; tokenNote = null
             }, primary = false)
@@ -381,7 +381,7 @@ private fun UpdateGroup(settings: Settings, onSettings: ((Settings) -> Settings)
                     tokenNote = R.string.update_token_bad
                 }
             })
-            tokenNote?.let { Text("> " + stringResource(it), style = MaterialTheme.typography.bodySmall, color = Color.Black) }
+            tokenNote?.let { Text("> " + stringResource(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface) }
         }
     }
 
@@ -429,12 +429,12 @@ private fun RelayGroup(
             }
         } else {
             Tag(
-                (if (r.peerAt != null) stringResource(R.string.relay_heard, Fmt.ago(LocalContext.current, r.peerAt, now)) else stringResource(R.string.relay_not_heard)).uppercase(),
+                (if (r.peerAt != null) stringResource(R.string.relay_heard, Fmt.ago(LocalContext.current, r.peerAt, now)) else stringResource(R.string.relay_not_heard)),
                 if (r.peerAt != null) LocalBrut.current.accent else Color.White, Color.Black,
                 bordered = r.peerAt == null, maxLines = 3,
             )
-            Text("> " + stringResource(R.string.relay_paired_on, Fmt.date(r.pairedAt)), style = MaterialTheme.typography.bodySmall, color = Color.Black)
-            r.lastError?.let { Text("> " + stringResource(R.string.relay_error, it), style = MaterialTheme.typography.bodySmall, color = Color.Black) }
+            Text("> " + stringResource(R.string.relay_paired_on, Fmt.date(r.pairedAt)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            r.lastError?.let { Text("> " + stringResource(R.string.relay_error, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface) }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
                 BrutButton(stringResource(R.string.relay_sync), onSync, primary = false)
                 BrutButton(stringResource(if (confirm) R.string.relay_unpair_confirm else R.string.relay_unpair), {
@@ -489,11 +489,11 @@ private fun AccountRow(store: String, state: AppState, now: Long, onLogin: (Stri
     ) {
         Column(Modifier.widthIn(min = 150.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                (if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)).uppercase(),
-                style = MaterialTheme.typography.titleSmall, color = Color.Black,
+                (if (store == Stores.AMAZON) stringResource(R.string.set_amazon) else Stores.label(store)),
+                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface,
             )
             Tag(
-                text.uppercase(),
+                text,
                 when (ok) { true -> b.accent; false -> Color.Black; null -> Color.White },
                 if (ok == false) Color.White else Color.Black,
                 bordered = ok == null,
@@ -502,15 +502,15 @@ private fun AccountRow(store: String, state: AppState, now: Long, onLogin: (Stri
         }
         BrutButton(stringResource(if (ok == true) R.string.open_store else R.string.login), { onLogin(store) }, primary = ok != true)
     }
-    Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
+    androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
 private fun Toggle(title: String, hint: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black)
-            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         BrutToggle(checked, onChange)
     }
@@ -520,7 +520,7 @@ private fun Toggle(title: String, hint: String?, checked: Boolean, onChange: (Bo
 private fun <T> Choice(title: String, options: List<Pair<T, String>>, selected: T, onPick: (T) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, modifier = Modifier.weight(1f))
+        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Box {
             BrutButton((options.firstOrNull { it.first == selected }?.second ?: "—") + " ▾", { open = true }, primary = false)
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

@@ -111,7 +111,7 @@ fun BargainRow(o: Offer, state: AppState, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Tag(v.grade ?: "?", gradeFill(v.grade), Color.Black, bordered = true)
-        Text(gradeLabel(v.grade), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        Text(gradeLabel(v.grade), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
     }
     if (open) {
         AlertDialog(

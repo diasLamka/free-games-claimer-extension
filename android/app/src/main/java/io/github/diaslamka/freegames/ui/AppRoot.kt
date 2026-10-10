@@ -38,6 +38,11 @@ import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -381,6 +386,12 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
 
     val screen: @Composable () -> Unit = {
             when (tab) {
+                4 -> RecoveryScreen(
+                    state = state, now = now, claiming = claiming,
+                    onClaim = { claim(it) },
+                    onOpen = { ClaimSession.openExternally(context, it) },
+                    onAccounts = { tab = 3 },
+                )
                 0 -> GamesScreen(
                     state = state, now = now, refreshing = refreshing, claiming = claiming,
                     onRefresh = { refresh() },
@@ -548,90 +559,43 @@ fun AdaptiveFrame(tab: Int, onTab: (Int) -> Unit, top: @Composable () -> Unit = 
     }
 }
 
+/** Les destinations, dans l'ordre d'affichage ; le troisieme champ est le numero qu'un intent, un raccourci ou une notification donnent. */
 private val TABS = listOf(
     Triple(Icons.Rounded.SportsEsports, R.string.tab_games_short, 0),
+    Triple(Icons.Rounded.TaskAlt, R.string.tab_recovery, 4),
     Triple(Icons.Rounded.Inventory2, R.string.tab_claimed, 1),
     Triple(Icons.Rounded.Star, R.string.tab_wishlist, 2),
     Triple(Icons.Rounded.Settings, R.string.tab_settings, 3),
 )
 
-/**
- * Le rail, sur un ecran large : les memes quatre cases, empilees sur le cote,
- * l'active en aplat d'accent et decalee vers la droite.
- */
+/** Le rail de navigation standard, sur un ecran large. */
 @Composable
 fun BrutRail(selected: Int, onSelect: (Int) -> Unit) {
-    val b = io.github.diaslamka.freegames.ui.theme.LocalBrut.current
-    Column(
-        Modifier.fillMaxHeight().width(104.dp).background(b.base)
-            .drawBehind { drawRect(androidx.compose.ui.graphics.Color.Black, topLeft = androidx.compose.ui.geometry.Offset(size.width - 3.dp.toPx(), 0f), size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
-            .verticalScroll(rememberScrollState())
-            .padding(start = 10.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-    ) {
+    NavigationRail(Modifier.fillMaxHeight().verticalScroll(rememberScrollState())) {
         TABS.forEach { (icon, label, i) ->
-            val on = selected == i
-            Column(
-                Modifier.fillMaxWidth().offset(x = if (on) 4.dp else 0.dp)
-                    .padding(end = 4.dp, bottom = 4.dp)
-                    .brut(if (on) b.accent else androidx.compose.ui.graphics.Color.White, shadow = if (on) (if (b.dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black) else null, offset = 4.dp)
-                    .selectable(selected = on, role = Role.Tab) { onSelect(i) }
-                    .padding(vertical = 10.dp),
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            ) {
-                Icon(icon, null, tint = androidx.compose.ui.graphics.Color.Black, modifier = Modifier.size(22.dp))
-                TabLabel(stringResource(label))
-            }
+            NavigationRailItem(
+                selected = selected == i,
+                onClick = { onSelect(i) },
+                icon = { Icon(icon, null) },
+                label = { Text(stringResource(label), maxLines = 1) },
+                alwaysShowLabel = true,
+            )
         }
     }
 }
 
-/**
- * Les onglets du bas : quatre cases cernees de noir, l'active en aplat
- * d'accent et decalee vers le haut. Pas de pastille Material.
- */
+/** La barre de navigation standard du bas : une icone et son nom pour chaque destination, l'active dans sa pastille. */
 @Composable
 fun BrutTabs(selected: Int, onSelect: (Int) -> Unit) {
-    val b = io.github.diaslamka.freegames.ui.theme.LocalBrut.current
-    val tabs = TABS
-    androidx.compose.foundation.layout.Row(
-        Modifier.background(b.base).navigationBarsPadding()
-            .drawBehind { drawRect(androidx.compose.ui.graphics.Color.Black, size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx())) }
-            .padding(start = 8.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-    ) {
-        tabs.forEach { (icon, label, i) ->
-            val on = selected == i
-            androidx.compose.foundation.layout.Column(
-                Modifier.weight(1f).offset(y = if (on) (-4).dp else 0.dp)
-                    .padding(end = 4.dp, bottom = 4.dp)
-                    .brut(if (on) b.accent else androidx.compose.ui.graphics.Color.White, shadow = if (on) (if (b.dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black) else null, offset = 4.dp)
-                    .selectable(selected = on, role = Role.Tab) { onSelect(i) }
-                    .padding(vertical = 7.dp),
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            ) {
-                Icon(icon, null, tint = androidx.compose.ui.graphics.Color.Black, modifier = Modifier.size(20.dp))
-                TabLabel(stringResource(label))
-            }
+    NavigationBar {
+        TABS.forEach { (icon, label, i) ->
+            NavigationBarItem(
+                selected = selected == i,
+                onClick = { onSelect(i) },
+                icon = { Icon(icon, null) },
+                label = { Text(stringResource(label), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+                alwaysShowLabel = true,
+            )
         }
     }
-}
-
-/**
- * Le libelle d'un onglet, sur une ligne : en grande police, il retrecit pour
- * tenir dans sa case, jamais en dessous de sa taille normale (11 sp a
- * l'echelle 1). Le nom entier reste celui que lit TalkBack.
- */
-@Composable
-private fun TabLabel(text: String) {
-    val style = MaterialTheme.typography.labelSmall
-    val min = with(androidx.compose.ui.platform.LocalDensity.current) { 10.dp.toSp() }
-    androidx.compose.foundation.text.BasicText(
-        text.uppercase(),
-        style = style.copy(color = androidx.compose.ui.graphics.Color.Black),
-        maxLines = 1,
-        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-        autoSize = if (min < style.fontSize) androidx.compose.foundation.text.TextAutoSize.StepBased(min, style.fontSize, 0.5.sp) else null,
-        modifier = Modifier.padding(horizontal = 3.dp),
-    )
 }
