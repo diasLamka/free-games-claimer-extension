@@ -72,7 +72,7 @@ function outcomeLabel(outcome) {
 const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 
 /* Les etiquettes de magasin du popup, pour que la page parle pareil. */
-const TAGS = { epic: 'EPIC', 'epic-mobile': 'EPIC MOBILE', gog: 'GOG', amazon: 'LUNA', steam: 'STEAM' };
+const TAGS = { epic: 'EPIC', 'epic-mobile': 'EPIC MOBILE', fab: 'FAB', gog: 'GOG', amazon: 'LUNA', steam: 'STEAM' };
 
 function storeTag(store) {
   const n = el('span', `store-tag ${store || ''}`, TAGS[store] || String(STORE_LABELS[store] || store || '—').toUpperCase());

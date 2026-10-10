@@ -86,7 +86,7 @@
     /* Le panneau redessine (2.62.0) : les cartes, et la couleur de chaque
        magasin -- les memes que dans le popup. */
     carte: '#1E1830', carteSurvol: '#262038', rose: '#FF6B81', jade: '#56D6A0',
-    epic: '#E4DDF5', 'epic-mobile': '#E4DDF5', gog: '#A567FF', steam: '#66C0F4', amazon: '#00C2FF',
+    epic: '#E4DDF5', 'epic-mobile': '#E4DDF5', fab: '#E4DDF5', gog: '#A567FF', steam: '#66C0F4', amazon: '#00C2FF',
     /* Le theme clair (2.70.0) a demande de separer ce que l'ambre faisait
        seul : le bouton plein, l'accent de texte, la pastille. */
     bouton: '#FFB454', boutonSurvol: '#FFC47A', boutonTexte: '#181128',
@@ -102,7 +102,7 @@
     ambre: '#9E5A00', ambreClair: '#8A4E00', encre: '#181128',
     eteint: '#CFC7E2', idle: '#6E6488', running: '#D98A00', ok: '#12805B', error: '#D62B47',
     carte: '#F2EFF9', carteSurvol: '#E8E3F3', rose: '#D62B47', jade: '#12805B',
-    epic: '#3D3459', 'epic-mobile': '#3D3459', gog: '#7A32E0', steam: '#1872A6', amazon: '#00709C',
+    epic: '#3D3459', 'epic-mobile': '#3D3459', fab: '#3D3459', gog: '#7A32E0', steam: '#1872A6', amazon: '#00709C',
     bouton: '#FFB454', boutonSurvol: '#FFC47A', boutonTexte: '#181128',
     pastilleFond: '#1B1528', pastilleTexte: '#FBFAFE',
     ombre: 'rgba(27,21,40,.18)', ombreBulle: 'rgba(27,21,40,.16)', schema: 'light',

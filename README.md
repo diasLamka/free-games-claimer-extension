@@ -260,6 +260,7 @@ est declare `"type": "module"`.
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
+| `sources/fab.js` | les assets gratuits de Fab (« Limited-Time Free ») : le bloc de donnees embarque dans la page, lu sans compte ni cookie -- detectes, jamais reclames |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |
 | `epic-mobile.js` | la mesure V8 : ou Epic expose ses jeux mobiles gratuits -- elle resume, elle ne decide rien |
 | `engine-text.js` | les phrases du moteur : il envoie une cle et ses valeurs, le lanceur et le worker composent dans la langue du lecteur |

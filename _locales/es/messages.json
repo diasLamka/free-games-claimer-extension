@@ -431,6 +431,9 @@
   "phoneDenied": {
     "message": "Permiso denegado: las alertas siguen desactivadas"
   },
+  "storeHostDenied": {
+    "message": "Permiso denegado: esta tienda sigue desactivada"
+  },
   "phoneSent": {
     "message": "Prueba enviada: mira tu móvil"
   },

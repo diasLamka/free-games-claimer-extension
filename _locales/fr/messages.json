@@ -431,6 +431,9 @@
   "phoneDenied": {
     "message": "Permission refusée : l'alerte reste coupée"
   },
+  "storeHostDenied": {
+    "message": "Permission refusée : ce magasin reste coupé"
+  },
   "phoneSent": {
     "message": "Essai envoyé : regardez votre téléphone"
   },

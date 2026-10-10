@@ -431,6 +431,9 @@
   "phoneDenied": {
     "message": "Permission denied: alerts stay off"
   },
+  "storeHostDenied": {
+    "message": "Permission denied: this store stays off"
+  },
   "phoneSent": {
     "message": "Test sent: check your phone"
   },

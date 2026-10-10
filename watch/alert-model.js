@@ -66,6 +66,7 @@ export const DEFAULT_SPARK = '✨';
 export const STORE_ICON = Object.freeze({
   'epic games store': '🛡️',
   'epic games (mobile)': '📱',
+  'fab (epic)': '🧩',
   'gog.com': '🟣',
   steam: '♨️',
   'amazon games': '📦',

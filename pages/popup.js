@@ -133,6 +133,10 @@ const SECONDARY = [
   /* The weekly free MOBILE games (2.57.0). Claimed in the Epic app on the
      phone, never by the extension -- "watched and notified" is exactly it. */
   { id: STORES.EPIC_MOBILE, tag: 'EPIC MOBILE' },
+  /* The free Fab assets (2.108.0): 3D models, plugins, Unreal and Unity assets.
+     Detected and notified, never claimed -- the card opens the listing. Fab is
+     not in the manifest hosts: its access is asked when the box is ticked. */
+  { id: STORES.FAB, tag: 'FAB', host: 'https://www.fab.com/' + '*' },
   { id: STORES.MICROSOFT, tag: 'MS' },
   { id: STORES.UBISOFT, tag: 'UBI' },
   { id: STORES.EA, tag: 'EA' },
@@ -199,7 +203,7 @@ const DROP_KEYS = {
   [REASONS.NO_DESTINATION]: 'dropNoPage',
 };
 
-const SOURCE_LABELS = { 'epic-api': 'Epic Games', 'epic-mobile': 'Epic Games (mobile)', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
+const SOURCE_LABELS = { 'epic-api': 'Epic Games', 'epic-mobile': 'Epic Games (mobile)', fab: 'Fab (Epic)', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
 
 /* ------------------------------------------------------------------ storage */
 
@@ -749,6 +753,8 @@ function ratingOf(ctx, offer) {
    discret plutot qu'une absence qu'on prendrait pour un oubli. */
 function bargainTag(ctx, offer) {
   if (!ctx.ratingsOn || offer.alreadyOwned === true) return null;
+  // Un asset de Fab n'est pas un jeu Steam : ni note, ni verdict qui parle de jeu (2.108.0).
+  if (offer.store === STORES.FAB) return null;
   const v = verdictFor(offer, { ratings: ctx.ratings, checks: ctx.checks, facts: ctx.facts });
   const tag = el('span', `bargain ${gradeTone(v.grade) || 'none'}`, v.grade || '?');
   tag.title = verdictTitle(v, t, { money, number: (n) => n.toLocaleString(intlLocale()) });
@@ -2150,6 +2156,7 @@ function renderStores(all, behaviour) {
      because none of them has a claim module -- promising more would be a lie
      the first autonomous night would expose. */
   const grid = document.getElementById('extra-stores');
+  const say = document.getElementById('extra-stores-say');
   grid.textContent = '';
   let count = 0;
 
@@ -2162,6 +2169,20 @@ function renderStores(all, behaviour) {
     box.type = 'checkbox';
     box.checked = on;
     box.addEventListener('change', async () => {
+      /* Un magasin hors du manifeste (Fab, 2.108.0) : son acces se demande ICI,
+         dans le geste, AVANT toute lecture -- et se retire en decochant. */
+      if (store.host) {
+        if (box.checked) {
+          if (!await askStoreHost(store.host)) {
+            box.checked = false;
+            say.textContent = t('storeHostDenied');
+            return;
+          }
+          say.textContent = '';
+        } else {
+          try { await api.permissions.remove({ origins: [store.host] }); } catch { /* deja retiree */ }
+        }
+      }
       const next = box.checked
         ? [...new Set([...watched, store.id])]
         : watched.filter((s) => s !== store.id);
@@ -3628,6 +3649,15 @@ async function writePhone(patch) {
 async function askPhoneHost(url) {
   const origin = originPattern(url);
   if (!origin || !declaresOptionalOrigin(api.runtime.getManifest(), origin)) return false;
+  try {
+    return await api.permissions.request({ origins: [origin] });
+  } catch { return false; }
+}
+
+/* Meme regle pour un magasin que le manifeste ne couvre pas (Fab, 2.108.0) : le
+   motif est celui de la liste, et une demande hors du manifeste n'est pas faite. */
+async function askStoreHost(origin) {
+  if (!declaresOptionalOrigin(api.runtime.getManifest(), origin)) return false;
   try {
     return await api.permissions.request({ origins: [origin] });
   } catch { return false; }

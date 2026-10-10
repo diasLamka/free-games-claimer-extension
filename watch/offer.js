@@ -21,6 +21,10 @@ export const STORES = Object.freeze({
      pour que la source Epic (PC) ne les balaie pas et que rien ne tente de
      les reclamer. */
   EPIC_MOBILE: 'epic-mobile',
+  /* Les assets offerts par Epic sur Fab (2.108.0) : modeles 3D, plugins,
+     assets Unreal et Unity. Detectes et annonces, jamais reclames -- la
+     reclamation n'a pas ete observee connectee. */
+  FAB: 'fab',
   GOG: 'gog',
   STEAM: 'steam',
   AMAZON: 'amazon',
@@ -39,6 +43,7 @@ export const STORES = Object.freeze({
 export const STORE_LABELS = Object.freeze({
   epic: 'Epic Games Store',
   'epic-mobile': 'Epic Games (mobile)',
+  fab: 'Fab (Epic)',
   gog: 'GOG.com',
   steam: 'Steam',
   amazon: 'Amazon Games',
@@ -161,6 +166,7 @@ export function storeFromPlatforms(platforms) {
 
 const STORE_HOSTS = [
   [/(^|\.)epicgames\.com$/i, STORES.EPIC],
+  [/(^|\.)fab\.com$/i, STORES.FAB],
   [/(^|\.)gog\.com$/i, STORES.GOG],
   [/(^|\.)steampowered\.com$|(^|\.)steamcommunity\.com$/i, STORES.STEAM],
   [/(^|\.)itch\.io$/i, STORES.ITCHIO],
@@ -205,7 +211,7 @@ export function detectStore({ title, platforms, url } = {}) {
  * Les sources qui lisent le catalogue du magasin LUI-MEME : le prix qu'elles
  * rendent est celui du magasin, pas l'annonce d'un tiers.
  */
-export const FIRST_PARTY_SOURCES = Object.freeze(['epic-api', 'gog', 'steam', 'epic-mobile']);
+export const FIRST_PARTY_SOURCES = Object.freeze(['epic-api', 'gog', 'steam', 'epic-mobile', 'fab']);
 
 /**
  * Qui a donne la valeur de cette offre : 'store' (le magasin), 'aggregator'

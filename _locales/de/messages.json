@@ -431,6 +431,9 @@
   "phoneDenied": {
     "message": "Berechtigung verweigert: Benachrichtigungen bleiben aus"
   },
+  "storeHostDenied": {
+    "message": "Berechtigung verweigert: dieser Shop bleibt aus"
+  },
   "phoneSent": {
     "message": "Test gesendet: sieh auf dein Handy"
   },

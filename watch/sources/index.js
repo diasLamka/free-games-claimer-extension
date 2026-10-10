@@ -7,6 +7,7 @@
  */
 import * as epic from './epic.js';
 import * as epicMobile from './epic-mobile.js';
+import * as fab from './fab.js';
 import * as gamerpower from './gamerpower.js';
 import * as gog from './gog.js';
 import * as steam from './steam.js';
@@ -35,8 +36,10 @@ export const CLAIMABLE_STORES = Object.freeze([
 
 /** Magasins detectes et affiches, mais jamais reclames sans option explicite.
     Les jeux mobiles d'Epic, eux, ne se reclament jamais : ils se recuperent
-    dans l'application du telephone (2.57.0). */
-export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM, STORES.EPIC_MOBILE]);
+    dans l'application du telephone (2.57.0). Les assets de Fab non plus
+    (2.108.0) : la reclamation exige la session Epic et n'a jamais ete observee
+    connectee -- un clic ouvre la fiche, l'utilisateur ajoute l'asset lui-meme. */
+export const DETECT_ONLY_STORES = Object.freeze([STORES.STEAM, STORES.EPIC_MOBILE, STORES.FAB]);
 
 /**
  * Les magasins reclamables pour CES reglages.
@@ -68,6 +71,10 @@ export function activeSourcesFor(settings) {
   const suivis = settings && Array.isArray(settings.watchedStores) ? settings.watchedStores : [];
   if (suivis.includes(STORES.EPIC_MOBILE)) out.add(epicMobile.NAME);
   else out.delete(epicMobile.NAME);
+  /* Fab (2.108.0), de meme : une page de 500 Ko qu'on ne lit que pour qui
+     suit ce magasin. */
+  if (suivis.includes(STORES.FAB)) out.add(fab.NAME);
+  else out.delete(fab.NAME);
   return [...out];
 }
 
@@ -171,6 +178,24 @@ export const SOURCES = Object.freeze({
     autoClaim: false,
   }),
 
+  [fab.NAME]: Object.freeze({
+    name: fab.NAME,
+    libelle: 'Fab (Epic)',
+    discover: fab.discover,
+    /**
+     * Le bloc des offres a duree limitee est la liste entiere : une fiche qui
+     * n'y est plus est terminee. La reponse le dit elle-meme (`complete`) :
+     * faux si la page n'a pas la forme mesuree (defi, page changee).
+     */
+    completeList: true,
+    authoritativeFor: STORES.FAB,
+    /** Une page d'un demi-megaoctet : pas plus d'une fois par heure. */
+    minIntervalMs: 60 * 60 * 1000,
+    /** Jamais interrogee pour un magasin qu'on ne suit pas, meme par « Verifier maintenant ». */
+    onlyWhenActive: true,
+    autoClaim: false,
+  }),
+
   [steam.NAME]: Object.freeze({
     name: steam.NAME,
     libelle: 'Steam',
@@ -192,4 +217,4 @@ export const SOURCES = Object.freeze({
 
 export const NAMES = Object.freeze(Object.keys(SOURCES));
 
-export { epic, epicMobile, gamerpower, steam };
+export { epic, epicMobile, fab, gamerpower, steam };

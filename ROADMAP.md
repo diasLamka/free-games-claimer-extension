@@ -141,6 +141,10 @@ L'integration continue tourne aussi : `npm run check` a chaque push.
   (`test/fixtures/epic-mobile-discover-*.json`), et verifiees de bout en bout
   sur le vrai reseau : Mindcop, Android et iOS, avec sa vignette.
 
+- **Fab : les assets gratuits d'Epic** (2.108.0, appli 1.29.0), la detection. Mesure du 2026-10-10 (`docs/specs/2026-10-10-humble-fab-constats.md`) :
+  la page « Limited-Time Free » repond a un GET anonyme, et son HTML brut porte la liste, les licences, le prix et la fin de la remise dans un bloc
+  de donnees (`/i/blades/free_content_blade`). La source le lit ; le magasin est suivi sur demande, jamais reclame (voir l'entree 6).
+
 ---
 
 ## 1. La banniere de giveaway GOG
@@ -208,6 +212,30 @@ importee avant.
 ## 5. Les jeux mobiles gratuits d'Epic
 
 **Livre en 2.57.0, ferme en 2.59.1** -- voir « Livre depuis ».
+
+---
+
+## 6. Reclamer sur Fab
+
+*Pourquoi.* Fab est detecte et annonce, mais l'asset s'ajoute encore a la main : un appui ouvre la fiche. La reclamation exige la session Epic de
+l'utilisateur, et le bouton d'ajout a la bibliotheque n'a **jamais ete observe connecte** -- ni son libelle, ni sa position, ni ce que montre une fiche
+deja possedee. Une mesure sans compte ne peut pas le dire, et cliquer a l'aveugle sur une boutique ou un panier existe n'est pas une option.
+
+*Ce qu'il faut.* Une fiche de la page « Limited-Time Free » ouverte CONNECTE, dans un vrai navigateur : le texte et le role des boutons de la fiche, avant et
+apres l'ajout, et ce que la fiche montre quand l'asset est deja a soi. Le plus simple : une capture du DOM de la fiche, ou la ligne « forme » d'un
+rapport de diagnostic sur le modele de l'entree 4.
+
+*A quoi on reconnaitra que c'est fini.* Un module de reclamation Fab, derriere une option coupee par defaut comme celle de Steam, dont le premier clic
+est verifie sur une vraie offre -- et dont un echec dit son motif.
+
+## 7. Humble Store
+
+*Ou on en est.* Mesure le 2026-10-10 : aucun jeu gratuit a reclamer chez Humble. Le filtre « gratuit » de la recherche est ignore, et la seule offre a
+0 € est une demo a 0,01 € dont la « fin d'offre » est l'an 3000. Un detecteur « prix courant = 0 » se tromperait ; il faudrait exiger un vrai prix de depart
+et une vraie date de fin. L'API de recherche n'est lisible que depuis un navigateur (Cloudflare refuse `curl`).
+
+*Ce qu'il faut pour le fermer.* Une seule mesure, prise pendant qu'Humble offre un jeu : la page de l'offre, son bouton, et si un compte est necessaire.
+Tant qu'aucun cadeau ne tourne, rien n'est ecrit -- meme situation que l'entree 1.
 
 ---
 
