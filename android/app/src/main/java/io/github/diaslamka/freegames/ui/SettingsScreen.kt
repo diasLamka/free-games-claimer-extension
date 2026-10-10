@@ -194,6 +194,7 @@ fun SettingsScreen(
                         Tiles.of(s.tiles),
                     ) { v -> onSettings { it.copy(tiles = v) } }
                     Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
+                    Toggle(stringResource(R.string.set_fab), stringResource(R.string.set_fab_hint), s.showFab) { v -> onSettings { it.copy(showFab = v) } }
                     Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
                     Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
                     Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }

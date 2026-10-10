@@ -61,8 +61,10 @@
     <string name="section_free">Gratis ahora</string>
     <string name="section_soon">Pronto gratis en Epic</string>
     <string name="section_mobile">Juegos móviles de Epic</string>
+    <string name="section_fab">Assets gratis de Fab</string>
     <string name="section_others">Otras tiendas</string>
     <string name="mobile_hint">en la app de Epic Games Store</string>
+    <string name="fab_hint">añádelo en fab.com</string>
     <string name="first_check">Primera comprobación en curso…</string>
     <string name="nothing_free">Ahora mismo no hay nada gratis que coincida.</string>
     <string name="checked_ago">Comprobado %1$s</string>
@@ -116,6 +118,8 @@
     <string name="set_notify_new">Avisar de nuevos juegos gratis</string>
     <string name="set_notify_ending">Recordar el último día</string>
     <string name="set_mobile">Mostrar juegos móviles de Epic</string>
+    <string name="set_fab">Mostrar assets gratis de Fab</string>
+    <string name="set_fab_hint">Modelos 3D, plugins, assets de Unreal y Unity. Se avisan, nunca se reclaman: al tocar se abre la ficha.</string>
     <string name="set_others">Mostrar otras tiendas</string>
     <string name="set_ratings">Valoración de Steam y «¿trampa o buena oferta?»</string>
     <string name="check_now">Comprobar ahora</string>

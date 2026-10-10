@@ -45,7 +45,7 @@ object Bargain {
     private const val MIN_REVIEWS = 50
 
     /** Les sources qui lisent le catalogue du magasin lui-meme : leur prix est celui du magasin. */
-    private val FIRST_PARTY = setOf("epic-api", "gog", "steam", "epic-mobile")
+    private val FIRST_PARTY = setOf("epic-api", "gog", "steam", "epic-mobile", "fab")
     private val STORE_OWN = mapOf("steam" to "steam", "epic-api" to "epic", "gog" to "gog")
     private val TRIAL = Regex("\\b(demo|playtest|benchmark)\\b", RegexOption.IGNORE_CASE)
     private val DLC_WORD = Regex("^(dlc|add-?on)$", RegexOption.IGNORE_CASE)

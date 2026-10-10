@@ -84,6 +84,7 @@ fun Modifier.brut(
 fun shortStore(store: String?): String = when (store) {
     Stores.EPIC -> "EPIC"
     Stores.EPIC_MOBILE -> "EPIC MOBILE"
+    Stores.FAB -> "FAB"
     Stores.GOG -> "GOG"
     Stores.STEAM -> "STEAM"
     Stores.AMAZON -> "AMAZON"

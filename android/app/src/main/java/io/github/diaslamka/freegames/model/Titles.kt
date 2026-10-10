@@ -72,6 +72,7 @@ object Titles {
 
     private val STORE_HOSTS = listOf(
         rx("(^|\\.)epicgames\\.com$") to Stores.EPIC,
+        rx("(^|\\.)fab\\.com$") to Stores.FAB,
         rx("(^|\\.)gog\\.com$") to Stores.GOG,
         rx("(^|\\.)steampowered\\.com$|(^|\\.)steamcommunity\\.com$") to Stores.STEAM,
         rx("(^|\\.)itch\\.io$") to Stores.ITCHIO,

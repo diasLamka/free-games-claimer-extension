@@ -61,8 +61,10 @@
     <string name="section_free">Jetzt gratis</string>
     <string name="section_soon">Bald gratis bei Epic</string>
     <string name="section_mobile">Epic-Handyspiele</string>
+    <string name="section_fab">Gratis-Assets auf Fab</string>
     <string name="section_others">Andere Shops</string>
     <string name="mobile_hint">in der Epic Games Store-App</string>
+    <string name="fab_hint">auf fab.com hinzufügen</string>
     <string name="first_check">Erste Prüfung läuft…</string>
     <string name="nothing_free">Gerade ist nichts Passendes gratis.</string>
     <string name="checked_ago">Geprüft %1$s</string>
@@ -116,6 +118,8 @@
     <string name="set_notify_new">Neue Gratisspiele melden</string>
     <string name="set_notify_ending">Am letzten Tag erinnern</string>
     <string name="set_mobile">Epic-Handyspiele zeigen</string>
+    <string name="set_fab">Gratis-Assets von Fab zeigen</string>
+    <string name="set_fab_hint">Dies sind 3D-Modelle, Plugins, Unreal- und Unity-Assets. Nur angekündigt, nie eingelöst: Antippen öffnet die Seite.</string>
     <string name="set_others">Andere Shops zeigen</string>
     <string name="set_ratings">Steam-Bewertung und „Falle oder Schnäppchen?“</string>
     <string name="check_now">Jetzt prüfen</string>

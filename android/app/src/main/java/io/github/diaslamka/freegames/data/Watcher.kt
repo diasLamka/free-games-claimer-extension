@@ -10,6 +10,7 @@ import io.github.diaslamka.freegames.notify.Digest
 import io.github.diaslamka.freegames.notify.Notifier
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.EpicMobileSource
+import io.github.diaslamka.freegames.sources.FabSource
 import io.github.diaslamka.freegames.sources.EpicSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
 import io.github.diaslamka.freegames.sources.GogSource
@@ -81,6 +82,8 @@ object Watcher {
                 async { SteamSource.discover(http, now, st.country) },
                 async { GamerPowerSource.discover(http, now) },
                 async { if (st.showMobile) EpicMobileSource.discover(http, now, st.country) else SourceResult(EpicMobileSource.NAME) },
+                // Fab (1.29.0) : une page d'un demi-megaoctet, lue seulement si on suit ce magasin.
+                async { if (st.showFab) FabSource.discover(http, now) else SourceResult(FabSource.NAME) },
             ).map { it.await() }
         }
 

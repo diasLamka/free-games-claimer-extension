@@ -4,6 +4,38 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## 2.108.0 / appli 1.29.0 -- 2026-10-10
+
+**Fab : les assets gratuits d'Epic (modeles 3D, plugins, assets Unreal et Unity) sont detectes et annonces**
+
+Mise a jour : l'extension se recharge comme d'habitude, l'appli par la mise a jour integree (meme cle de signature). **Aucune permission obligatoire de plus** :
+l'acces a `fab.com` n'est demande que si on suit Fab. Chaque point a ses tests, ecrits d'abord et vus echouer (les verifications les plus importantes aussi par
+mutation : en cassant la lecture du prix, des dates ou du reglage, des tests echouent).
+
+- **La mesure d'abord** (`docs/specs/2026-10-10-humble-fab-constats.md`, comme l'exige la feuille de route). La page « Limited-Time Free » de Fab repond 200
+  a un GET anonyme, et son HTML brut porte un bloc de donnees (`/i/blades/free_content_blade`) avec les fiches, leurs licences, leur prix et la fin de la
+  remise. Les endpoints `/i/...` repondent 403 a un client qui n'est pas un navigateur : on lit la page, pas eux. On lit le bloc, pas le balisage (les noms
+  de classe sont generes et changent a chaque deploiement).
+- **La source** (`watch/sources/fab.js` pour l'extension, `sources/FabSource.kt` pour l'appli, memes captures, memes attentes). Une fiche est une offre si une de
+  ses licences est gratuite MAINTENANT : un vrai prix d'origine remis a zero, une remise commencee et pas finie. Sa fin est la plus proche des licences
+  gratuites ; sa valeur, le prix de la licence Personnelle dans la devise de la page. Une page qui n'a plus la forme mesuree (defi Cloudflare, bloc renomme)
+  est une **erreur qui le dit**, jamais « aucune offre » -- seule une page lue, dont le bloc est vide, vaut « aucune offre cette semaine ».
+- **Suivi sur demande.** Extension : la case « Fab (Epic) » dans les magasins suivis ; cocher demande l'acces a `fab.com` (permission optionnelle, dans le geste
+  de la case) et decocher le retire. Appli : Reglages > Veille > « Montrer les assets gratuits Fab », **coupe par defaut** -- ce n'est pas le meme public que les
+  jeux. La page (un demi-megaoctet) n'est lue que pour qui suit Fab, une fois par heure au plus dans l'extension.
+- **Detecte et annonce, jamais reclame.** L'extension le range parmi les magasins « detectes seulement » (la carte dit « a ouvrir vous-meme ») ; l'appli lui
+  donne une section a part, repliee, avec la jaquette, la valeur, le temps restant, et un appui ouvre la fiche. Pas de verdict « piege ou bonne affaire » ni de
+  note Steam pour un asset. Une notification arrive a l'ouverture, un rappel au dernier jour, comme pour un jeu.
+- Tests : extension 1821 -> 1848 ; appli 413 -> 442 (unitaires), dont les memes captures que l'extension et un test d'ecran (la section n'existe que si on suit Fab).
+- Verifie sur emulateur Android 14, vrai reseau : le client reseau de l'appli recoit la page (HTTP 200, 521 Ko) et la source lit les trois offres de la semaine,
+  avec fin, valeur et jaquette ; dans l'appli installee, la case, la lecture, la section, la notification et l'appui qui ouvre la fiche dans le navigateur.
+- Non verifie : la lecture par l'extension dans Chrome (la page repond 200 a `curl` et au client de l'appli, l'extension envoie les en-tetes d'un navigateur,
+  mais le service worker n'a pas ete exerce sur un vrai Chrome) ; la forme de la page une semaine SANS offre (aucune n'a ete observee) ; ce que Fab montre
+  a un compte connecte.
+- Non fait : **la reclamation**. Elle exige la session Epic, et le bouton d'ajout a la bibliotheque n'a jamais ete observe connecte : ROADMAP, entree 6, avec la
+  mesure qu'il faut. **Humble Store** : aucun jeu gratuit a reclamer lors de la mesure (le filtre « gratuit » du site est ignore, la seule offre a 0 € est une
+  demo a 0,01 € qui finit en l'an 3000) ; rien n'est ecrit, ROADMAP, entree 7.
+
 ## Appli 1.28.0 -- 2026-10-09 (extension inchangee, 2.107.0)
 
 **La veille se regle, la page Sante dit ce qu'Android lui fait, et une sauvegarde chiffree -- a la main ou automatique -- permet de changer de telephone**

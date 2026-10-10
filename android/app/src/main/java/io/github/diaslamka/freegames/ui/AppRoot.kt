@@ -198,7 +198,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     Scheduler.digestAt(context, io.github.diaslamka.freegames.notify.Digest.nextSlot(heure, t, java.time.ZoneId.systemDefault()) + 60_000, replace = true)
                 } else Scheduler.cancelDigest(context)
             }
-            if (after.country != before.country || after.showMobile != before.showMobile) refresh()
+            if (after.country != before.country || after.showMobile != before.showMobile || after.showFab != before.showFab) refresh()
         }
     }
 

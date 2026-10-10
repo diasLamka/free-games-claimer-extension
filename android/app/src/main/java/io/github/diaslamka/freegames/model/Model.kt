@@ -7,6 +7,8 @@ import kotlinx.serialization.json.JsonElement
 object Stores {
     const val EPIC = "epic"
     const val EPIC_MOBILE = "epic-mobile"
+    /** Les assets offerts par Epic sur Fab (1.29.0) : detectes et annonces, jamais recuperes. */
+    const val FAB = "fab"
     const val GOG = "gog"
     const val STEAM = "steam"
     const val AMAZON = "amazon"
@@ -24,6 +26,7 @@ object Stores {
     val LABELS = mapOf(
         EPIC to "Epic Games Store",
         EPIC_MOBILE to "Epic Games (mobile)",
+        FAB to "Fab (Epic)",
         GOG to "GOG.com",
         STEAM to "Steam",
         AMAZON to "Amazon Games",
@@ -235,6 +238,8 @@ data class Settings(
      */
     val lastChance: Boolean = false,
     val showMobile: Boolean = true,
+    /** Suivre les assets gratuits de Fab (1.29.0) : coupe par defaut, c'est un autre public que les jeux. */
+    val showFab: Boolean = false,
     val showOthers: Boolean = true,
     val steamRatings: Boolean = true,
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */

@@ -66,6 +66,7 @@ import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.model.Upcoming
 import io.github.diaslamka.freegames.sources.Countries
 import io.github.diaslamka.freegames.sources.EpicMobileSource
+import io.github.diaslamka.freegames.sources.FabSource
 import io.github.diaslamka.freegames.sources.GamerPowerSource
 import io.github.diaslamka.freegames.ui.theme.LocalBrut
 import java.time.Instant
@@ -83,7 +84,7 @@ private val PC = setOf(Stores.EPIC, Stores.GOG, Stores.STEAM, Stores.AMAZON)
 
 /** Ce que l'ecran des jeux montre : les offres, ce qui arrive, ce qui attend, et les magasins a reconnecter. */
 private class GamesView(
-    val pc: List<Offer>, val mobile: List<Offer>, val others: List<Offer>, val soon: List<Upcoming>,
+    val pc: List<Offer>, val mobile: List<Offer>, val fab: List<Offer>, val others: List<Offer>, val soon: List<Upcoming>,
     val pending: List<Offer>, val needLogin: List<String>,
 )
 
@@ -95,12 +96,13 @@ private fun gamesView(state: AppState, now: Long, filter: String?, query: String
         .filter(::keep)
         .sortedWith(compareByDescending<Offer> { Rules.wished(it, state) }.thenBy { it.end ?: Long.MAX_VALUE })
     val mobile = if (state.settings.showMobile) open.filter { it.source == EpicMobileSource.NAME }.filter(::keep) else emptyList()
+    val fab = if (state.settings.showFab) open.filter { it.source == FabSource.NAME }.filter(::keep) else emptyList()
     val others = if (state.settings.showOthers) open.filter { it.source == GamerPowerSource.NAME && it.store !in PC }
         .filter { filter == null && (q.isEmpty() || it.normalisedTitle.contains(q)) } else emptyList()
     val soon = state.upcoming.filter { it.start > now && (filter == null || filter == Stores.EPIC) && (q.isEmpty() || Titles.normalise(it.title).contains(q)) }
     val pending = Rules.pending(state, now)
     val needLogin = pending.map { it.store }.distinct().filter { state.accounts[it]?.status == Accounts.LOGGED_OUT }
-    return GamesView(pc, mobile, others, soon, pending, needLogin)
+    return GamesView(pc, mobile, fab, others, soon, pending, needLogin)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,6 +131,7 @@ fun GamesScreen(
     // Repliees par defaut, comme dans le popup (1.3.0) : leur compte reste dans le titre.
     var openUpcoming by rememberSaveable { mutableStateOf(false) }
     var openMobile by rememberSaveable { mutableStateOf(false) }
+    var openFab by rememberSaveable { mutableStateOf(false) }
     var openOthers by rememberSaveable { mutableStateOf(false) }
 
     // Les listes sont recalculees quand l'etat, l'heure, le filtre ou la recherche changent -- pas a chaque recomposition
@@ -136,6 +139,7 @@ fun GamesScreen(
     val view = remember(state, now, filter, query) { gamesView(state, now, filter, query) }
     val pc = view.pc
     val mobile = view.mobile
+    val fab = view.fab
     val others = view.others
     val soon = view.soon
     val pending = view.pending
@@ -234,6 +238,10 @@ fun GamesScreen(
                     item("mob-h", span = full) { SectionHeader(stringResource(R.string.section_mobile), mobile.size, openMobile, { openMobile = !openMobile }) }
                     if (openMobile) itemsIndexed(mobile, key = { _, o -> "m:" + o.key }) { _, o -> CompactRow(o, now, stringResource(R.string.mobile_hint), onOpen) }
                 }
+                if (fab.isNotEmpty()) {
+                    item("fab-h", span = full) { SectionHeader(stringResource(R.string.section_fab), fab.size, openFab, { openFab = !openFab }) }
+                    if (openFab) itemsIndexed(fab, key = { _, o -> "f:" + o.key }) { _, o -> CompactRow(o, now, stringResource(R.string.fab_hint), onOpen) }
+                }
                 if (others.isNotEmpty()) {
                     item("oth-h", span = full) { SectionHeader(stringResource(R.string.section_others), others.size, openOthers, { openOthers = !openOthers }) }
                     if (openOthers) itemsIndexed(others, key = { _, o -> "g:" + o.key }) { _, o -> CompactRow(o, now, Stores.LABELS[o.store] ?: o.platforms.orEmpty(), onOpen) }
@@ -264,7 +272,7 @@ private fun SourcesLine(state: AppState, now: Long) {
     val context = LocalContext.current
     val b = LocalBrut.current
     val last = state.lastCheck ?: return
-    val names = mapOf("epic-api" to "EPIC", "gog" to "GOG", "steam" to "STEAM", "gamerpower" to "GAMERPOWER", "epic-mobile" to "MOBILE")
+    val names = mapOf("epic-api" to "EPIC", "gog" to "GOG", "steam" to "STEAM", "gamerpower" to "GAMERPOWER", "epic-mobile" to "MOBILE", "fab" to "FAB")
     val parts = names.mapNotNull { (k, label) -> state.sources[k]?.let { "$label[${if (it.ok) "OK" else "KO"}]" } }
     Text(
         "> " + stringResource(R.string.checked_ago, Fmt.ago(context, last, now)).uppercase() + "\n> " + parts.joinToString(" "),
