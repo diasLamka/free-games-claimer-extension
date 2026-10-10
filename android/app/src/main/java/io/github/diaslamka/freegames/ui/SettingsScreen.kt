@@ -17,11 +17,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Devices
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.ViewAgenda
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -104,44 +122,42 @@ fun SettingsScreen(
     val context = LocalContext.current
     val notificationsAllowed = rememberNotificationsAllowed()
     val restrictions = rememberRestrictions()
-    /* Toutes les sections sont pliees : un ecran de reglages est un sommaire, pas
-       une page a lire. Une seule s'ouvre d'office -- les comptes, quand l'un d'eux
-       a perdu sa session --, parce que c'est la qu'il y a quelque chose a faire. */
+    /* Les reglages sont un MENU (1.32.0) : une liste de rubriques, chacune avec une ligne de resume, et une page par rubrique.
+       Avant, tout etait une longue liste de sections repliables : on cherchait un interrupteur en defilant. */
     val lost = Accounts.STORES.any { state.accounts[it]?.status == Accounts.LOGGED_OUT }
-    var opened by rememberSaveable { mutableStateOf(open.ifEmpty { if (lost) listOf(SECTION_ACCOUNTS) else emptyList() }) }
-    val title_health = stringResource(R.string.section_health)
-    val title_accounts = stringResource(R.string.accounts)
-    val title_claiming = stringResource(R.string.section_claiming)
-    val title_watch = stringResource(R.string.section_watch)
-    val title_relay = stringResource(R.string.section_relay)
-    val title_family = stringResource(R.string.section_family)
-    val title_data = stringResource(R.string.section_data)
-    val title_about = stringResource(R.string.section_about)
-    fun isOpen(key: String) = key in opened
-    fun toggle(key: String) { opened = if (key in opened) opened - key else opened + key }
-    ReadableColumn {
-        TopBlock(stringResource(R.string.tab_settings))
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxSize(),
+    var shown by rememberSaveable { mutableStateOf(open) }
+    BackHandler(enabled = shown.isNotEmpty()) { shown = emptyList() }
+    val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
+    val connected = Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }
+    val enabledStores = listOfNotNull(
+        shortStore(Stores.EPIC).takeIf { s.claimEpic }, shortStore(Stores.GOG).takeIf { s.claimGog },
+        shortStore(Stores.AMAZON).takeIf { s.claimAmazon }, shortStore(Stores.STEAM).takeIf { s.claimSteam },
+    )
+    val notifyOn = listOf(s.notifyNew, s.notifyEnding, s.watchdog, s.lastChance).count { it }
+    val entries = listOf(
+        Entry(
+            SECTION_HEALTH, stringResource(R.string.section_health), Icons.Rounded.HealthAndSafety,
+            summary = if (health.problems + (if (notificationsAllowed) 0 else 1) > 0) stringResource(R.string.hub_to_check, health.problems + (if (notificationsAllowed) 0 else 1)) else stringResource(R.string.hub_all_good), badge = null, alert = health.problems + (if (notificationsAllowed) 0 else 1) > 0,
         ) {
-            // La page « Sante » (1.26.0), en premier : un probleme se lit avant les reglages. Le chiffre : les magasins a regarder.
-            val health = io.github.diaslamka.freegames.data.Health.overview(state, now)
-            fold(SECTION_HEALTH, title_health, (health.problems + if (notificationsAllowed) 0 else 1).takeIf { it > 0 }, isOpen(SECTION_HEALTH), ::toggle) {
                 HealthGroup(state, now, notificationsAllowed, onNotificationSettings = { openNotificationSettings(context) }, onAppSettings = { openAppSettings(context) }, restrictions = restrictions, maker = io.github.diaslamka.freegames.data.Restrictions.Maker.of(android.os.Build.MANUFACTURER, android.os.Build.BRAND), manufacturer = android.os.Build.MANUFACTURER, onBatterySettings = { openBatterySettings(context) }, onRunTest = {
                     Scheduler.testNow(context)
                     android.widget.Toast.makeText(context, context.getString(R.string.health_test_started), android.widget.Toast.LENGTH_LONG).show()
                 }, onShareDiagnostic = {
                     shareText(context, io.github.diaslamka.freegames.data.Diagnostic.build(state, io.github.diaslamka.freegames.data.Diagnostic.env(context), System.currentTimeMillis()), context.getString(R.string.diag_subject))
                 })
-            }
-            fold(SECTION_ACCOUNTS, title_accounts, Accounts.STORES.count { state.accounts[it]?.status == Accounts.OK || state.accounts[it]?.status == Accounts.PRESENT }, isOpen(SECTION_ACCOUNTS), ::toggle) {
+                    },
+        Entry(
+            SECTION_ACCOUNTS, stringResource(R.string.accounts), Icons.Rounded.AccountCircle,
+            summary = stringResource(R.string.hub_accounts, connected, Accounts.STORES.size), badge = null, alert = lost,
+        ) {
                 Group {
                     Accounts.STORES.forEach { store -> AccountRow(store, state, now, onLogin) }
                 }
-            }
-            fold(SECTION_CLAIMING, title_claiming, null, isOpen(SECTION_CLAIMING), ::toggle) {
+                    },
+        Entry(
+            SECTION_CLAIMING, stringResource(R.string.section_claiming), Icons.Rounded.Download,
+            summary = if (enabledStores.isEmpty()) stringResource(R.string.hub_none) else enabledStores.joinToString(", "), badge = null, alert = false,
+        ) {
                 Group {
                     val waiting = Rules.pending(state, now).size
                     if (waiting > 0) BrutButton(stringResource(R.string.claim_now) + " ($waiting)", onClaimNow, icon = Icons.Rounded.Download)
@@ -156,60 +172,86 @@ fun SettingsScreen(
                         if (v) steamWarning = true else onSettings { it.copy(claimSteam = false) }
                     }
                 }
-            }
-            fold(SECTION_WATCH, title_watch, null, isOpen(SECTION_WATCH), ::toggle) {
-                Group {
-                    Choice(
-                        stringResource(R.string.set_frequency),
-                        listOf(1, 3, 6, 12).map { it to stringResource(R.string.every_hours, it) },
-                        s.checkHours,
-                    ) { v -> onSettings { it.copy(checkHours = v) } }
-                    Toggle(stringResource(R.string.set_wifi_only), stringResource(R.string.set_wifi_only_hint), s.wifiOnly) { v -> onSettings { it.copy(wifiOnly = v) } }
-                    Toggle(stringResource(R.string.set_charging_only), stringResource(R.string.set_charging_only_hint), s.chargingOnly) { v -> onSettings { it.copy(chargingOnly = v) } }
-                    Choice(
-                        stringResource(R.string.set_country),
-                        Countries.ALL.map { it.code to it.label },
-                        s.country,
-                    ) { v -> onSettings { it.copy(country = v) } }
-                    Toggle(stringResource(R.string.set_notify_new), null, s.notifyNew) { v -> onSettings { it.copy(notifyNew = v) } }
-                    if (s.notifyNew) {
-                        Choice(
-                            stringResource(R.string.set_digest),
-                            listOf(Digest.OFF to stringResource(R.string.digest_off)) + Digest.HOURS.map { it to stringResource(R.string.every_hours_at, it) },
-                            s.digestHour,
-                        ) { v -> onSettings { it.copy(digestHour = v) } }
-                    }
-                    Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
-                    Toggle(stringResource(R.string.set_watchdog), stringResource(R.string.set_watchdog_hint), s.watchdog) { v -> onSettings { it.copy(watchdog = v) } }
-                    Toggle(stringResource(R.string.set_last_chance), null, s.lastChance) { v ->
-                        if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
-                    }
-                    Choice(
-                        stringResource(R.string.set_tiles),
-                        listOf(
-                            Tiles.CARDS to stringResource(R.string.tiles_cards),
-                            Tiles.LIST to stringResource(R.string.tiles_list),
-                            Tiles.GRID to stringResource(R.string.tiles_grid),
-                        ),
-                        Tiles.of(s.tiles),
-                    ) { v -> onSettings { it.copy(tiles = v) } }
-                    Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
-                    Toggle(stringResource(R.string.set_fab), stringResource(R.string.set_fab_hint), s.showFab) { v -> onSettings { it.copy(showFab = v) } }
-                    Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
-                    Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
-                    Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
-                    Toggle(stringResource(R.string.set_taste), null, s.taste) { v -> onSettings { it.copy(taste = v) } }
-                    if (s.taste) Toggle(stringResource(R.string.set_taste_quiet), null, s.tasteQuiet) { v -> onSettings { it.copy(tasteQuiet = v) } }
-                    Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
+                    },
+        Entry(
+            SECTION_WATCH, stringResource(R.string.section_watch), Icons.Rounded.Autorenew,
+            summary = stringResource(R.string.every_hours, s.checkHours) + (if (s.wifiOnly) " · Wi-Fi" else "") + (if (s.chargingOnly) " · " + stringResource(R.string.hub_charging) else ""), badge = null, alert = false,
+        ) {
+            Group {
+                Choice(
+                    stringResource(R.string.set_frequency),
+                    listOf(1, 3, 6, 12).map { it to stringResource(R.string.every_hours, it) },
+                    s.checkHours,
+                ) { v -> onSettings { it.copy(checkHours = v) } }
+                Toggle(stringResource(R.string.set_wifi_only), stringResource(R.string.set_wifi_only_hint), s.wifiOnly) { v -> onSettings { it.copy(wifiOnly = v) } }
+                Toggle(stringResource(R.string.set_charging_only), stringResource(R.string.set_charging_only_hint), s.chargingOnly) { v -> onSettings { it.copy(chargingOnly = v) } }
+                Choice(
+                    stringResource(R.string.set_country),
+                    Countries.ALL.map { it.code to it.label },
+                    s.country,
+                ) { v -> onSettings { it.copy(country = v) } }
+                Toggle(stringResource(R.string.set_watchdog), stringResource(R.string.set_watchdog_hint), s.watchdog) { v -> onSettings { it.copy(watchdog = v) } }
+                Toggle(stringResource(R.string.set_last_chance), null, s.lastChance) { v ->
+                    if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
                 }
+                Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
             }
-            fold(SECTION_RELAY, title_relay, null, isOpen(SECTION_RELAY), ::toggle) {
-                RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair)
+        },
+        Entry(
+            SECTION_NOTIFY, stringResource(R.string.section_notifications), Icons.Rounded.Notifications,
+            summary = stringResource(R.string.hub_active, notifyOn, 4), badge = null, alert = !notificationsAllowed,
+        ) {
+            Group {
+                Toggle(stringResource(R.string.set_notify_new), null, s.notifyNew) { v -> onSettings { it.copy(notifyNew = v) } }
+                if (s.notifyNew) {
+                    Choice(
+                        stringResource(R.string.set_digest),
+                        listOf(Digest.OFF to stringResource(R.string.digest_off)) + Digest.HOURS.map { it to stringResource(R.string.every_hours_at, it) },
+                        s.digestHour,
+                    ) { v -> onSettings { it.copy(digestHour = v) } }
+                }
+                Toggle(stringResource(R.string.set_notify_ending), null, s.notifyEnding) { v -> onSettings { it.copy(notifyEnding = v) } }
             }
-            fold(SECTION_FAMILY, title_family, state.family.size.takeIf { it > 0 }, isOpen(SECTION_FAMILY), ::toggle) {
-                FamilyGroup(state, familySupported, family)
+        },
+        Entry(
+            SECTION_DISPLAY, stringResource(R.string.section_display), Icons.Rounded.ViewAgenda,
+            summary = when (Tiles.of(s.tiles)) { Tiles.LIST -> stringResource(R.string.tiles_list); Tiles.GRID -> stringResource(R.string.tiles_grid); else -> stringResource(R.string.tiles_cards) }, badge = null, alert = false,
+        ) {
+            Group {
+                Choice(
+                    stringResource(R.string.set_tiles),
+                    listOf(
+                        Tiles.CARDS to stringResource(R.string.tiles_cards),
+                        Tiles.LIST to stringResource(R.string.tiles_list),
+                        Tiles.GRID to stringResource(R.string.tiles_grid),
+                    ),
+                    Tiles.of(s.tiles),
+                ) { v -> onSettings { it.copy(tiles = v) } }
+                Toggle(stringResource(R.string.set_mobile), null, s.showMobile) { v -> onSettings { it.copy(showMobile = v) } }
+                Toggle(stringResource(R.string.set_fab), stringResource(R.string.set_fab_hint), s.showFab) { v -> onSettings { it.copy(showFab = v) } }
+                Toggle(stringResource(R.string.set_others), null, s.showOthers) { v -> onSettings { it.copy(showOthers = v) } }
+                Toggle(stringResource(R.string.set_ratings), null, s.steamRatings) { v -> onSettings { it.copy(steamRatings = v) } }
+                Toggle(stringResource(R.string.set_tonight), null, s.tonight) { v -> onSettings { it.copy(tonight = v) } }
+                Toggle(stringResource(R.string.set_taste), null, s.taste) { v -> onSettings { it.copy(taste = v) } }
+                if (s.taste) Toggle(stringResource(R.string.set_taste_quiet), null, s.tasteQuiet) { v -> onSettings { it.copy(tasteQuiet = v) } }
             }
-            fold(SECTION_DATA, title_data, null, isOpen(SECTION_DATA), ::toggle) {
+        },
+        Entry(
+            SECTION_RELAY, stringResource(R.string.section_relay), Icons.Rounded.Devices,
+            summary = stringResource(if (state.relay != null) R.string.hub_paired else R.string.hub_not_paired), badge = null, alert = false,
+        ) {
+            RelayGroup(state, now, onRelayScan, onRelayCode, onRelaySync, onRelayUnpair)
+        },
+        Entry(
+            SECTION_FAMILY, stringResource(R.string.section_family), Icons.Rounded.Groups,
+            summary = if (state.family.isEmpty()) stringResource(R.string.hub_none) else pluralStringResource(R.plurals.hub_members, state.family.size, state.family.size), badge = null, alert = false,
+        ) {
+            FamilyGroup(state, familySupported, family)
+        },
+        Entry(
+            SECTION_DATA, stringResource(R.string.section_data), Icons.Rounded.Backup,
+            summary = stringResource(if (s.backupFolder != null) R.string.hub_backup_auto else R.string.hub_backup_manual), badge = null, alert = false,
+        ) {
                 Group {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         BrutButton(stringResource(R.string.import_backup), onImport)
@@ -232,9 +274,11 @@ fun SettingsScreen(
                         modifier = Modifier.padding(top = 10.dp).background(Color.Black).semantics { contentDescription = clearName }.clickableNoRipple { clearConfirm = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                     )
                 }
-            }
-            // Les versions et la confidentialite vivent ici, et nulle part ailleurs.
-            fold(SECTION_ABOUT, title_about, null, isOpen(SECTION_ABOUT), ::toggle) {
+                    },
+        Entry(
+            SECTION_ABOUT, stringResource(R.string.section_about), Icons.Rounded.Info,
+            summary = BuildConfig.VERSION_NAME, badge = null, alert = false,
+        ) {
                 Group {
                     Text(
                         stringResource(R.string.about_line, BuildConfig.VERSION_NAME, BuildConfig.ENGINE_VERSION),
@@ -245,6 +289,38 @@ fun SettingsScreen(
                         Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
                     }
                     UpdateGroup(s, onSettings)
+                }
+                    },
+    )
+
+    ReadableColumn {
+        val page = entries.filter { it.key in shown }
+        if (page.isEmpty()) {
+            TopBlock(stringResource(R.string.tab_settings))
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(entries, key = { "hub:" + it.key }) { e -> HubRow(e) { shown = listOf(e.key) } }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                SquareButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), { shown = emptyList() })
+                Text(
+                    if (page.size == 1) page[0].title else stringResource(R.string.tab_settings),
+                    style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 12.dp).semantics { heading() },
+                )
+            }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                page.forEach { e ->
+                    if (page.size > 1) item("h:" + e.key) { SectionHeader(e.title, e.badge) }
+                    item("b:" + e.key) { e.body() }
                 }
             }
         }
@@ -449,15 +525,43 @@ const val SECTION_HEALTH = "health"
 const val SECTION_ACCOUNTS = "accounts"
 const val SECTION_CLAIMING = "claiming"
 const val SECTION_WATCH = "watch"
+const val SECTION_NOTIFY = "notify"
+const val SECTION_DISPLAY = "display"
 const val SECTION_RELAY = "relay"
 const val SECTION_FAMILY = "family"
 const val SECTION_DATA = "data"
 const val SECTION_ABOUT = "about"
 
-/** Une section pliable : l'en-tete se touche, le corps n'existe que si elle est ouverte. */
-private fun LazyListScope.fold(key: String, title: String, count: Int?, open: Boolean, onToggle: (String) -> Unit, body: @Composable () -> Unit) {
-    item(key = "h:$key") { SectionHeader(title, count, open, { onToggle(key) }) }
-    if (open) item(key = "b:$key") { body() }
+/** Une rubrique du menu des reglages : son nom, son icone, une ligne de resume, et sa page. */
+private class Entry(
+    val key: String,
+    val title: String,
+    val icon: ImageVector,
+    val summary: String,
+    val badge: Int? = null,
+    val alert: Boolean = false,
+    val body: @Composable () -> Unit,
+)
+
+/** Une ligne du menu : une icone, le nom, ce qui est regle en une ligne, et ce qui demande un regard. */
+@Composable
+private fun HubRow(e: Entry, onOpen: () -> Unit) {
+    val b = LocalBrut.current
+    Row(
+        Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp)
+            .clickableNoRipple(role = Role.Button, onClick = onOpen).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp).brut(if (e.alert) b.accent else Color.White, border = 2.dp), contentAlignment = Alignment.Center) {
+            Icon(e.icon, null, tint = Color.Black, modifier = Modifier.size(22.dp))
+        }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(e.title, style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(e.summary, style = MaterialTheme.typography.bodySmall, color = MutedInk, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (e.alert) Tag("!", Color.Black, Color.White)
+        Text("›", style = MaterialTheme.typography.titleLarge, color = Color.Black, modifier = Modifier.padding(start = 8.dp))
+    }
 }
 
 @Composable

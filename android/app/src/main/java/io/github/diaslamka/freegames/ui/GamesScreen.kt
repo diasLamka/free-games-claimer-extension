@@ -176,7 +176,8 @@ fun GamesScreen(
                 if (help.isNotEmpty()) item("help", span = full) {
                     HelpBanner(help, state, claiming, onFinish = { onClaim(setOf(it.key)) }, onDismiss = onHelpDismiss)
                 }
-                item("hero", span = full) {
+                // Le grand chiffre n'a de sens qu'une fois un jeu recupere : un « 0,00 EUR, 0 jeu » ne dit rien (1.32.0).
+                if (state.library.isNotEmpty()) item("hero", span = full) {
                     val cur = Countries.of(state.settings.country).currency
                     val total = Money.total(state.library.values.map { it.worth }, cur)
                     Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))

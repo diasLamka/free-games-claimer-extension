@@ -189,9 +189,16 @@ fun Notice(text: String, color: Color, modifier: Modifier = Modifier, inverted: 
         else -> b.accent
     }
     val ink = if (inverted) b.base else Color.Black
-    Column(modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(fill, shadow = if (inverted || b.dark) b.accent else b.shadow, line = if (inverted) b.ink else Color.Black).padding(14.dp)) {
+    // Le texte et son geste sur UNE ligne quand ils tiennent (1.32.0), le geste dessous sinon : un bandeau ne prend plus la place d'une carte.
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    androidx.compose.foundation.layout.FlowRow(
+        modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(fill, shadow = if (inverted || b.dark) b.accent else b.shadow, line = if (inverted) b.ink else Color.Black).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(text.uppercase(), style = MaterialTheme.typography.titleSmall, color = ink)
-        if (action != null) Box(Modifier.padding(top = 10.dp)) { action() }
+        if (action != null) Box { action() }
     }
 }
 

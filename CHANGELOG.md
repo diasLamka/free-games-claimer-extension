@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.32.0 -- 2026-10-10 (extension inchangee, 2.108.0)
+
+**Les Reglages en menu, des textes courts, un accueil moins encombre -- dans la charte de l'appli**
+
+Mise a jour depuis la 1.31.1 : dans l'appli, comme d'habitude. La charte (jaune, bordures noires) ne change pas.
+
+- **Les Reglages sont un menu** (`ui/SettingsScreen.kt`). Dix rubriques -- Sante, Comptes, Recuperation, Veille, Notifications, Affichage, Relais PC, Famille, Donnees, A propos --, chacune une ligne avec son icone, ce qui y est regle en quelques mots (« 0 sur 4 connectes », « Epic, GOG, Amazon », « 3 h · Wi-Fi », « Associe »...) et un point d'alerte quand quelque chose demande un regard. Un appui ouvre la page de la rubrique, avec une fleche de retour (le geste retour d'Android aussi). La rubrique « Veille » de avant est coupee en trois : Veille (frequence, Wi-Fi, charge, pays, chien de garde), Notifications, Affichage. Plus de defilement pour trouver un interrupteur.
+- **Des textes courts** (`tools/strings.py`). Vingt-neuf textes d'aide, de confidentialite et de sante passent d'un paragraphe a une phrase, dans les quatre langues. Les fenetres de confirmation, les guides par fabricant et les messages d'erreur ne changent pas.
+- **Un accueil moins encombre.** Le grand chiffre (« 0,00 EUR, 0 jeu ») n'apparait qu'une fois un jeu recupere ; un bandeau garde son bouton sur la meme ligne quand il tient.
+- Tests : 467 -> 471. Verifie sur emulateur Android 14 : le menu s'affiche, et chaque rubrique s'ouvre.
+- Non fait : les logos des magasins a la place de leur nom. Il faut des images (voir la reponse), et je n'en telecharge pas sans accord. Les grandes cartes restent le choix par defaut pour les installations existantes (un appui sur la liste ou la grille, en haut de l'accueil, les remplace).
+
 ## Appli 1.31.1 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **La charte de l'appli est gardee ; seul le centre de recuperation reste de la 1.31.0**
