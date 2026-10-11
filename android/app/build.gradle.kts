@@ -62,8 +62,8 @@ android {
         applicationId = "io.github.diaslamka.freegames"
         minSdk = 26
         targetSdk = 36
-        versionCode = 47
-        versionName = "1.37.0"
+        versionCode = 48
+        versionName = "1.37.1"
         buildConfigField("String", "ENGINE_VERSION", "\"$engineVersion\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

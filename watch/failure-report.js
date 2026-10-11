@@ -27,6 +27,9 @@ export function isFailureVerdict(verdict) {
 const EMAIL = /[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+/g;
 const LONG_DIGITS = /\d{8,}/g;
 const LONG_TOKEN = /\b[A-Za-z0-9_-]{24,}\b/g;
+/* Un code d'echange (GOG, Luna) : trois groupes de quatre signes ou plus, majuscules et chiffres, separes par des tirets. C'est un
+   bien : il ne part pas dans un rapport. Les noms a tirets en minuscules ou en deux mots (Spider-Man, FREE-TO-PLAY) restent. */
+const CODE = /\b[A-Z0-9]{4,}(?:-[A-Z0-9]{4,}){2,}\b/g;
 
 function tidy(value, max) {
   if (typeof value !== 'string') return '';
@@ -34,6 +37,7 @@ function tidy(value, max) {
     .replace(/\s+/g, ' ')
     .trim()
     .replace(EMAIL, '[email]')
+    .replace(CODE, '[code]')
     .replace(LONG_DIGITS, '[nombre]')
     .replace(LONG_TOKEN, '[jeton]')
     .slice(0, max)
@@ -46,7 +50,15 @@ function bareUrl(value) {
   let u;
   try { u = new URL(value); } catch { return ''; }
   if (u.protocol !== 'https:' && u.protocol !== 'http:') return '';
-  return `${u.origin}${u.pathname}`.slice(0, MAX_URL);
+  // Le chemin peut porter un code ou un jeton (/redeem/CODE, /orders/123456789) : chaque segment passe par le meme nettoyage.
+  const chemin = u.pathname.split('/').map((s) => (s ? tidySegment(s) : s)).join('/');
+  return `${u.origin}${chemin}`.slice(0, MAX_URL);
+}
+
+function tidySegment(segment) {
+  let s = segment;
+  try { s = decodeURIComponent(segment); } catch { /* un segment mal encode reste tel quel, puis nettoye */ }
+  return s.replace(EMAIL, '[email]').replace(CODE, '[code]').replace(LONG_DIGITS, '[nombre]').replace(LONG_TOKEN, '[jeton]');
 }
 
 /** Ce que la page a montre, nettoye -- ou null quand il n'y a rien de lisible. */

@@ -29,12 +29,20 @@ object FailureReport {
     private val LONG_DIGITS = Regex("\\d{8,}")
     private val LONG_TOKEN = Regex("\\b[A-Za-z0-9_-]{24,}\\b")
 
+    /** Un code d'echange (GOG, Luna) : trois groupes de quatre signes ou plus, majuscules et chiffres, separes par des tirets. */
+    private val CODE = Regex("\\b[A-Z0-9]{4,}(?:-[A-Z0-9]{4,}){2,}\\b")
+
     fun isFailure(verdict: String?): Boolean = verdict != null && verdict in VERDICTS
 
     private fun tidy(value: String?, max: Int): String = value.orEmpty()
         .replace(SPACES, " ").trim()
-        .replace(EMAIL, "[email]").replace(LONG_DIGITS, "[nombre]").replace(LONG_TOKEN, "[jeton]")
+        .replace(EMAIL, "[email]").replace(CODE, "[code]").replace(LONG_DIGITS, "[nombre]").replace(LONG_TOKEN, "[jeton]")
         .take(max).trim()
+
+    private fun tidySegment(segment: String): String {
+        val s = try { java.net.URLDecoder.decode(segment, "UTF-8") } catch (_: Exception) { segment }
+        return s.replace(EMAIL, "[email]").replace(CODE, "[code]").replace(LONG_DIGITS, "[nombre]").replace(LONG_TOKEN, "[jeton]")
+    }
 
     /** L'adresse sans parametres ni ancre, ou null si ce n'est pas une adresse web. */
     private fun bareUrl(value: String?): String? {
@@ -43,7 +51,9 @@ object FailureReport {
         if (scheme != "https" && scheme != "http") return null
         val host = uri.host ?: return null
         val port = if (uri.port > 0) ":${uri.port}" else ""
-        return "$scheme://$host$port${uri.rawPath.orEmpty()}".take(MAX_URL)
+        // Le chemin peut porter un code ou un jeton (/redeem/CODE, /orders/123456789) : chaque segment passe par le meme nettoyage.
+        val path = uri.rawPath.orEmpty().split("/").joinToString("/") { if (it.isEmpty()) it else tidySegment(it) }
+        return "$scheme://$host$port$path".take(MAX_URL)
     }
 
     /** Le rapport a garder avec l'essai, ou null : un verdict sans echec efface le precedent. `page` : ce que le moteur a joint. */

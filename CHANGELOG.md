@@ -4,6 +4,16 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.111.1 / Appli 1.37.1 -- 2026-10-11
+
+**Le rapport d'echec ne laisse plus passer un code d'echange**
+
+Une revue de securite du commit 2.111.0 a signale une fuite possible de donnees sensibles dans `watch/failure-report.js`. Releve ligne a ligne, le point reel : le nettoyage ne touchait ni le CHEMIN de l'adresse (`/redeem/<code>`, `/orders/<numero>`) ni les codes a tirets du type `ABCDE-FGHIJ-KLMNO` -- le format d'un code GOG ou Luna. Un code d'echange est un bien ; il pouvait partir dans le texte copie. Tests ecrits d'abord (l'extension : 2 cas rouges avant ; l'appli : `FailureReportCodesTest`).
+
+- Un code a tirets (trois groupes de quatre signes ou plus, majuscules et chiffres) devient `[code]`, dans le texte, le titre et l'adresse.
+- Chaque segment du chemin de l'adresse passe par le meme nettoyage (adresse electronique, code, nombre long, jeton) ; un nom de jeu en minuscules (`out-of-sight-b96ca8`) reste lisible, comme `COUNTER-STRIKE 2` ou `FREE-TO-PLAY`.
+- Limite connue : un nom d'utilisateur ou un prenom affiche sur une page de compte n'est pas reconnaissable par motif et reste dans les 300 caracteres du texte. Le rapport est copie par toi, relis-le avant de le coller.
+
 ## Extension 2.111.0 / Appli 1.37.0 -- 2026-10-11
 
 **Le rapport d'echec : ce que la page montrait quand une recuperation a echoue**

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.111.0.js",
+  "fichier": "reference-v2.111.1.js",
   "sha256": "6104A91EBB00FEAF7181E631F216D6E774E316B1F2EF077A01EA70AE32E2D82A",
   "octets": 302725,
-  "version": "2.111.0",
-  "motif": "2.111.0 : le moteur joint la page aux verdicts d'echec (rapport d'echec)"
+  "version": "2.111.1",
+  "motif": "2.111.1 : le rapport d'echec masque les codes d'echange"
 }

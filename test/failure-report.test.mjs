@@ -88,3 +88,25 @@ test('un rapport pour une offre sans echec garde est quand meme lisible', () => 
   const r = buildReport({ title: 'Jeu', store: 'epic', verdict: 'failed', attempts: 2 }, { version: '2.111.0', now: 2000 });
   assert.ok(r.includes('Jeu') && r.includes('failed'), r);
 });
+
+/* Revue de securite du 2026-10-11 : le chemin de l'adresse et les codes a tirets (un code GOG ou Luna ressemble a
+   ABCDE-FGHIJ-KLMNO) passaient tels quels. Un code d'echange est un bien : il ne part pas dans un rapport. */
+test('un code a tirets est masque dans le texte, le titre et le chemin de l\'adresse', () => {
+  const p = cleanPage({ url: 'https://www.gog.com/redeem/ABCDE-FGHIJ-KLMNO?x=1', title: 'Code ABCDE-FGHIJ-KLMNO', text: 'Le code AB12C-DE34F-GH56I-JK78L est deja utilise' });
+  assert.ok(!/ABCDE|FGHIJ|KLMNO/.test(p.url + p.title), p.url + ' / ' + p.title);
+  assert.ok(!/AB12C|DE34F|GH56I|JK78L/.test(p.text), p.text);
+  assert.ok(p.text.includes('deja utilise'));
+  assert.ok(p.url.startsWith('https://www.gog.com/redeem/'));
+});
+
+test('un segment d\'adresse qui ressemble a un jeton est masque, un nom de jeu ne l\'est pas', () => {
+  const p = cleanPage({ url: 'https://store.epicgames.com/p/out-of-sight-b96ca8/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4/1234567890123', title: 't', text: '' });
+  assert.ok(p.url.includes('/p/out-of-sight-b96ca8/'), p.url);
+  assert.ok(!/a1b2c3d4e5f6/.test(p.url) && !/1234567890123/.test(p.url), p.url);
+});
+
+test('une phrase en majuscules ou un nom a tirets ne sont pas abimes', () => {
+  const p = cleanPage({ url: 'https://x.test/a', title: 'COUNTER-STRIKE 2', text: 'FREE-TO-PLAY now. Spider-Man 2 and X-COM' });
+  assert.equal(p.title, 'COUNTER-STRIKE 2');
+  assert.equal(p.text, 'FREE-TO-PLAY now. Spider-Man 2 and X-COM');
+});
