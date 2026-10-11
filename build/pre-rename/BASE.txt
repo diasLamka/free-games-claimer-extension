@@ -2,7 +2,7 @@ Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 37
 sha256  : CFD93055701B44318FC6D0E2BF412FD784EA776845FB8726844566615DE92CA2
-motif   : 2.111.1 : rapport d'echec, codes masques
+motif   : 2.112.0 : autonomie
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

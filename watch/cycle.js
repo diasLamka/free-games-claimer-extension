@@ -1274,6 +1274,8 @@ export async function claimWhatCanBe({
       details: r.details || null,
       // Le rapport d'echec (2.111.0) : ce que la page montrait. Un verdict sans echec efface le precedent.
       failure: failureOf({ verdict: r.verdict, details: r.details, page: r.page }, Date.now()),
+      // Seul ou a la demande (2.112.0) : la veille l'a pris (true) ou l'utilisateur l'a demande (false). Ce que l'autonomie compte.
+      alone: r.verdict === VERDICTS.CLAIMED || r.verdict === VERDICTS.REDEEMED ? !forced : (avant.alone ?? null),
       attemptStartedAt: null,
       // Garde, lui : c'est sur cette date que se regle le rythme de Steam.
       // Une simple lecture de bibliotheque ne la deplace pas.

@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.112.0 -- 2026-10-11 (appli inchangee, 1.38.0)
+
+**L'autonomie dans l'extension : recupere-t-elle vraiment seule, et qu'est-ce qui la freine ?**
+
+Le meme constat que sur le telephone (1.38.0) : l'extension recupere seule depuis longtemps, mais rien ne disait si elle le POUVAIT. Tests ecrits d'abord (`test/autonomy.test.mjs`, 12 cas ; trois cas dans `test/cycle.test.mjs`, dont deux rouges avant le code).
+
+- **Une section « Autonomie »** dans l'onglet Jeux du popup, repliee comme les autres (son compte est le nombre de freins) : « Recupere seule », « Recupere seule, avec des freins » ou « Ne recupere pas seule » (`watch/autonomy.js`, calcul pur).
+- **Les freins**, lus dans ce que l'extension sait deja : la reclamation automatique coupee ; l'arret d'urgence enclenche (les deux : « Ne recupere pas seule ») ; la permission d'arriere-plan absente (Chrome doit alors rester ouvert -- seulement si le navigateur la propose) ; une session perdue sur un magasin qu'on reclame (la sonde, jamais un simple « inconnu ») ; une verification humaine vue ces 14 derniers jours sur un jeu pas encore pris (« L'extension ne la resout jamais »).
+- **La mesure** : chaque jeu pris porte maintenant `alone` dans le catalogue -- vrai quand la veille l'a pris, faux quand tu l'as demande (« Tout recuperer », « Recuperer »). La section compte les deux sur 14 jours. Ce qui a ete pris avant la 2.112.0 n'a pas cette information et n'est pas compte : la mesure commence a zero.
+- Verifie dans le popup de demonstration (`npm run preview`) : la section, ses lignes et son compte, avec une session perdue, un defi et des jeux pris seul et a la demande.
+- Non verifie : un vrai passage de veille dans Chrome. Une recuperation a la main sur la page d'un magasin (le moteur qui demarre quand tu ouvres la page) n'est pas comptee non plus : seules celles du cycle et de « Tout recuperer » le sont. Un jeu que le magasin dit « deja dans la bibliotheque » peut etre compte comme pris : c'est le verdict du moteur.
+
 ## Appli 1.38.0 -- 2026-10-11 (extension inchangee, 2.111.1)
 
 **L'autonomie : le telephone recupere-t-il VRAIMENT seul, et qu'est-ce qui le freine ?**

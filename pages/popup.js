@@ -85,6 +85,7 @@ import { GUARD_SITES, guardScriptId } from '../watch/owned-guard.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
 import { buildReport } from '../watch/failure-report.js';
+import { autonomyReport, LEVEL as AUT_LEVEL, BLOCK as AUT_BLOCK, WINDOW_DAYS as AUT_DAYS } from '../watch/autonomy.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
 } from '../watch/session.js';
@@ -478,7 +479,7 @@ function foldSay(id, texte) {
  * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
  * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
  * de fermer. Le compte de chaque section reste dans son titre. */
-const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-tonight', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-autonomy', 'fold-free', 'fold-weekends', 'fold-tonight', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
 const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
@@ -2276,6 +2277,42 @@ async function renderShortcuts() {
   document.getElementById('shortcuts-edit').hidden = !SHORTCUTS_PAGE;
 }
 
+/* L'autonomie (2.112.0) : recupere-t-elle vraiment seule, et qu'est-ce qui la freine ? Voir watch/autonomy.js. */
+async function renderAutonomy(all) {
+  const supported = Boolean(api.permissions) && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
+  let granted = false;
+  if (supported) {
+    try { granted = await api.permissions.contains({ permissions: [OPTIONAL.BACKGROUND] }); } catch { granted = false; }
+  }
+  const r = autonomyReport({
+    settings: behaviourCache,
+    catalog: get(all, KEY_CATALOG, {}),
+    sessions: get(all, KEY_SESSIONS, {}),
+    stopped: all[KEY_STOP] === true,
+    backgroundSupported: supported,
+    backgroundGranted: granted,
+    claimableStores: claimableStoresFor(behaviourCache),
+    now: Date.now(),
+  });
+  const names = (stores) => stores.map((s) => STORE_LABELS[s] || s).join(', ');
+  const host = document.getElementById('autonomy');
+  host.textContent = '';
+  const titre = { [AUT_LEVEL.ON]: 'autOn', [AUT_LEVEL.PARTIAL]: 'autPartial', [AUT_LEVEL.OFF]: 'autOff' }[r.level];
+  host.append(el('p', 'changed', t(titre)));
+  for (const b of r.blocks) {
+    const ligne = {
+      [AUT_BLOCK.OFF]: () => t('autWhyOff'),
+      [AUT_BLOCK.STOPPED]: () => t('autWhyStopped'),
+      [AUT_BLOCK.CLOSED]: () => t('autWhyClosed'),
+      [AUT_BLOCK.SESSIONS]: () => t('autWhySessions', names(b.stores)),
+      [AUT_BLOCK.CHALLENGES]: () => t('autWhyChallenges', names(b.stores)),
+    }[b.kind];
+    if (ligne) host.append(el('p', 'changed', ligne()));
+  }
+  if (r.alone + r.withYou > 0) host.append(el('p', 'changed', t('autCounts', String(AUT_DAYS), String(r.alone), String(r.withYou))));
+  document.getElementById('autonomy-count').textContent = r.blocks.length || '';
+}
+
 async function renderBackground() {
   const supported = Boolean(api.permissions)
     && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
@@ -2912,6 +2949,7 @@ async function render() {
   renderFilters(all, behaviourCache);
   renderHealth(all);
   renderBackground();
+  renderAutonomy(all);
   renderCanary(all);
   renderStores(all, behaviourCache);
   renderDryRun(all, behaviourCache);

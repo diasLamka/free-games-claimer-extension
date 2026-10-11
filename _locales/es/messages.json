@@ -1244,6 +1244,36 @@
   "copyReportHint": {
     "message": "Copiar un informe de este fallo: lo que mostraba la página, para pegarlo en un mensaje"
   },
+  "autTitle": {
+    "message": "Autonomía"
+  },
+  "autOn": {
+    "message": "Reclama sola"
+  },
+  "autPartial": {
+    "message": "Reclama sola, con frenos"
+  },
+  "autOff": {
+    "message": "No reclama sola"
+  },
+  "autWhyOff": {
+    "message": "La reclamación automática está desactivada."
+  },
+  "autWhyStopped": {
+    "message": "La parada de emergencia está activa."
+  },
+  "autWhyClosed": {
+    "message": "Chrome debe seguir abierto: el permiso en segundo plano está desactivado."
+  },
+  "autWhySessions": {
+    "message": "Sesión perdida: $1."
+  },
+  "autWhyChallenges": {
+    "message": "$1 pidió una verificación. La extensión nunca la resuelve."
+  },
+  "autCounts": {
+    "message": "Últimos $1 días: $2 por la vigilancia, $3 a petición tuya."
+  },
   "tallyBestMonth": {
     "message": "mejor mes: $1 con $2"
   },

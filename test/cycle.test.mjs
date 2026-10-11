@@ -953,3 +953,43 @@ test('un echec sans page garde quand meme son motif', async () => {
   assert.equal(hades.failure.verdict, 'challenge');
   assert.equal(hades.failure.page, null);
 });
+
+/* --------------------------- l'autonomie : seule, ou a la demande (2.112.0) */
+
+import { claimWhatCanBe } from '../watch/cycle.js';
+
+async function catalogueAvecUneOffre() {
+  const src = sourceFactice('test', [response([offer('Hades')]), response([offer('Hades')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T, { fetch: fetchNtfy(), autonomousClaim: false });
+  return { c, catalog: c.faux.payload()[KEYS.OFFERS] };
+}
+
+test('un jeu pris par la veille est marque « seul »', async () => {
+  const { c } = await catalogueAvecUneOffre();
+  await c.cycle(T + DAY, { force: true, claimableStores: ['epic'], claim: async () => ({ verdict: VERDICTS.CLAIMED, store: 'epic' }) });
+  const hades = Object.values(c.faux.payload()[KEYS.OFFERS]).find((o) => o.title === 'Hades');
+  assert.equal(hades.verdict, 'claimed');
+  assert.equal(hades.alone, true);
+});
+
+test('un jeu pris a la demande de l\'utilisateur est marque « avec toi »', async () => {
+  const { c, catalog } = await catalogueAvecUneOffre();
+  const r = await claimWhatCanBe({
+    chrome: c.faux.chrome, now: T + DAY, catalog, filters: {}, claimableStores: ['epic'], cadence: [], maxReclamations: 5,
+    forced: true, claim: async () => ({ verdict: VERDICTS.CLAIMED, store: 'epic' }),
+  });
+  const hades = Object.values(r.catalog).find((o) => o.title === 'Hades');
+  assert.equal(hades.verdict, 'claimed');
+  assert.equal(hades.alone, false);
+});
+
+test('un echec ne se dit ni « seul » ni « avec toi »', async () => {
+  const { c, catalog } = await catalogueAvecUneOffre();
+  const r = await claimWhatCanBe({
+    chrome: c.faux.chrome, now: T + DAY, catalog, filters: {}, claimableStores: ['epic'], cadence: [], maxReclamations: 5,
+    forced: true, claim: async () => ({ verdict: VERDICTS.FAILURE, store: 'epic', details: 'x' }),
+  });
+  const hades = Object.values(r.catalog).find((o) => o.title === 'Hades');
+  assert.equal(hades.alone ?? null, null);
+});
