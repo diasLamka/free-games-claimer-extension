@@ -116,9 +116,13 @@
     <string name="rec_proof">Preuve</string>
     <string name="rec_proof_missing">L’image n’est plus sur ce téléphone.</string>
     <string name="rec_proof_page">Page : %1$s</string>
+    <string name="rec_report">Rapport</string>
+    <string name="rec_report_title">Rapport d’échec</string>
+    <string name="rec_report_copy">Copier</string>
+    <string name="rec_report_copied">Copié</string>
     <string name="rec_proofs_clear">Effacer les preuves</string>
     <string name="set_keep_proofs">Garder une preuve de chaque récupération</string>
-    <string name="set_keep_proofs_hint">Une petite capture de la page de confirmation, gardée sur ce téléphone seulement.</string>
+    <string name="set_keep_proofs_hint">Une petite capture de la page de confirmation, ou d’un échec. Gardée sur ce téléphone seulement.</string>
     <string name="first_check">Première vérification en cours…</string>
     <string name="nothing_free">Rien de gratuit ne correspond en ce moment.</string>
     <string name="checked_ago">Vérifié %1$s</string>

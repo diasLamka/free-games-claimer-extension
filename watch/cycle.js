@@ -48,6 +48,7 @@ import { t, intlLocale } from '../lib/i18n.js';
 import { ratingLine } from './steam-ratings.js';
 import { deferredDue } from './taste.js';
 import { delayText } from './lookup.js';
+import { failureOf } from './failure-report.js';
 import {
   claimOffer,
   hasRoom,
@@ -1271,6 +1272,8 @@ export async function claimWhatCanBe({
       // Le motif technique est garde : c'est lui qui dit a l'utilisateur ce
       // qu'il doit faire, quand l'extension ne peut plus rien.
       details: r.details || null,
+      // Le rapport d'echec (2.111.0) : ce que la page montrait. Un verdict sans echec efface le precedent.
+      failure: failureOf({ verdict: r.verdict, details: r.details, page: r.page }, Date.now()),
       attemptStartedAt: null,
       // Garde, lui : c'est sur cette date que se regle le rythme de Steam.
       // Une simple lecture de bibliotheque ne la deplace pas.

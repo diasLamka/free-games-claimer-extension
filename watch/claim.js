@@ -572,6 +572,8 @@ export async function claimOffer(offer, {
     return {
       verdict: response.verdict,
       details: response.reasonText || null,
+      // Ce que la page montrait (2.111.0) : joint par le moteur aux seuls verdicts d'echec.
+      page: response.page || null,
       key: response.key || null,
       resolvedUrl,
       store,

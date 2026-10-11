@@ -390,7 +390,13 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onClearProofs = {
                         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.dir(context))
-                            Graph.store.update { s -> s.copy(library = s.library.mapValues { it.value.copy(proof = null) }) }
+                            io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.failDir(context))
+                            Graph.store.update { s ->
+                                s.copy(
+                                    library = s.library.mapValues { it.value.copy(proof = null) },
+                                    attempts = s.attempts.mapValues { e -> e.value.failure?.let { f -> e.value.copy(failure = f.copy(shot = null)) } ?: e.value },
+                                )
+                            }
                         }
                     },
                 )

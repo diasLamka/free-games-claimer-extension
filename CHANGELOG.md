@@ -4,6 +4,20 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.111.0 / Appli 1.37.0 -- 2026-10-11
+
+**Le rapport d'echec : ce que la page montrait quand une recuperation a echoue**
+
+Le 2026-10-11, la phrase de succes de GOG avait change et il a fallu la deviner d'apres une capture envoyee a la main : l'extension savait que la recuperation avait echoue, pas ce que la page disait. Tests ecrits d'abord (extension : `test/failure-report.test.mjs`, `test/failure-page.test.mjs`, et deux cas dans `test/claim.test.mjs` et `test/cycle.test.mjs` ; appli : `FailureReportTest`, deux cas dans `RecoveryScreenTest`).
+
+- **Le moteur joint la page au verdict d'echec** (`src/core/31-bootstrap.js`, `sendToPilot`) : pour `failed`, `challenge`, `needs_login` et `needs_teaching` seulement, l'adresse sans parametres, le titre et les 600 premiers caracteres du texte principal. Le moteur est le meme dans l'extension et dans l'appli.
+- **Nettoye avant d'etre garde** : l'adresse perd ses parametres (ils portent des jetons), le texte perd les adresses electroniques, les suites de 8 chiffres ou plus et les mots de 24 signes ou plus ; 300 caracteres au plus. Ce n'est jamais nettoye apres coup, au moment de le montrer.
+- **Extension** (`watch/failure-report.js`, `watch/cycle.js`) : l'offre garde son `failure` (date, verdict, motif, page) ; un verdict sans echec l'efface. Dans « Vous attendent », un bouton **Rapport** copie un texte a coller dans un message (version, date, jeu, verdict, motif, page, texte). Le catalogue n'est pas dans la sauvegarde : le rapport n'en part pas.
+- **Appli** (`data/FailureReport.kt`, `claim/ClaimSession.kt`) : l'essai garde son `failure` ; la capture d'ecran de la page est prise tant qu'elle est a l'ecran (dossier prive `echecs`, dix au plus -- elles ne chassent jamais une preuve de recuperation ; coupees par Reglages > Donnees > « Garder une preuve », effacees par « Effacer les preuves »). Dans l'onglet Recuperation, un bouton **Rapport** sous chaque jeu bloque ou en attente ouvre la capture et le texte, avec **Copier**. Rien de tout cela n'entre dans la sauvegarde chiffree (liste blanche : les essais n'y sont pas).
+- Verifie sur emulateur Android 14 avec une vraie page : une recuperation Epic sans session s'arrete sur le controle anti-robot ; le rapport montre l'adresse de la fiche, le titre « Just a moment... » et la capture. Le popup de l'extension a ete verifie sur ses donnees de demonstration (le bouton, la copie du texte).
+- Non verifie : le rapport sur une vraie page GOG ou Steam apres un vrai echec ; la copie dans le presse-papiers de Chrome (le navigateur d'essai la refuse : la fonction a ete verifiee avec un presse-papiers simule). Une recuperation de fond de l'appli ne prend pas de capture (aucune page a l'ecran) mais garde le texte.
+- Une page protegee par un defi (Cloudflare) rend un texte vide : le rapport dit alors seulement l'adresse et le titre.
+
 ## Extension 2.110.0 / Appli 1.36.0 -- 2026-10-11
 
 **Un echange GOG se juge sur la bibliotheque du compte quand la page ne dit rien de lisible**

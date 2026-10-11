@@ -32,7 +32,28 @@
     }
   }
 
+  /* CE QUE LA PAGE MONTRAIT (2.111.0). Un echec dit son motif ; il ne disait pas ce que la page affichait, et c'est elle qui
+     montre qu'une phrase de GOG a change. On joint donc, aux seuls verdicts d'echec, un extrait borne : l'adresse sans
+     parametres, le titre, six cents caracteres du texte principal. Le nettoyage (adresses electroniques, jetons) se fait chez
+     celui qui le garde -- watch/failure-report.js pour l'extension. */
+  var PILOT_FAILURE_VERDICTS = ['failed', 'challenge', 'needs_login', 'needs_teaching'];
+
+  function pageSnapshot() {
+    try {
+      var root = document.querySelector('main, [role="main"]') || document.body;
+      return {
+        url: String(location.href).split(/[?#]/)[0],
+        title: String(document.title || '').slice(0, 160),
+        text: String((root && root.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 600)
+      };
+    } catch (e) { return null; }
+  }
+
   function sendToPilot(message) {
+    if (message && message.type === 'fgc-verdict' && !message.page && PILOT_FAILURE_VERDICTS.indexOf(message.verdict) !== -1) {
+      var snap = pageSnapshot();
+      if (snap) message.page = snap;
+    }
     try {
       chrome.runtime.sendMessage(message, function () {
         try { void chrome.runtime.lastError; } catch (e) {}

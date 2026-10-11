@@ -169,6 +169,23 @@ data class Attempt(
     val asks: Int = 0,
     /** Quand on a lu « rien a prendre » pour la premiere fois (1.24.0) : deux constats espaces closent l'offre. */
     val goneAt: Long? = null,
+    /** Ce que la page montrait au dernier echec (1.37.0) : un succes l'efface. Reste sur ce telephone, jamais sauvegarde. */
+    val failure: Failure? = null,
+)
+
+/**
+ * Le rapport d'un echec (1.37.0) : l'adresse de la page (sans parametres), son titre, le debut de son texte -- nettoyes, voir
+ * data/FailureReport.kt -- et le nom de la capture d'ecran quand la page etait a l'ecran (dossier prive, voir data/Proofs.kt).
+ */
+@Serializable
+data class Failure(
+    val at: Long,
+    val verdict: String,
+    val details: String? = null,
+    val url: String? = null,
+    val title: String? = null,
+    val text: String? = null,
+    val shot: String? = null,
 )
 
 /**

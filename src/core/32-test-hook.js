@@ -94,6 +94,7 @@
       gogLibraryHasTitle: gogLibraryHasTitle,
       gogOwnedInLibrary: gogOwnedInLibrary,
       gogSettleOutcome: gogSettleOutcome,
+      sendToPilot: sendToPilot,
       GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,
       EPIC_MAIN_CTA_PATTERNS: EPIC_MAIN_CTA_PATTERNS,
       EPIC_OWNERSHIP_PATTERNS: EPIC_OWNERSHIP_PATTERNS,

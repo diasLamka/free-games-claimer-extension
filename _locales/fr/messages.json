@@ -1235,6 +1235,15 @@
   "retryNow": {
     "message": "Réessayer"
   },
+  "copyReport": {
+    "message": "Rapport"
+  },
+  "reportCopied": {
+    "message": "Copié"
+  },
+  "copyReportHint": {
+    "message": "Copier un rapport de cet échec : ce que la page montrait, à coller dans un message"
+  },
   "tallyBestMonth": {
     "message": "meilleur mois : $1 avec $2"
   },

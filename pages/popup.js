@@ -84,6 +84,7 @@ import qrcodegen from './vendor/qrcodegen.js';
 import { GUARD_SITES, guardScriptId } from '../watch/owned-guard.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
+import { buildReport } from '../watch/failure-report.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
 } from '../watch/session.js';
@@ -1145,6 +1146,19 @@ function renderGames(all, behaviour) {
       await load();
     });
     row.append(retry);
+
+    /* Le rapport d'echec (2.111.0) : ce que la page montrait, a coller dans un message. */
+    if (offer.failure || offer.details) {
+      const report = el('button', 'btn-sm', t('copyReport'));
+      report.title = t('copyReportHint');
+      report.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try { await navigator.clipboard.writeText(buildReport(offer, { version: api.runtime.getManifest().version, now: Date.now() })); } catch { return; }
+        report.textContent = t('reportCopied');
+        setTimeout(() => { report.textContent = t('copyReport'); }, 2000);
+      });
+      row.append(report);
+    }
     lane.append(row);
   }
 

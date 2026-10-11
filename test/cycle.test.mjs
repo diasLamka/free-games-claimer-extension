@@ -912,3 +912,44 @@ test('derniere chance : un jeu attendu qui finit dans les 3 h part en urgent, un
   await c.cycle(T + 40 * 60000, { force: true, fetch: f, autonomousClaim: false });
   assert.equal(f.appels.filter((a) => new URL(a.url).searchParams.get('priority') === '5').length, 1, 'une fois');
 });
+
+/* --------------------------- le rapport d'echec (2.111.0) */
+
+test('un echec garde ce que la page montrait, un succes ulterieur l\'efface', async () => {
+  const src = sourceFactice('test', [response([offer('Hades')]), response([offer('Hades')]), response([offer('Hades')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T, { fetch: fetchNtfy(), autonomousClaim: false });
+  const page = { url: 'https://www.gog.com/redeem?token=SECRET', title: 'GOG', text: 'Contact moi@exemple.fr : quelque chose a change' };
+  await c.cycle(T + DAY, {
+    force: true, claimableStores: ['epic'],
+    claim: async () => ({ verdict: VERDICTS.FAILURE, details: 'delai depasse', store: 'epic', page }),
+  });
+  let hades = Object.values(c.faux.payload()[KEYS.OFFERS]).find((o) => o.title === 'Hades');
+  assert.ok(hades.failure, 'un rapport est garde');
+  assert.equal(hades.failure.verdict, 'failed');
+  assert.equal(hades.failure.details, 'delai depasse');
+  assert.equal(hades.failure.page.url, 'https://www.gog.com/redeem', 'sans parametres');
+  assert.ok(!/@/.test(hades.failure.page.text), 'sans adresse electronique');
+  assert.ok(hades.failure.at >= T + DAY);
+
+  // Le recul d'un echec se compte sur l'horloge reelle : le cycle suivant doit venir apres lui.
+  await c.cycle(Date.now() + 3 * DAY, {
+    force: true, claimableStores: ['epic'],
+    claim: async () => ({ verdict: VERDICTS.CLAIMED, store: 'epic' }),
+  });
+  hades = Object.values(c.faux.payload()[KEYS.OFFERS]).find((o) => o.title === 'Hades');
+  assert.equal(hades.failure, null, 'le rapport precedent est efface');
+});
+
+test('un echec sans page garde quand meme son motif', async () => {
+  const src = sourceFactice('test', [response([offer('Hades')]), response([offer('Hades')])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T, { fetch: fetchNtfy(), autonomousClaim: false });
+  await c.cycle(T + DAY, {
+    force: true, claimableStores: ['epic'],
+    claim: async () => ({ verdict: VERDICTS.CHALLENGE, details: null, store: 'epic' }),
+  });
+  const hades = Object.values(c.faux.payload()[KEYS.OFFERS]).find((o) => o.title === 'Hades');
+  assert.equal(hades.failure.verdict, 'challenge');
+  assert.equal(hades.failure.page, null);
+});

@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.110.0.js",
-  "sha256": "83DAF70C9982EEDDA183DA1B005026E0316EBC60E681999965A807101D1C95AF",
-  "octets": 301544,
-  "version": "2.110.0",
-  "motif": "2.110.0 : un echange GOG sans phrase reconnue est juge sur la bibliotheque du compte"
+  "fichier": "reference-v2.111.0.js",
+  "sha256": "6104A91EBB00FEAF7181E631F216D6E774E316B1F2EF077A01EA70AE32E2D82A",
+  "octets": 302725,
+  "version": "2.111.0",
+  "motif": "2.111.0 : le moteur joint la page aux verdicts d'echec (rapport d'echec)"
 }

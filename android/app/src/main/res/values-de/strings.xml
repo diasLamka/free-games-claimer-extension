@@ -116,9 +116,13 @@
     <string name="rec_proof">Beleg</string>
     <string name="rec_proof_missing">Das Bild ist nicht mehr auf diesem Handy.</string>
     <string name="rec_proof_page">Seite: %1$s</string>
+    <string name="rec_report">Bericht</string>
+    <string name="rec_report_title">Fehlerbericht</string>
+    <string name="rec_report_copy">Kopieren</string>
+    <string name="rec_report_copied">Kopiert</string>
     <string name="rec_proofs_clear">Belege löschen</string>
     <string name="set_keep_proofs">Beleg für jedes Einlösen behalten</string>
-    <string name="set_keep_proofs_hint">Ein kleiner Screenshot der Bestätigungsseite, nur auf diesem Handy.</string>
+    <string name="set_keep_proofs_hint">Ein kleiner Screenshot der Bestätigungsseite oder eines Fehlers. Nur auf diesem Handy.</string>
     <string name="first_check">Erste Prüfung läuft…</string>
     <string name="nothing_free">Gerade ist nichts Passendes gratis.</string>
     <string name="checked_ago">Geprüft %1$s</string>

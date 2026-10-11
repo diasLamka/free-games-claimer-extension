@@ -21,12 +21,14 @@ import io.github.diaslamka.freegames.data.Bargain
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
 import io.github.diaslamka.freegames.data.OwnedCheck
+import io.github.diaslamka.freegames.data.FailureReport
 import io.github.diaslamka.freegames.data.Proofs
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AccountState
+import io.github.diaslamka.freegames.model.Failure
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.OracleNote
@@ -123,6 +125,9 @@ class ClaimSession(
     // Ce que la boucle attend de la page ; internal pour que rendererGone se teste.
     internal var ready: CompletableDeferred<String>? = null
     internal var verdict: CompletableDeferred<JsonElement>? = null
+
+    /** Ce que la page montrait au dernier verdict d'echec (1.37.0) : joint par le moteur, remis a zero pour chaque offre. */
+    private var lastPage: kotlinx.serialization.json.JsonObject? = null
     internal var pageLoad: CompletableDeferred<String>? = null
     internal var userDone: CompletableDeferred<Boolean>? = null
     private var mainProxy: JavaScriptReplyProxy? = null
@@ -535,8 +540,18 @@ class ClaimSession(
                 proofUrl = withContext(Dispatchers.Main) { runCatching { Titles.webUrl(view.url) }.getOrNull() }
             }
         }
+        // Le rapport d'echec (1.37.0) : ce que la page montrait, et sa capture tant qu'elle est a l'ecran. Un succes l'efface.
+        var failure: Failure? = null
+        if (FailureReport.isFailure(verdictName)) {
+            var shot: String? = null
+            if (settings.keepProofs) web?.let { view ->
+                shot = runCatching { Proofs.capture(context, Rules.libraryKeyOf(o), view, now, Proofs.failDir(context), Proofs.FAIL_MAX) }.getOrNull()
+            }
+            failure = FailureReport.of(verdictName, details, lastPage, now, shot)
+        }
         Graph.store.update { s ->
-            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key]
+            val att = (if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key])
+                ?.let { if (count) it.copy(failure = failure) else it }
             var lib = s.library
             var accounts = s.accounts
             if (verdictName in Verdicts.ACQUIRED) {
@@ -554,6 +569,7 @@ class ClaimSession(
     }
 
     private suspend fun runOne(o: Offer, steamDone: Int): Pair<String, String?> = try {
+        lastPage = null
         if (o.store == Stores.STEAM) claimSteam(o, steamDone) else claimWithEngine(o)
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
@@ -612,6 +628,8 @@ class ClaimSession(
         val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }
             ?: return Verdicts.FAILURE to "aucun verdict en ${budget / 1000} s"
         val name = v["verdict"].str ?: Verdicts.UNDETERMINED
+        // Ce que la page montrait (1.37.0) : jointe par le moteur aux seuls verdicts d'echec.
+        lastPage = v["page"].obj
         return name to v["reasonText"].str
     }
 

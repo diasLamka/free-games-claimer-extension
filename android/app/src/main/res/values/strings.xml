@@ -117,9 +117,13 @@
     <string name="rec_proof">Proof</string>
     <string name="rec_proof_missing">The image is no longer on this phone.</string>
     <string name="rec_proof_page">Page: %1$s</string>
+    <string name="rec_report">Report</string>
+    <string name="rec_report_title">Failure report</string>
+    <string name="rec_report_copy">Copy</string>
+    <string name="rec_report_copied">Copied</string>
     <string name="rec_proofs_clear">Delete proofs</string>
     <string name="set_keep_proofs">Keep a proof of each claim</string>
-    <string name="set_keep_proofs_hint">A small screenshot of the confirmation page, kept on this phone only.</string>
+    <string name="set_keep_proofs_hint">A small screenshot of the confirmation page, or of a failure. Kept on this phone only.</string>
     <string name="first_check">First check in progress…</string>
     <string name="nothing_free">Nothing free right now matches.</string>
     <string name="checked_ago">Checked %1$s</string>

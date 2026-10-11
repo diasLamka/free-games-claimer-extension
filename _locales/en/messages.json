@@ -1235,6 +1235,15 @@
   "retryNow": {
     "message": "Retry"
   },
+  "copyReport": {
+    "message": "Report"
+  },
+  "reportCopied": {
+    "message": "Copied"
+  },
+  "copyReportHint": {
+    "message": "Copy a report of this failure: what the page showed, to paste into a message"
+  },
   "tallyBestMonth": {
     "message": "best month: $1 with $2"
   },

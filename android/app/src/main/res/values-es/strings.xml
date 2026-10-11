@@ -116,9 +116,13 @@
     <string name="rec_proof">Prueba</string>
     <string name="rec_proof_missing">La imagen ya no está en este móvil.</string>
     <string name="rec_proof_page">Página: %1$s</string>
+    <string name="rec_report">Informe</string>
+    <string name="rec_report_title">Informe del fallo</string>
+    <string name="rec_report_copy">Copiar</string>
+    <string name="rec_report_copied">Copiado</string>
     <string name="rec_proofs_clear">Borrar pruebas</string>
     <string name="set_keep_proofs">Guardar una prueba de cada reclamación</string>
-    <string name="set_keep_proofs_hint">Una captura pequeña de la página de confirmación, solo en este móvil.</string>
+    <string name="set_keep_proofs_hint">Una captura pequeña de la página de confirmación o de un fallo. Solo en este móvil.</string>
     <string name="first_check">Primera comprobación en curso…</string>
     <string name="nothing_free">Ahora mismo no hay nada gratis que coincida.</string>
     <string name="checked_ago">Comprobado %1$s</string>

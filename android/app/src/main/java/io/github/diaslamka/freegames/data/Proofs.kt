@@ -20,11 +20,17 @@ import java.io.FileOutputStream
 object Proofs {
     const val DIR = "preuves"
     const val MAX_FILES = 40
+
+    /** Les captures d'echec (1.37.0) : un dossier a part, et dix seulement -- elles ne chassent jamais une preuve de recuperation. */
+    const val FAIL_DIR = "echecs"
+    const val FAIL_MAX = 10
     const val MAX_WIDTH = 540
     private const val QUALITY = 70
     private val NAME = Regex("^[a-z0-9-]{1,64}\\.jpg$")
 
     fun dir(context: Context): File = File(context.filesDir, DIR)
+
+    fun failDir(context: Context): File = File(context.filesDir, FAIL_DIR)
 
     /** Un nom sur, stable pour un meme jeu : lettres et chiffres, plus une empreinte courte qui evite les collisions. */
     fun fileName(key: String): String {
@@ -39,7 +45,7 @@ object Proofs {
     }
 
     /** Enregistre la capture (reduite a 540 px de large), menage le dossier, rend le nom -- ou null si l'ecriture echoue. */
-    fun save(dir: File, key: String, bitmap: Bitmap, now: Long): String? = try {
+    fun save(dir: File, key: String, bitmap: Bitmap, now: Long, max: Int = MAX_FILES): String? = try {
         dir.mkdirs()
         val scaled = if (bitmap.width > MAX_WIDTH) {
             Bitmap.createScaledBitmap(bitmap, MAX_WIDTH, (bitmap.height.toLong() * MAX_WIDTH / bitmap.width).toInt().coerceAtLeast(1), true)
@@ -49,16 +55,16 @@ object Proofs {
         FileOutputStream(f).use { scaled.compress(Bitmap.CompressFormat.JPEG, QUALITY, it) }
         f.setLastModified(now)
         if (scaled !== bitmap) scaled.recycle()
-        prune(dir)
+        prune(dir, max)
         name
     } catch (_: Exception) {
         null
     }
 
     /** Les plus anciennes partent quand il y en a plus de MAX_FILES. */
-    private fun prune(dir: File) {
+    private fun prune(dir: File, max: Int) {
         val files = dir.listFiles { f -> f.isFile && NAME.matches(f.name) }?.sortedByDescending { it.lastModified() } ?: return
-        files.drop(MAX_FILES).forEach { it.delete() }
+        files.drop(max).forEach { it.delete() }
     }
 
     fun clear(dir: File) {
@@ -69,13 +75,13 @@ object Proofs {
      * La page affichee par `view`, enregistree sous le nom du jeu. null quand la vue n'est pas a l'ecran (une recuperation de
      * fond n'a pas de fenetre) : mieux vaut pas de preuve qu'une image vide.
      */
-    suspend fun capture(context: Context, key: String, view: View, now: Long): String? {
+    suspend fun capture(context: Context, key: String, view: View, now: Long, dir: File = dir(context), max: Int = MAX_FILES): String? {
         val bitmap = withContext(Dispatchers.Main) {
             runCatching {
                 if (view.width <= 0 || view.height <= 0) null
                 else Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
             }.getOrNull()
         } ?: return null
-        return withContext(Dispatchers.IO) { save(dir(context), key, bitmap, now).also { bitmap.recycle() } }
+        return withContext(Dispatchers.IO) { save(dir, key, bitmap, now, max).also { bitmap.recycle() } }
     }
 }

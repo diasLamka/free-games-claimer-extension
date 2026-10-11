@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.asImageBitmap
+import io.github.diaslamka.freegames.BuildConfig
+import io.github.diaslamka.freegames.data.FailureReport
 import io.github.diaslamka.freegames.data.Proofs
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -60,6 +62,7 @@ fun RecoveryScreen(
     val plan = remember(state, now) { Recovery.plan(state, now) }
     var simulating by remember { mutableStateOf(false) }
     var proofOf by remember { mutableStateOf<LibraryEntry?>(null) }
+    var reportOf by remember { mutableStateOf<Recovery.Item?>(null) }
     var openSkipped by rememberSaveable { mutableStateOf(false) }
     var openRecent by rememberSaveable { mutableStateOf(true) }
     val context = LocalContext.current
@@ -93,6 +96,7 @@ fun RecoveryScreen(
                         item.offer,
                         support = verdictText(verdict, null),
                         action = stringResource(if (verdict == Verdicts.LOGIN) R.string.rec_sign_in else R.string.help_finish), enabled = !claiming,
+                        extra = if (item.attempt?.failure != null) stringResource(R.string.rec_report) else null, onExtra = { reportOf = item },
                     ) { if (verdict == Verdicts.LOGIN) onAccounts() else onClaim(setOf(item.offer.key)) }
                 }
             }
@@ -108,6 +112,7 @@ fun RecoveryScreen(
                             item.retryAt?.let { stringResource(R.string.rec_retry_in, Fmt.left(context, it, now), (a?.count ?: 0) + 1, Verdicts.MAX_ATTEMPTS) },
                         ).joinToString(" / "),
                         action = stringResource(R.string.rec_retry_now), enabled = !claiming,
+                        extra = if (a?.failure != null) stringResource(R.string.rec_report) else null, onExtra = { reportOf = item },
                     ) { onClaim(setOf(item.offer.key)) }
                 }
             }
@@ -139,6 +144,35 @@ fun RecoveryScreen(
 
     if (simulating) SimulationDialog(Recovery.simulate(state, now), now, onDismiss = { simulating = false })
     proofOf?.let { ProofDialog(it, onOpen, onDismiss = { proofOf = null }) }
+    reportOf?.let { ReportDialog(it, now, onDismiss = { reportOf = null }) }
+}
+
+/** Le rapport d'echec (1.37.0) : ce que la page montrait, sa capture, et le texte a coller dans un message. */
+@Composable
+private fun ReportDialog(item: Recovery.Item, now: Long, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+    val text = remember(item, now) { FailureReport.report(item.offer, item.attempt, BuildConfig.VERSION_NAME, now) }
+    val image = remember(item.attempt?.failure?.shot) {
+        Proofs.file(Proofs.failDir(context), item.attempt?.failure?.shot)?.let { f -> android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rec_report_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (image != null) androidx.compose.foundation.Image(image, item.offer.shownTitle, Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.FillWidth)
+                Text(text, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)); copied = true }) {
+                Text(stringResource(if (copied) R.string.rec_report_copied else R.string.rec_report_copy))
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }
 
 /** L'etat, et le geste : « Tout recuperer » quand il y a quelque chose a prendre. Un bloc d'accent, ombre dure. */
@@ -175,7 +209,12 @@ private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onCla
 
 /** Une ligne : la jaquette, le titre, une phrase, et un geste. Meme carte que les autres listes de l'appli. */
 @Composable
-private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled: Boolean, primary: Boolean = true, onAction: () -> Unit) {
+private fun RecoveryRow(
+    offer: Offer, support: String, action: String?, enabled: Boolean, primary: Boolean = true,
+    /** Un second geste, discret, sous le texte : le rapport d'echec (1.37.0). */
+    extra: String? = null, onExtra: () -> Unit = {},
+    onAction: () -> Unit,
+) {
     val b = LocalBrut.current
     Row(
         Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 7.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(8.dp),
@@ -185,6 +224,7 @@ private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled:
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text(offer.shownTitle, style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (support.isNotEmpty()) Text(support, style = MaterialTheme.typography.bodySmall, color = MutedInk, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            if (extra != null) BrutButton(extra, onExtra, Modifier.padding(top = 4.dp), primary = false)
         }
         if (action != null) BrutButton(action, onAction, primary = primary, enabled = enabled)
     }
