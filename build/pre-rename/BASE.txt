@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 37
-sha256  : 7B57BA1FFB895DB786C208A1D17F195A912C92C9C96CDE41191640D4F5AD32EB
-motif   : 2.109.0 : la page de succes GOG est reconnue
+sha256  : EBB648645415FC9080EBD596FC512C6106FF7ACB58E21D11102FEDA8E9E2C0B9
+motif   : 2.110.0 : echange GOG juge sur la bibliotheque
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

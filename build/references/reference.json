@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.109.0.js",
-  "sha256": "F7F1B1A3C54052BACB1EE2D2780F13E57E2CF1A864BFE82E05E5D18B241503D9",
-  "octets": 297628,
-  "version": "2.109.0",
-  "motif": "2.109.0 : la page de succes GOG (Code redeemed successfully, successfully added) est reconnue"
+  "fichier": "reference-v2.110.0.js",
+  "sha256": "83DAF70C9982EEDDA183DA1B005026E0316EBC60E681999965A807101D1C95AF",
+  "octets": 301544,
+  "version": "2.110.0",
+  "motif": "2.110.0 : un echange GOG sans phrase reconnue est juge sur la bibliotheque du compte"
 }

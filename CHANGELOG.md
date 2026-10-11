@@ -4,6 +4,20 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.110.0 / Appli 1.36.0 -- 2026-10-11
+
+**Un echange GOG se juge sur la bibliotheque du compte quand la page ne dit rien de lisible**
+
+La 2.109.0 a rattrape UNE phrase que GOG avait changee. Les phrases changeront encore ; la bibliotheque, elle, dit la verite. Tests ecrits d'abord (`test/gog-redeem-library.test.mjs`, 8 tests ; le test du verdict a ete verifie par mutation : sans la bibliotheque, il echoue).
+
+- Quand l'attente de la page finit sans phrase de succes reconnue ni refus (le verdict `timeout`), le moteur interroge la bibliotheque du compte -- `/account/getFilteredProducts?search=<titre>`, depuis la page GOG elle-meme, donc avec ta session, sans permission ni cookie de plus. Le titre y est (a la casse, aux accents, aux mentions « Edition » et « Amazon Luna » pres, et jamais un titre voisin comme « Warbreeds 2 ») : l'echange est un succes, le code quitte la file, le jeu est inscrit comme echange. Il n'y est pas : l'echange reste « non confirme » comme avant -- GOG previent qu'un jeu peut mettre un moment a apparaitre, rien n'est invente.
+- Reseau en panne, 403, reponse illisible : « on ne sait pas », jamais un succes.
+- Seul `timeout` est rejuge. Un refus (« code deja utilise », « invalide »), un captcha ou une erreur gardent leur verdict, sans interroger la bibliotheque.
+- A l'expiration, le journal garde maintenant les 200 premiers caracteres du texte de la page : la prochaine phrase inconnue se lira, au lieu de se deviner d'apres une capture.
+- Meme moteur dans l'extension et dans l'appli : la correction vaut pour les deux.
+- Limite connue : si le jeu est deja a toi par ailleurs et que l'echange a en fait echoue sans message, le titre present dans la bibliotheque le fait passer pour reussi. Le code serait de toute facon sans usage pour ce jeu.
+- Non verifie : la lecture reelle de la bibliotheque GOG apres un echange (les tests tiennent la logique, pas le reseau ni la session).
+
 ## Extension 2.109.0 / Appli 1.35.0 -- 2026-10-11
 
 **Un echange GOG reussi n'est plus declare « non confirme »**
