@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.108.0
+ * FREE GAMES AUTO-CLAIMER -- v2.109.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -4828,7 +4828,7 @@
     return null;
   }
 
-  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|code utilis[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
+  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|redeemed successfully|successfully added|added \d+ items? to your|code (utilis|[e\u00e9]chang)[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
   var GOG_REDEEM_CONFIRM_PATTERNS = [/^r[e\u00e9]cup[e\u00e9]rer$/i, /utiliser (le|ce|mon) code/i, /^utiliser$/i, /^redeem$/i, /redeem (the |this )?code/i, /ajouter [a\u00e0] (ma|la|votre) biblioth/i, /add to (my |your )?(account|library)/i, /^obtenir$/i, /^get it$/i, /^confirmer$/i, /^confirm$/i];
 
   /* CE QUE L'ECHANGE GOG A LE DROIT DE CLIQUER.

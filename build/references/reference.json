@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.106.0.js",
-  "sha256": "E6B1CB6188AA308EF6F33933658E14B60178409EBA55100F08E3E3CB1262B93E",
-  "octets": 297545,
-  "version": "2.106.0",
-  "motif": "2.106.0 : gone -- une page sans rien a montrer ne demande plus le bouton"
+  "fichier": "reference-v2.109.0.js",
+  "sha256": "F7F1B1A3C54052BACB1EE2D2780F13E57E2CF1A864BFE82E05E5D18B241503D9",
+  "octets": 297628,
+  "version": "2.109.0",
+  "motif": "2.109.0 : la page de succes GOG (Code redeemed successfully, successfully added) est reconnue"
 }

@@ -4,6 +4,17 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.109.0 / Appli 1.35.0 -- 2026-10-11
+
+**Un echange GOG reussi n'est plus declare « non confirme »**
+
+Constate : le code Amazon Luna de WarBreeds a ete echange, GOG affichait « Code redeemed successfully! » et « You've successfully added 1 item to your GOG account », et pourtant le popup disait « GOG : echange non confirme (WarBreeds) ». Cause : le moteur reconnait la reussite a des phrases (`GOG_REDEEM_SUCCESS_TEXT`, `src/core/26-gog-redeem-dom.js`), et celles de GOG avaient change -- « successfully redeemed » etait connu, pas « redeemed successfully », ni « successfully added ». Faute de phrase, le moteur attendait jusqu'au delai, concluait « non confirme » et comptait un essai de plus contre le code. Le jeu, lui, etait bien au compte (GOG previent meme qu'il peut mettre un moment a apparaitre dans « Owned Games »).
+
+- Le moteur reconnait maintenant « redeemed successfully », « successfully added », « added N item(s) to your » et « code echange avec succes ». Un refus (« already been redeemed », « could not be redeemed ») ne ressemble toujours pas a un succes ; le test le tient.
+- Le moteur est le meme dans l'extension et dans l'appli : la correction vaut pour les deux (l'appli le recopie a chaque build).
+- Un code deja echange a la main reste sans suite : au prochain passage, GOG repond « code deja utilise », le moteur le retire de la file et l'inscrit comme deja echange.
+- Non verifie : la phrase des pages allemande et espagnole de GOG (je n'ai que l'anglaise sous les yeux) ; le francais est un calque a confirmer.
+
 ## Appli 1.34.0 -- 2026-10-11 (extension inchangee, 2.108.0)
 
 **Simuler une recuperation, et garder une preuve de chacune**
