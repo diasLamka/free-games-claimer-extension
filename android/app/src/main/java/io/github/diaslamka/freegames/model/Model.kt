@@ -124,6 +124,8 @@ data class LibraryEntry(
     /** La preuve (1.34.0) : le fichier de la capture de la page de confirmation (data/Proofs.kt), et l'adresse ou elle a ete prise. */
     val proof: String? = null,
     val proofUrl: String? = null,
+    /** Pris sans toi, par la recuperation de fond (true), ou avec toi, ecran allume (false) ; null avant la 1.38.0 (1.38.0). */
+    val alone: Boolean? = null,
 ) {
     /** Le titre normalise, une fois : Rules le compare a celui de chaque offre. */
     val normalisedTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.normalise(title) }

@@ -12,7 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.asImageBitmap
 import io.github.diaslamka.freegames.BuildConfig
+import io.github.diaslamka.freegames.data.Autonomy
 import io.github.diaslamka.freegames.data.FailureReport
+import io.github.diaslamka.freegames.data.Restrictions
 import io.github.diaslamka.freegames.data.Proofs
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -58,8 +60,13 @@ fun RecoveryScreen(
     onAccounts: () -> Unit,
     /** Effacer toutes les captures du carnet de preuves (1.34.0). */
     onClearProofs: () -> Unit = {},
+    /** Ce qu'Android a fait de la veille (1.38.0), lu une fois par l'ecran qui l'appelle ; null : on n'en dit rien. */
+    android: Restrictions.Snapshot? = null,
+    /** Ouvrir les reglages, la ou se coupe et s'allume la recuperation ecran eteint (1.38.0). */
+    onSettings: () -> Unit = {},
 ) {
     val plan = remember(state, now) { Recovery.plan(state, now) }
+    val autonomy = remember(state, android, now) { Autonomy.report(state, android, now) }
     var simulating by remember { mutableStateOf(false) }
     var proofOf by remember { mutableStateOf<LibraryEntry?>(null) }
     var reportOf by remember { mutableStateOf<Recovery.Item?>(null) }
@@ -76,6 +83,7 @@ fun RecoveryScreen(
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             item("status") { StatusBlock(plan, claiming, now, onClaimAll = { onClaim(emptySet()) }, onSimulate = { simulating = true }) }
+            item("autonomy") { AutonomyCard(autonomy, onSettings, onAccounts) }
 
             if (plan.ready.isNotEmpty()) {
                 item("ready-h") { SectionHeader(stringResource(R.string.rec_section_ready), plan.ready.size) }
@@ -145,6 +153,46 @@ fun RecoveryScreen(
     if (simulating) SimulationDialog(Recovery.simulate(state, now), now, onDismiss = { simulating = false })
     proofOf?.let { ProofDialog(it, onOpen, onDismiss = { proofOf = null }) }
     reportOf?.let { ReportDialog(it, now, onDismiss = { reportOf = null }) }
+}
+
+/** L'autonomie (1.38.0) : le telephone recupere-t-il seul, et qu'est-ce qui le freine ? Court : un titre, des freins, un compte. */
+@Composable
+private fun AutonomyCard(report: Autonomy.Report, onSettings: () -> Unit, onAccounts: () -> Unit) {
+    val b = LocalBrut.current
+    fun names(stores: List<String>) = stores.joinToString(", ") { Stores.label(it) }
+    Column(
+        Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 12.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            stringResource(when (report.level) { Autonomy.Level.ON -> R.string.aut_on; Autonomy.Level.PARTIAL -> R.string.aut_partial; Autonomy.Level.OFF -> R.string.aut_off }),
+            style = MaterialTheme.typography.titleSmall, color = Color.Black,
+        )
+        for (block in report.blocks) {
+            val line = when (block) {
+                Autonomy.Block.Off -> stringResource(R.string.aut_why_off)
+                is Autonomy.Block.Sessions -> stringResource(R.string.aut_why_sessions, names(block.stores))
+                is Autonomy.Block.Challenges -> stringResource(R.string.aut_why_challenges, names(block.stores))
+                is Autonomy.Block.Android -> stringResource(R.string.aut_why_android)
+            }
+            Text(line, style = MaterialTheme.typography.bodySmall, color = MutedInk)
+        }
+        if (report.wifiOnly || report.chargingOnly) {
+            Text(
+                listOfNotNull(if (report.wifiOnly) stringResource(R.string.aut_wifi) else null, if (report.chargingOnly) stringResource(R.string.aut_charging) else null).joinToString(" "),
+                style = MaterialTheme.typography.bodySmall, color = MutedInk,
+            )
+        }
+        if (report.alone + report.withYou > 0) {
+            Text(stringResource(R.string.aut_counts, Autonomy.WINDOW_DAYS, report.alone, report.withYou), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        }
+        val needsSession = report.blocks.any { it is Autonomy.Block.Sessions }
+        if (report.level == Autonomy.Level.OFF || report.blocks.any { it is Autonomy.Block.Android }) {
+            BrutButton(stringResource(R.string.aut_settings), onSettings, Modifier.padding(top = 4.dp), primary = report.level == Autonomy.Level.OFF)
+        } else if (needsSession) {
+            BrutButton(stringResource(R.string.rec_sign_in), onAccounts, Modifier.padding(top = 4.dp), primary = false)
+        }
+    }
 }
 
 /** Le rapport d'echec (1.37.0) : ce que la page montrait, sa capture, et le texte a coller dans un message. */

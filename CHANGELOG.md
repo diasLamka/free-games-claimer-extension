@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.38.0 -- 2026-10-11 (extension inchangee, 2.111.1)
+
+**L'autonomie : le telephone recupere-t-il VRAIMENT seul, et qu'est-ce qui le freine ?**
+
+Le telephone recupere seul depuis la 1.2.0 : l'option « Ecran eteint » (`claimInBackground`, coupee par defaut), qui ouvre la page du magasin sans l'afficher, dans le passage de la veille de fond. Ce qui manquait n'etait pas le geste, c'etait de savoir s'il pouvait l'accomplir, et pourquoi pas. Tests ecrits d'abord (`AutonomyTest`, 10 cas, dont une mutation verifiee ; deux cas dans `RecoveryScreenTest`).
+
+- **Une carte « Autonomie »** en haut de l'onglet Recuperation (`data/Autonomy.kt`, calcul pur) : « Il recupere seul », « Il recupere seul, avec des freins » ou « Il ne recupere pas seul » (l'option est coupee : bouton Reglages).
+- **Les freins** sont lus dans ce que l'appli sait deja, rien n'est invente : une session perdue sur un magasin que tu as laisse actif ; une verification humaine vue sur les 14 derniers jours pour un jeu pas encore pris (« Epic a demande une verification. L'appli ne la resout jamais ») ; Android qui retarde ou arrete la veille (classe de veille « rare » ou « restreinte », batterie restreinte, processus tue en travaillant -- ce que la page Sante detaille). Wi-Fi seulement et en charge seulement sont des choix, pas des freins : ils s'affichent sans changer le titre.
+- **La mesure** : chaque jeu pris porte maintenant s'il l'a ete par le fond (« sans toi ») ou ecran allume (« avec toi ») -- `LibraryEntry.alone`. La carte compte les deux sur 14 jours. Ce qui a ete pris avant la 1.38.0 n'a pas cette information et n'est pas compte : la carte commence a zero et se remplit au fil des recuperations.
+- Verifie sur emulateur Android 14 : la carte s'affiche dans la charte (option coupee par defaut : « Il ne recupere pas seul », bouton Reglages).
+- Non verifie : la carte avec un vrai passage de fond reussi ; le compte « pris sans toi » se remplira apres la premiere recuperation de fond reelle. Le bouton Reglages ouvre l'onglet Reglages, pas la section Recuperation directement.
+- Ce que cette version NE change pas : un controle anti-robot n'est jamais resolu par l'appli. Sur l'emulateur, Epic en demande un des la premiere ouverture ; sur ton telephone, deja connecte, il faut mesurer -- c'est l'objet de la carte.
+
 ## Extension 2.111.1 / Appli 1.37.1 -- 2026-10-11
 
 **Le rapport d'echec ne laisse plus passer un code d'echange**

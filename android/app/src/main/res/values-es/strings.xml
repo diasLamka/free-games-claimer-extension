@@ -120,6 +120,17 @@
     <string name="rec_report_title">Informe del fallo</string>
     <string name="rec_report_copy">Copiar</string>
     <string name="rec_report_copied">Copiado</string>
+    <string name="aut_on">Reclama solo</string>
+    <string name="aut_partial">Reclama solo, con frenos</string>
+    <string name="aut_off">No reclama solo</string>
+    <string name="aut_why_off">Reclamar con la pantalla apagada está desactivado.</string>
+    <string name="aut_why_sessions">Sesión perdida: %1$s.</string>
+    <string name="aut_why_challenges">%1$s pidió una verificación. La app nunca la resuelve.</string>
+    <string name="aut_why_android">Android frena la vigilancia. Mira Estado.</string>
+    <string name="aut_wifi">Solo con Wi-Fi.</string>
+    <string name="aut_charging">Solo cargando.</string>
+    <string name="aut_counts">Últimos %1$d días: %2$d reclamados solo, %3$d contigo.</string>
+    <string name="aut_settings">Ajustes</string>
     <string name="rec_proofs_clear">Borrar pruebas</string>
     <string name="set_keep_proofs">Guardar una prueba de cada reclamación</string>
     <string name="set_keep_proofs_hint">Una captura pequeña de la página de confirmación o de un fallo. Solo en este móvil.</string>

@@ -120,6 +120,17 @@
     <string name="rec_report_title">Fehlerbericht</string>
     <string name="rec_report_copy">Kopieren</string>
     <string name="rec_report_copied">Kopiert</string>
+    <string name="aut_on">Holt selbst</string>
+    <string name="aut_partial">Holt selbst, mit Bremsen</string>
+    <string name="aut_off">Holt nicht selbst</string>
+    <string name="aut_why_off">Das Holen bei ausgeschaltetem Bildschirm ist aus.</string>
+    <string name="aut_why_sessions">Abgemeldet: %1$s.</string>
+    <string name="aut_why_challenges">%1$s hat eine Prüfung verlangt. Die App löst sie nie.</string>
+    <string name="aut_why_android">Android bremst die Hintergrundprüfung. Siehe Zustand.</string>
+    <string name="aut_wifi">Nur im WLAN.</string>
+    <string name="aut_charging">Nur beim Laden.</string>
+    <string name="aut_counts">Letzte %1$d Tage: %2$d allein geholt, %3$d mit dir.</string>
+    <string name="aut_settings">Einstellungen</string>
     <string name="rec_proofs_clear">Belege löschen</string>
     <string name="set_keep_proofs">Beleg für jedes Einlösen behalten</string>
     <string name="set_keep_proofs_hint">Ein kleiner Screenshot der Bestätigungsseite oder eines Fehlers. Nur auf diesem Handy.</string>

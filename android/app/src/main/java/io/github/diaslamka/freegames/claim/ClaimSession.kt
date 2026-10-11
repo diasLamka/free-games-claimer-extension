@@ -558,7 +558,7 @@ class ClaimSession(
                 val entry = LibraryEntry(
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
-                    wsrc = Bargain.worthSource(o), proof = proof, proofUrl = proofUrl,
+                    wsrc = Bargain.worthSource(o), proof = proof, proofUrl = proofUrl, alone = headless,
                 )
                 lib = lib + (Rules.libraryKeyOf(o) to entry)
                 accounts = accounts + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))

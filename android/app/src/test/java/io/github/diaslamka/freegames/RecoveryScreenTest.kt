@@ -12,6 +12,7 @@ import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.Attempt
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
+import io.github.diaslamka.freegames.model.Settings
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.RecoveryScreen
 import io.github.diaslamka.freegames.ui.theme.FreeGamesTheme
@@ -117,5 +118,22 @@ class RecoveryScreenTest {
         show(blocked(withFailure = false))
         compose.onNodeWithText("Hades").assertExists()
         compose.onNodeWithText(str(R.string.rec_report), ignoreCase = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun theAutonomyCardSaysItDoesNotClaimAloneWhileBackgroundClaimingIsOff() {
+        show(AppState(offers = mapOf(offer.key to offer)))
+        compose.onNodeWithText(str(R.string.aut_off)).assertExists()
+        compose.onNodeWithText(str(R.string.aut_why_off)).assertExists()
+        compose.onNodeWithText(str(R.string.aut_settings), ignoreCase = true).assertExists()
+    }
+
+    @Test
+    fun theAutonomyCardSaysItClaimsAloneWhenNothingIsInTheWayAndCountsWhatItTook() {
+        val entry = LibraryEntry(store = Stores.EPIC, id = "b", title = "Autre", ts = now - 3_600_000, alone = true)
+        show(AppState(offers = mapOf(offer.key to offer), library = mapOf("epic:b" to entry), settings = Settings(claimInBackground = true)))
+        compose.onNodeWithText(str(R.string.aut_on)).assertExists()
+        compose.onNodeWithText("14", substring = true).assertExists()
+        compose.onNodeWithText(str(R.string.aut_why_off)).assertDoesNotExist()
     }
 }

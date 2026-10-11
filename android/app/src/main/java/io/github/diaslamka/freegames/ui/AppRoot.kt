@@ -387,6 +387,8 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onClaim = { claim(it) },
                     onOpen = { ClaimSession.openExternally(context, it) },
                     onAccounts = { tab = 3 },
+                    android = remember { runCatching { io.github.diaslamka.freegames.data.Restrictions.read(context) }.getOrNull() },
+                    onSettings = { tab = 3 },
                     onClearProofs = {
                         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.dir(context))

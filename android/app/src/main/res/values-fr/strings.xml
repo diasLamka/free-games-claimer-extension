@@ -120,6 +120,17 @@
     <string name="rec_report_title">Rapport d’échec</string>
     <string name="rec_report_copy">Copier</string>
     <string name="rec_report_copied">Copié</string>
+    <string name="aut_on">Il récupère seul</string>
+    <string name="aut_partial">Il récupère seul, avec des freins</string>
+    <string name="aut_off">Il ne récupère pas seul</string>
+    <string name="aut_why_off">La récupération écran éteint est coupée.</string>
+    <string name="aut_why_sessions">Session perdue : %1$s.</string>
+    <string name="aut_why_challenges">%1$s a demandé une vérification. L’appli ne la résout jamais.</string>
+    <string name="aut_why_android">Android freine la veille. Voir Santé.</string>
+    <string name="aut_wifi">En Wi-Fi seulement.</string>
+    <string name="aut_charging">En charge seulement.</string>
+    <string name="aut_counts">%1$d derniers jours : %2$d pris seul, %3$d avec toi.</string>
+    <string name="aut_settings">Réglages</string>
     <string name="rec_proofs_clear">Effacer les preuves</string>
     <string name="set_keep_proofs">Garder une preuve de chaque récupération</string>
     <string name="set_keep_proofs_hint">Une petite capture de la page de confirmation, ou d’un échec. Gardée sur ce téléphone seulement.</string>

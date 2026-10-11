@@ -121,6 +121,17 @@
     <string name="rec_report_title">Failure report</string>
     <string name="rec_report_copy">Copy</string>
     <string name="rec_report_copied">Copied</string>
+    <string name="aut_on">Claims on its own</string>
+    <string name="aut_partial">Claims on its own, with brakes</string>
+    <string name="aut_off">Does not claim on its own</string>
+    <string name="aut_why_off">Screen-off claiming is off.</string>
+    <string name="aut_why_sessions">Signed out: %1$s.</string>
+    <string name="aut_why_challenges">%1$s asked for a human check. Never solved by the app.</string>
+    <string name="aut_why_android">Android slows the background watch. See Health.</string>
+    <string name="aut_wifi">Wi-Fi only.</string>
+    <string name="aut_charging">While charging only.</string>
+    <string name="aut_counts">Last %1$d days: %2$d taken alone, %3$d with you.</string>
+    <string name="aut_settings">Settings</string>
     <string name="rec_proofs_clear">Delete proofs</string>
     <string name="set_keep_proofs">Keep a proof of each claim</string>
     <string name="set_keep_proofs_hint">A small screenshot of the confirmation page, or of a failure. Kept on this phone only.</string>
