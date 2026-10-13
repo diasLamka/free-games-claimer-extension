@@ -1274,6 +1274,15 @@
   "autCounts": {
     "message": "Últimos $1 días: $2 por la vigilancia, $3 a petición tuya."
   },
+  "skipNeedsBaseLabel": {
+    "message": "Ignorar los DLC si no tengo el juego base"
+  },
+  "skipNeedsBaseHint": {
+    "message": "Sin intentos, sin consultas, sin avisos, oculto de la lista. Solo con la biblioteca de Steam importada."
+  },
+  "dropNeedsBase": {
+    "message": "Necesita el juego base"
+  },
   "tallyBestMonth": {
     "message": "mejor mes: $1 con $2"
   },

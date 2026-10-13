@@ -39,7 +39,7 @@ import { TYPES as RELAY_TYPES, MAX_HELP_MS, ROLES as RELAY_ROLES, syncRelay, ann
 import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
-import { split } from './filters.js';
+import { split, baseGameMissing } from './filters.js';
 import {
   MODES, decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
@@ -130,10 +130,12 @@ function readableHours(ms) {
  * l'offre reste annoncable. C'est voulu -- l'agregateur laisse huit offres sur
  * vingt sans date, et les taire serait pire que de les annoncer.
  */
-export function toNotify(catalog, now) {
+export function toNotify(catalog, now, { filters = null, ownedIds = null } = {}) {
   if (typeof now !== 'number') throw new TypeError('aAnnoncer : "maintenant" est obligatoire');
+  const sansBase = Boolean(filters && filters.skipNeedsBase);
   return Object.values(catalog || {}).filter(
-    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED && !isExpired(o, now),
+    // Un DLC dont on n'a pas le jeu de base, l'option active (2.113.0) : retenu, pas perdu -- il s'annonce si l'option se coupe ou si le jeu est achete.
+    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED && !isExpired(o, now) && !(sansBase && baseGameMissing(o, ownedIds)),
   );
 }
 
@@ -478,7 +480,7 @@ export async function runCycle({
 
     /* ---- amorcage : le premier cycle ne notifie pas ---- */
 
-    const pending = toNotify(catalog, now);
+    const pending = toNotify(catalog, now, { filters: ctx.filters, ownedIds: ctx.collection ? ownedStoreKeys(ctx.collection) : null });
     let announcements = [];
     let nextState = { ...ctx.state };
 

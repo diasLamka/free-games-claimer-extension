@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.113.0 -- 2026-10-13 (appli inchangee, 1.38.0)
+
+**Une option pour ne plus chercher les DLC dont on n'a pas le jeu de base**
+
+Constate : l'extension continuait de s'occuper des DLC Steam gratuits dont le jeu de base manque. Un tel DLC revenait en « Jeu de base requis », puis etait relu toutes les douze heures -- la bibliotheque du compte, puis le nom du jeu de base chez Steam --, restait dans « Vous attendent » et dans la liste, et s'annoncait. Tests ecrits d'abord (`test/needs-base.test.mjs`, 9 cas ; la mutation « l'option ne fait plus rien » en fait echouer trois).
+
+- **Reglages > Filtres > « Ignorer les DLC dont je n'ai pas le jeu de base »** (`skipNeedsBase`, `watch/filters.js`). **Coupee par defaut** : un reglage de ce module ne retire rien dans le dos de l'utilisateur. Active, le DLC est ecarte par `judge` -- le meme juge que la veille et que le popup -- avec le motif « Il faut le jeu de base » : plus d'essai, donc plus de lecture de la bibliotheque ni du nom du jeu de base ; plus d'annonce (il est retenu, pas perdu : il s'annonce si tu coupes l'option ou si tu achetes le jeu de base) ; plus de ligne dans « Gratuit maintenant », ni dans « Vous attendent », ni dans les comptes.
+- **Elle ne conclut que sur une preuve** (`baseGameMissing`) : quand ta collection Steam a ete lue (au moins un jeu Steam dedans), le jeu de base y est ou n'y est pas -- et s'il y est maintenant, un ancien « Jeu de base requis » ne bloque plus. Sans collection Steam lue, seul le verdict deja constate par le module Steam compte. Ne pas savoir n'est pas savoir que le jeu manque : ecarter a tort un DLC offert est la seule erreur qui coute. Il faut donc avoir importe ta bibliotheque Steam (Ma collection) pour qu'elle agisse des le premier passage.
+- Verifie dans le popup de demonstration : un DLC sans jeu de base et un DLC avec, l'option cochee : le premier quitte la liste et « Vous attendent », le second reste.
+- Ne change pas : la section « DLC gratuits de tes jeux Steam » (`steamDlc`), qui cherche les DLC gratuits de jeux que tu AS ; elle a son propre interrupteur. Seul Steam est concerne : c'est le seul magasin dont le module dit « jeu de base requis ». L'appli a deja ses deux choix depuis la 1.33.0.
+- Non verifie : un vrai cycle dans Chrome avec ta collection Steam.
+
 ## Extension 2.112.0 -- 2026-10-11 (appli inchangee, 1.38.0)
 
 **L'autonomie dans l'extension : recupere-t-elle vraiment seule, et qu'est-ce qui la freine ?**

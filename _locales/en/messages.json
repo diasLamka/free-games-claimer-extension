@@ -1274,6 +1274,15 @@
   "autCounts": {
     "message": "Last $1 days: $2 by the watch, $3 at your request."
   },
+  "skipNeedsBaseLabel": {
+    "message": "Skip DLC when I don’t own the base game"
+  },
+  "skipNeedsBaseHint": {
+    "message": "No attempts, no lookups, no alerts, hidden from the list. Only once your Steam library is imported."
+  },
+  "dropNeedsBase": {
+    "message": "Needs the base game"
+  },
   "tallyBestMonth": {
     "message": "best month: $1 with $2"
   },

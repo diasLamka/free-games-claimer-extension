@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.112.0.js",
+  "fichier": "reference-v2.113.0.js",
   "sha256": "6104A91EBB00FEAF7181E631F216D6E774E316B1F2EF077A01EA70AE32E2D82A",
   "octets": 302725,
-  "version": "2.112.0",
-  "motif": "2.112.0 : autonomie, le catalogue marque seul ou a la demande"
+  "version": "2.113.0",
+  "motif": "2.113.0 : option ignorer les DLC sans jeu de base"
 }

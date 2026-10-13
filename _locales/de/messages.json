@@ -1274,6 +1274,15 @@
   "autCounts": {
     "message": "Letzte $1 Tage: $2 durch die Prüfung, $3 auf deinen Wunsch."
   },
+  "skipNeedsBaseLabel": {
+    "message": "DLC überspringen, wenn mir das Hauptspiel fehlt"
+  },
+  "skipNeedsBaseHint": {
+    "message": "Keine Versuche, keine Abfragen, keine Meldungen, aus der Liste ausgeblendet. Nur mit importierter Steam-Bibliothek."
+  },
+  "dropNeedsBase": {
+    "message": "Braucht das Hauptspiel"
+  },
   "tallyBestMonth": {
     "message": "bester Monat: $1 mit $2"
   },
