@@ -4,6 +4,7 @@ import android.content.Context
 import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.LunaList
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.model.AppState
@@ -31,6 +32,9 @@ import kotlinx.coroutines.withContext
  *     l'humain, et le jeu attend quatre heures avant que le fond y revienne ;
  *   - dix minutes en tout : on n'entame plus de jeu apres trois minutes, le
  *     reste passe au tour suivant, planifie un quart d'heure plus tard.
+ *
+ * Luna n'a pas d'API : avant de choisir ce qu'il y a a prendre, le fond lit la liste de ses offres dans la meme page
+ * sans ecran (1.39.0, LunaList), au plus une fois par heure. Sans cela Luna n'avait jamais rien a prendre.
  */
 object BackgroundClaim {
     /** Ce que le fond tenterait maintenant : ce qui reste, sur une session qu'on croit ouverte. */
@@ -41,6 +45,9 @@ object BackgroundClaim {
             a != Accounts.LOGGED_OUT && !Relay.held(s, o, now)
         }
     }
+
+    /** La liste Luna est-elle a lire ? Le fond doit etre actif ; le reste est dit par `LunaList.due`. */
+    fun wantsLunaList(s: AppState, now: Long): Boolean = s.settings.claimInBackground && LunaList.due(s, now)
 
     /** Toute la famille (1.9.0) : ce que le fond tenterait pour chaque membre. */
     fun familyTodo(s: AppState, now: Long): List<Pair<String, List<Offer>>> {
@@ -59,17 +66,22 @@ object BackgroundClaim {
     suspend fun run(context: Context, startedAt: Long = System.currentTimeMillis()): Int {
         Graph.init(context)
         val start = System.currentTimeMillis()
-        val list = todo(Graph.store.value, start)
-        if (list.isEmpty() && familyTodo(Graph.store.value, start).isEmpty()) return 0
+        var list = todo(Graph.store.value, start)
+        val readLuna = wantsLunaList(Graph.store.value, start)
+        if (list.isEmpty() && !readLuna && familyTodo(Graph.store.value, start).isEmpty()) return 0
         if (!Graph.claimLock.tryLock()) return 0
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         var session: ClaimSession? = null
         var won = 0
         val deadline = startedAt + ClaimSession.HEADLESS_START_WINDOW_MS
         try {
-            if (list.isNotEmpty()) {
+            if (list.isNotEmpty() || readLuna) {
                 session = withContext(Dispatchers.Main) { ClaimSession(context.applicationContext, scope, headless = true) }
-                won += session.runAll(list, deadline = deadline).size
+                if (readLuna) {
+                    session.discoverLuna()
+                    list = todo(Graph.store.value, System.currentTimeMillis())
+                }
+                if (list.isNotEmpty()) won += session.runAll(list, deadline = deadline).size
             }
             for ((id, todo) in familyTodo(Graph.store.value, System.currentTimeMillis())) {
                 if (System.currentTimeMillis() > deadline) break

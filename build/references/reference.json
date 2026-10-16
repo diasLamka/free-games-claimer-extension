@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.113.0.js",
-  "sha256": "6104A91EBB00FEAF7181E631F216D6E774E316B1F2EF077A01EA70AE32E2D82A",
-  "octets": 302725,
-  "version": "2.113.0",
-  "motif": "2.113.0 : option ignorer les DLC sans jeu de base"
+  "fichier": "reference-v2.114.0.js",
+  "sha256": "51EE3F3B84F004822814449B62BB56829F01A5EDBADCBAFB9F8352D7997669DF",
+  "octets": 304946,
+  "version": "2.114.0",
+  "motif": "2.114.0 : la source Luna (liste lue en fenetre reduite)"
 }

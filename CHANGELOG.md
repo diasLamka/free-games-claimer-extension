@@ -4,6 +4,21 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.114.0 / Appli 1.39.0 -- 2026-10-16
+
+**Luna se recupere enfin en fond : la veille lit la liste de ses offres, sans rien montrer**
+
+Signale : des jeux Amazon Luna a recuperer, et rien de fait en arriere-plan -- alors qu'Epic, lui, se prenait tout seul. Cause : Epic et GOG ont une API qui dit a la veille QUOI est offert ; Luna n'en a pas, et aucune source ne lui donnait de jeu. La veille n'ouvrait donc jamais la page de Luna (ni la fenetre reduite de l'extension, ni la page sans ecran de l'appli), sauf pour un jeu que l'agregateur aurait cite -- ce qu'il ne fait presque jamais. Tests ecrits d'abord (`test/luna-source.test.mjs`, 16 cas ; `LunaListTest`, 8 cas).
+
+- **Une source « Amazon Luna »** (`watch/sources/luna.js`, `data/LunaList.kt`). Elle ouvre la liste des offres (`/claims/home`) dans une fenetre REDUITE -- rien a l'ecran, comme toute reclamation de la veille --, demande au moteur de la LIRE, puis referme. Chaque fiche a prendre devient une offre Amazon, reclamee ensuite par le chemin existant (une fenetre reduite par jeu, le meme moteur). Les cartes a bouton direct, sans fiche, n'en font qu'une, sur la liste ; une carte deja prise n'est pas une offre ; une fiche qui quitte la liste est terminee au passage suivant.
+- **Le moteur lit, il ne clique pas** (`readLunaList`, `src/core/31-bootstrap.js`). Un ordre `fgc-liste-luna`, une reponse `fgc-liste` : des cartes (identifiant, titre, adresse, bouton direct ou non, deja prise ou non). Aucun clic, aucune navigation (un test le verifie dans le texte de la fonction). Memes arrets nets que la reclamation : session perdue, defi de securite, page etrangere -- dits comme des erreurs, jamais comme une liste vide. Le selecteur d'attente de la liste est partage avec la serie Luna (`lunaListRoot`) : un seul endroit a corriger si Amazon change la page.
+- **Ce qui vient de la page est borne a l'arrivee** : au plus 60 cartes, titre de 120 signes, adresse acceptee seulement sur `luna.amazon.*`, parametres retires.
+- **Quand** : au plus une fois par heure (reussie ou non). Extension : seulement si Amazon est suivi ET que la reclamation autonome est active (c'est une visite du compte, du meme ordre qu'une reclamation) ; jamais pour un magasin decoche, meme par « Verifier maintenant ». Appli : dans le passage de fond « Ecran eteint » (reglage inchange, coupe par defaut), et au geste « Tout recuperer » qui passe outre l'heure ; pas pour Amazon decoche, ni session perdue. Une session perdue vue par la lecture est notee comme perdue et notifiee.
+- Dans l'appli la lecture est notee dans `sources` (page Sante : une source en erreur se voit). Dans l'extension elle suit le cycle des autres sources (backoff, anomalies).
+- Le moteur change (`content/free-games-claimer.js`) : nouveau temoin `reference-v2.114.0.js`, base de renommage rebasee.
+- **Epic, GOG, Steam : rien a faire** -- les deux premiers ont une API, Steam passe par son option. Luna etait le seul magasin sans decouverte.
+- Non verifie : la liste REELLE d'un compte Luna connecte (le moteur ne lit que ce que la serie Luna savait deja lire, mais cette lecture-ci n'a tourne que sur des cartes simulees), et la fenetre reduite / la page sans ecran sur Luna reel. Une page lue sans carte n'est pas une erreur (un compte sans offre est possible) : si Amazon change sa page, la liste restera vide sans alerte -- c'est le point a surveiller sur la premiere semaine.
+
 ## Extension 2.113.0 -- 2026-10-13 (appli inchangee, 1.38.0)
 
 **Une option pour ne plus chercher les DLC dont on n'a pas le jeu de base**

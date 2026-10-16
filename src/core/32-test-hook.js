@@ -38,6 +38,7 @@
       standingEntry: standingEntry,
       pilotSettled: pilotSettled,
       inspectPage: inspectPage,
+      readLunaList: readLunaList,
       runEpicGamesModule: runEpicGamesModule,
       PILOT_SETTLE_MS: PILOT_SETTLE_MS,
       PILOT_EMPTY_REASON: PILOT_EMPTY_REASON,

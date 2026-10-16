@@ -343,6 +343,7 @@ export async function runCycle({
            ces parametres. Les autres sources les ignorent, et c'est plus sain
            que de leur inventer une option qu'elles n'honoreraient pas. */
         r = await source.discover({
+          chrome,
           fetch: fetchImpl,
           now,
           country: ctx.locale && ctx.locale.country,

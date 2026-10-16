@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.113.0
+ * FREE GAMES AUTO-CLAIMER -- v2.114.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -4581,11 +4581,7 @@
       return Promise.resolve();
     }
 
-    return waitForElement(function () {
-      var root = document.querySelector('[data-a-target="offer-list-FGWP_FULL"], [data-a-target="offer-list-FGWP"]');
-      if (root && root.querySelector('[data-a-target="item-card"], a[href*="/dp/"]')) return root;
-      return document.querySelector('a[data-a-target="FGWPOffer"], button[data-a-target="FGWPOffer"]');
-    }, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (root) {
+    return waitForElement(lunaListRoot, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (root) {
       var offers = collectLunaOffers();
       if (getLunaDlcEnabled()) {
         // Contenu en jeu (DLC, butin) : meme parcours que les jeux.
@@ -4700,6 +4696,13 @@
   }
 
   var lunaModuleRunSince = 0;
+
+  // La liste est-elle rendue ? Le bloc des offres, ou a defaut une carte cliquable. Partage par la serie et par la lecture.
+  function lunaListRoot() {
+    var root = document.querySelector('[data-a-target="offer-list-FGWP_FULL"], [data-a-target="offer-list-FGWP"]');
+    if (root && root.querySelector('[data-a-target="item-card"], a[href*="/dp/"]')) return root;
+    return document.querySelector('a[data-a-target="FGWPOffer"], button[data-a-target="FGWPOffer"]');
+  }
 
   function runAmazonLunaModule() {
     var PLATFORM = 'Amazon Luna';
@@ -5686,10 +5689,52 @@
     });
   }
 
+  // La liste des offres Luna (2.114.0), pour la source Luna de la veille : ce que la page propose, carte par carte.
+  // AUCUN CLIC, AUCUNE NAVIGATION : seulement des lectures. Les memes arrets nets que la reclamation, dans le meme ordre.
+  var LUNA_LIST_MAX = 60;
+
+  function readLunaList(then) {
+    var platform = 'Amazon Luna';
+    function done(verdict, offers) {
+      then({ type: 'fgc-liste', verdict: verdict, plateforme: platform, url: String(location.href).split(/[?#]/)[0], offers: offers || [] });
+    }
+    if (location.hostname.indexOf('luna.amazon.') === -1) { done('wrong_page'); return; }
+    if (isLikelyLoggedOut() || document.querySelector('[data-a-target="sign-in-button"]') || isLunaReauthVisible()) { done('needs_login'); return; }
+    if (detectSecurityChallenge()) { done('challenge'); return; }
+    if (!isLunaClaimsListPage(location.pathname)) { done('wrong_page'); return; }
+    rememberLunaHost();
+    waitForElement(lunaListRoot, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function () {
+      if (detectSecurityChallenge()) { done('challenge'); return; }
+      if (isLikelyLoggedOut() || isLunaReauthVisible()) { done('needs_login'); return; }
+      var cards = collectLunaOffers();
+      if (getLunaDlcEnabled()) {
+        var lootRoot = document.querySelector('[data-a-target="offer-list-IN_GAME_LOOT"]');
+        if (lootRoot) cards = cards.concat(collectLunaOffers(lootRoot));
+      }
+      var offers = cards.slice(0, LUNA_LIST_MAX).map(function (o) {
+        return {
+          id: o.id,
+          title: o.knownTitle || o.title,
+          url: o.url,
+          store: o.store,
+          hasButton: !!o.button,
+          hasCta: !!o.hasCta,
+          collected: !!o.collected
+        };
+      });
+      done(offers.length ? 'ok' : 'empty', offers);
+    });
+  }
+
   function listenForOrders() {
     try {
       chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (!msg) return;
+        if (msg.type === 'fgc-liste-luna') {
+          sendResponse({ recu: true });
+          readLunaList(sendToPilot);
+          return true;
+        }
         if (msg.type === 'fgc-inspecte') {
           sendResponse({ recu: true });
           inspectPage(sendToPilot);
@@ -5796,6 +5841,7 @@
       standingEntry: standingEntry,
       pilotSettled: pilotSettled,
       inspectPage: inspectPage,
+      readLunaList: readLunaList,
       runEpicGamesModule: runEpicGamesModule,
       PILOT_SETTLE_MS: PILOT_SETTLE_MS,
       PILOT_EMPTY_REASON: PILOT_EMPTY_REASON,

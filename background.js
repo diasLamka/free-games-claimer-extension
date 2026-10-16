@@ -1806,7 +1806,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return true;
   }
 
-  if (msg.type === 'fgc-pret' || msg.type === 'fgc-verdict' || msg.type === 'fgc-inspection') {
+  if (msg.type === 'fgc-pret' || msg.type === 'fgc-verdict' || msg.type === 'fgc-inspection' || msg.type === 'fgc-liste') {
     const tabId = sender && sender.tab && sender.tab.id;
     if (tabId !== undefined) {
       reportVerdict(tabId, msg.type, msg);
