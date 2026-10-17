@@ -47,11 +47,26 @@ object Watcher {
             val before = previous[o.key]
             out[o.key] = o.copy(firstSeen = before?.firstSeen ?: now, lastSeen = now)
         }
-        val native = out.values.filter { it.source != GamerPowerSource.NAME }
-            .map { "${it.store}:${it.normalisedTitle}" }.toSet()
+        val nativeOffers = out.values.filter { it.source != GamerPowerSource.NAME }
+        val native = nativeOffers.map { "${it.store}:${it.normalisedTitle}" }.toSet()
         return out.filterValues { o ->
-            !o.isExpired(now) && !(o.source == GamerPowerSource.NAME && "${o.store}:${o.normalisedTitle}" in native)
+            !o.isExpired(now) && !(o.source == GamerPowerSource.NAME && ("${o.store}:${o.normalisedTitle}" in native || sameEpicWindow(o, nativeOffers)))
         }
+    }
+
+    /** Epic donne ses titres dans la langue du pays, l'agregateur en anglais : le meme jeu n'a pas le meme titre (1.41.0). */
+    private const val SAME_END_MS = 36 * 3_600_000L
+
+    /**
+     * Une offre Epic de l'agregateur qui finit en meme temps qu'une offre de la source Epic est CETTE offre : l'API
+     * d'Epic liste toutes les promotions en cours, et l'agregateur arrondit la fin a 23:59 (heure de New York), soit une
+     * douzaine d'heures d'ecart au plus. Sans date de fin des deux cotes, rien ne le prouve : on garde. Epic seul --
+     * ailleurs, un autre jeu peut tres bien finir le meme jour.
+     */
+    private fun sameEpicWindow(o: Offer, natives: List<Offer>): Boolean {
+        val end = o.end ?: return false
+        if (o.store != Stores.EPIC) return false
+        return natives.any { n -> n.store == Stores.EPIC && n.end != null && kotlin.math.abs(n.end - end) <= SAME_END_MS }
     }
 
     suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) {

@@ -4,6 +4,12 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.41.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Un jeu Epic n'apparait plus deux fois sur l'accueil (« Recupere » et « Bonne affaire »)**
+
+Constate sur le telephone (capture de l'accueil) : « Agent A - Casse-tete d'espions » (source Epic, recupere) et « Agent A: A Puzzle in Disguise » (agregateur, « Deja a toi »), le meme jeu. Epic donne ses titres dans la langue du pays, l'agregateur en anglais : la fusion, qui ne comparait que les titres, ne les reconnaissait pas. Une offre Epic de l'agregateur qui finit a 36 h pres d'une offre de la source Epic en est desormais ecartee (l'API d'Epic liste toutes les promotions en cours ; l'agregateur arrondit la fin a 23:59, heure de New York). Epic seulement : ailleurs, un autre jeu peut finir le meme jour. Sans date de fin, ou sans source Epic qui repond, on garde. Test : `MergeDuplicatesTest` (4 cas). Le doublon disparait au prochain passage de la veille.
+
 ## Appli 1.40.0 -- 2026-10-17 (extension inchangee, 2.114.0)
 
 **Le plus d'images possible : l'initiale n'est plus que le dernier recours**
