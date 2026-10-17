@@ -34,7 +34,7 @@ class IncomingDeviceTest {
         compose.onAllNodesWithText(str(text), substring = substring, ignoreCase = true).fetchSemanticsNodes().isNotEmpty()
     }.getOrDefault(false)
 
-    private fun showsWishlist() = shows(R.string.wish_hint, substring = true)
+    private fun showsWishlist() = shows(R.string.wl_search_hint, substring = true)
     private fun showsGames() = shows(R.string.tab_games, substring = false)
 
     @Test
