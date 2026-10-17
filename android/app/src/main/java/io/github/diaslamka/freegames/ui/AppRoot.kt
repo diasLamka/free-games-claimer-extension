@@ -498,14 +498,20 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             }
     }
 
-    AdaptiveFrame(tab, { tab = it }, top = {
-        val fs = familySession
-        if (fs != null) ClaimPanel(
-            fs,
-            onStopped = { familyJob?.cancel() },
-            onDismissed = { fs.release(); familySession = null },
-        ) else ClaimPanel(session)
-    }) { screen() }
+    // Les images connues, par titre (1.40.0) : refaites seulement quand ce dont elles viennent change.
+    val images = remember(state.offers, state.library, state.upcoming, state.owned, state.ratings, state.tonightApps, state.tonightTitles) {
+        io.github.diaslamka.freegames.data.Images.index(state)
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalImages provides images) {
+        AdaptiveFrame(tab, { tab = it }, top = {
+            val fs = familySession
+            if (fs != null) ClaimPanel(
+                fs,
+                onStopped = { familyJob?.cancel() },
+                onDismissed = { fs.release(); familySession = null },
+            ) else ClaimPanel(session)
+        }) { screen() }
+    }
 
     helpLink?.let { link ->
         HelpDialog(

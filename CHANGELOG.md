@@ -4,6 +4,12 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.40.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Le plus d'images possible : l'initiale n'est plus que le dernier recours**
+
+Une jaquette manquante (offre Luna, entree venue du PC, jeu d'une liste sans vignette) se cherche maintenant ailleurs dans l'appli avant de tomber sur la premiere lettre : une autre offre du meme jeu, le registre, « Bientot gratuit », la fiche Steam, puis l'en-tete Steam deduit de l'appid (offre, note, registre, collection, « Ce soir »). Une image qui ne charge pas laisse la suivante. Rapprochement par titre normalise, https seulement (`data/Images.kt`, `ImagesTest`, 5 cas).
+
 ## Extension 2.114.0 / Appli 1.39.0 -- 2026-10-16
 
 **Luna se recupere enfin en fond : la veille lit la liste de ses offres, sans rien montrer**
