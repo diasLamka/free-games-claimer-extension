@@ -4,6 +4,20 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.42.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**L'onglet Souhaits devient un tableau de bord : recherche en direct avec images, prix, plus bas historique, marchands, courbe des prix -- et des jaquettes retrouvees pour les jeux qui n'en avaient pas**
+
+Demande : « rendre cet onglet le meilleur qui existe, avec images, tableau de bord, prix, historique », « recherche par jeu automatique avec images », et dans Recuperes « VAMPIRE : un V a la place d'une image ». Tests ecrits d'abord (`WishTest`, 13 cas, sur des reponses reelles de Steam et de CheapShark mesurees le 2026-10-17).
+
+- **Recherche en direct** (`Wish.suggest`) : des deux lettres, apres une pause de frappe, les resultats arrivent AVEC leur jaquette, leur prix et leur reduction ; un toucher ajoute le jeu. Steam d'abord (titre, prix dans la devise du pays), CheapShark pour ce que Steam ne vend pas (Epic seul, GOG...), sans doublon. Aucune cle d'API.
+- **Un tableau de bord** : souhaits, en promo, plus bas, gratuits -- quatre chiffres, et des filtres. Chaque souhait a sa jaquette, son prix du jour, sa reduction, et une etiquette « plus bas historique » ou « proche du plus bas » quand c'est vrai.
+- **La fiche d'un souhait** (un toucher) : la jaquette en grand, le prix Steam local, le plus bas jamais vu et sa date, les marchands du moins cher au plus cher (un toucher ouvre l'offre), la courbe des prix que l'appli a releves, ce qu'on sait de ses chances d'etre offert. Le plus bas historique ne depasse jamais le prix du jour (CheapShark le met a jour avec retard).
+- **Les prix sont lus par la veille** : six souhaits au plus par passage, toutes les six heures chacun ; un souhait fraichement ajoute est lu tout de suite. Les souhaits importes de l'extension (Steam, GOG) y sont aussi, listes sous « De tes listes ». Le prix Steam est dans la devise du pays ; tout le reste (CheapShark) est en dollars, et c'est dit.
+- **L'historique est celui que l'appli releve** : CheapShark ne donne pas de serie de prix, seulement le plus bas. Un releve est ajoute quand le prix bouge, ou apres douze heures ; soixante au plus. La courbe se remplit au fil des passages : elle commence vide, et le dit.
+- **Plus de V a la place d'une image** (`Covers`) : un jeu du registre ou une offre sans image nulle part dans l'appli est cherche sur Steam par son titre exact (huit au plus par passage ; un echec n'est pas retente avant une semaine). Les images des souhaits servent aussi aux autres ecrans. Une adresse qui ne charge pas laisse la suivante.
+- Non verifie sur telephone : la recherche en direct sur le reseau du telephone (les reponses sont reelles, mais lues depuis un PC), et la fiche sur les tres petits ecrans. Un jeu absent de Steam ET de CheapShark garde son initiale.
+
 ## Appli 1.41.0 -- 2026-10-17 (extension inchangee, 2.114.0)
 
 **Un jeu Epic n'apparait plus deux fois sur l'accueil (« Recupere » et « Bonne affaire »)**

@@ -399,6 +399,11 @@ data class AppState(
     val medians: Map<String, PlayMedian> = emptyMap(),
     val evening: EveningState? = null,
     val oddsAt: Long? = null,
+    /** Les souhaits en detail (1.42.0) : prix, plus bas historique, releves, image ; par titre normalise. */
+    val wishInfo: Map<String, WishInfo> = emptyMap(),
+    val wishAt: Long? = null,
+    /** Les jaquettes retrouvees par une recherche (1.42.0), par titre normalise : un jeu sans image n'en cherche qu'une fois par semaine. */
+    val covers: Map<String, CoverNote> = emptyMap(),
     /**
      * « Ce soir je joue a... » (1.8.0). Ce que l'on possede, d'apres Ma
      * collection de l'extension (sa sauvegarde l'apporte), par « magasin:id ».
@@ -559,6 +564,43 @@ data class Seen(val store: String, val ts: Long)
 data class Giver(val name: String, val games: List<String> = emptyList(), val last: Long = 0)
 
 /** Ce que la fiche Steam d'un souhait dit de lui. */
+@Serializable
+data class CoverNote(val at: Long, val url: String? = null)
+
+/** Une offre chez un marchand (CheapShark), en dollars : la seule devise commune a tous. */
+@Serializable
+data class Deal(val store: String, val price: Double, val retail: Double? = null, val savings: Int = 0, val dealId: String? = null)
+
+/** Un prix releve par l'appli, en dollars. */
+@Serializable
+data class PricePoint(val at: Long, val price: Double)
+
+/**
+ * Ce que l'on sait du prix d'un souhait (1.42.0). Le prix local vient de Steam (la devise du pays choisi) ; le reste
+ * -- meilleur prix, plus bas historique, marchands -- vient de CheapShark, en dollars, seule devise commune.
+ */
+@Serializable
+data class WishInfo(
+    val at: Long,
+    val notFound: Boolean = false,
+    val appid: String? = null,
+    val gameId: String? = null,
+    val name: String? = null,
+    val image: String? = null,
+    /** Le prix Steam dans la devise du pays, et sa reduction. */
+    val localPrice: Double? = null,
+    val localCurrency: String? = null,
+    val localDiscount: Int = 0,
+    /** Le meilleur prix chez tous les marchands, en dollars. */
+    val best: Double? = null,
+    val bestStore: String? = null,
+    val retail: Double? = null,
+    val lowest: Double? = null,
+    val lowestAt: Long? = null,
+    val deals: List<Deal> = emptyList(),
+    val history: List<PricePoint> = emptyList(),
+)
+
 @Serializable
 data class OddsInfo(
     val at: Long,

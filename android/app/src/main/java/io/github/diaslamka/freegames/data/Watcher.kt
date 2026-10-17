@@ -173,6 +173,8 @@ object Watcher {
             Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
         }
         refreshOdds(now)
+        refreshWishes(now)
+        refreshCovers(now)
         refreshTonight(now)
         runCatchingSuspend { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
         runCatchingSuspend { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
@@ -206,6 +208,27 @@ object Watcher {
         if (Odds.targets(s).none { Odds.needsInfo(s, it, now) }) return
         val next = Odds.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
         Graph.store.update { st -> st.copy(odds = next, oddsAt = now) }
+    }
+
+    /** Les souhaits en detail (1.42.0) : six au plus, toutes les demi-heures au plus ; les prix releves s'accumulent. */
+    suspend fun refreshWishes(now: Long, force: Boolean = false) {
+        val s = Graph.store.value
+        if (!force && s.wishAt != null && now - s.wishAt < Wish.PASS_EVERY_MS) return
+        if (Wish.targets(s).none { Wish.needs(s.wishInfo[Wish.key(it.first)], now) }) return
+        val next = Wish.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        // Fusionne : un souhait ajoute ou retire pendant la lecture n'est ni perdu ni ressuscite.
+        Graph.store.update { st ->
+            val keep = Wish.targets(st).map { Wish.key(it.first) }.toSet()
+            st.copy(wishInfo = (st.wishInfo + next).filterKeys { it in keep }, wishAt = now)
+        }
+    }
+
+    /** Les jaquettes qui manquent encore (1.42.0) : huit recherches Steam au plus par passage. */
+    suspend fun refreshCovers(now: Long) {
+        val s = Graph.store.value
+        if (Covers.missing(s, now).isEmpty()) return
+        val next = Covers.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        Graph.store.update { st -> st.copy(covers = st.covers + next) }
     }
 
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam de la pile, cent au plus, une fois par heure au plus. */

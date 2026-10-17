@@ -445,8 +445,27 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 )
                 2 -> WishlistScreen(
                     state, now,
-                    onAdd = { t -> scope.launch { Graph.store.update { s -> if (s.wishlist.any { Titles.normalise(it) == Titles.normalise(t) }) s else s.copy(wishlist = listOf(t) + s.wishlist) } } },
-                    onRemove = { t -> scope.launch { Graph.store.update { s -> s.copy(wishlist = s.wishlist.filter { it != t }) } } },
+                    onAdd = { t ->
+                        scope.launch {
+                            Graph.store.update { s -> if (s.wishlist.any { Titles.normalise(it) == Titles.normalise(t) }) s else s.copy(wishlist = listOf(t) + s.wishlist) }
+                            // Le prix et l'image se cherchent tout de suite, sans attendre le prochain passage.
+                            runCatching { io.github.diaslamka.freegames.data.Watcher.refreshWishes(System.currentTimeMillis(), force = true) }
+                        }
+                    },
+                    onRemove = { t -> scope.launch { Graph.store.update { s -> s.copy(wishlist = s.wishlist.filter { it != t }, wishInfo = s.wishInfo - io.github.diaslamka.freegames.data.Wish.key(t)) } } },
+                    suggest = { term -> io.github.diaslamka.freegames.data.Wish.suggest(Graph.http, term, io.github.diaslamka.freegames.sources.Countries.of(state.settings.country).code) },
+                    onAddSuggestion = { sug ->
+                        scope.launch {
+                            val now2 = System.currentTimeMillis()
+                            Graph.store.update { s ->
+                                val k = io.github.diaslamka.freegames.data.Wish.key(sug.title)
+                                if (s.wishlist.any { Titles.normalise(it) == k }) s
+                                else s.copy(wishlist = listOf(sug.title) + s.wishlist, wishInfo = s.wishInfo + (k to io.github.diaslamka.freegames.data.Wish.seed(sug, now2)))
+                            }
+                            runCatching { io.github.diaslamka.freegames.data.Watcher.refreshWishes(now2, force = true) }
+                        }
+                    },
+                    onOpen = { ClaimSession.openExternally(context, it) },
                 )
                 else -> SettingsScreen(
                     state, now,

@@ -196,6 +196,24 @@ class AdaptiveScreenshotTest {
         shoot("D-10-souhaits-chances", 2, dark = true) { io.github.diaslamka.freegames.ui.WishlistScreen(s, now, onAdd = {}, onRemove = {}) }
     }
 
+    /** Le tableau de bord des souhaits (1.42.0) : images, prix du jour, plus bas historique, promotions. */
+    @Test
+    @Config(qualifiers = "fr-rFR-w411dp-h891dp-night-xxhdpi")
+    fun souhaitsTableauDeBord() {
+        fun h(id: String) = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/$id/header.jpg"
+        val wi = io.github.diaslamka.freegames.model.WishInfo(at = now)
+        val s = AppState(
+            wishlist = listOf("Vampire Survivors", "Hades", "Hollow Knight", "Un jeu sans image"),
+            wishInfo = mapOf(
+                "vampire survivors" to wi.copy(appid = "1794680", name = "Vampire Survivors", image = h("1794680"), localPrice = 3.74, localCurrency = "EUR", localDiscount = 25, best = 3.74, lowest = 2.69, retail = 4.99,
+                    history = listOf(io.github.diaslamka.freegames.model.PricePoint(now - 9 * 86_400_000L, 4.99), io.github.diaslamka.freegames.model.PricePoint(now - 3 * 86_400_000L, 3.74))),
+                "hades" to wi.copy(appid = "1145360", name = "Hades", image = h("1145360"), localPrice = 12.49, localCurrency = "EUR", localDiscount = 50, best = 12.49, lowest = 12.49, retail = 24.99),
+                "hollow knight" to wi.copy(appid = "367520", name = "Hollow Knight", image = h("367520"), localPrice = 14.79, localCurrency = "EUR", best = 14.79, lowest = 6.59, retail = 14.79),
+            ),
+        )
+        shoot("D-11-souhaits-tableau-de-bord", 2, dark = true) { io.github.diaslamka.freegames.ui.WishlistScreen(s, now, onAdd = {}, onRemove = {}) }
+    }
+
     /** Ce soir je joue a... (1.8.0) : la carte de l'onglet Recuperes. */
     private val soir: AppState by lazy {
         val items = io.github.diaslamka.freegames.sources.parseJson(

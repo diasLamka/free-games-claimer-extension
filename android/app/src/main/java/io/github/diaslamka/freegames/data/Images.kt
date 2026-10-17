@@ -44,6 +44,9 @@ object Images {
             if (e.store == Stores.STEAM) steam(e.title, e.id)
         }
         for (u in s.upcoming) real(u.title, u.image)
+        // Ce que les recherches ont retrouve (1.42.0) : les jaquettes de Covers, et la fiche de chaque souhait.
+        for ((k, c) in s.covers) real(k, c.url)
+        for (w in s.wishInfo.values) { real(w.name, w.image); steam(w.name, w.appid) }
         for (g in s.owned.values) if (g.store == Stores.STEAM) steam(g.title, g.id)
         for ((title, m) in s.tonightTitles) {
             steam(title, m.appid)
