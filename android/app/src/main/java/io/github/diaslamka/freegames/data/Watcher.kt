@@ -173,6 +173,7 @@ object Watcher {
             Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
         }
         refreshOdds(now)
+        refreshRates(now)
         refreshWishes(now)
         refreshCovers(now)
         refreshTonight(now)
@@ -208,6 +209,15 @@ object Watcher {
         if (Odds.targets(s).none { Odds.needsInfo(s, it, now) }) return
         val next = Odds.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
         Graph.store.update { st -> st.copy(odds = next, oddsAt = now) }
+    }
+
+    /** Le taux du jour (1.43.0) : une lecture par jour au plus, dans la devise du pays choisi. */
+    suspend fun refreshRates(now: Long) {
+        val s = Graph.store.value
+        val base = Countries.of(s.settings.country).currency
+        if (!Rates.due(s.rates, base, now)) return
+        val next = Rates.refresh(Graph.http, s, now, base) ?: return
+        if (next != s.rates) Graph.store.update { st -> st.copy(rates = next) }
     }
 
     /** Les souhaits en detail (1.42.0) : six au plus, toutes les demi-heures au plus ; les prix releves s'accumulent. */

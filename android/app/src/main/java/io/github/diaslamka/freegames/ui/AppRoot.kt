@@ -250,6 +250,11 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     // La sauvegarde complete et chiffree (1.28.0).
     val vault = rememberVaultFlow(onSettingsChanged = ::settingsChanged)
 
+    // Le taux du jour (1.43.0) : lu a l'ouverture, une fois par jour au plus -- les prix en euros n'attendent pas le passage de la veille.
+    LaunchedEffect(Unit) {
+        runCatching { io.github.diaslamka.freegames.data.Watcher.refreshRates(System.currentTimeMillis()) }
+    }
+
     // Premiere ouverture : les notifications, puis un premier passage.
     LaunchedEffect(Unit) {
         // L'appli est ouverte : la sentinelle est reposee (une alarme ne survit pas a un redemarrage du telephone).
@@ -460,7 +465,7 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                             Graph.store.update { s ->
                                 val k = io.github.diaslamka.freegames.data.Wish.key(sug.title)
                                 if (s.wishlist.any { Titles.normalise(it) == k }) s
-                                else s.copy(wishlist = listOf(sug.title) + s.wishlist, wishInfo = s.wishInfo + (k to io.github.diaslamka.freegames.data.Wish.seed(sug, now2)))
+                                else s.copy(wishlist = listOf(sug.title) + s.wishlist, wishInfo = s.wishInfo + (k to io.github.diaslamka.freegames.data.Wish.seed(sug)))
                             }
                             runCatching { io.github.diaslamka.freegames.data.Watcher.refreshWishes(now2, force = true) }
                         }
@@ -521,7 +526,15 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     val images = remember(state.offers, state.library, state.upcoming, state.owned, state.ratings, state.tonightApps, state.tonightTitles) {
         io.github.diaslamka.freegames.data.Images.index(state)
     }
-    androidx.compose.runtime.CompositionLocalProvider(LocalImages provides images) {
+    val money = remember(state.rates, state.settings.country) {
+        val base = io.github.diaslamka.freegames.sources.Countries.of(state.settings.country).currency
+        val at = System.currentTimeMillis()
+        MoneyFmt(
+            { a, c -> io.github.diaslamka.freegames.data.Rates.show(a, c, state.rates, base, at) },
+            { w -> io.github.diaslamka.freegames.data.Rates.showWorth(w, state.rates, base, at) },
+        )
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalImages provides images, LocalMoney provides money) {
         AdaptiveFrame(tab, { tab = it }, top = {
             val fs = familySession
             if (fs != null) ClaimPanel(

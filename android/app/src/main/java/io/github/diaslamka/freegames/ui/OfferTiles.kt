@@ -140,7 +140,7 @@ fun OfferCard(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mo
                 if (l.url != null) Text(" ↗", style = MaterialTheme.typography.titleLarge, color = Color.Black)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                o.worth?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.Black, textDecoration = TextDecoration.LineThrough) }
+                LocalMoney.current.worth(o.worth)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = Color.Black, textDecoration = TextDecoration.LineThrough) }
                 Tag(stringResource(R.string.free).uppercase(), b.accent, b.onAccent, bordered = true)
                 Spacer(Modifier.weight(1f))
                 TimeLeft(o, now, l.urgent)
@@ -200,7 +200,7 @@ fun OfferRow(o: Offer, state: AppState, now: Long, onOpen: (String) -> Unit, mod
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 StoreChip(o.store)
                 if (l.wished) Tag("★", b.accent, b.onAccent)
-                o.worth?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, textDecoration = TextDecoration.LineThrough, maxLines = 1) }
+                LocalMoney.current.worth(o.worth)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Black, textDecoration = TextDecoration.LineThrough, maxLines = 1) }
             }
             if (l.attempt?.verdict != null && l.claimed == null && l.attempt.verdict !in Verdicts.ACQUIRED) {
                 Text("! " + verdictText(l.attempt.verdict, l.attempt.details), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)

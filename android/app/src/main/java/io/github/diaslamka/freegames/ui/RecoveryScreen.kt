@@ -286,7 +286,7 @@ private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit, onProof: (Librar
         Stores.label(e.store),
         e.ts?.let { Fmt.dateTime(it) },
         stringResource(if (e.via == "extension") R.string.rec_via_extension else R.string.rec_via_app),
-        e.worth,
+        LocalMoney.current.worth(e.worth),
     ).joinToString(" / ")
     Row(
         Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 7.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(10.dp),

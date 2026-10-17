@@ -353,7 +353,7 @@ private fun CompactRow(o: Offer, now: Long, hint: String, onOpen: (String) -> Un
         Cover(o.image, o.shownTitle, o.store, Modifier.width(92.dp).height(52.dp), letterSize = 20)
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text(o.shownTitle.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val extra = listOfNotNull(o.worth, o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" / ")
+            val extra = listOfNotNull(LocalMoney.current.worth(o.worth), o.end?.let { Fmt.left(context, it, now) }, hint.takeIf { it.isNotBlank() }).joinToString(" / ")
             Text(extra, style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Text("↗", style = MaterialTheme.typography.titleLarge, color = Color.Black)

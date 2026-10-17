@@ -596,11 +596,11 @@
     <string name="wl_price_pending">Looking for the price…</string>
     <string name="wl_not_found">No price found</string>
     <string name="wl_stores">Where to buy</string>
-    <string name="wl_stores_note">Prices in US dollars, from CheapShark.</string>
+    <string name="wl_stores_note">Prices converted at the day\'s rate (ECB), from CheapShark.</string>
     <string name="wl_history">Prices seen</string>
     <string name="wl_history_empty">Not enough readings yet: the app notes the price at each check.</string>
-    <string name="wl_history_note">%1$d readings since %2$s (US dollars)</string>
-    <string name="wl_given">Already given away free</string>
+    <string name="wl_history_note">%1$d readings since %2$s</string>
+    <string name="wl_given">Free-game history and chances</string>
     <string name="wl_open_steam">Open on Steam</string>
     <string name="wl_imported_h">From your lists</string>
     <string name="wl_empty">Search a game above to wish for it. You are told when it is free, and when its price drops.</string>

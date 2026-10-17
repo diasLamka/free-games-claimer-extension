@@ -21,7 +21,7 @@ object Covers {
             s.offers.values.filter { it.isOpen(now) }.map { it.title }
         return titles.filter { t ->
             val k = Titles.normalise(t)
-            k.isNotEmpty() && index.find(t) == null && s.covers[k].let { it == null || (it.url == null && now - it.at >= MISS_MS) }
+            k.isNotEmpty() && !index.hasReal(t) && s.covers[k].let { it == null || (it.url == null && now - it.at >= MISS_MS) }
         }.distinctBy { Titles.normalise(it) }
     }
 
@@ -33,7 +33,7 @@ object Covers {
                 val r = fetcher.get(Wish.steamSearchUrl(Titles.display(title), country))
                 if (r.ok) Wish.parseSteam(r.body).firstOrNull { Titles.normalise(it.title) == k } else null
             }.getOrNull()
-            next[k] = CoverNote(now, hit?.image)
+            next[k] = CoverNote(now, hit?.image, hit?.thumb)
         }
         return next
     }

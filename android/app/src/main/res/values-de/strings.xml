@@ -595,11 +595,11 @@
     <string name="wl_price_pending">Preis wird gesucht…</string>
     <string name="wl_not_found">Kein Preis gefunden</string>
     <string name="wl_stores">Wo kaufen</string>
-    <string name="wl_stores_note">Preise in US-Dollar, laut CheapShark.</string>
+    <string name="wl_stores_note">Preise zum Tageskurs (EZB) umgerechnet, laut CheapShark.</string>
     <string name="wl_history">Beobachtete Preise</string>
     <string name="wl_history_empty">Noch zu wenige Messwerte: die App notiert den Preis bei jeder Prüfung.</string>
-    <string name="wl_history_note">%1$d Messwerte seit %2$s (US-Dollar)</string>
-    <string name="wl_given">Schon gratis verschenkt</string>
+    <string name="wl_history_note">%1$d Messwerte seit %2$s</string>
+    <string name="wl_given">Gratis: Verlauf und Chancen</string>
     <string name="wl_open_steam">Auf Steam öffnen</string>
     <string name="wl_imported_h">Aus deinen Listen</string>
     <string name="wl_empty">Suche oben ein Spiel, um es zu wünschen. Du erfährst, wenn es gratis ist oder der Preis fällt.</string>

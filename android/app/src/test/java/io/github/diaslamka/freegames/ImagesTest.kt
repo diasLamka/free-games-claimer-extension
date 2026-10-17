@@ -11,6 +11,8 @@ import io.github.diaslamka.freegames.model.TitleMatch
 import io.github.diaslamka.freegames.model.TonightInfo
 import io.github.diaslamka.freegames.model.Upcoming
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -73,6 +75,19 @@ class ImagesTest {
         assertNull(Images.index(AppState(offers = mapOf(bad.key to bad))).find("Bad"))
         assertNull(Images.index(AppState()).find("Rien"))
         assertNull(Images.index(AppState()).find(null))
+    }
+
+    @Test
+    fun aRealImageThenItsThumbnailThenTheDerivedHeader() {
+        // Un jeu recent de Steam : pas d'en-tete a l'ancienne adresse, seulement la vignette de la recherche.
+        val w = io.github.diaslamka.freegames.model.WishInfo(at = 1, appid = "3265700", name = "Vampire Crawlers", image = "https://img.test/h.jpg", thumb = "https://img.test/t.jpg")
+        val idx = Images.index(AppState(wishInfo = mapOf("vampire crawlers" to w)))
+        assertEquals(listOf("https://img.test/h.jpg", "https://img.test/t.jpg", header("3265700")), idx.all("Vampire Crawlers"))
+        assertTrue(idx.hasReal("Vampire Crawlers"))
+        // Seul un en-tete deduit : ce n'est pas une vraie image, une recherche peut encore en trouver une.
+        val only = Images.index(AppState(offers = mapOf("k" to offer(Stores.STEAM, "620", "Portal 2", null))))
+        assertEquals(listOf(header("620")), only.all("Portal 2"))
+        assertFalse(only.hasReal("Portal 2"))
     }
 
     @Test

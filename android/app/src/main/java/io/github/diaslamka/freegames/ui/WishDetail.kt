@@ -54,23 +54,24 @@ fun WishDetail(
     onRemove: (() -> Unit)?,
 ) {
     val b = LocalBrut.current
+    val money = LocalMoney.current
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.padding(horizontal = 14.dp, vertical = 24.dp).fillMaxWidth().brut(Color.White, shadow = b.shadow, offset = 6.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Cover(info?.image, title, null, Modifier.fillMaxWidth().aspectRatio(16f / 9f), letterSize = 64)
+            Cover(info?.image, title, null, Modifier.fillMaxWidth().aspectRatio(16f / 9f), letterSize = 64, alt = info?.thumb)
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text((info?.name ?: Titles.display(title)).uppercase(), style = MaterialTheme.typography.titleLarge, color = Color.Black)
                 if (freeStore != null) Tag(stringResource(R.string.wish_free_now, Stores.label(freeStore)).uppercase(), b.accent, b.onAccent)
 
                 PriceLines(info, compact = false)
                 info?.localPrice?.let { p ->
-                    if (info.best != null) Text(stringResource(R.string.wl_steam_price, Money.format(p, info.localCurrency)), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+                    if (info.best != null) Text(stringResource(R.string.wl_steam_price, money.show(p, info.localCurrency)), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
                 }
                 info?.lowest?.let { low ->
                     Text(
-                        stringResource(R.string.wl_lowest, Money.format(low, "USD"), info.lowestAt?.let { Fmt.date(it) } ?: "?"),
+                        stringResource(R.string.wl_lowest, money.show(low, "USD"), info.lowestAt?.let { Fmt.date(it) } ?: "?"),
                         style = MaterialTheme.typography.bodySmall, color = Color.Black,
                     )
                 }
@@ -88,7 +89,7 @@ fun WishDetail(
                         ) {
                             Text(Wish.storeName(d.store), style = MaterialTheme.typography.bodyMedium, color = Color.Black, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (d.savings > 0) Text(stringResource(R.string.wl_off, d.savings), style = MaterialTheme.typography.labelSmall, color = Color.Black)
-                            Text(Money.format(d.price, "USD"), style = MaterialTheme.typography.titleSmall, color = Color.Black)
+                            Text(money.show(d.price, "USD"), style = MaterialTheme.typography.titleSmall, color = Color.Black)
                         }
                     }
                     Text(stringResource(R.string.wl_stores_note), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
@@ -104,7 +105,7 @@ fun WishDetail(
 
                 // Deja offert gratuitement, et les chances qu'il le soit encore.
                 val seen = state.passes[Titles.normalise(title)].orEmpty()
-                if (seen.isNotEmpty() || odds != null) {
+                if (seen.isNotEmpty() || (odds != null && odds.level != Odds.UNKNOWN)) {
                     Section(stringResource(R.string.wl_given))
                     odds?.let { OddsReasons(it); OddsBadge(it.level) }
                 }
@@ -135,13 +136,14 @@ private fun Section(label: String) {
 @Composable
 fun PriceChart(points: List<PricePoint>, lowest: Double?, modifier: Modifier = Modifier) {
     val b = LocalBrut.current
+    val money = LocalMoney.current
     val lo = minOf(points.minOf { it.price }, lowest ?: Double.MAX_VALUE)
     val hi = points.maxOf { it.price }
     val span = (hi - lo).takeIf { it > 0.0001 } ?: 1.0
     val t0 = points.first().at
     val dt = (points.last().at - t0).coerceAtLeast(1L).toDouble()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(Money.format(hi, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
+        Text(money.show(hi, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
         Canvas(Modifier.fillMaxWidth().height(90.dp).brut(Color.White, border = 2.dp).padding(8.dp)) {
             fun x(p: PricePoint) = ((p.at - t0) / dt * size.width).toFloat()
             fun y(v: Double) = (size.height - ((v - lo) / span * size.height)).toFloat()
@@ -159,6 +161,6 @@ fun PriceChart(points: List<PricePoint>, lowest: Double?, modifier: Modifier = M
             drawCircle(b.accent, radius = 9f, center = Offset(x(last), y(last.price)))
             drawCircle(Color.Black, radius = 9f, center = Offset(x(last), y(last.price)), style = Stroke(width = 3f))
         }
-        Text(Money.format(lo, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
+        Text(money.show(lo, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
     }
 }

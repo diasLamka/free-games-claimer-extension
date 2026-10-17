@@ -49,6 +49,7 @@ class WishTest {
         assertEquals("EUR", a.currency)
         assertEquals(25, a.discount)
         assertTrue(a.image!!.endsWith("/apps/1794680/header.jpg"))
+        assertNull("pas de vignette dans la reponse reduite", a.thumb)
         assertEquals(0, r[1].discount)
         assertTrue(Wish.parseSteam("pas du json").isEmpty())
     }
@@ -61,7 +62,8 @@ class WishTest {
         assertEquals(3.74, r[0].best!!, 0.001)
         assertNull(r[0].price)
         assertTrue("Steam: l'en-tete", r[0].image!!.contains("/apps/1794680/header.jpg"))
-        assertEquals("https://img.test/epic.jpg", r[1].image)
+        assertNull("hors Steam : pas d'en-tete", r[1].image)
+        assertEquals("https://img.test/epic.jpg", r[1].thumb)
     }
 
     @Test
@@ -188,6 +190,19 @@ class WishTest {
     }
 
     @Test
+    fun aWishAddedFromTheSearchIsStillReadForItsStoresAndLowest() = runBlocking {
+        val sug = Wish.parseSteam(steamSearch).first()
+        val seed = Wish.seed(sug)
+        assertEquals("l'image et le prix Steam sont deja la", 3.74, seed.localPrice!!, 0.001)
+        assertTrue("mais ce n'est pas une lecture complete", Wish.needs(seed, now))
+        val f = fetcher("storesearch" to steamSearch, "steamAppID=1794680" to sharkSearch, "games?id=238605" to sharkGame)
+        val s = AppState(wishlist = listOf("Vampire Survivors"), wishInfo = mapOf("vampire survivors" to seed))
+        val i = Wish.refresh(f, s, now, "FR").getValue("vampire survivors")
+        assertEquals(2.69, i.lowest!!, 0.001)
+        assertEquals(listOf("1", "25"), i.deals.map { it.store })
+    }
+
+    @Test
     fun aGameSteamDoesNotKnowIsFoundOnCheapSharkByItsExactTitle() = runBlocking {
         val shark = """[{"gameID":"9","steamAppID":null,"cheapest":"12.00","external":"Epic Only Game","thumb":"https://img.test/epic.jpg"}]"""
         val game = """{"info":{"title":"Epic Only Game"},"cheapestPriceEver":{"price":"9.00","date":1600000000},"deals":[{"storeID":"25","dealID":"z","price":"12.00","retailPrice":"20.00","savings":"40"}]}"""
@@ -195,7 +210,7 @@ class WishTest {
         val i = Wish.refresh(f, AppState(wishlist = listOf("Epic Only Game")), now, "FR").getValue("epic only game")
         assertNull(i.appid)
         assertEquals("9", i.gameId)
-        assertEquals("https://img.test/epic.jpg", i.image)
+        assertEquals("la vignette de CheapShark", "https://img.test/epic.jpg", i.thumb)
         assertEquals(12.0, i.best!!, 0.001)
         assertEquals(40, Wish.discount(i))
     }

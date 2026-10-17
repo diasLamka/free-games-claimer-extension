@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.43.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Les prix en euros partout, les marchands et le plus bas historique enfin lus pour un souhait ajoute, et des vignettes pour les jeux recents de Steam**
+
+Constate en essayant la 1.42.0 sur l'emulateur (le telephone s'etait reverrouille) : les prix de CheapShark restaient en dollars, un souhait ajoute depuis la recherche n'avait ni marchands ni plus bas, et deux resultats recents (Vampire Crawlers) gardaient un « V ». Tests ecrits d'abord (`RatesTest`, 6 cas ; un cas de plus dans `WishTest` et `ImagesTest`).
+
+- **Euros partout** (`data/Rates.kt`, comme `watch/rates.js` de l'extension) : le taux du jour de la BCE (api.frankfurter.dev, sans cle, une lecture par jour a l'ouverture de l'appli et a chaque passage) convertit a l'AFFICHAGE les montants en dollars -- prix des marchands, plus bas historique, courbe, et les prix barres des cartes (« $19.99 » devient « ≈ 17,76 € »). Le « ≈ » dit que c'est approximatif ; sans taux, ou un taux de plus de trente jours, le montant garde sa devise, jamais un chiffre invente. L'etat enregistre ne bouge pas. La devise est celle du pays choisi.
+- **Un souhait ajoute depuis la recherche est lu en entier** : il etait enregistre comme « lu a l'instant » (l'image et le prix Steam), donc la lecture des marchands et du plus bas historique le sautait. Il reste a lire (`Wish.seed`, `at = 0`).
+- **Les jeux recents de Steam ont une image** : leur en-tete n'existe plus a l'ancienne adresse, Steam ne sert que la vignette 231x87, que la recherche rend. Une image, puis sa vignette, puis l'en-tete deduit : une adresse qui ne charge pas laisse la suivante (`Images`, `Cover`). Et un jeu qui n'a qu'un en-tete DEDUIT (pas une vraie image) est cherche par `Covers` comme un jeu sans image.
+- La fiche d'un souhait cache le bloc « chances » quand il n'a rien a dire (« fiche Steam pas encore lue »), et son titre devient « Gratuit : historique et chances ».
+- Verifie sur emulateur Android 14 (fgc-api34, reseau reel) : la recherche en direct avec images et prix, l'ajout, la fiche avec marchands, plus bas, et conversion en euros.
+- Non verifie : le telephone (son ecran s'eteint en 15 s et refuse que `adb` le garde allume : il faut activer « Rester activé » dans les options pour developpeurs).
+
 ## Appli 1.42.0 -- 2026-10-17 (extension inchangee, 2.114.0)
 
 **L'onglet Souhaits devient un tableau de bord : recherche en direct avec images, prix, plus bas historique, marchands, courbe des prix -- et des jaquettes retrouvees pour les jeux qui n'en avaient pas**

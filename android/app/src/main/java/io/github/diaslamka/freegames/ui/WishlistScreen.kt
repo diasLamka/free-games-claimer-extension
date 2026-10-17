@@ -157,7 +157,7 @@ fun WishlistScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Cover(state.wishInfo[Wish.key(t.title)]?.image, t.title, null, Modifier.width(108.dp).height(50.dp), letterSize = 20)
+                            Cover(state.wishInfo[Wish.key(t.title)]?.image, t.title, null, Modifier.width(108.dp).height(50.dp), letterSize = 20, alt = state.wishInfo[Wish.key(t.title)]?.thumb)
                             Column(Modifier.weight(1f)) {
                                 Text(Titles.display(t.title).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 OddsReasons(e)
@@ -257,11 +257,12 @@ private fun SuggestionRow(r: Wish.Suggestion, mine: Set<String>, onClick: () -> 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Cover(r.image, r.title, null, Modifier.width(108.dp).height(50.dp), letterSize = 20)
+        Cover(r.image, r.title, null, Modifier.width(108.dp).height(50.dp), letterSize = 20, alt = r.thumb)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(r.title.uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                val price = r.price?.let { Money.format(it, r.currency) } ?: r.best?.let { Money.format(it, "USD") }
+                val money = LocalMoney.current
+                val price = r.price?.let { money.show(it, r.currency) } ?: r.best?.let { money.show(it, "USD") }
                 if (price != null) Text(price, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                 if (r.discount > 0) Tag(stringResource(R.string.wl_off, r.discount), b.accent, b.onAccent)
             }
@@ -288,7 +289,7 @@ private fun WishCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Cover(info?.image, title, null, Modifier.width(120.dp).height(56.dp), letterSize = 22)
+        Cover(info?.image, title, null, Modifier.width(120.dp).height(56.dp), letterSize = 22, alt = info?.thumb)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text((info?.name ?: Titles.display(title)).uppercase(), style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (freeStore != null) Text(stringResource(R.string.wish_free_now, Stores.label(freeStore)).uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.Black)
@@ -316,7 +317,8 @@ fun PriceLines(info: WishInfo?, compact: Boolean = true) {
     }
     val b = LocalBrut.current
     val local = info.localPrice?.let { Money.format(it, info.localCurrency) }
-    val bestUsd = info.best?.let { Money.format(it, "USD") }
+    val money = LocalMoney.current
+    val bestUsd = info.best?.let { money.show(it, "USD") }
     // Plusieurs etiquettes : elles passent a la ligne plutot que d'etre coupees (grande police, petit ecran).
     @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(3.dp), itemVerticalAlignment = Alignment.CenterVertically) {
@@ -327,7 +329,7 @@ fun PriceLines(info: WishInfo?, compact: Boolean = true) {
         else if (Wish.nearLow(info)) Tag(stringResource(R.string.wl_near_low).uppercase(), Color.White, Color.Black, bordered = true)
     }
     if (!compact || info.lowest != null) info.lowest?.let { low ->
-        Text(stringResource(R.string.wl_lowest_short, Money.format(low, "USD")), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 1)
+        Text(stringResource(R.string.wl_lowest_short, money.show(low, "USD")), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 1)
     }
 }
 

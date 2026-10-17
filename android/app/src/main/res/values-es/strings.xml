@@ -595,11 +595,11 @@
     <string name="wl_price_pending">Buscando el precio…</string>
     <string name="wl_not_found">Sin precio</string>
     <string name="wl_stores">Dónde comprarlo</string>
-    <string name="wl_stores_note">Precios en dólares, según CheapShark.</string>
+    <string name="wl_stores_note">Precios convertidos al cambio del día (BCE), según CheapShark.</string>
     <string name="wl_history">Precios registrados</string>
     <string name="wl_history_empty">Aún pocas lecturas: la app anota el precio en cada comprobación.</string>
-    <string name="wl_history_note">%1$d lecturas desde el %2$s (dólares)</string>
-    <string name="wl_given">Ya regalado gratis</string>
+    <string name="wl_history_note">%1$d lecturas desde el %2$s</string>
+    <string name="wl_given">Gratis: historial y posibilidades</string>
     <string name="wl_open_steam">Abrir en Steam</string>
     <string name="wl_imported_h">De tus listas</string>
     <string name="wl_empty">Busca un juego arriba para desearlo. Te avisamos cuando sea gratis o baje de precio.</string>

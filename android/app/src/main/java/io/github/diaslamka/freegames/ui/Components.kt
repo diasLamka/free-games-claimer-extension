@@ -165,6 +165,14 @@ fun Pill(text: String, color: Color, modifier: Modifier = Modifier, onImage: Boo
     Tag(text.uppercase(), color, Color.Black, modifier, bordered = true)
 }
 
+/**
+ * Les montants, lus en euros (1.43.0) : `show` pour un montant et sa devise, `worth` pour une valeur ecrite par une source
+ * (« $19.99 »). Converti au taux du jour et marque « ≈ » quand on sait ; tel quel sinon (data/Rates.kt).
+ */
+class MoneyFmt(val show: (Double, String?) -> String, val worth: (String?) -> String?)
+
+val LocalMoney = compositionLocalOf { MoneyFmt({ a, c -> io.github.diaslamka.freegames.data.Money.format(a, c) }, { it }) }
+
 /** Les images connues de l'appli (1.40.0), par titre : une jaquette manquante se retrouve ailleurs avant l'initiale. */
 val LocalImages = compositionLocalOf<Images.Index?> { null }
 
@@ -173,9 +181,9 @@ val LocalImages = compositionLocalOf<Images.Index?> { null }
  * pour ce jeu (une autre offre, le registre, l'en-tete Steam) ; l'initiale, en police d'affichage sur blanc, en dernier.
  */
 @Composable
-fun Cover(url: String?, title: String, store: String?, modifier: Modifier = Modifier, radius: Dp = 0.dp, letterSize: Int = 28) {
+fun Cover(url: String?, title: String, store: String?, modifier: Modifier = Modifier, radius: Dp = 0.dp, letterSize: Int = 28, alt: String? = null) {
     val index = LocalImages.current
-    val candidates = remember(url, title, index) { Images.candidates(url, title, index) }
+    val candidates = remember(url, title, index, alt) { (Images.candidates(url, title, index) + listOfNotNull(alt?.takeIf { it.startsWith("https://") })).distinct() }
     var failed by remember(candidates) { mutableIntStateOf(0) }
     Box(modifier.background(Color.White).border(3.dp, Color.Black).clipToBounds(), contentAlignment = Alignment.Center) {
         Text(title.trim().take(1).uppercase(), fontFamily = Display, fontSize = letterSize.sp, color = Color.Black)

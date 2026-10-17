@@ -402,6 +402,8 @@ data class AppState(
     /** Les souhaits en detail (1.42.0) : prix, plus bas historique, releves, image ; par titre normalise. */
     val wishInfo: Map<String, WishInfo> = emptyMap(),
     val wishAt: Long? = null,
+    /** Le taux du jour (1.43.0) : pour lire des euros ce qui est publie en dollars. */
+    val rates: RateTable? = null,
     /** Les jaquettes retrouvees par une recherche (1.42.0), par titre normalise : un jeu sans image n'en cherche qu'une fois par semaine. */
     val covers: Map<String, CoverNote> = emptyMap(),
     /**
@@ -564,8 +566,12 @@ data class Seen(val store: String, val ts: Long)
 data class Giver(val name: String, val games: List<String> = emptyList(), val last: Long = 0)
 
 /** Ce que la fiche Steam d'un souhait dit de lui. */
+/** Les taux de la BCE : pour une unite de `base`, combien de chaque autre devise. */
 @Serializable
-data class CoverNote(val at: Long, val url: String? = null)
+data class RateTable(val base: String, val date: String? = null, val rates: Map<String, Double> = emptyMap(), val at: Long = 0)
+
+@Serializable
+data class CoverNote(val at: Long, val url: String? = null, val thumb: String? = null)
 
 /** Une offre chez un marchand (CheapShark), en dollars : la seule devise commune a tous. */
 @Serializable
@@ -587,6 +593,8 @@ data class WishInfo(
     val gameId: String? = null,
     val name: String? = null,
     val image: String? = null,
+    /** La vignette (231x87) : la seule image que Steam sert pour un jeu recent, quand l'en-tete manque. */
+    val thumb: String? = null,
     /** Le prix Steam dans la devise du pays, et sa reduction. */
     val localPrice: Double? = null,
     val localCurrency: String? = null,

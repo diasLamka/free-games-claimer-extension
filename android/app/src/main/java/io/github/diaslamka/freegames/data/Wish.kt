@@ -52,6 +52,8 @@ object Wish {
         val appid: String? = null,
         val gameId: String? = null,
         val image: String? = null,
+        /** La vignette que la recherche rend : celle qui existe toujours. */
+        val thumb: String? = null,
         val price: Double? = null,
         val currency: String? = null,
         val discount: Int = 0,
@@ -92,7 +94,7 @@ object Wish {
         val final = cents(i["price"]["final"].num)
         val initial = cents(i["price"]["initial"].num)
         val discount = if (final != null && initial != null && initial > 0 && final < initial) Math.round(100 * (initial - final) / initial).toInt() else 0
-        Suggestion(title = name, appid = appid, image = steamHeader(appid), price = final, currency = i["price"]["currency"].str, discount = discount)
+        Suggestion(title = name, appid = appid, image = steamHeader(appid), thumb = i["tiny_image"].str?.takeIf { it.startsWith("https://") }, price = final, currency = i["price"]["currency"].str, discount = discount)
     }
 
     /** La reponse de la recherche CheapShark (`games?title=`) : un jeu, son meilleur prix, sa vignette. */
@@ -101,7 +103,7 @@ object Wish {
         val appid = numeric(i["steamAppID"].text)
         Suggestion(
             title = name, appid = appid, gameId = numeric(i["gameID"].text),
-            image = steamHeader(appid) ?: i["thumb"].str?.takeIf { it.startsWith("https://") },
+            image = steamHeader(appid), thumb = i["thumb"].str?.takeIf { it.startsWith("https://") },
             best = i["cheapest"].num,
         )
     }
@@ -128,9 +130,12 @@ object Wish {
         return seen.values.filter { it.title.isNotBlank() }.take(MAX_SUGGESTIONS)
     }
 
-    /** Ce qu'une proposition apprend deja, avant toute autre lecture : l'image, le prix Steam. */
-    fun seed(s: Suggestion, now: Long) = WishInfo(
-        at = now, appid = s.appid, gameId = s.gameId, name = s.title, image = s.image,
+    /**
+     * Ce qu'une proposition apprend deja, avant toute autre lecture : l'image, le prix Steam. `at = 0` : ce n'est PAS une
+     * lecture complete -- les marchands et le plus bas historique restent a lire, et le prochain passage s'en charge.
+     */
+    fun seed(s: Suggestion) = WishInfo(
+        at = 0L, appid = s.appid, gameId = s.gameId, name = s.title, image = s.image, thumb = s.thumb,
         localPrice = s.price, localCurrency = s.currency, localDiscount = s.discount, best = s.best,
     )
 
@@ -224,7 +229,7 @@ object Wish {
             .firstOrNull { (appid != null && it.appid == appid) || (appid == null && key(it.title) == target) }
         if (found != null) {
             appid = found.appid
-            base = base.copy(appid = appid, name = found.title, image = found.image ?: base.image, localPrice = found.price, localCurrency = found.currency, localDiscount = found.discount)
+            base = base.copy(appid = appid, name = found.title, image = found.image ?: base.image, thumb = found.thumb ?: base.thumb, localPrice = found.price, localCurrency = found.currency, localDiscount = found.discount)
         } else if (appid != null) base = base.copy(appid = appid)
         // CheapShark : l'identifiant du jeu, puis son detail.
         var gameId = base.gameId
@@ -235,7 +240,7 @@ object Wish {
             val hit = runCatchingSuspend { fetcher.get(sharkSearchUrl(Titles.display(title))).let { if (it.ok) parseShark(it.body) else emptyList() } }
                 .getOrDefault(emptyList()).firstOrNull { key(it.title) == target }
             gameId = hit?.gameId
-            if (hit != null && base.image == null) base = base.copy(image = hit.image)
+            if (hit != null && base.image == null) base = base.copy(image = hit.image, thumb = hit.thumb ?: base.thumb)
         }
         if (gameId == null) return if (found != null) base.copy(at = now) else WishInfo(at = now, notFound = true)
         base = base.copy(gameId = gameId)
