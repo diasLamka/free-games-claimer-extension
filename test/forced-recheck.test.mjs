@@ -1,4 +1,4 @@
-/* Une recuperation demandee ne rejoue pas la semaine (2.108.1).
+/* Une recuperation demandee ne rejoue pas la semaine (2.114.1).
  *
  * Signale le 2026-10-25 : un nouveau jeu Epic est offert, et l'extension reprend
  * la recuperation d'un ancien jeu, deja pris le jeudi, au lieu de ne prendre que

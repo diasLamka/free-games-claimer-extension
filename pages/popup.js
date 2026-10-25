@@ -19,7 +19,7 @@
 import { t, translateDocument, setLocale, intlLocale } from '../lib/i18n.js';
 import { STORE_LABELS, STORES, normaliseTitle, displayTitle } from '../watch/offer.js';
 import {
-  preview, judge, REASONS, readWorth, isExtraContent,
+  preview, judge, REASONS, readWorth, isExtraContent, baseGameMissing,
 } from '../watch/filters.js';
 import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
 import { money, worthLabel as worthLabelIn } from '../lib/money.js';
@@ -84,6 +84,8 @@ import qrcodegen from './vendor/qrcodegen.js';
 import { GUARD_SITES, guardScriptId } from '../watch/owned-guard.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
+import { buildReport } from '../watch/failure-report.js';
+import { autonomyReport, LEVEL as AUT_LEVEL, BLOCK as AUT_BLOCK, WINDOW_DAYS as AUT_DAYS } from '../watch/autonomy.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
 } from '../watch/session.js';
@@ -201,6 +203,7 @@ const DROP_KEYS = {
   [REASONS.EXTRA_CONTENT]: 'dropExtra',
   [REASONS.TITLE_EXCLUDED]: 'dropExcluded',
   [REASONS.NO_DESTINATION]: 'dropNoPage',
+  [REASONS.NEEDS_BASE]: 'dropNeedsBase',
 };
 
 const SOURCE_LABELS = { 'epic-api': 'Epic Games', 'epic-mobile': 'Epic Games (mobile)', fab: 'Fab (Epic)', gamerpower: 'GamerPower', gog: 'GOG', steam: 'Steam' };
@@ -477,7 +480,7 @@ function foldSay(id, texte) {
  * que le popup reparte replie. Relu UNE fois, a la premiere lecture des
  * preferences : un rendu suivant ne rouvre pas sous les doigts ce qu'on vient
  * de fermer. Le compte de chaque section reste dans son titre. */
-const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-free', 'fold-weekends', 'fold-tonight', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
+const REMEMBERED_FOLDS = Object.freeze(['fold-waiting', 'fold-autonomy', 'fold-free', 'fold-weekends', 'fold-tonight', 'fold-dlc', 'fold-wishes', 'fold-upcoming', 'fold-claimed', 'fold-codes']);
 const FOLDS_KEY = EN_ONGLET ? 'foldsTab' : 'foldsPopup';
 
 function applyFolds() {
@@ -1067,7 +1070,9 @@ function renderGames(all, behaviour) {
   const filters = get(all, KEY_FILTERS, {});
   const now = Date.now();
 
-  const rows = openOffers(catalog, behaviour, now);
+  /* Les DLC dont on n'a pas le jeu de base, l'option active (2.113.0) : masques de la liste, des comptes et de « Vous attendent ». */
+  const sansBase = filters.skipNeedsBase === true ? ownedStoreKeys(get(all, KEY_COLLECTION, null)) : null;
+  const rows = openOffers(catalog, behaviour, now).filter(({ offer }) => !sansBase || !baseGameMissing(offer, sansBase));
   const puces = storeChips(rows, storeFilter, [...PRIMARY, ...SECONDARY].map((s) => s.id));
   storeFilter = puces.active;
   renderStoreChips(puces);
@@ -1145,6 +1150,19 @@ function renderGames(all, behaviour) {
       await load();
     });
     row.append(retry);
+
+    /* Le rapport d'echec (2.111.0) : ce que la page montrait, a coller dans un message. */
+    if (offer.failure || offer.details) {
+      const report = el('button', 'btn-sm', t('copyReport'));
+      report.title = t('copyReportHint');
+      report.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try { await navigator.clipboard.writeText(buildReport(offer, { version: api.runtime.getManifest().version, now: Date.now() })); } catch { return; }
+        report.textContent = t('reportCopied');
+        setTimeout(() => { report.textContent = t('copyReport'); }, 2000);
+      });
+      row.append(report);
+    }
     lane.append(row);
   }
 
@@ -2262,6 +2280,42 @@ async function renderShortcuts() {
   document.getElementById('shortcuts-edit').hidden = !SHORTCUTS_PAGE;
 }
 
+/* L'autonomie (2.112.0) : recupere-t-elle vraiment seule, et qu'est-ce qui la freine ? Voir watch/autonomy.js. */
+async function renderAutonomy(all) {
+  const supported = Boolean(api.permissions) && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
+  let granted = false;
+  if (supported) {
+    try { granted = await api.permissions.contains({ permissions: [OPTIONAL.BACKGROUND] }); } catch { granted = false; }
+  }
+  const r = autonomyReport({
+    settings: behaviourCache,
+    catalog: get(all, KEY_CATALOG, {}),
+    sessions: get(all, KEY_SESSIONS, {}),
+    stopped: all[KEY_STOP] === true,
+    backgroundSupported: supported,
+    backgroundGranted: granted,
+    claimableStores: claimableStoresFor(behaviourCache),
+    now: Date.now(),
+  });
+  const names = (stores) => stores.map((s) => STORE_LABELS[s] || s).join(', ');
+  const host = document.getElementById('autonomy');
+  host.textContent = '';
+  const titre = { [AUT_LEVEL.ON]: 'autOn', [AUT_LEVEL.PARTIAL]: 'autPartial', [AUT_LEVEL.OFF]: 'autOff' }[r.level];
+  host.append(el('p', 'changed', t(titre)));
+  for (const b of r.blocks) {
+    const ligne = {
+      [AUT_BLOCK.OFF]: () => t('autWhyOff'),
+      [AUT_BLOCK.STOPPED]: () => t('autWhyStopped'),
+      [AUT_BLOCK.CLOSED]: () => t('autWhyClosed'),
+      [AUT_BLOCK.SESSIONS]: () => t('autWhySessions', names(b.stores)),
+      [AUT_BLOCK.CHALLENGES]: () => t('autWhyChallenges', names(b.stores)),
+    }[b.kind];
+    if (ligne) host.append(el('p', 'changed', ligne()));
+  }
+  if (r.alone + r.withYou > 0) host.append(el('p', 'changed', t('autCounts', String(AUT_DAYS), String(r.alone), String(r.withYou))));
+  document.getElementById('autonomy-count').textContent = r.blocks.length || '';
+}
+
 async function renderBackground() {
   const supported = Boolean(api.permissions)
     && declaresOptional(api.runtime.getManifest(), OPTIONAL.BACKGROUND);
@@ -2734,6 +2788,7 @@ function renderFilters(all, behaviour) {
   document.getElementById('min-worth-value').textContent = threshold > 0 ? money(threshold, seuilDevise) : t('noThreshold');
   document.getElementById('include-dlc').checked = filters.claimExtraContent === true;
   document.getElementById('keepable-only').checked = filters.claimOnlyKeepable !== false;
+  document.getElementById('skip-needs-base').checked = filters.skipNeedsBase === true;
   document.getElementById('autonomous').checked = behaviour.autonomousClaim !== false;
   document.getElementById('steam-auto').checked = behaviour.steamAutoClaim === true;
 
@@ -2898,6 +2953,7 @@ async function render() {
   renderFilters(all, behaviourCache);
   renderHealth(all);
   renderBackground();
+  renderAutonomy(all);
   renderCanary(all);
   renderStores(all, behaviourCache);
   renderDryRun(all, behaviourCache);
@@ -3117,6 +3173,7 @@ document.getElementById('min-worth').addEventListener('input', (e) => {
 document.getElementById('min-worth').addEventListener('change', (e) => writeFilters({ minWorth: Number(e.target.value) }));
 document.getElementById('include-dlc').addEventListener('change', (e) => writeFilters({ claimExtraContent: e.target.checked }));
 document.getElementById('keepable-only').addEventListener('change', (e) => writeFilters({ claimOnlyKeepable: e.target.checked }));
+document.getElementById('skip-needs-base').addEventListener('change', (e) => writeFilters({ skipNeedsBase: e.target.checked }));
 document.getElementById('autonomous').addEventListener('change', (e) => writeBehaviour({ autonomousClaim: e.target.checked }));
 
 /* --- Steam: never on a single click.

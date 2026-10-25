@@ -100,6 +100,19 @@
       }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, true);
     }).then(function (outcome) {
+      /* Ni phrase reconnue ni refus : la bibliotheque du compte tranche (2.110.0). Le titre y est, l'echange a reussi ;
+         sinon il reste "non confirme", avec ce que la page disait -- pour qu'une phrase nouvelle se lise dans le journal. */
+      if (outcome.type !== 'timeout') return outcome;
+      return gogSettleOutcome(outcome, entry.title).then(function (settled) {
+        if (settled.type === 'success') {
+          log(PLATFORM, 'info', 'Page de succes non reconnue, mais "' + entry.title + '" est dans la bibliotheque GOG : echange confirme.');
+          return settled;
+        }
+        var seen = String((document.body && document.body.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (seen) log(PLATFORM, 'warn', 'Texte de la page a l\'expiration : "' + seen + '"');
+        return outcome;
+      });
+    }).then(function (outcome) {
       var remaining;
       if (outcome.type === 'success') {
         removePendingRedeemCode(entry.code);

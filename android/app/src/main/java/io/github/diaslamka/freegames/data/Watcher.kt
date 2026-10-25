@@ -47,11 +47,26 @@ object Watcher {
             val before = previous[o.key]
             out[o.key] = o.copy(firstSeen = before?.firstSeen ?: now, lastSeen = now)
         }
-        val native = out.values.filter { it.source != GamerPowerSource.NAME }
-            .map { "${it.store}:${it.normalisedTitle}" }.toSet()
+        val nativeOffers = out.values.filter { it.source != GamerPowerSource.NAME }
+        val native = nativeOffers.map { "${it.store}:${it.normalisedTitle}" }.toSet()
         return out.filterValues { o ->
-            !o.isExpired(now) && !(o.source == GamerPowerSource.NAME && "${o.store}:${o.normalisedTitle}" in native)
+            !o.isExpired(now) && !(o.source == GamerPowerSource.NAME && ("${o.store}:${o.normalisedTitle}" in native || sameEpicWindow(o, nativeOffers)))
         }
+    }
+
+    /** Epic donne ses titres dans la langue du pays, l'agregateur en anglais : le meme jeu n'a pas le meme titre (1.41.0). */
+    private const val SAME_END_MS = 36 * 3_600_000L
+
+    /**
+     * Une offre Epic de l'agregateur qui finit en meme temps qu'une offre de la source Epic est CETTE offre : l'API
+     * d'Epic liste toutes les promotions en cours, et l'agregateur arrondit la fin a 23:59 (heure de New York), soit une
+     * douzaine d'heures d'ecart au plus. Sans date de fin des deux cotes, rien ne le prouve : on garde. Epic seul --
+     * ailleurs, un autre jeu peut tres bien finir le meme jour.
+     */
+    private fun sameEpicWindow(o: Offer, natives: List<Offer>): Boolean {
+        val end = o.end ?: return false
+        if (o.store != Stores.EPIC) return false
+        return natives.any { n -> n.store == Stores.EPIC && n.end != null && kotlin.math.abs(n.end - end) <= SAME_END_MS }
     }
 
     suspend fun check(context: Context, reason: String): Summary = withContext(Dispatchers.IO) {
@@ -158,6 +173,9 @@ object Watcher {
             Scheduler.digestAt(context, Digest.nextSlot(it, now, ZoneId.systemDefault()) + 60_000)
         }
         refreshOdds(now)
+        refreshRates(now)
+        refreshWishes(now)
+        refreshCovers(now)
         refreshTonight(now)
         runCatchingSuspend { io.github.diaslamka.freegames.widget.TonightWidget.refresh(context) }
         runCatchingSuspend { io.github.diaslamka.freegames.widget.FreeNowWidget.refresh(context) }
@@ -191,6 +209,36 @@ object Watcher {
         if (Odds.targets(s).none { Odds.needsInfo(s, it, now) }) return
         val next = Odds.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
         Graph.store.update { st -> st.copy(odds = next, oddsAt = now) }
+    }
+
+    /** Le taux du jour (1.43.0) : une lecture par jour au plus, dans la devise du pays choisi. */
+    suspend fun refreshRates(now: Long) {
+        val s = Graph.store.value
+        val base = Countries.of(s.settings.country).currency
+        if (!Rates.due(s.rates, base, now)) return
+        val next = Rates.refresh(Graph.http, s, now, base) ?: return
+        if (next != s.rates) Graph.store.update { st -> st.copy(rates = next) }
+    }
+
+    /** Les souhaits en detail (1.42.0) : six au plus, toutes les demi-heures au plus ; les prix releves s'accumulent. */
+    suspend fun refreshWishes(now: Long, force: Boolean = false) {
+        val s = Graph.store.value
+        if (!force && s.wishAt != null && now - s.wishAt < Wish.PASS_EVERY_MS) return
+        if (Wish.targets(s).none { Wish.needs(s.wishInfo[Wish.key(it.first)], now) }) return
+        val next = Wish.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        // Fusionne : un souhait ajoute ou retire pendant la lecture n'est ni perdu ni ressuscite.
+        Graph.store.update { st ->
+            val keep = Wish.targets(st).map { Wish.key(it.first) }.toSet()
+            st.copy(wishInfo = (st.wishInfo + next).filterKeys { it in keep }, wishAt = now)
+        }
+    }
+
+    /** Les jaquettes qui manquent encore (1.42.0) : huit recherches Steam au plus par passage. */
+    suspend fun refreshCovers(now: Long) {
+        val s = Graph.store.value
+        if (Covers.missing(s, now).isEmpty()) return
+        val next = Covers.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        Graph.store.update { st -> st.copy(covers = st.covers + next) }
     }
 
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam de la pile, cent au plus, une fois par heure au plus. */

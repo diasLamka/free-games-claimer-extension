@@ -309,7 +309,7 @@ const catalogue = (extra = {}) => ({
   'epic:hades': { store: 'epic', storeId: 'hades', title: 'Hades', image: JAQUETTE, ...extra },
 });
 
-test('un jeu pris sur l\'autre appareil entre au registre AVEC la jaquette que le catalogue connait (2.108.1)', async () => {
+test('un jeu pris sur l\'autre appareil entre au registre AVEC la jaquette que le catalogue connait (2.114.1)', async () => {
   const { catalogImageLookup } = await import('../watch/relay.js');
   const r = applyMessages({ dev: 'c0ffee01', locks: {} }, [FX.message], {
     library: {}, now: NOW, ...helpers, imageFor: catalogImageLookup(catalogue()),

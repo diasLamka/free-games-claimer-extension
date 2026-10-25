@@ -306,6 +306,19 @@ test('les motifs de succes GOG reconnaissent les libelles accentues (v2.5.0)', (
   assert.ok(!fgc.GOG_REDEEM_SUCCESS_TEXT.test('Code invalide'));
 });
 
+// Constate le 2026-10-11 : GOG a bien ajoute WarBreeds, mais la page dit « Code redeemed successfully » et « successfully added 1 item
+// to your GOG account » -- ni l'un ni l'autre n'etait reconnu, l'echange restait « non confirme » alors que le jeu etait au compte.
+test('la page de succes GOG de 2026 est reconnue (code redeemed successfully)', () => {
+  const page = "Code redeemed successfully! Great news! You've successfully added 1 item to your GOG account. Due to high demand, your game might take a little longer to appear in your Owned Games section, but don't worry — it'll be there shortly! Warbreeds - Amazon Luna Go to my account";
+  assert.ok(fgc.GOG_REDEEM_SUCCESS_TEXT.test(page));
+  assert.ok(fgc.GOG_REDEEM_SUCCESS_TEXT.test('Code redeemed successfully!'));
+  assert.ok(fgc.GOG_REDEEM_SUCCESS_TEXT.test("You've successfully added 2 items to your GOG account."));
+  assert.ok(fgc.GOG_REDEEM_SUCCESS_TEXT.test('Code échangé avec succès'));
+  // un refus ne ressemble pas a un succes
+  assert.ok(!fgc.GOG_REDEEM_SUCCESS_TEXT.test('This code has already been redeemed'));
+  assert.ok(!fgc.GOG_REDEEM_SUCCESS_TEXT.test('Code could not be redeemed. Please try again.'));
+});
+
 test('le bouton de confirmation GOG accentue est reconnu (v2.7.0)', () => {
   const match = (label) => fgc.GOG_REDEEM_CONFIRM_PATTERNS.some((p) => p.test(label));
   assert.ok(match('Récupérer'));

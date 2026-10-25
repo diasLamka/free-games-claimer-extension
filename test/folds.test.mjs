@@ -9,6 +9,7 @@ const HTML = lire('pages/popup.html');
 const JS = lire('pages/popup.js');
 const PLIS = {
   'fold-waiting': ['waitingOnYou', 'waiting-count', false],
+  'fold-autonomy': ['autTitle', 'autonomy-count', false],
   'fold-free': ['freeNow', 'free-count', false],
   'fold-weekends': ['weekendsTitle', 'weekends-count', false],
   'fold-tonight': ['tonightTitle', 'tonight-count', false],

@@ -1235,6 +1235,54 @@
   "retryNow": {
     "message": "Retry"
   },
+  "copyReport": {
+    "message": "Report"
+  },
+  "reportCopied": {
+    "message": "Copied"
+  },
+  "copyReportHint": {
+    "message": "Copy a report of this failure: what the page showed, to paste into a message"
+  },
+  "autTitle": {
+    "message": "Autonomy"
+  },
+  "autOn": {
+    "message": "Claims on its own"
+  },
+  "autPartial": {
+    "message": "Claims on its own, with brakes"
+  },
+  "autOff": {
+    "message": "Does not claim on its own"
+  },
+  "autWhyOff": {
+    "message": "Automatic claiming is off."
+  },
+  "autWhyStopped": {
+    "message": "Emergency stop is on."
+  },
+  "autWhyClosed": {
+    "message": "Chrome must stay open: the background permission is off."
+  },
+  "autWhySessions": {
+    "message": "Signed out: $1."
+  },
+  "autWhyChallenges": {
+    "message": "$1 asked for a human check. Never solved by the extension."
+  },
+  "autCounts": {
+    "message": "Last $1 days: $2 by the watch, $3 at your request."
+  },
+  "skipNeedsBaseLabel": {
+    "message": "Skip DLC when I don’t own the base game"
+  },
+  "skipNeedsBaseHint": {
+    "message": "No attempts, no lookups, no alerts, hidden from the list. Only once your Steam library is imported."
+  },
+  "dropNeedsBase": {
+    "message": "Needs the base game"
+  },
   "tallyBestMonth": {
     "message": "best month: $1 with $2"
   },

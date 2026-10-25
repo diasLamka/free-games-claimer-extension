@@ -56,6 +56,14 @@ export const DEFAULT_FILTERS = Object.freeze({
    * compte d'un autre jeu.
    */
   claimExtraContent: false,
+  /**
+   * Ne pas chercher les DLC dont on n'a pas le jeu de base (2.113.0).
+   *
+   * Un DLC Steam gratuit dont le jeu de base manque revenait en « Jeu de base requis », relu toutes les douze heures, affiche, annonce.
+   * Coupe par defaut, comme tout reglage de ce module qui retire quelque chose : c'est a l'utilisateur de le decider. Actif, il ecarte le DLC
+   * -- ni essai, ni lecture, ni ligne, ni annonce --, et ne conclut JAMAIS d'une collection Steam absente (voir baseGameMissing).
+   */
+  skipNeedsBase: false,
   /** Magasins autorises. null = tous ceux qu'on sait reclamer. */
   allowedStores: null,
   /** Titres a ne jamais reclamer. Comparaison sur le titre normalise. */
@@ -73,6 +81,7 @@ export const REASONS = Object.freeze({
   EXTRA_CONTENT: 'contenu additionnel',
   TITLE_EXCLUDED: 'titre exclu',
   NO_DESTINATION: 'aucune page a ouvrir',
+  NEEDS_BASE: 'jeu de base manquant',
 });
 
 /* ------------------------------------------------------------------ valeur */
@@ -263,6 +272,25 @@ export function isKeepable(offer) {
   return worth > 0;
 }
 
+/* -------------------------------------------------------------- jeu de base */
+
+/**
+ * Cette offre est un DLC Steam dont on n'a PAS le jeu de base ? (2.113.0)
+ *
+ * Elle ne le dit que sur une preuve. La collection Steam, quand elle a ete lue (au moins un jeu Steam dedans), tranche : le jeu de base y est ou n'y
+ * est pas -- et s'il y est maintenant, un ancien « Jeu de base requis » ne bloque plus. Sans collection Steam lue, seul le verdict deja constate
+ * (« needs_base_game », rendu par le module Steam apres avoir lu la bibliotheque du compte) compte : ne pas savoir n'est pas savoir que le jeu
+ * manque, et ecarter a tort un DLC offert est la seule erreur qui coute.
+ */
+export function baseGameMissing(offer, ownedIds) {
+  if (!offer || offer.store !== STORES.STEAM) return false;
+  const base = /^\d+$/.test(String(offer.parentAppid || '')) ? String(offer.parentAppid) : null;
+  if (!base) return false;
+  const lue = ownedIds && typeof ownedIds.has === 'function' && [...ownedIds].some((k) => String(k).startsWith('steam:'));
+  if (lue) return !ownedIds.has('steam:' + base);
+  return offer.verdict === 'needs_base_game';
+}
+
 /* -------------------------------------------------------------- evaluation */
 
 /**
@@ -329,6 +357,7 @@ export function judge(offer, filters = {}, { supportedStores = [], owned = null,
   if (ownedIds && offerStoreKeys(offer).some((k) => ownedIds.has(k))) {
     return deny(REASONS.ALREADY_OWNED);
   }
+  if (f.skipNeedsBase && baseGameMissing(offer, ownedIds)) return deny(REASONS.NEEDS_BASE);
   for (const excludedTitle of f.excludedTitles || []) {
     const reason = normaliseTitle(excludedTitle);
     if (reason && title.includes(reason)) return deny(REASONS.TITLE_EXCLUDED);

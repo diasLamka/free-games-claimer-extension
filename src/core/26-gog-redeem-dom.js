@@ -45,7 +45,7 @@
     return null;
   }
 
-  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|code utilis[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
+  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|redeemed successfully|successfully added|added \d+ items? to your|code (utilis|[e\u00e9]chang)[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
   var GOG_REDEEM_CONFIRM_PATTERNS = [/^r[e\u00e9]cup[e\u00e9]rer$/i, /utiliser (le|ce|mon) code/i, /^utiliser$/i, /^redeem$/i, /redeem (the |this )?code/i, /ajouter [a\u00e0] (ma|la|votre) biblioth/i, /add to (my |your )?(account|library)/i, /^obtenir$/i, /^get it$/i, /^confirmer$/i, /^confirm$/i];
 
   /* CE QUE L'ECHANGE GOG A LE DROIT DE CLIQUER.
@@ -83,6 +83,52 @@
       return /(^|\s)warning-message(\s|$)/i.test(String(n.className || '')) || !!classifyGogWarning(text);
     });
     return visible ? (visible.textContent || '').trim() : null;
+  }
+
+  /* LA BIBLIOTHEQUE DIT LA VERITE QUAND LA PAGE SE TAIT (2.110.0).
+   *
+   * Les phrases de GOG changent sans prevenir : le 2026-10-11, "Code redeemed successfully" n'etait pas reconnu et un jeu
+   * ajoute au compte etait declare "non confirme". Quand l'attente finit sans phrase ni refus, on demande donc a la
+   * bibliotheque du compte -- meme origine que la page, donc meme session -- si le titre y est. Il y est : succes. Il n'y est
+   * pas (GOG previent qu'il peut mettre un moment a apparaitre) : l'echange reste "non confirme", rien n'est invente. */
+  var GOG_LIBRARY_EDITION = /\b(standard|deluxe|ultimate|definitive|complete|goty|game of the year|gold|premium|enhanced|remastered|anniversary|special|collector s|digital) edition\b/g;
+
+  function gogTitleCore(title) {
+    var s = String(title == null ? '' : title).toLowerCase();
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    s = s.replace(/\s*[-\u2013\u2014(]\s*amazon luna\s*\)?\s*$/, ' ');
+    return s.replace(/[^a-z0-9]+/g, ' ').replace(GOG_LIBRARY_EDITION, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function gogLibrarySearchUrl(title) {
+    var q = String(title == null ? '' : title).replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\b(key\s+)?giveaway\b/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    return 'https://www.gog.com/account/getFilteredProducts?mediaType=1&sortBy=title&page=1&search=' + encodeURIComponent(q);
+  }
+
+  function gogLibraryHasTitle(body, title) {
+    var want = gogTitleCore(title);
+    if (!want || !body || !Array.isArray(body.products)) return false;
+    return body.products.some(function (p) { return p && gogTitleCore(p.title) === want; });
+  }
+
+  /* Vrai seulement si la bibliotheque s'est lue ET contient le titre. Tout le reste -- reseau, 403, JSON illisible -- vaut non. */
+  function gogOwnedInLibrary(title, fetcher) {
+    var get = fetcher || function (url, opts) { return fetch(url, opts); };
+    return Promise.resolve().then(function () {
+      return get(gogLibrarySearchUrl(title), { credentials: 'include', headers: { Accept: 'application/json' } });
+    }).then(function (res) {
+      if (!res || !res.ok) return false;
+      return res.json().then(function (body) { return gogLibraryHasTitle(body, title); });
+    }).catch(function () { return false; });
+  }
+
+  /* Le verdict de l'attente, corrige par la bibliotheque : seul "timeout" (ni phrase ni refus) est rejuge ; tout autre
+     verdict -- refus, captcha, succes lu -- reste tel quel. */
+  function gogSettleOutcome(outcome, title, fetcher) {
+    if (!outcome || outcome.type !== 'timeout') return Promise.resolve(outcome);
+    return gogOwnedInLibrary(title, fetcher).then(function (owned) {
+      return owned ? { type: 'success', detail: 'bibliotheque' } : outcome;
+    });
   }
 
   function watchGogRedeemOutcome(form, originalSubmit, timeout, afterConfirm) {

@@ -250,6 +250,11 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
     // La sauvegarde complete et chiffree (1.28.0).
     val vault = rememberVaultFlow(onSettingsChanged = ::settingsChanged)
 
+    // Le taux du jour (1.43.0) : lu a l'ouverture, une fois par jour au plus -- les prix en euros n'attendent pas le passage de la veille.
+    LaunchedEffect(Unit) {
+        runCatching { io.github.diaslamka.freegames.data.Watcher.refreshRates(System.currentTimeMillis()) }
+    }
+
     // Premiere ouverture : les notifications, puis un premier passage.
     LaunchedEffect(Unit) {
         // L'appli est ouverte : la sentinelle est reposee (une alarme ne survit pas a un redemarrage du telephone).
@@ -387,6 +392,20 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                     onClaim = { claim(it) },
                     onOpen = { ClaimSession.openExternally(context, it) },
                     onAccounts = { tab = 3 },
+                    android = remember { runCatching { io.github.diaslamka.freegames.data.Restrictions.read(context) }.getOrNull() },
+                    onSettings = { tab = 3 },
+                    onClearProofs = {
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.dir(context))
+                            io.github.diaslamka.freegames.data.Proofs.clear(io.github.diaslamka.freegames.data.Proofs.failDir(context))
+                            Graph.store.update { s ->
+                                s.copy(
+                                    library = s.library.mapValues { it.value.copy(proof = null) },
+                                    attempts = s.attempts.mapValues { e -> e.value.failure?.let { f -> e.value.copy(failure = f.copy(shot = null)) } ?: e.value },
+                                )
+                            }
+                        }
+                    },
                 )
                 0 -> GamesScreen(
                     state = state, now = now, refreshing = refreshing, claiming = claiming,
@@ -431,8 +450,27 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
                 )
                 2 -> WishlistScreen(
                     state, now,
-                    onAdd = { t -> scope.launch { Graph.store.update { s -> if (s.wishlist.any { Titles.normalise(it) == Titles.normalise(t) }) s else s.copy(wishlist = listOf(t) + s.wishlist) } } },
-                    onRemove = { t -> scope.launch { Graph.store.update { s -> s.copy(wishlist = s.wishlist.filter { it != t }) } } },
+                    onAdd = { t ->
+                        scope.launch {
+                            Graph.store.update { s -> if (s.wishlist.any { Titles.normalise(it) == Titles.normalise(t) }) s else s.copy(wishlist = listOf(t) + s.wishlist) }
+                            // Le prix et l'image se cherchent tout de suite, sans attendre le prochain passage.
+                            runCatching { io.github.diaslamka.freegames.data.Watcher.refreshWishes(System.currentTimeMillis(), force = true) }
+                        }
+                    },
+                    onRemove = { t -> scope.launch { Graph.store.update { s -> s.copy(wishlist = s.wishlist.filter { it != t }, wishInfo = s.wishInfo - io.github.diaslamka.freegames.data.Wish.key(t)) } } },
+                    suggest = { term -> io.github.diaslamka.freegames.data.Wish.suggest(Graph.http, term, io.github.diaslamka.freegames.sources.Countries.of(state.settings.country).code) },
+                    onAddSuggestion = { sug ->
+                        scope.launch {
+                            val now2 = System.currentTimeMillis()
+                            Graph.store.update { s ->
+                                val k = io.github.diaslamka.freegames.data.Wish.key(sug.title)
+                                if (s.wishlist.any { Titles.normalise(it) == k }) s
+                                else s.copy(wishlist = listOf(sug.title) + s.wishlist, wishInfo = s.wishInfo + (k to io.github.diaslamka.freegames.data.Wish.seed(sug)))
+                            }
+                            runCatching { io.github.diaslamka.freegames.data.Watcher.refreshWishes(now2, force = true) }
+                        }
+                    },
+                    onOpen = { ClaimSession.openExternally(context, it) },
                 )
                 else -> SettingsScreen(
                     state, now,
@@ -484,14 +522,28 @@ fun AppRoot(session: ClaimSession, intents: StateFlow<Intent?>, onIntentHandled:
             }
     }
 
-    AdaptiveFrame(tab, { tab = it }, top = {
-        val fs = familySession
-        if (fs != null) ClaimPanel(
-            fs,
-            onStopped = { familyJob?.cancel() },
-            onDismissed = { fs.release(); familySession = null },
-        ) else ClaimPanel(session)
-    }) { screen() }
+    // Les images connues, par titre (1.40.0) : refaites seulement quand ce dont elles viennent change.
+    val images = remember(state.offers, state.library, state.upcoming, state.owned, state.ratings, state.tonightApps, state.tonightTitles) {
+        io.github.diaslamka.freegames.data.Images.index(state)
+    }
+    val money = remember(state.rates, state.settings.country) {
+        val base = io.github.diaslamka.freegames.sources.Countries.of(state.settings.country).currency
+        val at = System.currentTimeMillis()
+        MoneyFmt(
+            { a, c -> io.github.diaslamka.freegames.data.Rates.show(a, c, state.rates, base, at) },
+            { w -> io.github.diaslamka.freegames.data.Rates.showWorth(w, state.rates, base, at) },
+        )
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalImages provides images, LocalMoney provides money) {
+        AdaptiveFrame(tab, { tab = it }, top = {
+            val fs = familySession
+            if (fs != null) ClaimPanel(
+                fs,
+                onStopped = { familyJob?.cancel() },
+                onDismissed = { fs.release(); familySession = null },
+            ) else ClaimPanel(session)
+        }) { screen() }
+    }
 
     helpLink?.let { link ->
         HelpDialog(

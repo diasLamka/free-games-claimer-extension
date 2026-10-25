@@ -39,7 +39,7 @@ import { TYPES as RELAY_TYPES, MAX_HELP_MS, ROLES as RELAY_ROLES, syncRelay, ann
 import { ownedStoreKeys } from './collection.js';
 import { refreshRates } from './rates.js';
 import { currencyFor } from './locale.js';
-import { split } from './filters.js';
+import { split, baseGameMissing } from './filters.js';
 import {
   MODES, decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
@@ -48,6 +48,7 @@ import { t, intlLocale } from '../lib/i18n.js';
 import { ratingLine } from './steam-ratings.js';
 import { deferredDue } from './taste.js';
 import { delayText } from './lookup.js';
+import { failureOf } from './failure-report.js';
 import {
   claimOffer,
   hasRoom,
@@ -129,10 +130,12 @@ function readableHours(ms) {
  * l'offre reste annoncable. C'est voulu -- l'agregateur laisse huit offres sur
  * vingt sans date, et les taire serait pire que de les annoncer.
  */
-export function toNotify(catalog, now) {
+export function toNotify(catalog, now, { filters = null, ownedIds = null } = {}) {
   if (typeof now !== 'number') throw new TypeError('aAnnoncer : "maintenant" est obligatoire');
+  const sansBase = Boolean(filters && filters.skipNeedsBase);
   return Object.values(catalog || {}).filter(
-    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED && !isExpired(o, now),
+    // Un DLC dont on n'a pas le jeu de base, l'option active (2.113.0) : retenu, pas perdu -- il s'annonce si l'option se coupe ou si le jeu est achete.
+    (o) => !o.notifiedAt && o.state !== STATES.EXPIRED && !isExpired(o, now) && !(sansBase && baseGameMissing(o, ownedIds)),
   );
 }
 
@@ -340,6 +343,7 @@ export async function runCycle({
            ces parametres. Les autres sources les ignorent, et c'est plus sain
            que de leur inventer une option qu'elles n'honoreraient pas. */
         r = await source.discover({
+          chrome,
           fetch: fetchImpl,
           now,
           country: ctx.locale && ctx.locale.country,
@@ -477,7 +481,7 @@ export async function runCycle({
 
     /* ---- amorcage : le premier cycle ne notifie pas ---- */
 
-    const pending = toNotify(catalog, now);
+    const pending = toNotify(catalog, now, { filters: ctx.filters, ownedIds: ctx.collection ? ownedStoreKeys(ctx.collection) : null });
     let announcements = [];
     let nextState = { ...ctx.state };
 
@@ -1072,7 +1076,7 @@ export async function claimWhatCanBe({
      plus recent que cette memoire. Ce que les MAGASINS disent posseder
      (`collection`, lu sur le compte) reste cru. */
   forced = false,
-  /* « Tout recuperer » (2.108.1) : une demande en bloc ne rouvre pas ce que le
+  /* « Tout recuperer » (2.114.1) : une demande en bloc ne rouvre pas ce que le
      registre et la memoire « deja a toi » disent pris. Elle reste `forced` pour
      le reste -- le moteur relit la page de ce qui n'est PAS connu pris, et la
      question « montrez-moi le bouton » peut se poser --, mais l'utilisateur
@@ -1281,6 +1285,10 @@ export async function claimWhatCanBe({
       // Le motif technique est garde : c'est lui qui dit a l'utilisateur ce
       // qu'il doit faire, quand l'extension ne peut plus rien.
       details: r.details || null,
+      // Le rapport d'echec (2.111.0) : ce que la page montrait. Un verdict sans echec efface le precedent.
+      failure: failureOf({ verdict: r.verdict, details: r.details, page: r.page }, Date.now()),
+      // Seul ou a la demande (2.112.0) : la veille l'a pris (true) ou l'utilisateur l'a demande (false). Ce que l'autonomie compte.
+      alone: r.verdict === VERDICTS.CLAIMED || r.verdict === VERDICTS.REDEEMED ? !forced : (avant.alone ?? null),
       attemptStartedAt: null,
       // Garde, lui : c'est sur cette date que se regle le rythme de Steam.
       // Une simple lecture de bibliotheque ne la deplace pas.

@@ -572,6 +572,8 @@ export async function claimOffer(offer, {
     return {
       verdict: response.verdict,
       details: response.reasonText || null,
+      // Ce que la page montrait (2.111.0) : joint par le moteur aux seuls verdicts d'echec.
+      page: response.page || null,
       key: response.key || null,
       resolvedUrl,
       store,
@@ -935,7 +937,7 @@ async function closeEmptiedWindow(chrome, windowId, tabId) {
  * resiste. Ne jette jamais : un menage qui echoue ne doit pas transformer un
  * verdict acquis en erreur.
  */
-async function closeHiddenWindow(chrome, windowId, tabId) {
+export async function closeHiddenWindow(chrome, windowId, tabId) {
   if (windowId === null || windowId === undefined) return;
   try {
     await chrome.windows.remove(windowId);

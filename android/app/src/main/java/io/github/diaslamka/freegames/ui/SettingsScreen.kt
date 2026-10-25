@@ -259,6 +259,7 @@ fun SettingsScreen(
                         BrutButton(stringResource(R.string.import_backup), onImport)
                         BrutButton(stringResource(R.string.export_backup), onExport, primary = false)
                     }
+                    Toggle(stringResource(R.string.set_keep_proofs), stringResource(R.string.set_keep_proofs_hint), s.keepProofs) { v -> onSettings { it.copy(keepProofs = v) } }
                     state.importedAt?.let {
                         Text("> " + stringResource(R.string.imported_on, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
                     }

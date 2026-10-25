@@ -126,7 +126,7 @@ private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Uni
                 )
             }
         }
-        e.worth?.let {
+        LocalMoney.current.worth(e.worth)?.let {
             Text(
                 it, style = MaterialTheme.typography.labelLarge, color = b.onAccent,
                 modifier = Modifier.padding(end = 8.dp).background(b.accent).padding(horizontal = 6.dp, vertical = 3.dp),

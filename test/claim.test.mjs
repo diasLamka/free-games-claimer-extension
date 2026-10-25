@@ -60,7 +60,7 @@ function fauxAvecOnglets(scenario = {}) {
       ordres.push({ id, msg });
       if (scenario.ordreEchoue) throw new Error('Receiving end does not exist');
       if (scenario.verdict) {
-        setTimeout(() => reportVerdict(id, 'fgc-verdict', { verdict: scenario.verdict, reasonText: scenario.reasonText }), 5);
+        setTimeout(() => reportVerdict(id, 'fgc-verdict', { verdict: scenario.verdict, reasonText: scenario.reasonText, page: scenario.page }), 5);
       }
       return { recu: true };
     },
@@ -304,4 +304,20 @@ test('les verdicts definitifs ne contiennent rien de reessayable', () => {
   assert.ok(!FINAL_VERDICTS.includes(VERDICTS.LOGIN));
   assert.ok(FINAL_VERDICTS.includes(VERDICTS.CLAIMED));
   assert.ok(FINAL_VERDICTS.includes(VERDICTS.OUT_OF_SCOPE));
+});
+
+/* --------------------------- la page vue pendant l'echec (2.111.0) */
+
+test('le moteur qui echoue joint la page qu\'il voyait, elle arrive jusqu\'au resultat', async () => {
+  const ctx = fauxAvecOnglets({ verdict: VERDICTS.FAILURE, reasonText: 'delai depasse', page: { url: 'https://www.gog.com/redeem', title: 'GOG', text: 'rien de net' } });
+  const r = await claimOffer(offreEpic(), options(ctx.faux));
+  assert.equal(r.verdict, VERDICTS.FAILURE);
+  assert.equal(r.page.url, 'https://www.gog.com/redeem');
+  assert.equal(r.page.text, 'rien de net');
+});
+
+test('sans page jointe, le resultat n\'en invente pas', async () => {
+  const ctx = fauxAvecOnglets({ verdict: VERDICTS.CLAIMED });
+  const r = await claimOffer(offreEpic(), options(ctx.faux));
+  assert.equal(r.page, null);
 });

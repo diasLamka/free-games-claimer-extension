@@ -4,7 +4,7 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
-## Extension 2.108.1 et appli 1.33.4 -- 2026-10-25
+## Extension 2.114.1 et appli 1.43.1 -- 2026-10-25
 
 **Un nouveau jeu Epic ne rejoue plus le jeu pris jeudi, et les jeux pris sur l'autre appareil retrouvent leur jaquette**
 
@@ -12,10 +12,162 @@ Signale : un nouveau jeu Epic est offert, et la recuperation reprend un ancien j
 
 - **« Tout recuperer » respecte le registre** (`watch/cycle.js`, `watch/commands.js`). Depuis la 2.99.7 une recuperation demandee ne tenait pour rien ni le registre ni la memoire « deja a toi » : chaque jeu gratuit rouvrait son onglet, y compris celui pris jeudi, des qu'on touchait « Tout recuperer » pour le nouveau. La demande en bloc (`trustKnownOwned`) les croit de nouveau ; le moteur relit toujours la page de ce qui n'est pas connu pris. **Le clic sur UNE offre (« Recuperer ») garde la regle de la 2.99.7** : un geste explicite sur ce jeu-la est plus recent que la memoire.
 - **Une recuperation forcee ne remet a zero que ce qu'elle rouvre** (`epicGamesToRecheck`, `src/core/10-epic-helpers.js`). Le moteur effacait l'entree « claimed » de TOUS les jeux gratuits de la semaine, alors que, sur une fiche, il s'arrete apres le jeu de la fiche : le jeu pris jeudi perdait son entree, et le passage automatique suivant le tenait pour « non reclame ». Maintenant : sur une fiche, ce jeu seul ; sur la liste, tous sauf ceux dont l'entree est une vraie reclamation (`CLAIMED`) -- le soin de la 2.99.7 ne la touchait pas non plus. Les « deja ... » (`ALREADY_*`), que l'ancienne lecture a pu mal faire, se revoient.
-- **Les jeux pris sur l'autre appareil recoivent leur jaquette** (`watch/relay.js`, `data/Relay.kt`). Le message du relais ne porte pas d'image, et l'entree du registre naissait avec `image: null` : la liste montrait la premiere lettre du titre. Elle prend maintenant celle que le catalogue (extension) ou les offres (appli) connaissent -- par identifiant, puis par titre dans le meme magasin --, et une entree deja arrivee sans image la recoit au message suivant. La liste « Recuperes » de l'appli cherche aussi l'offre par titre, plus seulement par identifiant (`ui/ClaimedScreen.kt`).
-- Moteur fige : `reference-v2.108.1.js`. Tests : `test/forced-recheck.test.mjs` (8) et cinq dans `test/relay.test.mjs` ; un test Kotlin (`RelayTest`).
+- **Les jeux pris sur l'autre appareil recoivent leur jaquette** (`watch/relay.js`, `data/Relay.kt`). Le message du relais ne porte pas d'image, et l'entree du registre naissait avec `image: null` : la liste montrait la premiere lettre du titre. Elle prend maintenant celle que le catalogue (extension) ou les offres (appli) connaissent -- par identifiant, puis par titre dans le meme magasin --, et une entree deja arrivee sans image la recoit au message suivant. La liste « Recuperes » de l'appli cherche aussi l'offre par titre, plus seulement par identifiant (`ui/ClaimedScreen.kt`). Complete la 1.40.0 / 1.42.0, qui cherchent l'image d'un jeu sans l'avoir : ici l'appareil l'a, et elle n'etait pas rattachee.
+- Moteur fige : `reference-v2.114.1.js`. Tests : `test/forced-recheck.test.mjs` (8) et cinq dans `test/relay.test.mjs` ; un test Kotlin (`RelayTest`).
 - Non verifie : le moteur sur un vrai compte Epic (la page est derriere un mur anti-robot depuis ce poste) ; le code Kotlin n'a pas ete compile ici (pas de SDK Android) -- la CI le fait.
-- Ne change pas : un jeu dont aucune source ne connait l'image (ni le catalogue, ni le registre, ni Steam au titre exact) garde sa lettre.
+- Ne change pas : un jeu dont aucune source ne connait l'image garde sa lettre.
+
+## Appli 1.43.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Les prix en euros partout, les marchands et le plus bas historique enfin lus pour un souhait ajoute, et des vignettes pour les jeux recents de Steam**
+
+Constate en essayant la 1.42.0 sur l'emulateur (le telephone s'etait reverrouille) : les prix de CheapShark restaient en dollars, un souhait ajoute depuis la recherche n'avait ni marchands ni plus bas, et deux resultats recents (Vampire Crawlers) gardaient un « V ». Tests ecrits d'abord (`RatesTest`, 6 cas ; un cas de plus dans `WishTest` et `ImagesTest`).
+
+- **Euros partout** (`data/Rates.kt`, comme `watch/rates.js` de l'extension) : le taux du jour de la BCE (api.frankfurter.dev, sans cle, une lecture par jour a l'ouverture de l'appli et a chaque passage) convertit a l'AFFICHAGE les montants en dollars -- prix des marchands, plus bas historique, courbe, et les prix barres des cartes (« $19.99 » devient « ≈ 17,76 € »). Le « ≈ » dit que c'est approximatif ; sans taux, ou un taux de plus de trente jours, le montant garde sa devise, jamais un chiffre invente. L'etat enregistre ne bouge pas. La devise est celle du pays choisi.
+- **Un souhait ajoute depuis la recherche est lu en entier** : il etait enregistre comme « lu a l'instant » (l'image et le prix Steam), donc la lecture des marchands et du plus bas historique le sautait. Il reste a lire (`Wish.seed`, `at = 0`).
+- **Les jeux recents de Steam ont une image** : leur en-tete n'existe plus a l'ancienne adresse, Steam ne sert que la vignette 231x87, que la recherche rend. Une image, puis sa vignette, puis l'en-tete deduit : une adresse qui ne charge pas laisse la suivante (`Images`, `Cover`). Et un jeu qui n'a qu'un en-tete DEDUIT (pas une vraie image) est cherche par `Covers` comme un jeu sans image.
+- La fiche d'un souhait cache le bloc « chances » quand il n'a rien a dire (« fiche Steam pas encore lue »), et son titre devient « Gratuit : historique et chances ».
+- Verifie sur emulateur Android 14 (fgc-api34, reseau reel) : la recherche en direct avec images et prix, l'ajout, la fiche avec marchands, plus bas, et conversion en euros.
+- Non verifie : le telephone (son ecran s'eteint en 15 s et refuse que `adb` le garde allume : il faut activer « Rester activé » dans les options pour developpeurs).
+
+## Appli 1.42.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**L'onglet Souhaits devient un tableau de bord : recherche en direct avec images, prix, plus bas historique, marchands, courbe des prix -- et des jaquettes retrouvees pour les jeux qui n'en avaient pas**
+
+Demande : « rendre cet onglet le meilleur qui existe, avec images, tableau de bord, prix, historique », « recherche par jeu automatique avec images », et dans Recuperes « VAMPIRE : un V a la place d'une image ». Tests ecrits d'abord (`WishTest`, 13 cas, sur des reponses reelles de Steam et de CheapShark mesurees le 2026-10-17).
+
+- **Recherche en direct** (`Wish.suggest`) : des deux lettres, apres une pause de frappe, les resultats arrivent AVEC leur jaquette, leur prix et leur reduction ; un toucher ajoute le jeu. Steam d'abord (titre, prix dans la devise du pays), CheapShark pour ce que Steam ne vend pas (Epic seul, GOG...), sans doublon. Aucune cle d'API.
+- **Un tableau de bord** : souhaits, en promo, plus bas, gratuits -- quatre chiffres, et des filtres. Chaque souhait a sa jaquette, son prix du jour, sa reduction, et une etiquette « plus bas historique » ou « proche du plus bas » quand c'est vrai.
+- **La fiche d'un souhait** (un toucher) : la jaquette en grand, le prix Steam local, le plus bas jamais vu et sa date, les marchands du moins cher au plus cher (un toucher ouvre l'offre), la courbe des prix que l'appli a releves, ce qu'on sait de ses chances d'etre offert. Le plus bas historique ne depasse jamais le prix du jour (CheapShark le met a jour avec retard).
+- **Les prix sont lus par la veille** : six souhaits au plus par passage, toutes les six heures chacun ; un souhait fraichement ajoute est lu tout de suite. Les souhaits importes de l'extension (Steam, GOG) y sont aussi, listes sous « De tes listes ». Le prix Steam est dans la devise du pays ; tout le reste (CheapShark) est en dollars, et c'est dit.
+- **L'historique est celui que l'appli releve** : CheapShark ne donne pas de serie de prix, seulement le plus bas. Un releve est ajoute quand le prix bouge, ou apres douze heures ; soixante au plus. La courbe se remplit au fil des passages : elle commence vide, et le dit.
+- **Plus de V a la place d'une image** (`Covers`) : un jeu du registre ou une offre sans image nulle part dans l'appli est cherche sur Steam par son titre exact (huit au plus par passage ; un echec n'est pas retente avant une semaine). Les images des souhaits servent aussi aux autres ecrans. Une adresse qui ne charge pas laisse la suivante.
+- Non verifie sur telephone : la recherche en direct sur le reseau du telephone (les reponses sont reelles, mais lues depuis un PC), et la fiche sur les tres petits ecrans. Un jeu absent de Steam ET de CheapShark garde son initiale.
+
+## Appli 1.41.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Un jeu Epic n'apparait plus deux fois sur l'accueil (« Recupere » et « Bonne affaire »)**
+
+Constate sur le telephone (capture de l'accueil) : « Agent A - Casse-tete d'espions » (source Epic, recupere) et « Agent A: A Puzzle in Disguise » (agregateur, « Deja a toi »), le meme jeu. Epic donne ses titres dans la langue du pays, l'agregateur en anglais : la fusion, qui ne comparait que les titres, ne les reconnaissait pas. Une offre Epic de l'agregateur qui finit a 36 h pres d'une offre de la source Epic en est desormais ecartee (l'API d'Epic liste toutes les promotions en cours ; l'agregateur arrondit la fin a 23:59, heure de New York). Epic seulement : ailleurs, un autre jeu peut finir le meme jour. Sans date de fin, ou sans source Epic qui repond, on garde. Test : `MergeDuplicatesTest` (4 cas). Le doublon disparait au prochain passage de la veille.
+
+## Appli 1.40.0 -- 2026-10-17 (extension inchangee, 2.114.0)
+
+**Le plus d'images possible : l'initiale n'est plus que le dernier recours**
+
+Une jaquette manquante (offre Luna, entree venue du PC, jeu d'une liste sans vignette) se cherche maintenant ailleurs dans l'appli avant de tomber sur la premiere lettre : une autre offre du meme jeu, le registre, « Bientot gratuit », la fiche Steam, puis l'en-tete Steam deduit de l'appid (offre, note, registre, collection, « Ce soir »). Une image qui ne charge pas laisse la suivante. Rapprochement par titre normalise, https seulement (`data/Images.kt`, `ImagesTest`, 5 cas).
+
+## Extension 2.114.0 / Appli 1.39.0 -- 2026-10-16
+
+**Luna se recupere enfin en fond : la veille lit la liste de ses offres, sans rien montrer**
+
+Signale : des jeux Amazon Luna a recuperer, et rien de fait en arriere-plan -- alors qu'Epic, lui, se prenait tout seul. Cause : Epic et GOG ont une API qui dit a la veille QUOI est offert ; Luna n'en a pas, et aucune source ne lui donnait de jeu. La veille n'ouvrait donc jamais la page de Luna (ni la fenetre reduite de l'extension, ni la page sans ecran de l'appli), sauf pour un jeu que l'agregateur aurait cite -- ce qu'il ne fait presque jamais. Tests ecrits d'abord (`test/luna-source.test.mjs`, 16 cas ; `LunaListTest`, 8 cas).
+
+- **Une source « Amazon Luna »** (`watch/sources/luna.js`, `data/LunaList.kt`). Elle ouvre la liste des offres (`/claims/home`) dans une fenetre REDUITE -- rien a l'ecran, comme toute reclamation de la veille --, demande au moteur de la LIRE, puis referme. Chaque fiche a prendre devient une offre Amazon, reclamee ensuite par le chemin existant (une fenetre reduite par jeu, le meme moteur). Les cartes a bouton direct, sans fiche, n'en font qu'une, sur la liste ; une carte deja prise n'est pas une offre ; une fiche qui quitte la liste est terminee au passage suivant.
+- **Le moteur lit, il ne clique pas** (`readLunaList`, `src/core/31-bootstrap.js`). Un ordre `fgc-liste-luna`, une reponse `fgc-liste` : des cartes (identifiant, titre, adresse, bouton direct ou non, deja prise ou non). Aucun clic, aucune navigation (un test le verifie dans le texte de la fonction). Memes arrets nets que la reclamation : session perdue, defi de securite, page etrangere -- dits comme des erreurs, jamais comme une liste vide. Le selecteur d'attente de la liste est partage avec la serie Luna (`lunaListRoot`) : un seul endroit a corriger si Amazon change la page.
+- **Ce qui vient de la page est borne a l'arrivee** : au plus 60 cartes, titre de 120 signes, adresse acceptee seulement sur `luna.amazon.*`, parametres retires.
+- **Quand** : au plus une fois par heure (reussie ou non). Extension : seulement si Amazon est suivi ET que la reclamation autonome est active (c'est une visite du compte, du meme ordre qu'une reclamation) ; jamais pour un magasin decoche, meme par « Verifier maintenant ». Appli : dans le passage de fond « Ecran eteint » (reglage inchange, coupe par defaut), et au geste « Tout recuperer » qui passe outre l'heure ; pas pour Amazon decoche, ni session perdue. Une session perdue vue par la lecture est notee comme perdue et notifiee.
+- Dans l'appli la lecture est notee dans `sources` (page Sante : une source en erreur se voit). Dans l'extension elle suit le cycle des autres sources (backoff, anomalies).
+- Le moteur change (`content/free-games-claimer.js`) : nouveau temoin `reference-v2.114.0.js`, base de renommage rebasee.
+- **Epic, GOG, Steam : rien a faire** -- les deux premiers ont une API, Steam passe par son option. Luna etait le seul magasin sans decouverte.
+- Non verifie : la liste REELLE d'un compte Luna connecte (le moteur ne lit que ce que la serie Luna savait deja lire, mais cette lecture-ci n'a tourne que sur des cartes simulees), et la fenetre reduite / la page sans ecran sur Luna reel. Une page lue sans carte n'est pas une erreur (un compte sans offre est possible) : si Amazon change sa page, la liste restera vide sans alerte -- c'est le point a surveiller sur la premiere semaine.
+
+## Extension 2.113.0 -- 2026-10-13 (appli inchangee, 1.38.0)
+
+**Une option pour ne plus chercher les DLC dont on n'a pas le jeu de base**
+
+Constate : l'extension continuait de s'occuper des DLC Steam gratuits dont le jeu de base manque. Un tel DLC revenait en « Jeu de base requis », puis etait relu toutes les douze heures -- la bibliotheque du compte, puis le nom du jeu de base chez Steam --, restait dans « Vous attendent » et dans la liste, et s'annoncait. Tests ecrits d'abord (`test/needs-base.test.mjs`, 9 cas ; la mutation « l'option ne fait plus rien » en fait echouer trois).
+
+- **Reglages > Filtres > « Ignorer les DLC dont je n'ai pas le jeu de base »** (`skipNeedsBase`, `watch/filters.js`). **Coupee par defaut** : un reglage de ce module ne retire rien dans le dos de l'utilisateur. Active, le DLC est ecarte par `judge` -- le meme juge que la veille et que le popup -- avec le motif « Il faut le jeu de base » : plus d'essai, donc plus de lecture de la bibliotheque ni du nom du jeu de base ; plus d'annonce (il est retenu, pas perdu : il s'annonce si tu coupes l'option ou si tu achetes le jeu de base) ; plus de ligne dans « Gratuit maintenant », ni dans « Vous attendent », ni dans les comptes.
+- **Elle ne conclut que sur une preuve** (`baseGameMissing`) : quand ta collection Steam a ete lue (au moins un jeu Steam dedans), le jeu de base y est ou n'y est pas -- et s'il y est maintenant, un ancien « Jeu de base requis » ne bloque plus. Sans collection Steam lue, seul le verdict deja constate par le module Steam compte. Ne pas savoir n'est pas savoir que le jeu manque : ecarter a tort un DLC offert est la seule erreur qui coute. Il faut donc avoir importe ta bibliotheque Steam (Ma collection) pour qu'elle agisse des le premier passage.
+- Verifie dans le popup de demonstration : un DLC sans jeu de base et un DLC avec, l'option cochee : le premier quitte la liste et « Vous attendent », le second reste.
+- Ne change pas : la section « DLC gratuits de tes jeux Steam » (`steamDlc`), qui cherche les DLC gratuits de jeux que tu AS ; elle a son propre interrupteur. Seul Steam est concerne : c'est le seul magasin dont le module dit « jeu de base requis ». L'appli a deja ses deux choix depuis la 1.33.0.
+- Non verifie : un vrai cycle dans Chrome avec ta collection Steam.
+
+## Extension 2.112.0 -- 2026-10-11 (appli inchangee, 1.38.0)
+
+**L'autonomie dans l'extension : recupere-t-elle vraiment seule, et qu'est-ce qui la freine ?**
+
+Le meme constat que sur le telephone (1.38.0) : l'extension recupere seule depuis longtemps, mais rien ne disait si elle le POUVAIT. Tests ecrits d'abord (`test/autonomy.test.mjs`, 12 cas ; trois cas dans `test/cycle.test.mjs`, dont deux rouges avant le code).
+
+- **Une section « Autonomie »** dans l'onglet Jeux du popup, repliee comme les autres (son compte est le nombre de freins) : « Recupere seule », « Recupere seule, avec des freins » ou « Ne recupere pas seule » (`watch/autonomy.js`, calcul pur).
+- **Les freins**, lus dans ce que l'extension sait deja : la reclamation automatique coupee ; l'arret d'urgence enclenche (les deux : « Ne recupere pas seule ») ; la permission d'arriere-plan absente (Chrome doit alors rester ouvert -- seulement si le navigateur la propose) ; une session perdue sur un magasin qu'on reclame (la sonde, jamais un simple « inconnu ») ; une verification humaine vue ces 14 derniers jours sur un jeu pas encore pris (« L'extension ne la resout jamais »).
+- **La mesure** : chaque jeu pris porte maintenant `alone` dans le catalogue -- vrai quand la veille l'a pris, faux quand tu l'as demande (« Tout recuperer », « Recuperer »). La section compte les deux sur 14 jours. Ce qui a ete pris avant la 2.112.0 n'a pas cette information et n'est pas compte : la mesure commence a zero.
+- Verifie dans le popup de demonstration (`npm run preview`) : la section, ses lignes et son compte, avec une session perdue, un defi et des jeux pris seul et a la demande.
+- Non verifie : un vrai passage de veille dans Chrome. Une recuperation a la main sur la page d'un magasin (le moteur qui demarre quand tu ouvres la page) n'est pas comptee non plus : seules celles du cycle et de « Tout recuperer » le sont. Un jeu que le magasin dit « deja dans la bibliotheque » peut etre compte comme pris : c'est le verdict du moteur.
+
+## Appli 1.38.0 -- 2026-10-11 (extension inchangee, 2.111.1)
+
+**L'autonomie : le telephone recupere-t-il VRAIMENT seul, et qu'est-ce qui le freine ?**
+
+Le telephone recupere seul depuis la 1.2.0 : l'option « Ecran eteint » (`claimInBackground`, coupee par defaut), qui ouvre la page du magasin sans l'afficher, dans le passage de la veille de fond. Ce qui manquait n'etait pas le geste, c'etait de savoir s'il pouvait l'accomplir, et pourquoi pas. Tests ecrits d'abord (`AutonomyTest`, 10 cas, dont une mutation verifiee ; deux cas dans `RecoveryScreenTest`).
+
+- **Une carte « Autonomie »** en haut de l'onglet Recuperation (`data/Autonomy.kt`, calcul pur) : « Il recupere seul », « Il recupere seul, avec des freins » ou « Il ne recupere pas seul » (l'option est coupee : bouton Reglages).
+- **Les freins** sont lus dans ce que l'appli sait deja, rien n'est invente : une session perdue sur un magasin que tu as laisse actif ; une verification humaine vue sur les 14 derniers jours pour un jeu pas encore pris (« Epic a demande une verification. L'appli ne la resout jamais ») ; Android qui retarde ou arrete la veille (classe de veille « rare » ou « restreinte », batterie restreinte, processus tue en travaillant -- ce que la page Sante detaille). Wi-Fi seulement et en charge seulement sont des choix, pas des freins : ils s'affichent sans changer le titre.
+- **La mesure** : chaque jeu pris porte maintenant s'il l'a ete par le fond (« sans toi ») ou ecran allume (« avec toi ») -- `LibraryEntry.alone`. La carte compte les deux sur 14 jours. Ce qui a ete pris avant la 1.38.0 n'a pas cette information et n'est pas compte : la carte commence a zero et se remplit au fil des recuperations.
+- Verifie sur emulateur Android 14 : la carte s'affiche dans la charte (option coupee par defaut : « Il ne recupere pas seul », bouton Reglages).
+- Non verifie : la carte avec un vrai passage de fond reussi ; le compte « pris sans toi » se remplira apres la premiere recuperation de fond reelle. Le bouton Reglages ouvre l'onglet Reglages, pas la section Recuperation directement.
+- Ce que cette version NE change pas : un controle anti-robot n'est jamais resolu par l'appli. Sur l'emulateur, Epic en demande un des la premiere ouverture ; sur ton telephone, deja connecte, il faut mesurer -- c'est l'objet de la carte.
+
+## Extension 2.111.1 / Appli 1.37.1 -- 2026-10-11
+
+**Le rapport d'echec ne laisse plus passer un code d'echange**
+
+Une revue de securite du commit 2.111.0 a signale une fuite possible de donnees sensibles dans `watch/failure-report.js`. Releve ligne a ligne, le point reel : le nettoyage ne touchait ni le CHEMIN de l'adresse (`/redeem/<code>`, `/orders/<numero>`) ni les codes a tirets du type `ABCDE-FGHIJ-KLMNO` -- le format d'un code GOG ou Luna. Un code d'echange est un bien ; il pouvait partir dans le texte copie. Tests ecrits d'abord (l'extension : 2 cas rouges avant ; l'appli : `FailureReportCodesTest`).
+
+- Un code a tirets (trois groupes de quatre signes ou plus, majuscules et chiffres) devient `[code]`, dans le texte, le titre et l'adresse.
+- Chaque segment du chemin de l'adresse passe par le meme nettoyage (adresse electronique, code, nombre long, jeton) ; un nom de jeu en minuscules (`out-of-sight-b96ca8`) reste lisible, comme `COUNTER-STRIKE 2` ou `FREE-TO-PLAY`.
+- Limite connue : un nom d'utilisateur ou un prenom affiche sur une page de compte n'est pas reconnaissable par motif et reste dans les 300 caracteres du texte. Le rapport est copie par toi, relis-le avant de le coller.
+
+## Extension 2.111.0 / Appli 1.37.0 -- 2026-10-11
+
+**Le rapport d'echec : ce que la page montrait quand une recuperation a echoue**
+
+Le 2026-10-11, la phrase de succes de GOG avait change et il a fallu la deviner d'apres une capture envoyee a la main : l'extension savait que la recuperation avait echoue, pas ce que la page disait. Tests ecrits d'abord (extension : `test/failure-report.test.mjs`, `test/failure-page.test.mjs`, et deux cas dans `test/claim.test.mjs` et `test/cycle.test.mjs` ; appli : `FailureReportTest`, deux cas dans `RecoveryScreenTest`).
+
+- **Le moteur joint la page au verdict d'echec** (`src/core/31-bootstrap.js`, `sendToPilot`) : pour `failed`, `challenge`, `needs_login` et `needs_teaching` seulement, l'adresse sans parametres, le titre et les 600 premiers caracteres du texte principal. Le moteur est le meme dans l'extension et dans l'appli.
+- **Nettoye avant d'etre garde** : l'adresse perd ses parametres (ils portent des jetons), le texte perd les adresses electroniques, les suites de 8 chiffres ou plus et les mots de 24 signes ou plus ; 300 caracteres au plus. Ce n'est jamais nettoye apres coup, au moment de le montrer.
+- **Extension** (`watch/failure-report.js`, `watch/cycle.js`) : l'offre garde son `failure` (date, verdict, motif, page) ; un verdict sans echec l'efface. Dans « Vous attendent », un bouton **Rapport** copie un texte a coller dans un message (version, date, jeu, verdict, motif, page, texte). Le catalogue n'est pas dans la sauvegarde : le rapport n'en part pas.
+- **Appli** (`data/FailureReport.kt`, `claim/ClaimSession.kt`) : l'essai garde son `failure` ; la capture d'ecran de la page est prise tant qu'elle est a l'ecran (dossier prive `echecs`, dix au plus -- elles ne chassent jamais une preuve de recuperation ; coupees par Reglages > Donnees > « Garder une preuve », effacees par « Effacer les preuves »). Dans l'onglet Recuperation, un bouton **Rapport** sous chaque jeu bloque ou en attente ouvre la capture et le texte, avec **Copier**. Rien de tout cela n'entre dans la sauvegarde chiffree (liste blanche : les essais n'y sont pas).
+- Verifie sur emulateur Android 14 avec une vraie page : une recuperation Epic sans session s'arrete sur le controle anti-robot ; le rapport montre l'adresse de la fiche, le titre « Just a moment... » et la capture. Le popup de l'extension a ete verifie sur ses donnees de demonstration (le bouton, la copie du texte).
+- Non verifie : le rapport sur une vraie page GOG ou Steam apres un vrai echec ; la copie dans le presse-papiers de Chrome (le navigateur d'essai la refuse : la fonction a ete verifiee avec un presse-papiers simule). Une recuperation de fond de l'appli ne prend pas de capture (aucune page a l'ecran) mais garde le texte.
+- Une page protegee par un defi (Cloudflare) rend un texte vide : le rapport dit alors seulement l'adresse et le titre.
+
+## Extension 2.110.0 / Appli 1.36.0 -- 2026-10-11
+
+**Un echange GOG se juge sur la bibliotheque du compte quand la page ne dit rien de lisible**
+
+La 2.109.0 a rattrape UNE phrase que GOG avait changee. Les phrases changeront encore ; la bibliotheque, elle, dit la verite. Tests ecrits d'abord (`test/gog-redeem-library.test.mjs`, 8 tests ; le test du verdict a ete verifie par mutation : sans la bibliotheque, il echoue).
+
+- Quand l'attente de la page finit sans phrase de succes reconnue ni refus (le verdict `timeout`), le moteur interroge la bibliotheque du compte -- `/account/getFilteredProducts?search=<titre>`, depuis la page GOG elle-meme, donc avec ta session, sans permission ni cookie de plus. Le titre y est (a la casse, aux accents, aux mentions « Edition » et « Amazon Luna » pres, et jamais un titre voisin comme « Warbreeds 2 ») : l'echange est un succes, le code quitte la file, le jeu est inscrit comme echange. Il n'y est pas : l'echange reste « non confirme » comme avant -- GOG previent qu'un jeu peut mettre un moment a apparaitre, rien n'est invente.
+- Reseau en panne, 403, reponse illisible : « on ne sait pas », jamais un succes.
+- Seul `timeout` est rejuge. Un refus (« code deja utilise », « invalide »), un captcha ou une erreur gardent leur verdict, sans interroger la bibliotheque.
+- A l'expiration, le journal garde maintenant les 200 premiers caracteres du texte de la page : la prochaine phrase inconnue se lira, au lieu de se deviner d'apres une capture.
+- Meme moteur dans l'extension et dans l'appli : la correction vaut pour les deux.
+- Limite connue : si le jeu est deja a toi par ailleurs et que l'echange a en fait echoue sans message, le titre present dans la bibliotheque le fait passer pour reussi. Le code serait de toute facon sans usage pour ce jeu.
+- Non verifie : la lecture reelle de la bibliotheque GOG apres un echange (les tests tiennent la logique, pas le reseau ni la session).
+
+## Extension 2.109.0 / Appli 1.35.0 -- 2026-10-11
+
+**Un echange GOG reussi n'est plus declare « non confirme »**
+
+Constate : le code Amazon Luna de WarBreeds a ete echange, GOG affichait « Code redeemed successfully! » et « You've successfully added 1 item to your GOG account », et pourtant le popup disait « GOG : echange non confirme (WarBreeds) ». Cause : le moteur reconnait la reussite a des phrases (`GOG_REDEEM_SUCCESS_TEXT`, `src/core/26-gog-redeem-dom.js`), et celles de GOG avaient change -- « successfully redeemed » etait connu, pas « redeemed successfully », ni « successfully added ». Faute de phrase, le moteur attendait jusqu'au delai, concluait « non confirme » et comptait un essai de plus contre le code. Le jeu, lui, etait bien au compte (GOG previent meme qu'il peut mettre un moment a apparaitre dans « Owned Games »).
+
+- Le moteur reconnait maintenant « redeemed successfully », « successfully added », « added N item(s) to your » et « code echange avec succes ». Un refus (« already been redeemed », « could not be redeemed ») ne ressemble toujours pas a un succes ; le test le tient.
+- Le moteur est le meme dans l'extension et dans l'appli : la correction vaut pour les deux (l'appli le recopie a chaque build).
+- Un code deja echange a la main reste sans suite : au prochain passage, GOG repond « code deja utilise », le moteur le retire de la file et l'inscrit comme deja echange.
+- Non verifie : la phrase des pages allemande et espagnole de GOG (je n'ai que l'anglaise sous les yeux) ; le francais est un calque a confirmer.
+
+## Appli 1.34.0 -- 2026-10-11 (extension inchangee, 2.108.0)
+
+**Simuler une recuperation, et garder une preuve de chacune**
+
+Mise a jour depuis la 1.33.3 : dans l'appli, comme d'habitude. Tests ecrits d'abord.
+
+- **La simulation** (`data/Recovery.kt`, onglet Recuperation, bouton « Simuler »). Elle liste, dans l'ordre, ce que « Tout recuperer » ferait MAINTENANT -- la liste de `Rules.pending`, celle du bouton --, et juge chaque jeu : sera ouvert et recupere, s'arrete ici faute de connexion au magasin (la session perdue, connue de la page Comptes), ou a besoin de toi (une verification). Un resume dit combien seront probablement pris et combien sont bloques. Elle n'ouvre ni ne clique rien. Sur l'emulateur, avec les vraies donnees, elle a montre que les deux jeux Epic s'arreteraient a la connexion.
+- **Le carnet de preuves** (`data/Proofs.kt`, `claim/ClaimSession.kt`). Quand un jeu est recupere, l'appli garde une capture de la page de confirmation, avant de passer a l'offre suivante : 540 px de large, JPEG, dans un dossier prive de l'appli, les quarante dernieres. **Elle reste sur ce telephone** : la sauvegarde chiffree n'en emporte pas le nom, l'export et le diagnostic non plus. Un bouton « Preuve » dans « Recuperes recemment » l'ouvre avec sa date, son magasin et l'adresse de la page ; « Effacer les preuves » les supprime toutes ; Reglages > Donnees > « Garder une preuve de chaque recuperation » la coupe. Les noms de fichier sont relus avec une liste blanche (un nom venu d'une restauration ne peut pas sortir du dossier).
+- Tests : 476 -> 489 (la simulation, le dossier de preuves -- nom, taille, un fichier par jeu, quarante au plus, nom hors dossier refuse, effacement --, la sauvegarde sans preuve, l'ecran).
+- Verifie sur emulateur Android 14 : le bouton « Simuler » et sa fenetre, avec les vraies donnees.
+- Non verifie : la CAPTURE elle-meme. Elle demande une vraie recuperation, donc une session de magasin ; les tests tiennent le fichier, pas la page. Une recuperation de fond (sans fenetre) ne prend pas de capture : la vue n'est pas a l'ecran, et mieux vaut pas de preuve qu'une image vide. A confirmer au premier jeu recupere avec l'appli ouverte.
 
 ## Appli 1.33.3 -- 2026-10-10 (extension inchangee, 2.108.0)
 

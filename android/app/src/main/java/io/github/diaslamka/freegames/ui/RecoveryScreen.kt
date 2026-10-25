@@ -8,6 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.asImageBitmap
+import io.github.diaslamka.freegames.BuildConfig
+import io.github.diaslamka.freegames.data.Autonomy
+import io.github.diaslamka.freegames.data.FailureReport
+import io.github.diaslamka.freegames.data.Restrictions
+import io.github.diaslamka.freegames.data.Proofs
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -50,8 +58,18 @@ fun RecoveryScreen(
     onClaim: (Set<String>) -> Unit,
     onOpen: (String) -> Unit,
     onAccounts: () -> Unit,
+    /** Effacer toutes les captures du carnet de preuves (1.34.0). */
+    onClearProofs: () -> Unit = {},
+    /** Ce qu'Android a fait de la veille (1.38.0), lu une fois par l'ecran qui l'appelle ; null : on n'en dit rien. */
+    android: Restrictions.Snapshot? = null,
+    /** Ouvrir les reglages, la ou se coupe et s'allume la recuperation ecran eteint (1.38.0). */
+    onSettings: () -> Unit = {},
 ) {
     val plan = remember(state, now) { Recovery.plan(state, now) }
+    val autonomy = remember(state, android, now) { Autonomy.report(state, android, now) }
+    var simulating by remember { mutableStateOf(false) }
+    var proofOf by remember { mutableStateOf<LibraryEntry?>(null) }
+    var reportOf by remember { mutableStateOf<Recovery.Item?>(null) }
     var openSkipped by rememberSaveable { mutableStateOf(false) }
     var openRecent by rememberSaveable { mutableStateOf(true) }
     val context = LocalContext.current
@@ -64,7 +82,8 @@ fun RecoveryScreen(
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            item("status") { StatusBlock(plan, claiming, now, onClaimAll = { onClaim(emptySet()) }) }
+            item("status") { StatusBlock(plan, claiming, now, onClaimAll = { onClaim(emptySet()) }, onSimulate = { simulating = true }) }
+            item("autonomy") { AutonomyCard(autonomy, onSettings, onAccounts) }
 
             if (plan.ready.isNotEmpty()) {
                 item("ready-h") { SectionHeader(stringResource(R.string.rec_section_ready), plan.ready.size) }
@@ -85,6 +104,7 @@ fun RecoveryScreen(
                         item.offer,
                         support = verdictText(verdict, null),
                         action = stringResource(if (verdict == Verdicts.LOGIN) R.string.rec_sign_in else R.string.help_finish), enabled = !claiming,
+                        extra = if (item.attempt?.failure != null) stringResource(R.string.rec_report) else null, onExtra = { reportOf = item },
                     ) { if (verdict == Verdicts.LOGIN) onAccounts() else onClaim(setOf(item.offer.key)) }
                 }
             }
@@ -100,6 +120,7 @@ fun RecoveryScreen(
                             item.retryAt?.let { stringResource(R.string.rec_retry_in, Fmt.left(context, it, now), (a?.count ?: 0) + 1, Verdicts.MAX_ATTEMPTS) },
                         ).joinToString(" / "),
                         action = stringResource(R.string.rec_retry_now), enabled = !claiming,
+                        extra = if (a?.failure != null) stringResource(R.string.rec_report) else null, onExtra = { reportOf = item },
                     ) { onClaim(setOf(item.offer.key)) }
                 }
             }
@@ -121,15 +142,90 @@ fun RecoveryScreen(
             item("recent-h") { SectionHeader(stringResource(R.string.rec_section_recent), plan.recent.size, openRecent, { openRecent = !openRecent }) }
             if (openRecent) {
                 if (plan.recent.isEmpty()) item("recent-empty") { Text(stringResource(R.string.rec_recent_empty), style = MaterialTheme.typography.bodyMedium, color = b.mute, modifier = Modifier.padding(vertical = 8.dp)) }
-                items(plan.recent, key = { "p:" + it.store + it.id }) { entry -> ProofRow(entry, onOpen) }
+                items(plan.recent, key = { "p:" + it.store + it.id }) { entry -> ProofRow(entry, onOpen, onProof = { proofOf = it }) }
+                if (plan.recent.any { it.proof != null }) item("proofs-clear") {
+                    BrutButton(stringResource(R.string.rec_proofs_clear), onClearProofs, Modifier.padding(top = 4.dp), primary = false)
+                }
             }
+        }
+    }
+
+    if (simulating) SimulationDialog(Recovery.simulate(state, now), now, onDismiss = { simulating = false })
+    proofOf?.let { ProofDialog(it, onOpen, onDismiss = { proofOf = null }) }
+    reportOf?.let { ReportDialog(it, now, onDismiss = { reportOf = null }) }
+}
+
+/** L'autonomie (1.38.0) : le telephone recupere-t-il seul, et qu'est-ce qui le freine ? Court : un titre, des freins, un compte. */
+@Composable
+private fun AutonomyCard(report: Autonomy.Report, onSettings: () -> Unit, onAccounts: () -> Unit) {
+    val b = LocalBrut.current
+    fun names(stores: List<String>) = stores.joinToString(", ") { Stores.label(it) }
+    Column(
+        Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 12.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            stringResource(when (report.level) { Autonomy.Level.ON -> R.string.aut_on; Autonomy.Level.PARTIAL -> R.string.aut_partial; Autonomy.Level.OFF -> R.string.aut_off }),
+            style = MaterialTheme.typography.titleSmall, color = Color.Black,
+        )
+        for (block in report.blocks) {
+            val line = when (block) {
+                Autonomy.Block.Off -> stringResource(R.string.aut_why_off)
+                is Autonomy.Block.Sessions -> stringResource(R.string.aut_why_sessions, names(block.stores))
+                is Autonomy.Block.Challenges -> stringResource(R.string.aut_why_challenges, names(block.stores))
+                is Autonomy.Block.Android -> stringResource(R.string.aut_why_android)
+            }
+            Text(line, style = MaterialTheme.typography.bodySmall, color = MutedInk)
+        }
+        if (report.wifiOnly || report.chargingOnly) {
+            Text(
+                listOfNotNull(if (report.wifiOnly) stringResource(R.string.aut_wifi) else null, if (report.chargingOnly) stringResource(R.string.aut_charging) else null).joinToString(" "),
+                style = MaterialTheme.typography.bodySmall, color = MutedInk,
+            )
+        }
+        if (report.alone + report.withYou > 0) {
+            Text(stringResource(R.string.aut_counts, Autonomy.WINDOW_DAYS, report.alone, report.withYou), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+        }
+        val needsSession = report.blocks.any { it is Autonomy.Block.Sessions }
+        if (report.level == Autonomy.Level.OFF || report.blocks.any { it is Autonomy.Block.Android }) {
+            BrutButton(stringResource(R.string.aut_settings), onSettings, Modifier.padding(top = 4.dp), primary = report.level == Autonomy.Level.OFF)
+        } else if (needsSession) {
+            BrutButton(stringResource(R.string.rec_sign_in), onAccounts, Modifier.padding(top = 4.dp), primary = false)
         }
     }
 }
 
+/** Le rapport d'echec (1.37.0) : ce que la page montrait, sa capture, et le texte a coller dans un message. */
+@Composable
+private fun ReportDialog(item: Recovery.Item, now: Long, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+    val text = remember(item, now) { FailureReport.report(item.offer, item.attempt, BuildConfig.VERSION_NAME, now) }
+    val image = remember(item.attempt?.failure?.shot) {
+        Proofs.file(Proofs.failDir(context), item.attempt?.failure?.shot)?.let { f -> android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rec_report_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (image != null) androidx.compose.foundation.Image(image, item.offer.shownTitle, Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.FillWidth)
+                Text(text, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)); copied = true }) {
+                Text(stringResource(if (copied) R.string.rec_report_copied else R.string.rec_report_copy))
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
+}
+
 /** L'etat, et le geste : « Tout recuperer » quand il y a quelque chose a prendre. Un bloc d'accent, ombre dure. */
 @Composable
-private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onClaimAll: () -> Unit) {
+private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onClaimAll: () -> Unit, onSimulate: () -> Unit) {
     val b = LocalBrut.current
     val context = LocalContext.current
     val title = when {
@@ -150,13 +246,23 @@ private fun StatusBlock(plan: Recovery.Plan, claiming: Boolean, now: Long, onCla
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, color = Color.Black)
         if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodySmall, color = Color.Black)
-        if (!claiming && plan.ready.isNotEmpty()) BrutButton(stringResource(R.string.rec_claim_all), onClaimAll, Modifier.padding(top = 4.dp), primary = false)
+        if (!claiming && (plan.ready.isNotEmpty() || plan.needsYou.isNotEmpty())) {
+            Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (plan.ready.isNotEmpty()) BrutButton(stringResource(R.string.rec_claim_all), onClaimAll, primary = false)
+                BrutButton(stringResource(R.string.rec_simulate), onSimulate, primary = false)
+            }
+        }
     }
 }
 
 /** Une ligne : la jaquette, le titre, une phrase, et un geste. Meme carte que les autres listes de l'appli. */
 @Composable
-private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled: Boolean, primary: Boolean = true, onAction: () -> Unit) {
+private fun RecoveryRow(
+    offer: Offer, support: String, action: String?, enabled: Boolean, primary: Boolean = true,
+    /** Un second geste, discret, sous le texte : le rapport d'echec (1.37.0). */
+    extra: String? = null, onExtra: () -> Unit = {},
+    onAction: () -> Unit,
+) {
     val b = LocalBrut.current
     Row(
         Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 7.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(8.dp),
@@ -166,6 +272,7 @@ private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled:
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text(offer.shownTitle, style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (support.isNotEmpty()) Text(support, style = MaterialTheme.typography.bodySmall, color = MutedInk, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            if (extra != null) BrutButton(extra, onExtra, Modifier.padding(top = 4.dp), primary = false)
         }
         if (action != null) BrutButton(action, onAction, primary = primary, enabled = enabled)
     }
@@ -173,13 +280,13 @@ private fun RecoveryRow(offer: Offer, support: String, action: String?, enabled:
 
 /** Une preuve : ce qui a ete pris, quand, par quoi, et pour combien. */
 @Composable
-private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit) {
+private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit, onProof: (LibraryEntry) -> Unit) {
     val b = LocalBrut.current
     val line = listOfNotNull(
         Stores.label(e.store),
         e.ts?.let { Fmt.dateTime(it) },
         stringResource(if (e.via == "extension") R.string.rec_via_extension else R.string.rec_via_app),
-        e.worth,
+        LocalMoney.current.worth(e.worth),
     ).joinToString(" / ")
     Row(
         Modifier.fillMaxWidth().padding(end = 5.dp, bottom = 7.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp).padding(10.dp),
@@ -189,8 +296,62 @@ private fun ProofRow(e: LibraryEntry, onOpen: (String) -> Unit) {
             Text(e.title ?: e.id, style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(line, style = MaterialTheme.typography.bodySmall, color = MutedInk, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        e.url?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false) }
+        if (e.proof != null) BrutButton(stringResource(R.string.rec_proof), { onProof(e) }, primary = false)
+        else e.url?.let { u -> BrutButton(stringResource(R.string.action_open), { onOpen(u) }, primary = false) }
     }
+}
+
+/** La simulation : ce que « Tout recuperer » ferait maintenant, dans l'ordre, sans rien ouvrir ni cliquer. */
+@Composable
+private fun SimulationDialog(sim: Recovery.Simulation, now: Long, onDismiss: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rec_sim_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    if (sim.steps.isEmpty()) stringResource(R.string.rec_status_quiet) else stringResource(R.string.rec_sim_summary, sim.likely, sim.blocked),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                sim.steps.forEachIndexed { i, step ->
+                    val line = when (step.outcome) {
+                        Recovery.Outcome.CLAIM -> stringResource(R.string.rec_sim_claim)
+                        Recovery.Outcome.LOGIN -> stringResource(R.string.rec_sim_login)
+                        Recovery.Outcome.HELP -> stringResource(R.string.rec_sim_help)
+                    }
+                    Column {
+                        Text("${i + 1}. ${step.offer.shownTitle}", style = MaterialTheme.typography.titleSmall)
+                        Text("${Stores.label(step.offer.store)} — $line", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Text(stringResource(R.string.rec_sim_nothing), style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
+}
+
+/** Une preuve : la capture de la page de confirmation, prise au moment ou le jeu a ete recupere. */
+@Composable
+private fun ProofDialog(e: LibraryEntry, onOpen: (String) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val image = remember(e.proof) {
+        Proofs.file(Proofs.dir(context), e.proof)?.let { f -> android.graphics.BitmapFactory.decodeFile(f.path)?.asImageBitmap() }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(e.title ?: e.id) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(listOfNotNull(Stores.label(e.store), e.ts?.let { Fmt.dateTime(it) }).joinToString(" / "), style = MaterialTheme.typography.bodySmall)
+                if (image != null) androidx.compose.foundation.Image(image, e.title, Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.FillWidth)
+                else Text(stringResource(R.string.rec_proof_missing), style = MaterialTheme.typography.bodyMedium)
+                e.proofUrl?.let { Text(stringResource(R.string.rec_proof_page, it), style = MaterialTheme.typography.bodySmall) }
+            }
+        },
+        dismissButton = e.proofUrl?.let { u -> { androidx.compose.material3.TextButton(onClick = { onOpen(u) }) { Text(stringResource(R.string.action_open)) } } },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }
 
 /** Pourquoi cette offre n'est pas prise, en toutes lettres. */

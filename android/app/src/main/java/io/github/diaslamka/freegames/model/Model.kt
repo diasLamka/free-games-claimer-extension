@@ -121,6 +121,11 @@ data class LibraryEntry(
     val via: String = "app",
     /** D'ou vient la valeur (1.22.0) : « store » (le magasin) ou « aggregator » (un site tiers). Figee a la reclamation. */
     val wsrc: String? = null,
+    /** La preuve (1.34.0) : le fichier de la capture de la page de confirmation (data/Proofs.kt), et l'adresse ou elle a ete prise. */
+    val proof: String? = null,
+    val proofUrl: String? = null,
+    /** Pris sans toi, par la recuperation de fond (true), ou avec toi, ecran allume (false) ; null avant la 1.38.0 (1.38.0). */
+    val alone: Boolean? = null,
 ) {
     /** Le titre normalise, une fois : Rules le compare a celui de chaque offre. */
     val normalisedTitle: String by lazy(LazyThreadSafetyMode.PUBLICATION) { Titles.normalise(title) }
@@ -166,6 +171,23 @@ data class Attempt(
     val asks: Int = 0,
     /** Quand on a lu « rien a prendre » pour la premiere fois (1.24.0) : deux constats espaces closent l'offre. */
     val goneAt: Long? = null,
+    /** Ce que la page montrait au dernier echec (1.37.0) : un succes l'efface. Reste sur ce telephone, jamais sauvegarde. */
+    val failure: Failure? = null,
+)
+
+/**
+ * Le rapport d'un echec (1.37.0) : l'adresse de la page (sans parametres), son titre, le debut de son texte -- nettoyes, voir
+ * data/FailureReport.kt -- et le nom de la capture d'ecran quand la page etait a l'ecran (dossier prive, voir data/Proofs.kt).
+ */
+@Serializable
+data class Failure(
+    val at: Long,
+    val verdict: String,
+    val details: String? = null,
+    val url: String? = null,
+    val title: String? = null,
+    val text: String? = null,
+    val shot: String? = null,
 )
 
 /**
@@ -245,6 +267,8 @@ data class Settings(
     val showDlc: Boolean = true,
     /** Montrer ce qui demande le jeu de base, que tu n'as pas (1.33.0). */
     val showNeedsBase: Boolean = true,
+    /** Garder une capture de la page de confirmation de chaque jeu recupere (1.34.0). */
+    val keepProofs: Boolean = true,
     val steamRatings: Boolean = true,
     /** « Ce soir je joue a... » (1.8.0) : les fiches Steam des jeux de la pile, lues sans cookie. */
     val tonight: Boolean = true,
@@ -375,6 +399,13 @@ data class AppState(
     val medians: Map<String, PlayMedian> = emptyMap(),
     val evening: EveningState? = null,
     val oddsAt: Long? = null,
+    /** Les souhaits en detail (1.42.0) : prix, plus bas historique, releves, image ; par titre normalise. */
+    val wishInfo: Map<String, WishInfo> = emptyMap(),
+    val wishAt: Long? = null,
+    /** Le taux du jour (1.43.0) : pour lire des euros ce qui est publie en dollars. */
+    val rates: RateTable? = null,
+    /** Les jaquettes retrouvees par une recherche (1.42.0), par titre normalise : un jeu sans image n'en cherche qu'une fois par semaine. */
+    val covers: Map<String, CoverNote> = emptyMap(),
     /**
      * « Ce soir je joue a... » (1.8.0). Ce que l'on possede, d'apres Ma
      * collection de l'extension (sa sauvegarde l'apporte), par « magasin:id ».
@@ -535,6 +566,49 @@ data class Seen(val store: String, val ts: Long)
 data class Giver(val name: String, val games: List<String> = emptyList(), val last: Long = 0)
 
 /** Ce que la fiche Steam d'un souhait dit de lui. */
+/** Les taux de la BCE : pour une unite de `base`, combien de chaque autre devise. */
+@Serializable
+data class RateTable(val base: String, val date: String? = null, val rates: Map<String, Double> = emptyMap(), val at: Long = 0)
+
+@Serializable
+data class CoverNote(val at: Long, val url: String? = null, val thumb: String? = null)
+
+/** Une offre chez un marchand (CheapShark), en dollars : la seule devise commune a tous. */
+@Serializable
+data class Deal(val store: String, val price: Double, val retail: Double? = null, val savings: Int = 0, val dealId: String? = null)
+
+/** Un prix releve par l'appli, en dollars. */
+@Serializable
+data class PricePoint(val at: Long, val price: Double)
+
+/**
+ * Ce que l'on sait du prix d'un souhait (1.42.0). Le prix local vient de Steam (la devise du pays choisi) ; le reste
+ * -- meilleur prix, plus bas historique, marchands -- vient de CheapShark, en dollars, seule devise commune.
+ */
+@Serializable
+data class WishInfo(
+    val at: Long,
+    val notFound: Boolean = false,
+    val appid: String? = null,
+    val gameId: String? = null,
+    val name: String? = null,
+    val image: String? = null,
+    /** La vignette (231x87) : la seule image que Steam sert pour un jeu recent, quand l'en-tete manque. */
+    val thumb: String? = null,
+    /** Le prix Steam dans la devise du pays, et sa reduction. */
+    val localPrice: Double? = null,
+    val localCurrency: String? = null,
+    val localDiscount: Int = 0,
+    /** Le meilleur prix chez tous les marchands, en dollars. */
+    val best: Double? = null,
+    val bestStore: String? = null,
+    val retail: Double? = null,
+    val lowest: Double? = null,
+    val lowestAt: Long? = null,
+    val deals: List<Deal> = emptyList(),
+    val history: List<PricePoint> = emptyList(),
+)
+
 @Serializable
 data class OddsInfo(
     val at: Long,

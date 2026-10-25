@@ -241,7 +241,7 @@ export function lockKey(store, normalisedTitle) {
  * recevoir leur jaquette, `helped` les cles des demandes d'aide nouvelles.
  *
  * `imageFor(magasin, id, titre)` rend la jaquette que CET appareil connait pour
- * ce jeu, ou null (2.108.1). Le message du relais ne porte pas d'image -- elle
+ * ce jeu, ou null (2.114.1). Le message du relais ne porte pas d'image -- elle
  * pese, et l'enveloppe est petite --, donc un jeu pris sur l'autre appareil
  * entrait au registre sans jaquette, et la liste « Recuperes » montrait sa
  * premiere lettre. L'offre, elle, est dans le catalogue de CET appareil tant

@@ -76,7 +76,7 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     claim,
     // Un clic de l'utilisateur : voir `forced` dans claimWhatCanBe.
     forced: true,
-    // Mais en bloc : ce que le registre dit pris ne rouvre pas d'onglet (2.108.1).
+    // Mais en bloc : ce que le registre dit pris ne rouvre pas d'onglet (2.114.1).
     trustKnownOwned: true,
   });
 

@@ -1235,6 +1235,54 @@
   "retryNow": {
     "message": "Erneut versuchen"
   },
+  "copyReport": {
+    "message": "Bericht"
+  },
+  "reportCopied": {
+    "message": "Kopiert"
+  },
+  "copyReportHint": {
+    "message": "Bericht zu diesem Fehler kopieren: was die Seite zeigte, zum Einfügen in eine Nachricht"
+  },
+  "autTitle": {
+    "message": "Autonomie"
+  },
+  "autOn": {
+    "message": "Holt selbst"
+  },
+  "autPartial": {
+    "message": "Holt selbst, mit Bremsen"
+  },
+  "autOff": {
+    "message": "Holt nicht selbst"
+  },
+  "autWhyOff": {
+    "message": "Automatisches Holen ist aus."
+  },
+  "autWhyStopped": {
+    "message": "Der Notstopp ist aktiv."
+  },
+  "autWhyClosed": {
+    "message": "Chrome muss geöffnet bleiben: Die Hintergrundberechtigung ist aus."
+  },
+  "autWhySessions": {
+    "message": "Abgemeldet: $1."
+  },
+  "autWhyChallenges": {
+    "message": "$1 hat eine Prüfung verlangt. Die Erweiterung löst sie nie."
+  },
+  "autCounts": {
+    "message": "Letzte $1 Tage: $2 durch die Prüfung, $3 auf deinen Wunsch."
+  },
+  "skipNeedsBaseLabel": {
+    "message": "DLC überspringen, wenn mir das Hauptspiel fehlt"
+  },
+  "skipNeedsBaseHint": {
+    "message": "Keine Versuche, keine Abfragen, keine Meldungen, aus der Liste ausgeblendet. Nur mit importierter Steam-Bibliothek."
+  },
+  "dropNeedsBase": {
+    "message": "Braucht das Hauptspiel"
+  },
   "tallyBestMonth": {
     "message": "bester Monat: $1 mit $2"
   },

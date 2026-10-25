@@ -20,15 +20,20 @@ import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.Bargain
 import io.github.diaslamka.freegames.data.Family
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.LunaList
 import io.github.diaslamka.freegames.data.OwnedCheck
+import io.github.diaslamka.freegames.data.FailureReport
+import io.github.diaslamka.freegames.data.Proofs
 import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.data.RelayLink
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AccountState
+import io.github.diaslamka.freegames.model.Failure
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Offer
 import io.github.diaslamka.freegames.model.OracleNote
+import io.github.diaslamka.freegames.model.SourceStatus
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.model.Titles
 import io.github.diaslamka.freegames.notify.Notifier
@@ -122,6 +127,11 @@ class ClaimSession(
     // Ce que la boucle attend de la page ; internal pour que rendererGone se teste.
     internal var ready: CompletableDeferred<String>? = null
     internal var verdict: CompletableDeferred<JsonElement>? = null
+    /** La liste des offres Luna, rendue par le moteur (1.39.0). */
+    internal var lunaList: CompletableDeferred<JsonElement>? = null
+
+    /** Ce que la page montrait au dernier verdict d'echec (1.37.0) : joint par le moteur, remis a zero pour chaque offre. */
+    private var lastPage: kotlinx.serialization.json.JsonObject? = null
     internal var pageLoad: CompletableDeferred<String>? = null
     internal var userDone: CompletableDeferred<Boolean>? = null
     private var mainProxy: JavaScriptReplyProxy? = null
@@ -253,6 +263,7 @@ class ClaimSession(
         val why = RendererGone(didCrash)
         ready?.completeExceptionally(why)
         verdict?.completeExceptionally(why)
+        lunaList?.completeExceptionally(why)
         pageLoad?.completeExceptionally(why)
         userDone?.complete(false)
         _ui.value = _ui.value.copy(needsUser = false, teach = false)
@@ -285,6 +296,7 @@ class ClaimSession(
                 ready?.complete(msg["url"].str.orEmpty())
             }
             "fgc-verdict" -> if (isMainFrame && piloting) verdict?.complete(msg ?: JsonNull)
+            "fgc-liste" -> if (isMainFrame && piloting) lunaList?.complete(msg ?: JsonNull)
             // Le moteur a appris le bouton d'un clic de l'utilisateur : on reessaie ce jeu.
             "fgc-appris" -> if (isMainFrame && piloting) userDone?.complete(true)
             "fgc-fetch" -> scope.launch { reply(fetchFor(msg["url"].str)) }
@@ -374,7 +386,9 @@ class ClaimSession(
         val now = System.currentTimeMillis()
         val s = Graph.store.value
         val todo = Rules.pending(s, now, force = keys).let { list -> if (keys.isEmpty()) list else list.filter { it.key in keys } }
-        if (todo.isEmpty()) {
+        // Luna n'a pas d'API : « Tout recuperer » lit d'abord la liste de ses offres (1.39.0), sans attendre l'heure.
+        val readLuna = keys.isEmpty() && member == null && LunaList.due(s, now, force = true)
+        if (todo.isEmpty() && !readLuna) {
             _ui.value = Ui(outcomes = emptyList(), visible = false)
             return true
         }
@@ -382,7 +396,13 @@ class ClaimSession(
         _ui.value = Ui(running = true, total = todo.size, visible = true)
         job = scope.launch {
             try {
-                runAll(todo)
+                var list = todo
+                if (readLuna) {
+                    discoverLuna()
+                    list = Rules.pending(Graph.store.value, System.currentTimeMillis())
+                    _ui.value = _ui.value.copy(total = list.size)
+                }
+                if (list.isNotEmpty()) runAll(list) else _ui.value = Ui(outcomes = emptyList(), visible = false)
             } finally {
                 Graph.claimLock.unlock()
             }
@@ -504,6 +524,51 @@ class ClaimSession(
         return won
     }
 
+    /**
+     * Lit la liste des offres Luna (1.39.0) et la verse dans l'etat : les fiches deviennent des offres, la source est
+     * notee pour la page Sante, une session perdue est dite. Ne jette jamais : une lecture qui echoue est une ligne
+     * de Sante, pas une panne de la recuperation.
+     */
+    suspend fun discoverLuna(): LunaList.Result {
+        val now = System.currentTimeMillis()
+        val result = try {
+            readLunaPage(now)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            LunaList.Result(LunaList.Status.SILENT)
+        } finally {
+            piloting = false
+            if (web != null) withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { runCatching { web?.loadUrl("about:blank") } }
+        }
+        Graph.store.update { s ->
+            var next = s.copy(sources = s.sources + (LunaList.NAME to SourceStatus(now, result.ok, result.offers.size, result.error)))
+            if (result.status == LunaList.Status.OK) next = next.copy(offers = LunaList.merge(s.offers, result.offers, complete = true, now = now))
+            if (result.status == LunaList.Status.LOGIN) {
+                next = next.copy(accounts = next.accounts + (Stores.AMAZON to AccountState(Accounts.LOGGED_OUT, now, via = Accounts.PAGE)))
+            }
+            next
+        }
+        if (result.status == LunaList.Status.LOGIN) Notifier.login(context, Stores.AMAZON, null)
+        return result
+    }
+
+    private suspend fun readLunaPage(now: Long): LunaList.Result {
+        if (member != null) return LunaList.Result(LunaList.Status.SILENT)
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return LunaList.Result(LunaList.Status.SILENT)
+        val target = Localize.url(LunaList.CLAIMS_URL, Graph.store.value.settings.country, forClaim = true) ?: LunaList.CLAIMS_URL
+        piloting = true
+        ready = CompletableDeferred()
+        lunaList = CompletableDeferred()
+        load(target) ?: return LunaList.Result(LunaList.Status.SILENT)
+        withTimeoutOrNull(READY_WAIT_MS) { ready!!.await() } ?: return LunaList.Result(LunaList.Status.SILENT)
+        // Un ordre de LECTURE : le moteur ne clique rien et ne change pas de page pour y repondre.
+        val order = buildJsonObject { put("push", buildJsonObject { put("type", "fgc-liste-luna") }) }.toString()
+        withContext(Dispatchers.Main) { mainProxy?.postMessage(order) }
+        val message = withTimeoutOrNull(LIST_WAIT_MS) { lunaList!!.await() }
+        return LunaList.parse(message, now)
+    }
+
     /** Le magasin s'est-il laisse lire ? Note pour la page « Sante » (1.26.0), sans bloquer quoi que ce soit. */
     private suspend fun noteReading(store: String, reading: OwnedCheck.Reading) {
         val note = OracleNote(System.currentTimeMillis(), reading == OwnedCheck.Reading.READ)
@@ -524,15 +589,35 @@ class ClaimSession(
             Graph.store.update { Family.record(it, member, o, verdictName, details, now, unattended = headless, count = count, confirmed = confirmed) }
             return
         }
+        // La preuve (1.34.0) : la page de confirmation, tant qu'elle est affichee -- avant de passer a l'offre suivante.
+        val settings = Graph.store.value.settings
+        var proof: String? = null
+        var proofUrl: String? = null
+        if (verdictName in Verdicts.ACQUIRED && settings.keepProofs) {
+            web?.let { view ->
+                proof = runCatching { Proofs.capture(context, Rules.libraryKeyOf(o), view, now) }.getOrNull()
+                proofUrl = withContext(Dispatchers.Main) { runCatching { Titles.webUrl(view.url) }.getOrNull() }
+            }
+        }
+        // Le rapport d'echec (1.37.0) : ce que la page montrait, et sa capture tant qu'elle est a l'ecran. Un succes l'efface.
+        var failure: Failure? = null
+        if (FailureReport.isFailure(verdictName)) {
+            var shot: String? = null
+            if (settings.keepProofs) web?.let { view ->
+                shot = runCatching { Proofs.capture(context, Rules.libraryKeyOf(o), view, now, Proofs.failDir(context), Proofs.FAIL_MAX) }.getOrNull()
+            }
+            failure = FailureReport.of(verdictName, details, lastPage, now, shot)
+        }
         Graph.store.update { s ->
-            val att = if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key]
+            val att = (if (count) Rules.afterVerdict(s.attempts[o.key], verdictName, details, now, unattended = headless, confirmed = confirmed) else s.attempts[o.key])
+                ?.let { if (count) it.copy(failure = failure) else it }
             var lib = s.library
             var accounts = s.accounts
             if (verdictName in Verdicts.ACQUIRED) {
                 val entry = LibraryEntry(
                     store = o.store, id = o.storeId ?: o.sourceId ?: o.normalisedTitle, title = o.shownTitle,
                     url = o.url, worth = o.worth, image = o.image, ts = now, status = verdictName,
-                    wsrc = Bargain.worthSource(o),
+                    wsrc = Bargain.worthSource(o), proof = proof, proofUrl = proofUrl, alone = headless,
                 )
                 lib = lib + (Rules.libraryKeyOf(o) to entry)
                 accounts = accounts + (o.store to AccountState(Accounts.OK, now, via = Accounts.PAGE))
@@ -543,6 +628,7 @@ class ClaimSession(
     }
 
     private suspend fun runOne(o: Offer, steamDone: Int): Pair<String, String?> = try {
+        lastPage = null
         if (o.store == Stores.STEAM) claimSteam(o, steamDone) else claimWithEngine(o)
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
@@ -601,6 +687,8 @@ class ClaimSession(
         val v = withTimeoutOrNull(budget + 10_000) { verdict!!.await() }
             ?: return Verdicts.FAILURE to "aucun verdict en ${budget / 1000} s"
         val name = v["verdict"].str ?: Verdicts.UNDETERMINED
+        // Ce que la page montrait (1.37.0) : jointe par le moteur aux seuls verdicts d'echec.
+        lastPage = v["page"].obj
         return name to v["reasonText"].str
     }
 
@@ -688,6 +776,8 @@ class ClaimSession(
         const val STEP_CLAIM = "claim"
 
         const val LOAD_WAIT_MS = 45_000L
+        /** Le moteur attend la liste Luna jusqu'a une minute (page dynamique). */
+        const val LIST_WAIT_MS = 75_000L
         const val READY_WAIT_MS = 60_000L
         const val BUDGET_MS = 5 * 60_000L
         /** Le fond a dix minutes en tout (WorkManager) : un jeu en prend quatre au plus. */

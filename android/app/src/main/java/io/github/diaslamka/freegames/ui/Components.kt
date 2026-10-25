@@ -59,6 +59,11 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import io.github.diaslamka.freegames.data.Images
 import androidx.compose.ui.res.stringResource
 
 /* ------------------------------------------------------------ la matiere */
@@ -161,14 +166,34 @@ fun Pill(text: String, color: Color, modifier: Modifier = Modifier, onImage: Boo
 }
 
 /**
- * La jaquette, cernee de noir. Tant qu'elle n'est pas la : l'initiale, en
- * police d'affichage, sur blanc.
+ * Les montants, lus en euros (1.43.0) : `show` pour un montant et sa devise, `worth` pour une valeur ecrite par une source
+ * (« $19.99 »). Converti au taux du jour et marque « ≈ » quand on sait ; tel quel sinon (data/Rates.kt).
+ */
+class MoneyFmt(val show: (Double, String?) -> String, val worth: (String?) -> String?)
+
+val LocalMoney = compositionLocalOf { MoneyFmt({ a, c -> io.github.diaslamka.freegames.data.Money.format(a, c) }, { it }) }
+
+/** Les images connues de l'appli (1.40.0), par titre : une jaquette manquante se retrouve ailleurs avant l'initiale. */
+val LocalImages = compositionLocalOf<Images.Index?> { null }
+
+/**
+ * La jaquette, cernee de noir. La sienne d'abord ; si elle manque ou ne charge pas, celle que l'appli connait ailleurs
+ * pour ce jeu (une autre offre, le registre, l'en-tete Steam) ; l'initiale, en police d'affichage sur blanc, en dernier.
  */
 @Composable
-fun Cover(url: String?, title: String, store: String?, modifier: Modifier = Modifier, radius: Dp = 0.dp, letterSize: Int = 28) {
+fun Cover(url: String?, title: String, store: String?, modifier: Modifier = Modifier, radius: Dp = 0.dp, letterSize: Int = 28, alt: String? = null) {
+    val index = LocalImages.current
+    val candidates = remember(url, title, index, alt) { (Images.candidates(url, title, index) + listOfNotNull(alt?.takeIf { it.startsWith("https://") })).distinct() }
+    var failed by remember(candidates) { mutableIntStateOf(0) }
     Box(modifier.background(Color.White).border(3.dp, Color.Black).clipToBounds(), contentAlignment = Alignment.Center) {
         Text(title.trim().take(1).uppercase(), fontFamily = Display, fontSize = letterSize.sp, color = Color.Black)
-        if (url != null) AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().padding(3.dp))
+        candidates.getOrNull(failed)?.let { shown ->
+            AsyncImage(
+                model = shown, contentDescription = null, contentScale = ContentScale.Crop,
+                onError = { failed += 1 },
+                modifier = Modifier.fillMaxSize().padding(3.dp),
+            )
+        }
     }
 }
 

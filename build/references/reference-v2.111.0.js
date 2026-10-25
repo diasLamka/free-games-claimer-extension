@@ -1702,35 +1702,6 @@
     return 'slug:' + slug;
   }
 
-  /* QUELS JEUX UNE RECUPERATION FORCEE REVOIT-ELLE (2.108.1).
-   *
-   * Forcer, c'est ne pas se fier a la memoire du moteur (voir
-   * epicForceRecheck) -- mais pour les jeux que CE passage va rouvrir, pas pour
-   * toute la semaine. Avant la 2.108.1 l'entree "claimed" de TOUS les jeux
-   * gratuits etait effacee d'entree, y compris ceux que le passage ne regardait
-   * pas : sur une fiche, le module s'arrete apres le jeu de la fiche. Le jeu
-   * pris le jeudi n'avait alors plus d'entree, le passage automatique suivant
-   * le tenait pour "non reclame" et rouvrait sa fiche -- le jour ou un nouveau
-   * jeu etait offert.
-   *
-   *   - sur la fiche d'un jeu gratuit : ce jeu seul ;
-   *   - sur la liste : tous, SAUF ceux dont l'entree est une vraie reclamation
-   *     (CLAIMED) -- le moteur ne l'ecrit qu'apres avoir vu le jeu passer dans
-   *     la bibliotheque, et le soin de la 2.99.7 ne la touche pas non plus.
-   *     Seuls les "deja ..." (ALREADY_*), que l'ancienne lecture a pu mal
-   *     faire, se revoient. */
-  function epicGamesToRecheck(freebies, currentSlug, history) {
-    var list = freebies || [];
-    var past = history || {};
-    var onFiche = !!currentSlug && list.some(function (g) { return g.slug === currentSlug; });
-    return list.filter(function (g) {
-      var entry = past[epicHistoryKeyForSlug(g.slug)];
-      if (!entry || entry.status !== 'claimed') return false;
-      if (onFiche) return g.slug === currentSlug;
-      return entry.reason !== 'CLAIMED';
-    });
-  }
-
   function getRedirectCount(slug) {
     try {
       var raw = sessionStorage.getItem('FGC_epic_redirect_counts') || '{}';
@@ -2753,10 +2724,13 @@
       var currentSlug = extractEpicSlug(location.href);
 
       if (freebies && force) {
-        // Demande explicite : l'historique des jeux que ce passage revoit ne decide rien (voir epicForceRecheck, epicGamesToRecheck).
-        epicGamesToRecheck(freebies, currentSlug, getHistory(PLATFORM)).forEach(function (g) {
-          log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
-          removeHistoryEntry(PLATFORM, epicHistoryKeyForSlug(g.slug));
+        // Demande explicite : l'historique de ces jeux ne decide rien (voir epicForceRecheck).
+        freebies.forEach(function (g) {
+          var k = epicHistoryKeyForSlug(g.slug);
+          if (alreadyHandled(PLATFORM, k)) {
+            log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
+            removeHistoryEntry(PLATFORM, k);
+          }
         });
       }
 
@@ -5027,7 +5001,7 @@
     return null;
   }
 
-  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|code utilis[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
+  var GOG_REDEEM_SUCCESS_TEXT = /a \u00e9t\u00e9 ajout|ont \u00e9t\u00e9 ajout|vient d'\u00eatre ajout|has been added|have been added|was added to your|f[e\u00e9]licitations|congratulations|successfully redeemed|redeemed successfully|successfully added|added \d+ items? to your|code (utilis|[e\u00e9]chang)[e\u00e9] avec succ|est maintenant dans votre biblioth|is now in your library/i;
   var GOG_REDEEM_CONFIRM_PATTERNS = [/^r[e\u00e9]cup[e\u00e9]rer$/i, /utiliser (le|ce|mon) code/i, /^utiliser$/i, /^redeem$/i, /redeem (the |this )?code/i, /ajouter [a\u00e0] (ma|la|votre) biblioth/i, /add to (my |your )?(account|library)/i, /^obtenir$/i, /^get it$/i, /^confirmer$/i, /^confirm$/i];
 
   /* CE QUE L'ECHANGE GOG A LE DROIT DE CLIQUER.
@@ -5065,6 +5039,52 @@
       return /(^|\s)warning-message(\s|$)/i.test(String(n.className || '')) || !!classifyGogWarning(text);
     });
     return visible ? (visible.textContent || '').trim() : null;
+  }
+
+  /* LA BIBLIOTHEQUE DIT LA VERITE QUAND LA PAGE SE TAIT (2.110.0).
+   *
+   * Les phrases de GOG changent sans prevenir : le 2026-10-11, "Code redeemed successfully" n'etait pas reconnu et un jeu
+   * ajoute au compte etait declare "non confirme". Quand l'attente finit sans phrase ni refus, on demande donc a la
+   * bibliotheque du compte -- meme origine que la page, donc meme session -- si le titre y est. Il y est : succes. Il n'y est
+   * pas (GOG previent qu'il peut mettre un moment a apparaitre) : l'echange reste "non confirme", rien n'est invente. */
+  var GOG_LIBRARY_EDITION = /\b(standard|deluxe|ultimate|definitive|complete|goty|game of the year|gold|premium|enhanced|remastered|anniversary|special|collector s|digital) edition\b/g;
+
+  function gogTitleCore(title) {
+    var s = String(title == null ? '' : title).toLowerCase();
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    s = s.replace(/\s*[-\u2013\u2014(]\s*amazon luna\s*\)?\s*$/, ' ');
+    return s.replace(/[^a-z0-9]+/g, ' ').replace(GOG_LIBRARY_EDITION, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function gogLibrarySearchUrl(title) {
+    var q = String(title == null ? '' : title).replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\b(key\s+)?giveaway\b/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    return 'https://www.gog.com/account/getFilteredProducts?mediaType=1&sortBy=title&page=1&search=' + encodeURIComponent(q);
+  }
+
+  function gogLibraryHasTitle(body, title) {
+    var want = gogTitleCore(title);
+    if (!want || !body || !Array.isArray(body.products)) return false;
+    return body.products.some(function (p) { return p && gogTitleCore(p.title) === want; });
+  }
+
+  /* Vrai seulement si la bibliotheque s'est lue ET contient le titre. Tout le reste -- reseau, 403, JSON illisible -- vaut non. */
+  function gogOwnedInLibrary(title, fetcher) {
+    var get = fetcher || function (url, opts) { return fetch(url, opts); };
+    return Promise.resolve().then(function () {
+      return get(gogLibrarySearchUrl(title), { credentials: 'include', headers: { Accept: 'application/json' } });
+    }).then(function (res) {
+      if (!res || !res.ok) return false;
+      return res.json().then(function (body) { return gogLibraryHasTitle(body, title); });
+    }).catch(function () { return false; });
+  }
+
+  /* Le verdict de l'attente, corrige par la bibliotheque : seul "timeout" (ni phrase ni refus) est rejuge ; tout autre
+     verdict -- refus, captcha, succes lu -- reste tel quel. */
+  function gogSettleOutcome(outcome, title, fetcher) {
+    if (!outcome || outcome.type !== 'timeout') return Promise.resolve(outcome);
+    return gogOwnedInLibrary(title, fetcher).then(function (owned) {
+      return owned ? { type: 'success', detail: 'bibliotheque' } : outcome;
+    });
   }
 
   function watchGogRedeemOutcome(form, originalSubmit, timeout, afterConfirm) {
@@ -5207,6 +5227,19 @@
         return { type: 'timeout', detail: 'clic de confirmation refuse' };
       }
       return watchGogRedeemOutcome(form, submit, CONFIG.gogRedeemOutcomeTimeout, true);
+    }).then(function (outcome) {
+      /* Ni phrase reconnue ni refus : la bibliotheque du compte tranche (2.110.0). Le titre y est, l'echange a reussi ;
+         sinon il reste "non confirme", avec ce que la page disait -- pour qu'une phrase nouvelle se lise dans le journal. */
+      if (outcome.type !== 'timeout') return outcome;
+      return gogSettleOutcome(outcome, entry.title).then(function (settled) {
+        if (settled.type === 'success') {
+          log(PLATFORM, 'info', 'Page de succes non reconnue, mais "' + entry.title + '" est dans la bibliotheque GOG : echange confirme.');
+          return settled;
+        }
+        var seen = String((document.body && document.body.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (seen) log(PLATFORM, 'warn', 'Texte de la page a l\'expiration : "' + seen + '"');
+        return outcome;
+      });
     }).then(function (outcome) {
       var remaining;
       if (outcome.type === 'success') {
@@ -5465,7 +5498,28 @@
     }
   }
 
+  /* CE QUE LA PAGE MONTRAIT (2.111.0). Un echec dit son motif ; il ne disait pas ce que la page affichait, et c'est elle qui
+     montre qu'une phrase de GOG a change. On joint donc, aux seuls verdicts d'echec, un extrait borne : l'adresse sans
+     parametres, le titre, six cents caracteres du texte principal. Le nettoyage (adresses electroniques, jetons) se fait chez
+     celui qui le garde -- watch/failure-report.js pour l'extension. */
+  var PILOT_FAILURE_VERDICTS = ['failed', 'challenge', 'needs_login', 'needs_teaching'];
+
+  function pageSnapshot() {
+    try {
+      var root = document.querySelector('main, [role="main"]') || document.body;
+      return {
+        url: String(location.href).split(/[?#]/)[0],
+        title: String(document.title || '').slice(0, 160),
+        text: String((root && root.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 600)
+      };
+    } catch (e) { return null; }
+  }
+
   function sendToPilot(message) {
+    if (message && message.type === 'fgc-verdict' && !message.page && PILOT_FAILURE_VERDICTS.indexOf(message.verdict) !== -1) {
+      var snap = pageSnapshot();
+      if (snap) message.page = snap;
+    }
     try {
       chrome.runtime.sendMessage(message, function () {
         try { void chrome.runtime.lastError; } catch (e) {}
@@ -5883,7 +5937,6 @@
       isEpicFreeToKeep: isEpicFreeToKeep,
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
-      epicGamesToRecheck: epicGamesToRecheck,
       epicStoreUrl: epicStoreUrl,
       localizeStoreUrl: localizeStoreUrl,
       readLunaHost: readLunaHost,
@@ -5968,6 +6021,11 @@
       GOG_SUBMIT_PATTERNS: GOG_SUBMIT_PATTERNS,
       LUNA_CLAIMED_TEXT: LUNA_CLAIMED_TEXT,
       GOG_REDEEM_SUCCESS_TEXT: GOG_REDEEM_SUCCESS_TEXT,
+      gogLibrarySearchUrl: gogLibrarySearchUrl,
+      gogLibraryHasTitle: gogLibraryHasTitle,
+      gogOwnedInLibrary: gogOwnedInLibrary,
+      gogSettleOutcome: gogSettleOutcome,
+      sendToPilot: sendToPilot,
       GOG_REDEEM_CONFIRM_PATTERNS: GOG_REDEEM_CONFIRM_PATTERNS,
       EPIC_MAIN_CTA_PATTERNS: EPIC_MAIN_CTA_PATTERNS,
       EPIC_OWNERSHIP_PATTERNS: EPIC_OWNERSHIP_PATTERNS,

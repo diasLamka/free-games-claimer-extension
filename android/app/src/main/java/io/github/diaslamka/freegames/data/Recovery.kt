@@ -57,6 +57,40 @@ object Recovery {
         val quiet: Boolean get() = ready.isEmpty() && needsYou.isEmpty() && waiting.isEmpty()
     }
 
+    /** Ce que « Tout recuperer » ferait d'une offre, sans rien toucher (1.34.0). */
+    enum class Outcome {
+        /** Elle serait ouverte et prise. */
+        CLAIM,
+
+        /** Le magasin n'a plus ta session : la recuperation s'arreterait la. */
+        LOGIN,
+
+        /** Une verification attend un humain : l'appli la montrerait et passerait a la suite. */
+        HELP,
+    }
+
+    data class Step(val offer: Offer, val outcome: Outcome)
+
+    data class Simulation(val steps: List<Step>) {
+        val likely: Int get() = steps.count { it.outcome == Outcome.CLAIM }
+        val blocked: Int get() = steps.size - likely
+    }
+
+    /** Ce que « Tout recuperer » ferait MAINTENANT, dans l'ordre : la liste de [Rules.pending], jugee magasin par magasin. */
+    fun simulate(s: AppState, now: Long): Simulation = Simulation(
+        Rules.pending(s, now).map { o ->
+            val a = s.attempts[o.key]
+            Step(
+                o,
+                when {
+                    a?.verdict in Verdicts.HUMAN || a?.verdict == Verdicts.TEACH -> Outcome.HELP
+                    s.accounts[o.store]?.status == Accounts.LOGGED_OUT -> Outcome.LOGIN
+                    else -> Outcome.CLAIM
+                },
+            )
+        },
+    )
+
     private const val RECENT = 10
 
     /** Pourquoi cette offre n'est pas prise, ou null si l'appli la prendrait (sous reserve de son attente). */

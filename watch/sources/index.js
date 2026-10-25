@@ -10,6 +10,7 @@ import * as epicMobile from './epic-mobile.js';
 import * as fab from './fab.js';
 import * as gamerpower from './gamerpower.js';
 import * as gog from './gog.js';
+import * as luna from './luna.js';
 import * as steam from './steam.js';
 import { STORES } from '../offer.js';
 
@@ -75,6 +76,13 @@ export function activeSourcesFor(settings) {
      suit ce magasin. */
   if (suivis.includes(STORES.FAB)) out.add(fab.NAME);
   else out.delete(fab.NAME);
+  /* Luna (2.114.0) : pas d'API, donc la veille ouvre la liste dans une fenetre reduite. C'est une
+     visite du compte Amazon, du meme ordre qu'une reclamation : seulement si le magasin est suivi ET
+     que l'extension recupere seule. Compare a `false`, comme partout : un reglage absent ne coupe rien. */
+  const seule = !settings || settings.autonomousClaim !== false;
+  /* Aucun magasin coche veut dire tous, comme dans claimCandidates. */
+  if ((suivis.length === 0 || suivis.includes(STORES.AMAZON)) && seule) out.add(luna.NAME);
+  else out.delete(luna.NAME);
   return [...out];
 }
 
@@ -196,6 +204,22 @@ export const SOURCES = Object.freeze({
     autoClaim: false,
   }),
 
+  [luna.NAME]: Object.freeze({
+    name: luna.NAME,
+    libelle: 'Amazon Luna',
+    discover: luna.discover,
+    /**
+     * La liste des offres du compte EST la liste entiere : une fiche qui n'y est plus est terminee.
+     * La reponse le dit elle-meme (`complete`) : faux si la page n'a pas ete lue.
+     */
+    completeList: true,
+    authoritativeFor: STORES.AMAZON,
+    /** Une page de compte, lue dans une vraie fenetre : pas plus d'une fois par heure. */
+    minIntervalMs: 60 * 60 * 1000,
+    /** Jamais interrogee pour un magasin qu'on ne suit pas, meme par « Verifier maintenant ». */
+    onlyWhenActive: true,
+  }),
+
   [steam.NAME]: Object.freeze({
     name: steam.NAME,
     libelle: 'Steam',
@@ -217,4 +241,4 @@ export const SOURCES = Object.freeze({
 
 export const NAMES = Object.freeze(Object.keys(SOURCES));
 
-export { epic, epicMobile, fab, gamerpower, steam };
+export { epic, epicMobile, fab, gamerpower, luna, steam };

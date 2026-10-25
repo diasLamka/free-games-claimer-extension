@@ -352,11 +352,11 @@
     return 'slug:' + slug;
   }
 
-  /* QUELS JEUX UNE RECUPERATION FORCEE REVOIT-ELLE (2.108.1).
+  /* QUELS JEUX UNE RECUPERATION FORCEE REVOIT-ELLE (2.114.1).
    *
    * Forcer, c'est ne pas se fier a la memoire du moteur (voir
    * epicForceRecheck) -- mais pour les jeux que CE passage va rouvrir, pas pour
-   * toute la semaine. Avant la 2.108.1 l'entree "claimed" de TOUS les jeux
+   * toute la semaine. Avant la 2.114.1 l'entree "claimed" de TOUS les jeux
    * gratuits etait effacee d'entree, y compris ceux que le passage ne regardait
    * pas : sur une fiche, le module s'arrete apres le jeu de la fiche. Le jeu
    * pris le jeudi n'avait alors plus d'entree, le passage automatique suivant

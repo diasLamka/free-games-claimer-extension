@@ -1,7 +1,10 @@
 package io.github.diaslamka.freegames
 
 import io.github.diaslamka.freegames.data.Recovery
+import io.github.diaslamka.freegames.data.Recovery.Outcome
 import io.github.diaslamka.freegames.data.Recovery.Why
+import io.github.diaslamka.freegames.data.Accounts
+import io.github.diaslamka.freegames.model.AccountState
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.Verdicts
 import io.github.diaslamka.freegames.model.AppState
@@ -159,5 +162,38 @@ class RecoveryTest {
             ),
         )
         assertEquals(now + 2 * hour, Recovery.plan(s, now).nextRetry)
+    }
+
+    @Test
+    fun theSimulationListsWhatClaimAllWouldDoInOrder() {
+        val s = state(offer("a", title = "Alpha"), offer("b", title = "Bravo", store = Stores.GOG))
+        val sim = Recovery.simulate(s, now)
+        assertEquals(listOf("epic:a", "gog:b"), sim.steps.map { it.offer.key })
+        assertTrue(sim.steps.all { it.outcome == Outcome.CLAIM })
+        assertEquals(2, sim.likely)
+        assertEquals(0, sim.blocked)
+    }
+
+    @Test
+    fun aStoreYouAreSignedOutOfStopsTheSimulationThere() {
+        val s = state(offer("a"), offer("b", store = Stores.GOG)).copy(accounts = mapOf(Stores.GOG to AccountState(Accounts.LOGGED_OUT, now)))
+        val sim = Recovery.simulate(s, now)
+        assertEquals(Outcome.CLAIM, sim.steps.first { it.offer.storeId == "a" }.outcome)
+        assertEquals(Outcome.LOGIN, sim.steps.first { it.offer.storeId == "b" }.outcome)
+        assertEquals(1, sim.likely)
+        assertEquals(1, sim.blocked)
+    }
+
+    @Test
+    fun aGameThatWaitsForAHumanIsAHelpStepNotAClaim() {
+        val s = state(offer("a"), attempts = mapOf("epic:a" to Attempt(count = 0, lastAt = now, verdict = Verdicts.CHALLENGE)))
+        assertEquals(listOf(Outcome.HELP), Recovery.simulate(s, now).steps.map { it.outcome })
+    }
+
+    @Test
+    fun theSimulationIsEmptyWhenNothingIsPending() {
+        val sim = Recovery.simulate(AppState(), now)
+        assertTrue(sim.steps.isEmpty())
+        assertEquals(0, sim.likely)
     }
 }

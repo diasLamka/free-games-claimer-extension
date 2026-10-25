@@ -145,11 +145,7 @@
       return Promise.resolve();
     }
 
-    return waitForElement(function () {
-      var root = document.querySelector('[data-a-target="offer-list-FGWP_FULL"], [data-a-target="offer-list-FGWP"]');
-      if (root && root.querySelector('[data-a-target="item-card"], a[href*="/dp/"]')) return root;
-      return document.querySelector('a[data-a-target="FGWPOffer"], button[data-a-target="FGWPOffer"]');
-    }, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (root) {
+    return waitForElement(lunaListRoot, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function (root) {
       var offers = collectLunaOffers();
       if (getLunaDlcEnabled()) {
         // Contenu en jeu (DLC, butin) : meme parcours que les jeux.
@@ -264,4 +260,11 @@
   }
 
   var lunaModuleRunSince = 0;
+
+  // La liste est-elle rendue ? Le bloc des offres, ou a defaut une carte cliquable. Partage par la serie et par la lecture.
+  function lunaListRoot() {
+    var root = document.querySelector('[data-a-target="offer-list-FGWP_FULL"], [data-a-target="offer-list-FGWP"]');
+    if (root && root.querySelector('[data-a-target="item-card"], a[href*="/dp/"]')) return root;
+    return document.querySelector('a[data-a-target="FGWPOffer"], button[data-a-target="FGWPOffer"]');
+  }
 

@@ -32,7 +32,28 @@
     }
   }
 
+  /* CE QUE LA PAGE MONTRAIT (2.111.0). Un echec dit son motif ; il ne disait pas ce que la page affichait, et c'est elle qui
+     montre qu'une phrase de GOG a change. On joint donc, aux seuls verdicts d'echec, un extrait borne : l'adresse sans
+     parametres, le titre, six cents caracteres du texte principal. Le nettoyage (adresses electroniques, jetons) se fait chez
+     celui qui le garde -- watch/failure-report.js pour l'extension. */
+  var PILOT_FAILURE_VERDICTS = ['failed', 'challenge', 'needs_login', 'needs_teaching'];
+
+  function pageSnapshot() {
+    try {
+      var root = document.querySelector('main, [role="main"]') || document.body;
+      return {
+        url: String(location.href).split(/[?#]/)[0],
+        title: String(document.title || '').slice(0, 160),
+        text: String((root && root.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 600)
+      };
+    } catch (e) { return null; }
+  }
+
   function sendToPilot(message) {
+    if (message && message.type === 'fgc-verdict' && !message.page && PILOT_FAILURE_VERDICTS.indexOf(message.verdict) !== -1) {
+      var snap = pageSnapshot();
+      if (snap) message.page = snap;
+    }
     try {
       chrome.runtime.sendMessage(message, function () {
         try { void chrome.runtime.lastError; } catch (e) {}
@@ -372,10 +393,52 @@
     });
   }
 
+  // La liste des offres Luna (2.114.0), pour la source Luna de la veille : ce que la page propose, carte par carte.
+  // AUCUN CLIC, AUCUNE NAVIGATION : seulement des lectures. Les memes arrets nets que la reclamation, dans le meme ordre.
+  var LUNA_LIST_MAX = 60;
+
+  function readLunaList(then) {
+    var platform = 'Amazon Luna';
+    function done(verdict, offers) {
+      then({ type: 'fgc-liste', verdict: verdict, plateforme: platform, url: String(location.href).split(/[?#]/)[0], offers: offers || [] });
+    }
+    if (location.hostname.indexOf('luna.amazon.') === -1) { done('wrong_page'); return; }
+    if (isLikelyLoggedOut() || document.querySelector('[data-a-target="sign-in-button"]') || isLunaReauthVisible()) { done('needs_login'); return; }
+    if (detectSecurityChallenge()) { done('challenge'); return; }
+    if (!isLunaClaimsListPage(location.pathname)) { done('wrong_page'); return; }
+    rememberLunaHost();
+    waitForElement(lunaListRoot, { timeout: CONFIG.lunaOffersWaitTimeout }).catch(function () { return null; }).then(function () {
+      if (detectSecurityChallenge()) { done('challenge'); return; }
+      if (isLikelyLoggedOut() || isLunaReauthVisible()) { done('needs_login'); return; }
+      var cards = collectLunaOffers();
+      if (getLunaDlcEnabled()) {
+        var lootRoot = document.querySelector('[data-a-target="offer-list-IN_GAME_LOOT"]');
+        if (lootRoot) cards = cards.concat(collectLunaOffers(lootRoot));
+      }
+      var offers = cards.slice(0, LUNA_LIST_MAX).map(function (o) {
+        return {
+          id: o.id,
+          title: o.knownTitle || o.title,
+          url: o.url,
+          store: o.store,
+          hasButton: !!o.button,
+          hasCta: !!o.hasCta,
+          collected: !!o.collected
+        };
+      });
+      done(offers.length ? 'ok' : 'empty', offers);
+    });
+  }
+
   function listenForOrders() {
     try {
       chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (!msg) return;
+        if (msg.type === 'fgc-liste-luna') {
+          sendResponse({ recu: true });
+          readLunaList(sendToPilot);
+          return true;
+        }
         if (msg.type === 'fgc-inspecte') {
           sendResponse({ recu: true });
           inspectPage(sendToPilot);
