@@ -7,6 +7,8 @@
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
       epicGamesToRecheck: epicGamesToRecheck,
+      epicOffFeedState: epicOffFeedState,
+      markEpicClaimOrdered: markEpicClaimOrdered,
       epicStoreUrl: epicStoreUrl,
       localizeStoreUrl: localizeStoreUrl,
       readLunaHost: readLunaHost,

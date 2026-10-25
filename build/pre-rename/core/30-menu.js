@@ -3,6 +3,7 @@
       clearAutoCooldown('epic');
       clearAutoCooldown('luna');
       epicForceRecheck = true;
+      markEpicClaimOrdered();
       navForceRecheck = true;
       dispatch();
     });
@@ -11,6 +12,7 @@
       clearAutoCooldown('luna');
       notifyUser('Free Games Claimer', 'Delai de repos remis a zero : la prochaine verification repart immediatement.');
       epicForceRecheck = true;
+      markEpicClaimOrdered();
       navForceRecheck = true;
       dispatch();
     });

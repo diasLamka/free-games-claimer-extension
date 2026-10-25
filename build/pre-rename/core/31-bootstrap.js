@@ -183,6 +183,8 @@
   function runClaimOrder(budgetMs, force, teachMode) {
     var platform = platformNameForHost(location.hostname);
     if (force) navForceRecheck = true;
+    // Un ordre sur une page Epic est expres : le moteur peut y lire une fiche que le flux ne liste pas (2.115.0).
+    if (platform === 'Epic Games') markEpicClaimOrdered();
     /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
        memoire du moteur (2.99.7) : voir epicForceRecheck. */
     if (force && platform === 'Epic Games') {

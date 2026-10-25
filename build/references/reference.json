@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.114.1.js",
-  "sha256": "EE8D7B5194F845AEDC820147390DD61AB1C8CD9459DB7739B79D51D12A574E17",
-  "octets": 306543,
-  "version": "2.114.1",
-  "motif": "2.114.1 : une recuperation forcee ne remet a zero que les jeux qu'elle rouvre (epicGamesToRecheck)"
+  "fichier": "reference-v2.115.0.js",
+  "sha256": "168C2C2A6E826E14F5353C1B898B80F9DFCCEAC4BEE718C2067EA8CC417DE824",
+  "octets": 313823,
+  "version": "2.115.0",
+  "motif": "2.115.0 : une fiche Epic ordonnee que le flux ne liste pas se reclame sur son bouton gratuit (epicOffFeedState)"
 }

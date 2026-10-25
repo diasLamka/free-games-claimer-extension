@@ -4,6 +4,18 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.115.0 et appli 1.44.0 -- 2026-10-25
+
+**Un jeu Epic offert hors de la rotation de la semaine (MAFIA HOTEL) se recupere enfin**
+
+Signale : MAFIA HOTEL, gratuit sur Epic depuis le 24 octobre, ne se recuperait ni dans l'extension ni dans l'appli.
+
+- **La cause.** Le moteur ne prenait que les jeux listes par `freeGamesPromotions`, le flux de la rotation hebdomadaire. MAFIA HOTEL, offert a 0 EUR par son editeur, n'y est pas (verifie sur les flux FR, US, DE et GB). Envoye sur sa fiche par GamerPower, le moteur lisait le flux, ne voyait que les deux jeux deja pris, ecrivait « aucun jeu gratuit restant a reclamer » et ne cliquait rien.
+- **La regle neuve** (`epicOffFeedState`, `claimOffFeedFiche`). Sur une fiche qu'on lui ORDONNE expressement -- le worker de l'extension, l'appli, le bouton de la page ou le menu --, et que le flux ne liste pas, le moteur lit le bouton principal de la fiche : « Obtenir », « Get », « Recuperer » ou « Ajouter a la bibliotheque », **sans un mot d'argent**, et il reclame par le parcours habituel. Deja dans la bibliotheque : il l'ecrit. Bouton payant (« Acheter », un prix, « Precommander »...), libelle inconnu ou fiche qui ne s'affiche pas : il ne clique **rien** et n'ecrit rien -- le mode pilote dit alors « rien a prendre » ou « montrez-moi le bouton ».
+- **Ce qui ne change pas.** Le guetteur automatique et toute visite ordinaire ne touchent jamais une fiche hors flux : l'ordre expres est la seule porte, et il se perime en deux minutes. Les protections d'argent restent entieres : un libelle payant ne se clique jamais, et la fenetre de paiement n'accepte que les commandes a zero. « Ajouter au panier » seul ne vaut pas « gratuit » : sur une fiche payante c'est le second bouton.
+- Moteur fige : `reference-v2.115.0.js`. Tests : `test/epic-off-feed.test.mjs` (13).
+- Non verifie : le moteur sur la vraie fiche d'Epic (derriere un mur anti-robot depuis le poste de developpement) ; le bouton « Obtenir » de MAFIA HOTEL a ete confirme a 0 EUR par l'utilisateur. Si le moteur ne reconnait pas le bouton, le journal dit les libelles vus.
+
 ## Extension 2.114.1 et appli 1.43.1 -- 2026-10-25
 
 **Un nouveau jeu Epic ne rejoue plus le jeu pris jeudi, et les jeux pris sur l'autre appareil retrouvent leur jaquette**

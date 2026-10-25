@@ -2,6 +2,11 @@
   // bibliotheque") : on tolere les deux graphies via des echappements unicode
   // pour garder le fichier en ASCII pur.
   var EPIC_MAIN_CTA_PATTERNS = [/^add to cart$/i, /^ajouter au panier$/i, /^get$/i, /^r[e\u00e9]cup[e\u00e9]rer$/i, /^obtenir$/i];
+  /* Les SEULS libelles d'un bouton principal qui valent "gratuit" sur une fiche
+   * que le flux freeGamesPromotions ne liste pas (2.115.0). Les mots de panier en
+   * sont absents a dessein : sur une fiche payante, "Ajouter au panier" est le
+   * second bouton, et le principal dit "Acheter". */
+  var EPIC_OFF_FEED_FREE_CTA_PATTERNS = [/^get$/i, /^obtenir$/i, /^r[e\u00e9]cup[e\u00e9]rer$/i, /^ajouter [a\u00e0] la biblioth[e\u00e8]que$/i, /^add to library$/i];
   var APOS = "['\u2019]";
   var EPIC_OWNERSHIP_PATTERNS = [/in library/i, /dans la biblioth[e\u00e8]que/i, /^play$/i, /^jouer$/i];
   // Cartes de la rotation hebdomadaire sur /free-games : "Gratuit jusqu'au

@@ -1,8 +1,8 @@
 Base de comparaison du moteur, pour build/verify-rename.mjs.
 
 modules : 37
-sha256  : 0E516AC39C371A9CCC794D4395A70E990534946A67F55DDC31A3911BE4BCF129
-motif   : 2.114.1 : une recuperation forcee ne remet a zero que les jeux qu'elle rouvre (epicGamesToRecheck)
+sha256  : 58FF14F7C2147543C8CD460D7D407C46FC0C0D7D288ACD85DF62AA7DEA84EB2C
+motif   : 2.115.0 : une fiche Epic ordonnee que le flux ne liste pas se reclame sur son bouton gratuit (epicOffFeedState)
 
 La table de renommage ne s'applique plus a cette base : elle est deja en
 anglais. verify-rename compare desormais src/core a cette copie a

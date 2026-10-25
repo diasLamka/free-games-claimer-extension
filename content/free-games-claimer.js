@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.114.1
+ * FREE GAMES AUTO-CLAIMER -- v2.115.0
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -198,6 +198,11 @@
   // bibliotheque") : on tolere les deux graphies via des echappements unicode
   // pour garder le fichier en ASCII pur.
   var EPIC_MAIN_CTA_PATTERNS = [/^add to cart$/i, /^ajouter au panier$/i, /^get$/i, /^r[e\u00e9]cup[e\u00e9]rer$/i, /^obtenir$/i];
+  /* Les SEULS libelles d'un bouton principal qui valent "gratuit" sur une fiche
+   * que le flux freeGamesPromotions ne liste pas (2.115.0). Les mots de panier en
+   * sont absents a dessein : sur une fiche payante, "Ajouter au panier" est le
+   * second bouton, et le principal dit "Acheter". */
+  var EPIC_OFF_FEED_FREE_CTA_PATTERNS = [/^get$/i, /^obtenir$/i, /^r[e\u00e9]cup[e\u00e9]rer$/i, /^ajouter [a\u00e0] la biblioth[e\u00e8]que$/i, /^add to library$/i];
   var APOS = "['\u2019]";
   var EPIC_OWNERSHIP_PATTERNS = [/in library/i, /dans la biblioth[e\u00e8]que/i, /^play$/i, /^jouer$/i];
   // Cartes de la rotation hebdomadaire sur /free-games : "Gratuit jusqu'au
@@ -1455,6 +1460,55 @@
       .catch(function () { return null; });
   }
 
+  /* LA FICHE QUE LE FLUX NE LISTE PAS (2.115.0).
+   *
+   * freeGamesPromotions est la liste d'Epic pour la rotation de la semaine. Un
+   * jeu offert autrement -- une remise a 100 % lancee par l'editeur, annoncee par
+   * un agregateur -- n'y est pas : le moteur concluait "aucun jeu gratuit restant"
+   * et ne cliquait rien (MAFIA HOTEL, 2026-10-24). Quand on l'envoie EXPRESSEMENT
+   * sur une telle fiche, c'est la fiche elle-meme qui dit si le jeu est gratuit :
+   *
+   *   'owned' : deja dans la bibliotheque ;
+   *   'free'  : le bouton principal dit "Obtenir" / "Get" / "Ajouter a la
+   *             bibliotheque" -- et rien qui parle d'argent ;
+   *   'paid'  : le bouton principal annonce une depense : on ne touche a rien ;
+   *   null    : la fiche n'a pas fini de s'afficher, ou son bouton n'est pas reconnu.
+   *
+   * Un libelle inconnu vaut null, jamais 'free' : mieux vaut ne rien prendre que
+   * cliquer sur ce qu'on ne comprend pas. Sans le marqueur d'Epic
+   * (data-testid="purchase-cta-button"), le repli exige un bouton gratuit ET
+   * aucun bouton payant sur la page. */
+  function epicOffFeedState() {
+    if (!extractEpicSlug(location.href)) return null;
+    if (epicOwnedHere()) return 'owned';
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      var t = actionText(principaux[0]);
+      if (!t) return null;
+      if (looksPaid(t)) return 'paid';
+      return EPIC_OFF_FEED_FREE_CTA_PATTERNS.some(function (p) { return p.test(t); }) ? 'free' : null;
+    }
+    var gratuit = findActionElement(document, EPIC_OFF_FEED_FREE_CTA_PATTERNS, { mustBeEnabled: false });
+    if (!gratuit) return null;
+    var tousLesBoutons = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
+    var payant = tousLesBoutons.some(function (el) { return epicElementVisible(el) && looksPaid(actionText(el)); });
+    return payant ? 'paid' : 'free';
+  }
+
+  // Attend que la fiche dise ce qu'elle est, mais s'arrete des qu'elle annonce une depense. null au bout du delai.
+  function waitForEpicOffFeedState(timeoutMs) {
+    return waitForElement(function () { return epicOffFeedState(); }, { timeout: timeoutMs, interval: 500 })
+      .catch(function () { return null; });
+  }
+
+  // Le titre que la fiche affiche, a defaut le slug.
+  function epicFicheTitle(slug) {
+    var h = null;
+    try { h = document.querySelector('h1'); } catch (e) { h = null; }
+    var text = h && h.textContent ? String(h.textContent).replace(/\s+/g, ' ').trim() : '';
+    return text || slug;
+  }
+
   function isEpicNotFoundPage(pathname) {
     return /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?not-found\/?$/i.test(pathname || '');
   }
@@ -1933,6 +1987,7 @@
         clearAutoCooldown('epic');
         clearAutoCooldown('luna');
         epicForceRecheck = true;
+        markEpicClaimOrdered();
         navForceRecheck = true;
         updateUiState('running', uiText('engSearching'));
         dispatch();
@@ -2510,6 +2565,26 @@
    * propre fiche, qui sait, elle, si le jeu est a vous. */
   var epicForceRecheck = false;
 
+  /* Une recuperation ORDONNEE (2.115.0) : le worker, l'appli, le bouton de la
+   * page ou le menu ont envoye le moteur sur CETTE page pour y prendre le jeu.
+   * Seule une telle demande autorise le moteur a lire une fiche que le flux
+   * freeGamesPromotions ne liste pas (voir epicOffFeedState) ; une visite
+   * ordinaire, le guetteur automatique, n'y touche jamais. Le drapeau se perime
+   * (deux minutes) : un ordre ignore parce qu'un passage tournait deja ne doit
+   * pas survivre jusqu'a une page que personne n'a demandee. */
+  var epicClaimOrderedAt = 0;
+  var EPIC_ORDER_FRESH_MS = 2 * 60000;
+
+  function markEpicClaimOrdered(at) {
+    epicClaimOrderedAt = typeof at === 'number' ? at : Date.now();
+  }
+
+  function takeEpicClaimOrdered() {
+    var fresh = !!epicClaimOrderedAt && Date.now() - epicClaimOrderedAt < EPIC_ORDER_FRESH_MS;
+    epicClaimOrderedAt = 0;
+    return fresh;
+  }
+
   function runEpicGamesModule() {
     var PLATFORM = 'Epic Games';
 
@@ -2568,16 +2643,22 @@
       // temps de s'afficher (rendu cote client) au lieu de la lire vide.
       var force = epicForceRecheck;
       epicForceRecheck = false;
+      var ordered = takeEpicClaimOrdered();
       var currentSlug = extractEpicSlug(location.href);
       var currentFree = freebies && currentSlug && freebies.find(function (g) { return g.slug === currentSlug; });
       var pageReady = currentFree && (force || alreadyHandled(PLATFORM, epicHistoryKeyForSlug(currentFree.slug)))
         ? waitForEpicCtaState(8000)
         : Promise.resolve(null);
-      return pageReady.then(function (pageState) { return { freebies: freebies, force: force, pageState: pageState }; });
+      return pageReady.then(function (pageState) { return { freebies: freebies, force: force, ordered: ordered, pageState: pageState }; });
     }).then(function (ctx) {
       var freebies = ctx.freebies;
       var force = ctx.force;
       var currentSlug = extractEpicSlug(location.href);
+
+      // Une fiche que le flux ne liste pas, ordonnee expressement : c'est elle qui dit si le jeu est gratuit.
+      if (ctx.ordered && currentSlug && !(freebies && freebies.some(function (g) { return g.slug === currentSlug; }))) {
+        return claimOffFeedFiche(PLATFORM, currentSlug, force);
+      }
 
       if (freebies && force) {
         // Demande explicite : l'historique des jeux que ce passage revoit ne decide rien (voir epicForceRecheck, epicGamesToRecheck).
@@ -2619,32 +2700,8 @@
 
         var currentMatch = currentSlug ? unclaimed.find(function (g) { return g.slug === currentSlug; }) : null;
         if (currentMatch) {
-          try { sessionStorage.removeItem('FGC_epic_redirect_counts'); } catch (e) {}
-
           log(PLATFORM, 'info', 'Fiche produit courante identifiee comme jeu gratuit non reclame : ' + currentMatch.title);
-          updateUiState('running', uiText('engEpicWorking', currentMatch.title));
-          resetEpicSettleClock();
-          return withRetry(function () {
-            return claimEpicGame(document, currentMatch.title, PLATFORM);
-          }, { label: 'recuperation Epic (' + currentMatch.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
-            // On ne se fie pas au seul enchainement des clics : si le bouton
-            // "Obtenir" est encore la, la reclamation n'a pas abouti.
-            return sleep(CONFIG.epicClaimVerifyDelayMs).then(function () {
-              if (result !== 'ALREADY_OWNED' && isEpicGameUnownedOnCurrentPage()) {
-                log(PLATFORM, 'warn', 'Verification : "' + currentMatch.title + '" affiche encore le bouton d\'achat. Rien enregistre, nouvelle tentative au prochain passage.');
-                notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicUnconfirmed', currentMatch.title));
-                updateUiState('error', uiText('engEpicUnconfirmed', currentMatch.title));
-                return;
-              }
-              saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(currentMatch.slug), 'claimed', result, currentMatch.title);
-              updateUiState('ok', uiText('engEpicClaimed', currentMatch.title));
-              log(PLATFORM, 'info', 'OK Recupere avec succes : ' + currentMatch.title + ' (' + result + ')');
-            });
-          }).catch(function (err) {
-            updateUiState('error', uiText('engEpicFailed', currentMatch.title, err.message));
-            log(PLATFORM, 'error', 'ECHEC de la recuperation pour "' + currentMatch.title + '" : ' + err.message + '. Aucune entree "claimed" enregistree.');
-            notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFailed', currentMatch.title, err.message));
-          });
+          return claimCurrentEpicFiche(currentMatch, PLATFORM);
         }
 
         var successCount = 0;
@@ -2768,6 +2825,79 @@
     });
   }
 
+
+  /* Reclame le jeu de la fiche OUVERTE, puis verifie sur la fiche que c'est fait.
+   * Partage par le jeu que le flux liste (la fiche courante) et par la fiche
+   * ordonnee que le flux ne liste pas (claimOffFeedFiche). */
+  function claimCurrentEpicFiche(game, PLATFORM) {
+    try { sessionStorage.removeItem('FGC_epic_redirect_counts'); } catch (e) {}
+
+    updateUiState('running', uiText('engEpicWorking', game.title));
+    resetEpicSettleClock();
+    return withRetry(function () {
+      return claimEpicGame(document, game.title, PLATFORM);
+    }, { label: 'recuperation Epic (' + game.title + ')', retries: 2, baseDelay: 2000 }).then(function (result) {
+      // On ne se fie pas au seul enchainement des clics : si le bouton
+      // "Obtenir" est encore la, la reclamation n'a pas abouti.
+      return sleep(CONFIG.epicClaimVerifyDelayMs).then(function () {
+        if (result !== 'ALREADY_OWNED' && isEpicGameUnownedOnCurrentPage()) {
+          log(PLATFORM, 'warn', 'Verification : "' + game.title + '" affiche encore le bouton d\'achat. Rien enregistre, nouvelle tentative au prochain passage.');
+          notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicUnconfirmed', game.title));
+          updateUiState('error', uiText('engEpicUnconfirmed', game.title));
+          return;
+        }
+        saveHistoryEntry(PLATFORM, epicHistoryKeyForSlug(game.slug), 'claimed', result, game.title);
+        updateUiState('ok', uiText('engEpicClaimed', game.title));
+        log(PLATFORM, 'info', 'OK Recupere avec succes : ' + game.title + ' (' + result + ')');
+      });
+    }).catch(function (err) {
+      updateUiState('error', uiText('engEpicFailed', game.title, err.message));
+      log(PLATFORM, 'error', 'ECHEC de la recuperation pour "' + game.title + '" : ' + err.message + '. Aucune entree "claimed" enregistree.');
+      notifyUser('Free Games Claimer -- Epic Games', uiText('engNotifyEpicFailed', game.title, err.message));
+    });
+  }
+
+  /* Une fiche ordonnee que freeGamesPromotions ne liste pas (2.115.0) : MAFIA
+   * HOTEL, offert a 0 EUR par son editeur hors de la rotation de la semaine.
+   *
+   * Le moteur ne se fie plus au flux pour CETTE page : il lit le bouton principal
+   * (voir epicOffFeedState). "Obtenir" / "Get" sans un mot d'argent : il reclame,
+   * par le meme parcours que les autres jeux -- le garde de la fenetre d'achat
+   * (zero seulement) reste la derniere barriere. Deja dans la bibliotheque : il
+   * l'ecrit. Tout le reste -- bouton payant, libelle inconnu, fiche qui ne
+   * s'affiche pas : il ne clique RIEN et n'ecrit rien, et c'est le mode pilote
+   * qui dit "rien a prendre" ou "montrez-moi le bouton". */
+  function claimOffFeedFiche(PLATFORM, slug, force) {
+    var key = epicHistoryKeyForSlug(slug);
+    if (force) removeHistoryEntry(PLATFORM, key);
+    var title = epicFicheTitle(slug);
+
+    if (alreadyHandled(PLATFORM, key)) {
+      log(PLATFORM, 'info', 'Fiche "' + title + '" absente du flux, deja recuperee precedemment : rien a faire.');
+      updateUiState('ok', uiText('engEpicClaimed', title));
+      return Promise.resolve();
+    }
+
+    log(PLATFORM, 'info', 'Fiche ordonnee absente du flux freeGamesPromotions : "' + title + '". Le bouton principal de la fiche dit si le jeu est gratuit.');
+    updateUiState('running', uiText('engEpicWorking', title));
+    return waitForEpicOffFeedState(12000).then(function (state) {
+      if (state === 'owned') {
+        saveHistoryEntry(PLATFORM, key, 'claimed', 'ALREADY_OWNED', title);
+        updateUiState('ok', uiText('engEpicClaimed', title));
+        log(PLATFORM, 'info', '"' + title + '" est deja dans la bibliotheque (' + 'fiche hors flux).');
+        return;
+      }
+      if (state !== 'free') {
+        var labels = visibleActionLabels(8);
+        log(PLATFORM, 'warn', '"' + title + '" : la fiche ' + (state === 'paid' ? 'annonce une depense' : 'ne montre aucun bouton gratuit reconnu')
+          + ' -- rien n\'est clique. Boutons visibles : ' + (labels.length ? labels.join(' | ') : 'aucun'));
+        updateUiState('error', uiText('engEpicFailed', title, state === 'paid' ? 'jeu payant' : 'bouton gratuit introuvable'));
+        return;
+      }
+      log(PLATFORM, 'info', '"' + title + '" : bouton gratuit sur la fiche, on reclame.');
+      return claimCurrentEpicFiche({ title: title, slug: slug }, PLATFORM);
+    });
+  }
   /* ======================================================================
    * LE NAVIGATEUR ADAPTATIF (2.100.0)
    *
@@ -5234,6 +5364,7 @@
       clearAutoCooldown('epic');
       clearAutoCooldown('luna');
       epicForceRecheck = true;
+      markEpicClaimOrdered();
       navForceRecheck = true;
       dispatch();
     });
@@ -5242,6 +5373,7 @@
       clearAutoCooldown('luna');
       notifyUser('Free Games Claimer', 'Delai de repos remis a zero : la prochaine verification repart immediatement.');
       epicForceRecheck = true;
+      markEpicClaimOrdered();
       navForceRecheck = true;
       dispatch();
     });
@@ -5505,6 +5637,8 @@
   function runClaimOrder(budgetMs, force, teachMode) {
     var platform = platformNameForHost(location.hostname);
     if (force) navForceRecheck = true;
+    // Un ordre sur une page Epic est expres : le moteur peut y lire une fiche que le flux ne liste pas (2.115.0).
+    if (platform === 'Epic Games') markEpicClaimOrdered();
     /* Une recuperation FORCEE (le geste de l'utilisateur) ne se fie pas a la
        memoire du moteur (2.99.7) : voir epicForceRecheck. */
     if (force && platform === 'Epic Games') {
@@ -5836,6 +5970,8 @@
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
       epicGamesToRecheck: epicGamesToRecheck,
+      epicOffFeedState: epicOffFeedState,
+      markEpicClaimOrdered: markEpicClaimOrdered,
       epicStoreUrl: epicStoreUrl,
       localizeStoreUrl: localizeStoreUrl,
       readLunaHost: readLunaHost,

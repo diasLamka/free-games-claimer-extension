@@ -43,6 +43,7 @@
         clearAutoCooldown('epic');
         clearAutoCooldown('luna');
         epicForceRecheck = true;
+        markEpicClaimOrdered();
         navForceRecheck = true;
         updateUiState('running', uiText('engSearching'));
         dispatch();

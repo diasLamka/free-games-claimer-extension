@@ -278,6 +278,55 @@
       .catch(function () { return null; });
   }
 
+  /* LA FICHE QUE LE FLUX NE LISTE PAS (2.115.0).
+   *
+   * freeGamesPromotions est la liste d'Epic pour la rotation de la semaine. Un
+   * jeu offert autrement -- une remise a 100 % lancee par l'editeur, annoncee par
+   * un agregateur -- n'y est pas : le moteur concluait "aucun jeu gratuit restant"
+   * et ne cliquait rien (MAFIA HOTEL, 2026-10-24). Quand on l'envoie EXPRESSEMENT
+   * sur une telle fiche, c'est la fiche elle-meme qui dit si le jeu est gratuit :
+   *
+   *   'owned' : deja dans la bibliotheque ;
+   *   'free'  : le bouton principal dit "Obtenir" / "Get" / "Ajouter a la
+   *             bibliotheque" -- et rien qui parle d'argent ;
+   *   'paid'  : le bouton principal annonce une depense : on ne touche a rien ;
+   *   null    : la fiche n'a pas fini de s'afficher, ou son bouton n'est pas reconnu.
+   *
+   * Un libelle inconnu vaut null, jamais 'free' : mieux vaut ne rien prendre que
+   * cliquer sur ce qu'on ne comprend pas. Sans le marqueur d'Epic
+   * (data-testid="purchase-cta-button"), le repli exige un bouton gratuit ET
+   * aucun bouton payant sur la page. */
+  function epicOffFeedState() {
+    if (!extractEpicSlug(location.href)) return null;
+    if (epicOwnedHere()) return 'owned';
+    var principaux = epicPurchaseButtons();
+    if (principaux.length) {
+      var t = actionText(principaux[0]);
+      if (!t) return null;
+      if (looksPaid(t)) return 'paid';
+      return EPIC_OFF_FEED_FREE_CTA_PATTERNS.some(function (p) { return p.test(t); }) ? 'free' : null;
+    }
+    var gratuit = findActionElement(document, EPIC_OFF_FEED_FREE_CTA_PATTERNS, { mustBeEnabled: false });
+    if (!gratuit) return null;
+    var tousLesBoutons = Array.prototype.slice.call(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
+    var payant = tousLesBoutons.some(function (el) { return epicElementVisible(el) && looksPaid(actionText(el)); });
+    return payant ? 'paid' : 'free';
+  }
+
+  // Attend que la fiche dise ce qu'elle est, mais s'arrete des qu'elle annonce une depense. null au bout du delai.
+  function waitForEpicOffFeedState(timeoutMs) {
+    return waitForElement(function () { return epicOffFeedState(); }, { timeout: timeoutMs, interval: 500 })
+      .catch(function () { return null; });
+  }
+
+  // Le titre que la fiche affiche, a defaut le slug.
+  function epicFicheTitle(slug) {
+    var h = null;
+    try { h = document.querySelector('h1'); } catch (e) { h = null; }
+    var text = h && h.textContent ? String(h.textContent).replace(/\s+/g, ' ').trim() : '';
+    return text || slug;
+  }
+
   function isEpicNotFoundPage(pathname) {
     return /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?not-found\/?$/i.test(pathname || '');
   }
