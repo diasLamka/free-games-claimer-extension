@@ -301,3 +301,68 @@ test('syncRelay rend les demandes d\'aide nouvelles et les garde dans l\'etat', 
   const r2 = await syncRelay({ chrome, fetch: async () => ({ ok: true, status: 200, text: async () => '' }), now: NOW + 1000 });
   assert.equal(r2.help.length, 0);
 });
+
+/* ------------------------------------------- la jaquette du jeu pris ailleurs */
+
+const JAQUETTE = 'https://cdn1.epicgames.com/offer/hades/EGS_Hades_1200x1600';
+const catalogue = (extra = {}) => ({
+  'epic:hades': { store: 'epic', storeId: 'hades', title: 'Hades', image: JAQUETTE, ...extra },
+});
+
+test('un jeu pris sur l\'autre appareil entre au registre AVEC la jaquette que le catalogue connait (2.108.1)', async () => {
+  const { catalogImageLookup } = await import('../watch/relay.js');
+  const r = applyMessages({ dev: 'c0ffee01', locks: {} }, [FX.message], {
+    library: {}, now: NOW, ...helpers, imageFor: catalogImageLookup(catalogue()),
+  });
+  assert.equal(r.library[libraryKey('epic', 'hades')].image, JAQUETTE, 'sinon la liste montre la premiere lettre');
+});
+
+test('sans catalogue, ou pour un jeu que le catalogue ne connait pas, l\'entree entre sans jaquette, sans erreur', async () => {
+  const { catalogImageLookup } = await import('../watch/relay.js');
+  for (const imageFor of [undefined, catalogImageLookup(null), catalogImageLookup({}), catalogImageLookup({ 'gog:x': { store: 'gog', storeId: 'x', title: 'X', image: 'https://x/y.jpg' } })]) {
+    const r = applyMessages({ dev: 'c0ffee01', locks: {} }, [FX.message], { library: {}, now: NOW, ...helpers, ...(imageFor ? { imageFor } : {}) });
+    assert.equal(r.library[libraryKey('epic', 'hades')].image, null);
+  }
+});
+
+test('le titre rattache la jaquette quand l\'autre appareil range le jeu sous un autre identifiant, dans le meme magasin seulement', async () => {
+  const { catalogImageLookup } = await import('../watch/relay.js');
+  const cat = {
+    'epic:hades-2c3d4e': { store: 'epic', storeId: 'hades-2c3d4e', title: 'Hades', image: JAQUETTE },
+    'gog:hades': { store: 'gog', storeId: 'hades', title: 'Hades', image: 'https://images.gog-statics.com/hades.jpg' },
+  };
+  assert.equal(catalogImageLookup(cat)('epic', 'hades', 'Hades'), JAQUETTE);
+  assert.equal(catalogImageLookup(cat)('amazon', 'hades', 'Hades'), null, 'un autre magasin n\'est pas ce jeu-la');
+});
+
+test('une entree arrivee sans jaquette la recoit quand le catalogue la connait enfin, sans rien perdre d\'autre', async () => {
+  const { catalogImageLookup } = await import('../watch/relay.js');
+  const sans = applyMessages({ dev: 'c0ffee01', locks: {} }, [FX.message], { library: {}, now: NOW, ...helpers });
+  assert.equal(sans.library[libraryKey('epic', 'hades')].image, null);
+
+  const apres = applyMessages(sans.state, [FX.message], {
+    library: sans.library, now: NOW, ...helpers, imageFor: catalogImageLookup(catalogue()),
+  });
+  assert.equal(apres.added, 0);
+  assert.deepEqual([...apres.imaged], [libraryKey('epic', 'hades')]);
+  const e = apres.library[libraryKey('epic', 'hades')];
+  assert.equal(e.image, JAQUETTE);
+  assert.equal(e.via, 'telephone');
+  assert.equal(e.ts, FX.message.games[0].at, 'la date de prise ne bouge pas');
+});
+
+test('syncRelay : la jaquette du catalogue est ecrite, y compris sur une entree deja la sans image', async () => {
+  const { chrome, payload } = fakeChrome({ now: NOW });
+  await chrome.storage.local.set({ [KEY_RELAY]: { secret: FX.secret, server: DEFAULT_SERVER, dev: 'c0ffee01', pairedAt: NOW - 1000 } });
+  const fetchImpl = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ id: 'z9', event: 'message', message: FX.envelope }) + '\n' });
+
+  // 1. Le jeu arrive alors que le catalogue ne le connait pas : pas de jaquette.
+  await syncRelay({ chrome, fetch: fetchImpl, now: NOW });
+  assert.equal(payload()[KEY_LIBRARY][libraryKey('epic', 'hades')].image, null);
+
+  // 2. Le message revient (signe de vie suivant) et le catalogue le connait : l'entree la recoit.
+  await chrome.storage.local.set({ [KEY_RELAY]: { ...payload()[KEY_RELAY], since: null } });
+  const r = await syncRelay({ chrome, fetch: fetchImpl, now: NOW + 1000, catalog: catalogue() });
+  assert.equal(payload()[KEY_LIBRARY][libraryKey('epic', 'hades')].image, JAQUETTE);
+  assert.equal(r.library[libraryKey('epic', 'hades')].image, JAQUETTE);
+});

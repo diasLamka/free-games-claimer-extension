@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import io.github.diaslamka.freegames.R
 import io.github.diaslamka.freegames.data.Fmt
 import io.github.diaslamka.freegames.data.Money
+import io.github.diaslamka.freegames.data.Relay
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.sources.Countries
@@ -101,7 +102,8 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.
 private fun ClaimedRow(state: AppState, e: LibraryEntry, onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
     val b = LocalBrut.current
     val title = e.title ?: e.id
-    val image = e.image ?: state.offers.values.firstOrNull { it.store == e.store && (it.storeId == e.id) }?.image
+    // La jaquette figee ; sinon celle de l'offre, par identifiant puis par titre (un jeu pris sur l'autre appareil n'en porte pas).
+    val image = e.image ?: Relay.findOffer(state, e.store, e.id, title)?.image
     Row(
         modifier.fillMaxWidth().padding(end = 5.dp, bottom = 5.dp).brut(Color.White, shadow = b.shadow, offset = 5.dp)
             .then(if (e.url != null) Modifier.clickableNoRipple { onOpen(e.url) } else Modifier),

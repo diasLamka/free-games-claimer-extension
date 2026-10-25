@@ -78,13 +78,10 @@
       var currentSlug = extractEpicSlug(location.href);
 
       if (freebies && force) {
-        // Demande explicite : l'historique de ces jeux ne decide rien (voir epicForceRecheck).
-        freebies.forEach(function (g) {
-          var k = epicHistoryKeyForSlug(g.slug);
-          if (alreadyHandled(PLATFORM, k)) {
-            log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
-            removeHistoryEntry(PLATFORM, k);
-          }
+        // Demande explicite : l'historique des jeux que ce passage revoit ne decide rien (voir epicForceRecheck, epicGamesToRecheck).
+        epicGamesToRecheck(freebies, currentSlug, getHistory(PLATFORM)).forEach(function (g) {
+          log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
+          removeHistoryEntry(PLATFORM, epicHistoryKeyForSlug(g.slug));
         });
       }
 

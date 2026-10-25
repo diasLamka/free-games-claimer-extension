@@ -253,14 +253,19 @@ object Relay {
                     if (st != null && st !in ACQUIRED) continue
                     val id = g["i"].str?.takeIf { it.isNotEmpty() } ?: Titles.normalise(title)
                     val k = Rules.libraryKey(store, id)
-                    if (lib.containsKey(k)) continue
+                    val have = lib[k]
+                    if (have != null) {
+                        // Deja la mais sans jaquette (le message n'en porte pas) : celle de l'offre, des que l'appli la connait.
+                        if (have.image == null) findOffer(state, store, id, title)?.image?.let { lib = lib + (k to have.copy(image = it)) }
+                        continue
+                    }
                     // Deja la par le titre, dans le meme magasin ? Rien a ajouter.
                     val norm = Titles.normalise(title)
                     if (lib.values.any { it.store == store && Titles.normalise(it.title) == norm }) continue
                     lib = lib + (k to LibraryEntry(
                         store = store, id = id, title = title,
                         url = Titles.webUrl(g["u"].str)?.takeIf { it.startsWith("https://") },
-                        worth = g["w"].str, image = null, ts = g["at"].long() ?: ts,
+                        worth = g["w"].str, image = findOffer(state, store, id, title)?.image, ts = g["at"].long() ?: ts,
                         status = st ?: "claimed", via = "pc",
                     ))
                     added++

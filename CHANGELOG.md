@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.108.1 et appli 1.33.4 -- 2026-10-25
+
+**Un nouveau jeu Epic ne rejoue plus le jeu pris jeudi, et les jeux pris sur l'autre appareil retrouvent leur jaquette**
+
+Signale : un nouveau jeu Epic est offert, et la recuperation reprend un ancien jeu deja pris le jeudi, au lieu de ne prendre que ce qui peut l'etre ; et des jeux s'affichent avec leur premiere lettre au lieu de leur image, dans l'extension et dans l'appli.
+
+- **« Tout recuperer » respecte le registre** (`watch/cycle.js`, `watch/commands.js`). Depuis la 2.99.7 une recuperation demandee ne tenait pour rien ni le registre ni la memoire « deja a toi » : chaque jeu gratuit rouvrait son onglet, y compris celui pris jeudi, des qu'on touchait « Tout recuperer » pour le nouveau. La demande en bloc (`trustKnownOwned`) les croit de nouveau ; le moteur relit toujours la page de ce qui n'est pas connu pris. **Le clic sur UNE offre (« Recuperer ») garde la regle de la 2.99.7** : un geste explicite sur ce jeu-la est plus recent que la memoire.
+- **Une recuperation forcee ne remet a zero que ce qu'elle rouvre** (`epicGamesToRecheck`, `src/core/10-epic-helpers.js`). Le moteur effacait l'entree « claimed » de TOUS les jeux gratuits de la semaine, alors que, sur une fiche, il s'arrete apres le jeu de la fiche : le jeu pris jeudi perdait son entree, et le passage automatique suivant le tenait pour « non reclame ». Maintenant : sur une fiche, ce jeu seul ; sur la liste, tous sauf ceux dont l'entree est une vraie reclamation (`CLAIMED`) -- le soin de la 2.99.7 ne la touchait pas non plus. Les « deja ... » (`ALREADY_*`), que l'ancienne lecture a pu mal faire, se revoient.
+- **Les jeux pris sur l'autre appareil recoivent leur jaquette** (`watch/relay.js`, `data/Relay.kt`). Le message du relais ne porte pas d'image, et l'entree du registre naissait avec `image: null` : la liste montrait la premiere lettre du titre. Elle prend maintenant celle que le catalogue (extension) ou les offres (appli) connaissent -- par identifiant, puis par titre dans le meme magasin --, et une entree deja arrivee sans image la recoit au message suivant. La liste « Recuperes » de l'appli cherche aussi l'offre par titre, plus seulement par identifiant (`ui/ClaimedScreen.kt`).
+- Moteur fige : `reference-v2.108.1.js`. Tests : `test/forced-recheck.test.mjs` (8) et cinq dans `test/relay.test.mjs` ; un test Kotlin (`RelayTest`).
+- Non verifie : le moteur sur un vrai compte Epic (la page est derriere un mur anti-robot depuis ce poste) ; le code Kotlin n'a pas ete compile ici (pas de SDK Android) -- la CI le fait.
+- Ne change pas : un jeu dont aucune source ne connait l'image (ni le catalogue, ni le registre, ni Steam au titre exact) garde sa lettre.
+
 ## Appli 1.33.3 -- 2026-10-10 (extension inchangee, 2.108.0)
 
 **Les « figures bizarres » du logo Epic : un defaut de lecture d'Android, corrige**

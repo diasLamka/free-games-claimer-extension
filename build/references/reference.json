@@ -1,7 +1,7 @@
 {
-  "fichier": "reference-v2.106.0.js",
-  "sha256": "E6B1CB6188AA308EF6F33933658E14B60178409EBA55100F08E3E3CB1262B93E",
-  "octets": 297545,
-  "version": "2.106.0",
-  "motif": "2.106.0 : gone -- une page sans rien a montrer ne demande plus le bouton"
+  "fichier": "reference-v2.108.1.js",
+  "sha256": "2D0749B4670299759D18DF8D4E89CE84B037A4B7D74FC7B925B65208870EE32F",
+  "octets": 299142,
+  "version": "2.108.1",
+  "motif": "2.108.1 : une recuperation forcee ne remet a zero que les jeux qu'elle rouvre (epicGamesToRecheck)"
 }

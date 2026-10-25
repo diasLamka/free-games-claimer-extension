@@ -28,7 +28,7 @@
  * Module pur, sauf les fonctions qui recoivent leur `fetch` ou leur `chrome`.
  */
 
-import { KEY_LIBRARY, libraryKey, makeEntry, mergeEntry } from './library.js';
+import { KEY_LIBRARY, enrich, libraryKey, makeEntry, mergeEntry } from './library.js';
 import { normaliseTitle } from './offer.js';
 
 /** L'etat du relais. Ecrit par le popup (association) et le worker (lecture). */
@@ -236,14 +236,24 @@ export function lockKey(store, normalisedTitle) {
  * registre, les verrous, les demandes d'aide et le signe de vie de l'autre
  * sont notes.
  *
- * Rend { state, library, added, helped } -- `added` compte les entrees
- * nouvelles du registre, `helped` les cles des demandes d'aide nouvelles.
+ * Rend { state, library, added, imaged, helped } -- `added` compte les entrees
+ * nouvelles du registre, `imaged` les cles d'entrees DEJA la qui viennent de
+ * recevoir leur jaquette, `helped` les cles des demandes d'aide nouvelles.
+ *
+ * `imageFor(magasin, id, titre)` rend la jaquette que CET appareil connait pour
+ * ce jeu, ou null (2.108.1). Le message du relais ne porte pas d'image -- elle
+ * pese, et l'enveloppe est petite --, donc un jeu pris sur l'autre appareil
+ * entrait au registre sans jaquette, et la liste « Recuperes » montrait sa
+ * premiere lettre. L'offre, elle, est dans le catalogue de CET appareil tant
+ * qu'elle court : c'est la seule fenetre pour la lui rattacher.
+ *
  * Pure : ni horloge, ni stockage.
  */
-export function applyMessages(state, messages, { library = {}, now, normalise, libraryKey, makeEntry, mergeEntry }) {
+export function applyMessages(state, messages, { library = {}, now, normalise, libraryKey, makeEntry, mergeEntry, imageFor = () => null }) {
   const st = { ...state, locks: { ...(state.locks || {}) }, help: { ...(state.help || {}) } };
   const lib = { ...library };
   let added = 0;
+  const imaged = [];
   const helped = [];
   for (const m of messages) {
     if (!m || m.v !== VERSION || typeof m.ts !== 'number') continue;
@@ -262,7 +272,7 @@ export function applyMessages(state, messages, { library = {}, now, normalise, l
           ...makeEntry({
             store: g.s, id: g.i || normalise(g.t), title: g.t,
             url: typeof g.u === 'string' && /^https:\/\//.test(g.u) ? g.u : null,
-            worth: typeof g.w === 'string' ? g.w : null, image: null,
+            worth: typeof g.w === 'string' ? g.w : null, image: imageFor(g.s, g.i || normalise(g.t), g.t) || null,
             ts: typeof g.at === 'number' ? g.at : m.ts, status: g.st || 'claimed',
           }),
           via,
@@ -270,6 +280,7 @@ export function applyMessages(state, messages, { library = {}, now, normalise, l
         const avant = lib[k];
         const merged = avant ? { ...mergeEntry(avant, entry), via: avant.via || via } : entry;
         if (!avant) added++;
+        else if (!avant.image && merged.image) imaged.push(k);
         lib[k] = merged;
       }
     }
@@ -317,7 +328,7 @@ export function applyMessages(state, messages, { library = {}, now, normalise, l
     .filter((e) => e && e.store && e.title && (!e.status || ACQUIRED.includes(e.status)))
     .map((e) => lockKey(e.store, normalise(e.title))));
   for (const [k, v] of Object.entries(st.help)) if (!v || v.until <= now || acquis.has(k)) delete st.help[k];
-  return { state: st, library: lib, added, helped: helped.filter((k) => st.help[k]) };
+  return { state: st, library: lib, added, imaged, helped: helped.filter((k) => st.help[k]) };
 }
 
 /** Les demandes d'aide encore ouvertes, de la plus recente a la plus ancienne. */
@@ -423,11 +434,32 @@ async function patchRelay(chrome, patch) {
 }
 
 /**
+ * La jaquette que le catalogue de cet appareil connait pour un jeu, ou null.
+ *
+ * Par identifiant chez le magasin d'abord (la cle commune des deux appareils),
+ * puis par titre dans le MEME magasin : l'autre appareil peut ranger le jeu
+ * sous un identifiant que celui-ci ne connait pas.
+ */
+export function catalogImageLookup(catalog) {
+  if (!catalog || typeof catalog !== 'object') return () => null;
+  return (store, id, title) => {
+    const known = enrich(store, id, catalog);
+    if (known && known.image) return known.image;
+    const t = normaliseTitle(title);
+    if (!t) return null;
+    for (const o of Object.values(catalog)) {
+      if (o && o.store === store && o.image && normaliseTitle(o.title) === t) return o.image;
+    }
+    return null;
+  };
+}
+
+/**
  * Lit le relais et integre ce qui est arrive. Rend { held, library, ctx, help }
  * -- `held` : les jeux que l'autre appareil est en train de prendre ; `help` :
  * ses demandes d'aide nouvelles -- ou null s'il n'y a pas d'association.
  */
-export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => {} }) {
+export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => {}, catalog = null }) {
   const ctx = await relayContext(chrome);
   if (!ctx) return null;
   const { cfg } = ctx;
@@ -446,15 +478,20 @@ export async function syncRelay({ chrome, fetch: fetchImpl, now, record = () => 
   const library0 = (await chrome.storage.local.get(KEY_LIBRARY))[KEY_LIBRARY] || {};
   const r = applyMessages({ dev: cfg.dev, locks: cfg.locks, peer: cfg.peer, help: cfg.help }, ouverts, {
     library: library0, now, normalise: normaliseTitle, libraryKey, makeEntry, mergeEntry,
+    imageFor: catalogImageLookup(catalog),
   });
   let library = null;
-  if (r.added) {
+  if (r.added || r.imaged.length) {
     // Relu juste avant d'ecrire : l'historique du moteur a pu y entrer entre-temps.
     const frais = (await chrome.storage.local.get(KEY_LIBRARY))[KEY_LIBRARY] || {};
     library = { ...frais };
     for (const [k, v] of Object.entries(r.library)) if (!library[k]) library[k] = v;
+    // Une entree deja la, sans jaquette : elle recoit celle que le catalogue vient de connaitre.
+    for (const k of r.imaged) {
+      if (library[k] && !library[k].image && r.library[k].image) library[k] = { ...library[k], image: r.library[k].image };
+    }
     await chrome.storage.local.set({ [KEY_LIBRARY]: library });
-    record('info', `relais : ${r.added} jeu(x) obtenu(s) par l'autre appareil`);
+    if (r.added) record('info', `relais : ${r.added} jeu(x) obtenu(s) par l'autre appareil`);
   }
   await patchRelay(chrome, {
     since: p.last, lastSync: now, lastError: null, locks: r.state.locks, peer: r.state.peer || cfg.peer, help: r.state.help,

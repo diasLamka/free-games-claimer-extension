@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- * FREE GAMES AUTO-CLAIMER -- v2.108.0
+ * FREE GAMES AUTO-CLAIMER -- v2.108.1
  * =============================================================================
  * FICHIER GENERE -- ne pas editer a la main.
  *
@@ -1529,6 +1529,35 @@
     return 'slug:' + slug;
   }
 
+  /* QUELS JEUX UNE RECUPERATION FORCEE REVOIT-ELLE (2.108.1).
+   *
+   * Forcer, c'est ne pas se fier a la memoire du moteur (voir
+   * epicForceRecheck) -- mais pour les jeux que CE passage va rouvrir, pas pour
+   * toute la semaine. Avant la 2.108.1 l'entree "claimed" de TOUS les jeux
+   * gratuits etait effacee d'entree, y compris ceux que le passage ne regardait
+   * pas : sur une fiche, le module s'arrete apres le jeu de la fiche. Le jeu
+   * pris le jeudi n'avait alors plus d'entree, le passage automatique suivant
+   * le tenait pour "non reclame" et rouvrait sa fiche -- le jour ou un nouveau
+   * jeu etait offert.
+   *
+   *   - sur la fiche d'un jeu gratuit : ce jeu seul ;
+   *   - sur la liste : tous, SAUF ceux dont l'entree est une vraie reclamation
+   *     (CLAIMED) -- le moteur ne l'ecrit qu'apres avoir vu le jeu passer dans
+   *     la bibliotheque, et le soin de la 2.99.7 ne la touche pas non plus.
+   *     Seuls les "deja ..." (ALREADY_*), que l'ancienne lecture a pu mal
+   *     faire, se revoient. */
+  function epicGamesToRecheck(freebies, currentSlug, history) {
+    var list = freebies || [];
+    var past = history || {};
+    var onFiche = !!currentSlug && list.some(function (g) { return g.slug === currentSlug; });
+    return list.filter(function (g) {
+      var entry = past[epicHistoryKeyForSlug(g.slug)];
+      if (!entry || entry.status !== 'claimed') return false;
+      if (onFiche) return g.slug === currentSlug;
+      return entry.reason !== 'CLAIMED';
+    });
+  }
+
   function getRedirectCount(slug) {
     try {
       var raw = sessionStorage.getItem('FGC_epic_redirect_counts') || '{}';
@@ -2551,13 +2580,10 @@
       var currentSlug = extractEpicSlug(location.href);
 
       if (freebies && force) {
-        // Demande explicite : l'historique de ces jeux ne decide rien (voir epicForceRecheck).
-        freebies.forEach(function (g) {
-          var k = epicHistoryKeyForSlug(g.slug);
-          if (alreadyHandled(PLATFORM, k)) {
-            log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
-            removeHistoryEntry(PLATFORM, k);
-          }
+        // Demande explicite : l'historique des jeux que ce passage revoit ne decide rien (voir epicForceRecheck, epicGamesToRecheck).
+        epicGamesToRecheck(freebies, currentSlug, getHistory(PLATFORM)).forEach(function (g) {
+          log(PLATFORM, 'info', 'Recuperation demandee : "' + g.title + '" est revu sur sa fiche, l\'historique est ignore.');
+          removeHistoryEntry(PLATFORM, epicHistoryKeyForSlug(g.slug));
         });
       }
 
@@ -5684,6 +5710,7 @@
       isEpicFreeToKeep: isEpicFreeToKeep,
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
+      epicGamesToRecheck: epicGamesToRecheck,
       epicStoreUrl: epicStoreUrl,
       localizeStoreUrl: localizeStoreUrl,
       readLunaHost: readLunaHost,

@@ -6,6 +6,7 @@
       isEpicFreeToKeep: isEpicFreeToKeep,
       mapEpicApiElements: mapEpicApiElements,
       extractEpicSlug: extractEpicSlug,
+      epicGamesToRecheck: epicGamesToRecheck,
       epicStoreUrl: epicStoreUrl,
       localizeStoreUrl: localizeStoreUrl,
       readLunaHost: readLunaHost,

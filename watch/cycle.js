@@ -804,7 +804,7 @@ export async function runCycle({
       let relais = null;
       if (fetchImpl) {
         try {
-          relais = await syncRelay({ chrome, fetch: fetchImpl, now, record });
+          relais = await syncRelay({ chrome, fetch: fetchImpl, now, record, catalog });
         } catch (e) {
           record('warn', `relais : ${(e && e.message) || e}`);
         }
@@ -1072,6 +1072,15 @@ export async function claimWhatCanBe({
      plus recent que cette memoire. Ce que les MAGASINS disent posseder
      (`collection`, lu sur le compte) reste cru. */
   forced = false,
+  /* « Tout recuperer » (2.108.1) : une demande en bloc ne rouvre pas ce que le
+     registre et la memoire « deja a toi » disent pris. Elle reste `forced` pour
+     le reste -- le moteur relit la page de ce qui n'est PAS connu pris, et la
+     question « montrez-moi le bouton » peut se poser --, mais l'utilisateur
+     qui touche « Tout recuperer » veut ce qu'on peut encore prendre, pas la
+     semaine rejouee : le jeu pris jeudi n'a pas a rouvrir son onglet le jour ou
+     un nouveau jeu arrive. Le clic sur UNE offre (« Recuperer ») garde
+     l'ancienne regle : un geste explicite sur ce jeu-la est plus recent que la memoire. */
+  trustKnownOwned = false,
   /* Le relais (2.87.0) : les cles « magasin|titre » que l'autre appareil est
      en train de prendre, et deux avis -- avant une reclamation (un verrou),
      apres un succes (le jeu obtenu). Une panne du relais ne bloque rien. */
@@ -1106,8 +1115,9 @@ export async function claimWhatCanBe({
   try { dejaRaw = (await chrome.storage.local.get(KEY_DEJA))[KEY_DEJA] || null; } catch { dejaRaw = null; }
   let deja = readDeja(dejaRaw, now);
   let dejaChanged = false;
-  const ownedLib = library && !forced ? ownedKeys(library, normaliseTitle) : null;
-  const ownedDeja = !forced ? dejaKeys(deja) : null;
+  const trustMemory = !forced || trustKnownOwned;
+  const ownedLib = library && trustMemory ? ownedKeys(library, normaliseTitle) : null;
+  const ownedDeja = trustMemory ? dejaKeys(deja) : null;
   const owned = ownedLib || (ownedDeja && ownedDeja.size) ? new Set([...(ownedLib || []), ...(ownedDeja || [])]) : null;
   const ownedIds = collection ? ownedStoreKeys(collection) : null;
   /* Une table par cycle : l'historique des commandes Epic se lit UNE fois, pas une fois par offre (2.107.0). */

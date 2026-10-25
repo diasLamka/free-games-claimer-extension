@@ -84,6 +84,24 @@ class RelayTest {
     }
 
     @Test
+    fun aGameClaimedElsewhereGetsTheCoverTheAppKnows() {
+        val cover = "https://cdn1.epicgames.com/offer/hades/cover"
+        val o = Offer(key = "epic:hades", source = "epic", store = Stores.EPIC, storeId = "hades", title = "Hades",
+            url = "https://store.epicgames.com/p/hades", end = now + 86_400_000, keepable = true, image = cover)
+        val k = Rules.libraryKey("epic", "hades")
+        // L'offre est connue quand le message arrive : l'entree porte sa jaquette.
+        val (known, n) = Relay.apply(base().copy(offers = mapOf(o.key to o)), listOf(message), now)
+        assertEquals(1, n)
+        assertEquals(cover, known.library[k]!!.image)
+        // L'entree est arrivee sans offre connue : le message suivant lui rattache la jaquette, sans rien ajouter.
+        val (bare, _) = Relay.apply(base(), listOf(message), now)
+        assertNull(bare.library[k]!!.image)
+        val (later, again) = Relay.apply(bare.copy(offers = mapOf(o.key to o)), listOf(message), now)
+        assertEquals(0, again)
+        assertEquals(cover, later.library[k]!!.image)
+    }
+
+    @Test
     fun ownOldAndFailedMessagesAreIgnored() {
         val mine = JsonObject(message + ("dev" to parseJson("\"c0ffee01\"")!!))
         val old = JsonObject(message + ("ts" to parseJson("${now - 8 * 24 * 3_600_000L}")!!))

@@ -38,7 +38,7 @@ export async function isStopped(chrome) {
   return raw[KEY_STOP] === true;
 }
 
-export async function claimAllNow({ chrome, now = Date.now(), claimableStores, record = () => {}, fetch: fetchImpl }) {
+export async function claimAllNow({ chrome, now = Date.now(), claimableStores, record = () => {}, fetch: fetchImpl, claim }) {
   if (await isStopped(chrome)) {
     record('warn', 'arret d\'urgence actif : aucune reclamation');
     return { claimed: 0, left: 0, claims: [], stopped: true };
@@ -72,8 +72,12 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     collection: raw[KEY_COLLECTION] || null,
     maxReclamations: MAX_PER_HOUR,
     record,
+    // Le geste de reclamation, injectable pour les tests (claimOneNow fait de meme) ; absent, c'est claimOffer.
+    claim,
     // Un clic de l'utilisateur : voir `forced` dans claimWhatCanBe.
     forced: true,
+    // Mais en bloc : ce que le registre dit pris ne rouvre pas d'onglet (2.108.1).
+    trustKnownOwned: true,
   });
 
   await writeCycle(chrome, { catalog, cadence, canary });
