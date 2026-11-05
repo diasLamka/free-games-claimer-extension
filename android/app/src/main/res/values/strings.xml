@@ -121,6 +121,7 @@
     <string name="rec_report_title">Failure report</string>
     <string name="rec_report_copy">Copy</string>
     <string name="rec_report_copied">Copied</string>
+    <string name="rec_report_issue">Flag it</string>
     <string name="aut_on">Claims on its own</string>
     <string name="aut_partial">Claims on its own, with brakes</string>
     <string name="aut_off">Does not claim on its own</string>

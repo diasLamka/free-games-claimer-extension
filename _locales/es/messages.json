@@ -3085,5 +3085,11 @@
   },
   "seasonsSoon": {
     "message": "Próxima temporada: a partir del $1. Hasta entonces, nada cambia."
+  },
+  "reportIssue": {
+    "message": "Avisar"
+  },
+  "reportIssueHint": {
+    "message": "Abrir una incidencia de GitHub ya rellenada con este informe. Usted la revisa: no se envía nada hasta que pulse « Submit new issue », y la incidencia es pública."
   }
 }

@@ -107,3 +107,63 @@ export function buildReport(offer, { version, now } = {}) {
   }
   return lines.join('\n');
 }
+
+/* ------------------------------------------------------- le signalement (2.118.0) */
+
+/** Le formulaire de nouveau ticket du depot public : il s'ouvre rempli, rien n'est envoye avant le clic de l'utilisateur. */
+export const ISSUES_URL = 'https://github.com/diasLamka/free-games-claimer-extension/issues/new';
+
+/* GitHub refuse un lien trop long (l'ordre de grandeur est de huit mille caracteres) : on se garde une marge, et c'est le TEXTE DE LA
+   PAGE qui raccourcit en premier -- le jeu, le magasin, le verdict et l'adresse sont ce qui permet de comprendre. */
+export const MAX_ISSUE_URL = 6000;
+const MAX_ISSUE_TITLE = 120;
+
+/** Le titre du ticket : le jeu et le magasin, deja nettoyes comme le reste du rapport. */
+export function issueTitle(offer) {
+  const o = offer || {};
+  return tidy(`Echec de recuperation : ${o.title || '?'} (${o.store || '?'})`, MAX_ISSUE_TITLE);
+}
+
+/**
+ * Le corps du ticket : une consigne de relecture, un espace pour dire ce qu'on a vu, et le rapport dans un bloc de code.
+ * Le ticket est PUBLIC : la premiere ligne le dit, et c'est la premiere chose que l'utilisateur lit avant d'envoyer.
+ */
+export function issueBody(report) {
+  return [
+    'Relis ce texte avant de l\'envoyer : ce ticket sera public. Les codes, les adresses electroniques et les parametres d\'adresse sont deja retires du rapport.',
+    '',
+    'Ce que j\'ai observe :',
+    '',
+    '',
+    'Rapport de l\'extension :',
+    '',
+    '```text',
+    String(report).replace(/`{3,}/g, '\'\'\''),
+    '```',
+  ].join('\n');
+}
+
+function issueLink(title, body) {
+  return `${ISSUES_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+}
+
+/**
+ * Le lien qui ouvre un ticket deja rempli avec le rapport de cet echec.
+ *
+ * Trop long, le lien perd d'abord le texte de la page (par moities), puis tout le bloc de la page : un lien qui ouvre un
+ * formulaire a moitie rempli vaut mieux qu'un lien qui n'ouvre rien.
+ */
+export function issueUrl(offer, { version, now } = {}) {
+  const title = issueTitle(offer);
+  const f = offer && offer.failure;
+  let text = f && f.page ? f.page.text || '' : '';
+  for (let i = 0; i < 10; i++) {
+    const copy = f && f.page ? { ...offer, failure: { ...f, page: { ...f.page, text } } } : offer;
+    const url = issueLink(title, issueBody(buildReport(copy, { version, now })));
+    if (url.length <= MAX_ISSUE_URL) return url;
+    if (!text) break;
+    text = text.length > 40 ? text.slice(0, Math.floor(text.length / 2)).trim() : '';
+  }
+  const bare = { ...(offer || {}), failure: f ? { ...f, page: null } : null };
+  return issueLink(title, issueBody(buildReport(bare, { version, now }))).slice(0, MAX_ISSUE_URL);
+}

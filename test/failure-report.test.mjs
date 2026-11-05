@@ -6,7 +6,10 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_PAGE_TEXT, cleanPage, failureOf, isFailureVerdict, buildReport } from '../watch/failure-report.js';
+import {
+  MAX_PAGE_TEXT, cleanPage, failureOf, isFailureVerdict, buildReport,
+  ISSUES_URL, MAX_ISSUE_URL, issueTitle, issueBody, issueUrl,
+} from '../watch/failure-report.js';
 
 test('seuls les verdicts qui demandent un regard laissent un rapport', () => {
   for (const v of ['failed', 'challenge', 'needs_login', 'needs_teaching']) assert.equal(isFailureVerdict(v), true, v);
@@ -109,4 +112,75 @@ test('une phrase en majuscules ou un nom a tirets ne sont pas abimes', () => {
   const p = cleanPage({ url: 'https://x.test/a', title: 'COUNTER-STRIKE 2', text: 'FREE-TO-PLAY now. Spider-Man 2 and X-COM' });
   assert.equal(p.title, 'COUNTER-STRIKE 2');
   assert.equal(p.text, 'FREE-TO-PLAY now. Spider-Man 2 and X-COM');
+});
+
+/* ------------------------------------------------------- le signalement (2.118.0) */
+
+const NOW = Date.UTC(2026, 10, 5, 12, 0, 0);
+const OFFRE = {
+  title: 'Out of Sight', store: 'epic', verdict: 'failed', attempts: 2,
+  failure: { at: NOW, verdict: 'failed', details: 'bouton introuvable', page: { url: 'https://store.epicgames.com/p/out-of-sight', title: 'Out of Sight', text: 'Obtenir' } },
+};
+const lire = (url) => { const q = new URL(url).searchParams; return { title: q.get('title'), body: q.get('body') }; };
+
+test('le signalement ouvre le formulaire du depot, rempli avec le rapport', () => {
+  const url = issueUrl(OFFRE, { version: '2.118.0', now: NOW });
+  assert.ok(url.startsWith(`${ISSUES_URL}?`), url);
+  const { title, body } = lire(url);
+  assert.equal(title, 'Echec de recuperation : Out of Sight (epic)');
+  assert.ok(body.includes(buildReport(OFFRE, { version: '2.118.0', now: NOW })), 'le rapport entier est dans le corps');
+  assert.ok(/ce ticket sera public/.test(body), 'la consigne de relecture est la');
+});
+
+test('le signalement : & # + % et accents font l\'aller-retour sans etre abimes', () => {
+  const offre = { ...OFFRE, title: 'Tom & Jerry #1 100% + caf\u00e9', failure: { ...OFFRE.failure, details: 'a&b=c#d+e%20f' } };
+  const { title, body } = lire(issueUrl(offre, { version: '2.118.0', now: NOW }));
+  assert.ok(title.includes('Tom & Jerry #1 100% + caf\u00e9'), title);
+  assert.ok(body.includes('motif : a&b=c#d+e%20f'), body);
+});
+
+test('le signalement : un lien trop long perd d\'abord le texte de la page, jamais le jeu', () => {
+  const enorme = '\u00e9'.repeat(5000); // six caracteres par lettre une fois encode
+  const offre = { ...OFFRE, failure: { ...OFFRE.failure, page: { ...OFFRE.failure.page, text: enorme } } };
+  const url = issueUrl(offre, { version: '2.118.0', now: NOW });
+  assert.ok(url.length <= MAX_ISSUE_URL, String(url.length));
+  const { body } = lire(url);
+  assert.ok(body.includes('jeu : Out of Sight (epic)'));
+  assert.ok(body.includes('verdict : failed'));
+  assert.ok(body.includes('page : https://store.epicgames.com/p/out-of-sight'), 'l\'adresse reste');
+});
+
+test('le signalement : un rapport de taille normale n\'est pas raccourci', () => {
+  const texte = 'Le jeu a deja ete obtenu avec ce compte. '.repeat(7).slice(0, 300).trim();
+  const offre = { ...OFFRE, failure: { ...OFFRE.failure, page: { ...OFFRE.failure.page, text: texte } } };
+  const url = issueUrl(offre, { version: '2.118.0', now: NOW });
+  assert.ok(url.length < MAX_ISSUE_URL, String(url.length));
+  assert.ok(lire(url).body.includes(texte));
+});
+
+test('le signalement : trois accents graves dans le rapport ne cassent pas le bloc de code', () => {
+  const offre = { ...OFFRE, failure: { ...OFFRE.failure, details: 'avant ``` apres' } };
+  const { body } = lire(issueUrl(offre, { version: '2.118.0', now: NOW }));
+  assert.equal(body.split('```').length - 1, 2, 'une ouverture et une fermeture, pas plus');
+});
+
+test('le signalement : sans page lue, le ticket le dit', () => {
+  const offre = { title: 'Jeu', store: 'gog', verdict: 'challenge', attempts: 0 };
+  const { title, body } = lire(issueUrl(offre, { version: '2.118.0', now: NOW }));
+  assert.equal(title, 'Echec de recuperation : Jeu (gog)');
+  assert.ok(/aucune page/i.test(body), body);
+});
+
+test('le signalement : le titre est nettoye et borne comme le rapport', () => {
+  assert.ok(!issueTitle({ title: 'Ecrire a moi@example.com', store: 'epic' }).includes('@'));
+  assert.ok(issueTitle({ title: 'x'.repeat(500), store: 'epic' }).length <= 120);
+  assert.equal(issueTitle(undefined), 'Echec de recuperation : ? (?)');
+});
+
+test('le signalement : le corps est une consigne, un espace a remplir, puis le rapport', () => {
+  const corps = issueBody('ligne 1\nligne 2');
+  const lignes = corps.split('\n');
+  assert.ok(/^Relis ce texte/.test(lignes[0]));
+  assert.ok(corps.includes('Ce que j\'ai observe :'));
+  assert.ok(corps.endsWith('```text\nligne 1\nligne 2\n```'));
 });

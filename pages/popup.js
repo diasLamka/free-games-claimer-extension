@@ -88,7 +88,7 @@ import qrcodegen from './vendor/qrcodegen.js';
 import { GUARD_SITES, guardScriptId } from '../watch/owned-guard.js';
 import { readLibraryMirror } from '../watch/library-sync.js';
 import { failingSources, reasonText } from '../watch/sentinel.js';
-import { buildReport } from '../watch/failure-report.js';
+import { buildReport, issueUrl } from '../watch/failure-report.js';
 import { autonomyReport, LEVEL as AUT_LEVEL, BLOCK as AUT_BLOCK, WINDOW_DAYS as AUT_DAYS } from '../watch/autonomy.js';
 import {
   KEY_SESSIONS, SESSION, PROBED_STORES, LOGIN_URLS, readSession, summarise, isStale,
@@ -1169,6 +1169,16 @@ function renderGames(all, behaviour) {
         setTimeout(() => { report.textContent = t('copyReport'); }, 2000);
       });
       row.append(report);
+
+      /* Le signalement en un geste (2.118.0) : le meme rapport, dans un ticket GitHub deja rempli. Rien ne part
+         d'ici : le formulaire s'ouvre dans un onglet, et c'est l'utilisateur qui l'envoie, apres relecture. */
+      const signaler = el('button', 'btn-sm', t('reportIssue'));
+      signaler.title = t('reportIssueHint');
+      signaler.addEventListener('click', (e) => {
+        e.stopPropagation();
+        api.tabs.create({ url: issueUrl(offer, { version: api.runtime.getManifest().version, now: Date.now() }), active: true });
+      });
+      row.append(signaler);
     }
     lane.append(row);
   }

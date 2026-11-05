@@ -120,6 +120,7 @@
     <string name="rec_report_title">Rapport d’échec</string>
     <string name="rec_report_copy">Copier</string>
     <string name="rec_report_copied">Copié</string>
+    <string name="rec_report_issue">Signaler</string>
     <string name="aut_on">Il récupère seul</string>
     <string name="aut_partial">Il récupère seul, avec des freins</string>
     <string name="aut_off">Il ne récupère pas seul</string>

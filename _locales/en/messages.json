@@ -3085,5 +3085,11 @@
   },
   "seasonsSoon": {
     "message": "Next season: from $1. Until then, nothing changes."
+  },
+  "reportIssue": {
+    "message": "Flag it"
+  },
+  "reportIssueHint": {
+    "message": "Open a GitHub issue already filled in with this report. You read it over: nothing is sent until you click “Submit new issue”, and the issue is public."
   }
 }

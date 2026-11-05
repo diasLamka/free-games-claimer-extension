@@ -106,4 +106,58 @@ class FailureReportTest {
         val after = Rules.afterVerdict(Attempt(count = 1, verdict = Verdicts.FAILURE, failure = failure), Verdicts.CLAIMED, null, now = 2)
         assertNull("un succes efface le rapport precedent", after.failure)
     }
+
+    /* Le signalement en un geste (1.45.0) : le meme ticket que l'extension (watch/failure-report.js, 2.118.0). */
+    private val offerEpic = Offer(key = "epic:o", source = "s", store = Stores.EPIC, storeId = "o", title = "Out of Sight")
+
+    private fun queryOf(url: String): Map<String, String> = url.substringAfter('?').split('&').associate {
+        it.substringBefore('=') to java.net.URLDecoder.decode(it.substringAfter('='), "UTF-8")
+    }
+
+    @Test
+    fun theIssueLinkOpensTheRepositoryFormFilledWithTheReport() {
+        val failure = FailureReport.of(Verdicts.FAILURE, "bouton introuvable", page(text = "Obtenir"), now = 1)
+        val attempt = Attempt(count = 2, verdict = Verdicts.FAILURE, failure = failure)
+        val url = FailureReport.issueUrl(offerEpic, attempt, version = "1.45.0", now = 2)
+        assertTrue(url, url.startsWith(FailureReport.ISSUES_URL + "?"))
+        val q = queryOf(url)
+        assertEquals("Echec de recuperation : Out of Sight (epic)", q["title"])
+        assertTrue(q["body"]!!.contains(FailureReport.report(offerEpic, attempt, "1.45.0", 2)))
+        assertTrue("la consigne de relecture", q["body"]!!.contains("ce ticket sera public"))
+    }
+
+    @Test
+    fun specialCharactersSurviveTheRoundTrip() {
+        val offer = offerEpic.copy(title = "Tom & Jerry #1 100% + caf\u00e9")
+        val attempt = Attempt(count = 1, verdict = Verdicts.FAILURE, failure = FailureReport.of(Verdicts.FAILURE, "a&b=c#d+e%20f", null, now = 1))
+        val q = queryOf(FailureReport.issueUrl(offer, attempt, "1.45.0", 2))
+        assertTrue(q["title"]!!, q["title"]!!.contains("Tom & Jerry #1 100% + caf\u00e9"))
+        assertTrue(q["body"]!!, q["body"]!!.contains("motif : a&b=c#d+e%20f"))
+    }
+
+    @Test
+    fun aTooLongLinkLosesThePageTextFirstNeverTheGame() {
+        val failure = Failure(at = 1, verdict = Verdicts.FAILURE, url = "https://store.epicgames.com/p/out-of-sight", text = "\u00e9".repeat(5000))
+        val attempt = Attempt(count = 2, verdict = Verdicts.FAILURE, failure = failure)
+        val url = FailureReport.issueUrl(offerEpic, attempt, "1.45.0", 2)
+        assertTrue(url.length.toString(), url.length <= FailureReport.MAX_ISSUE_URL)
+        val body = queryOf(url)["body"]!!
+        assertTrue(body.contains("jeu : Out of Sight (epic)"))
+        assertTrue(body.contains("verdict : failed"))
+        assertTrue("l'adresse reste", body.contains("page : https://store.epicgames.com/p/out-of-sight"))
+    }
+
+    @Test
+    fun threeBackticksDoNotBreakTheCodeBlock() {
+        val attempt = Attempt(count = 1, verdict = Verdicts.FAILURE, failure = FailureReport.of(Verdicts.FAILURE, "avant ``` apres", null, now = 1))
+        val body = queryOf(FailureReport.issueUrl(offerEpic, attempt, "1.45.0", 2))["body"]!!
+        assertEquals("une ouverture et une fermeture, pas plus", 2, body.split("```").size - 1)
+    }
+
+    @Test
+    fun withoutAFailureTheTicketStillOpensAndSaysNoPageWasRead() {
+        val q = queryOf(FailureReport.issueUrl(offerEpic, null, "1.45.0", 2))
+        assertEquals("Echec de recuperation : Out of Sight (epic)", q["title"])
+        assertTrue(q["body"]!!.contains("aucune page"))
+    }
 }

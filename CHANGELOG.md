@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.118.0 et appli 1.45.0 -- 2026-11-05
+
+**Le signalement en un geste : un echec devient un ticket GitHub deja rempli**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Le depot est public : un echec chez un utilisateur peut devenir un correctif pour tous, sans serveur. Jusqu'ici le bouton « Rapport » copiait le texte, a coller soi-meme dans un message.
+
+- **Un bouton « Signaler »** a cote de « Rapport » (popup de l'extension, boite « Rapport d'echec » de l'appli). Il ouvre le formulaire de nouveau ticket du depot, deja rempli : titre (« Echec de recuperation : jeu (magasin) »), une consigne de relecture, un espace pour dire ce qu'on a vu, et le rapport dans un bloc de code.
+- **Rien ne part de l'extension ni de l'appli.** Un onglet (ou le navigateur) s'ouvre sur github.com ; c'est l'utilisateur qui envoie, apres relecture, en cliquant « Submit new issue ». Aucune permission nouvelle, aucune requete.
+- **Le ticket est public**, et la premiere ligne du corps le dit. Le rapport est celui qui existait deja : l'adresse sans parametres, un extrait de 300 caracteres de la page sans adresse electronique, sans longue suite de chiffres, sans jeton, sans code d'echange. La capture d'ecran de l'appli n'est pas jointe (un lien ne porte pas d'image) : elle reste sur le telephone.
+- **Longueur** (`watch/failure-report.js`, `data/FailureReport.kt`). GitHub refuse un lien trop long : le lien est borne a 6000 caracteres, et c'est le texte de la page qui raccourcit en premier (par moities), puis toute la page ; le jeu, le magasin, le verdict et l'adresse restent. Trois accents graves dans le rapport sont remplaces, pour ne pas casser le bloc de code.
+- Moteur inchange. Tests : huit dans `test/failure-report.test.mjs` ; cinq dans `FailureReportTest.kt`. Deux textes ajoutes dans les quatre langues (extension et appli).
+- Non verifie : **le code Kotlin n'a pas ete compile ici** (pas de SDK Android) -- la CI le fait ; le formulaire GitHub n'a pas ete ouvert avec un vrai lien (le reseau du poste de developpement ne le permet pas) : la limite de 6000 caracteres est une marge prudente sur ce que GitHub accepte, pas une mesure.
+
 ## Extension 2.117.0 -- 2026-11-05 (appli inchangee, 1.44.0)
 
 **Les grandes saisons : la veille regarde chaque jour pendant les quinze jours de cadeaux de fin d'annee**

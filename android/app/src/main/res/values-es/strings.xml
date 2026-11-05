@@ -120,6 +120,7 @@
     <string name="rec_report_title">Informe del fallo</string>
     <string name="rec_report_copy">Copiar</string>
     <string name="rec_report_copied">Copiado</string>
+    <string name="rec_report_issue">Avisar</string>
     <string name="aut_on">Reclama solo</string>
     <string name="aut_partial">Reclama solo, con frenos</string>
     <string name="aut_off">No reclama solo</string>

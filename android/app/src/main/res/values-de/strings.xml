@@ -120,6 +120,7 @@
     <string name="rec_report_title">Fehlerbericht</string>
     <string name="rec_report_copy">Kopieren</string>
     <string name="rec_report_copied">Kopiert</string>
+    <string name="rec_report_issue">Melden</string>
     <string name="aut_on">Holt selbst</string>
     <string name="aut_partial">Holt selbst, mit Bremsen</string>
     <string name="aut_off">Holt nicht selbst</string>

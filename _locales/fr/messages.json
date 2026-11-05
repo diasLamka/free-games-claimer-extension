@@ -3085,5 +3085,11 @@
   },
   "seasonsSoon": {
     "message": "Prochaine saison : à partir du $1. D'ici là, rien ne change."
+  },
+  "reportIssue": {
+    "message": "Signaler"
+  },
+  "reportIssueHint": {
+    "message": "Ouvrir un ticket GitHub déjà rempli avec ce rapport. Vous le relisez : rien n'est envoyé avant votre clic sur « Submit new issue », et le ticket est public."
   }
 }

@@ -42,6 +42,12 @@ modifiables dans Veille de fond), et attend le lendemain d'une suite de trois
 ouvertures d'un jour d'ecart (`watch/schedule/seasons.js`). Elle dit QUAND
 regarder, jamais QUEL jeu.
 
+**Le signalement en un geste** (2.118.0, appli 1.45.0) : sur un echec, le bouton
+« Signaler » ouvre un ticket GitHub deja rempli avec le rapport (codes, adresses
+electroniques et parametres d'adresse retires). Rien ne part avant votre clic sur
+« Submit new issue », et le ticket est public : relisez-le
+(`watch/failure-report.js`).
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 
@@ -272,6 +278,7 @@ est declare `"type": "module"`.
 | `alert-model.js` | la lecture commune des alertes : cartes de jeu, pannes, jeux mobiles, etiquettes -- Telegram et Discord ne font que les habiller |
 | `discord-format.js` | les alertes Discord en cartes : liseré, titre-lien, jaquette, Markdown neutralise, aucune mention |
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
+| `failure-report.js` | le rapport d'echec (ce que la page montrait, nettoye) et le lien qui ouvre un ticket GitHub deja rempli |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |

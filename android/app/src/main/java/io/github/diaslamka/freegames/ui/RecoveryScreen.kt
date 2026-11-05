@@ -215,12 +215,29 @@ private fun ReportDialog(item: Recovery.Item, now: Long, onDismiss: () -> Unit) 
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)); copied = true }) {
-                Text(stringResource(if (copied) R.string.rec_report_copied else R.string.rec_report_copy))
+            Row {
+                androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)); copied = true }) {
+                    Text(stringResource(if (copied) R.string.rec_report_copied else R.string.rec_report_copy))
+                }
+                /* Le signalement en un geste (1.45.0) : le meme rapport, dans un ticket GitHub deja rempli. Rien ne part d'ici : le
+                   formulaire s'ouvre dans le navigateur, et c'est l'utilisateur qui l'envoie, apres relecture. */
+                androidx.compose.material3.TextButton(onClick = { openIssue(context, FailureReport.issueUrl(item.offer, item.attempt, BuildConfig.VERSION_NAME, now)) }) {
+                    Text(stringResource(R.string.rec_report_issue))
+                }
             }
         },
         confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
+}
+
+/** Ouvre le formulaire de ticket dans le navigateur : une adresse web fixe (le depot), jamais une autre appli. */
+private fun openIssue(context: android.content.Context, url: String) {
+    runCatching {
+        context.startActivity(
+            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
 }
 
 /** L'etat, et le geste : « Tout recuperer » quand il y a quelque chose a prendre. Un bloc d'accent, ombre dure. */

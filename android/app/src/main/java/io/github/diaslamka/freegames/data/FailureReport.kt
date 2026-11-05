@@ -93,4 +93,51 @@ object FailureReport {
         }
         return lines.joinToString("\n")
     }
+
+    /* Le signalement en un geste (1.45.0) : le meme ticket que l'extension (watch/failure-report.js, 2.118.0). Un lien qui ouvre le
+       formulaire du depot public, deja rempli avec ce rapport : rien ne part d'ici, c'est l'utilisateur qui l'envoie, apres relecture. */
+    const val ISSUES_URL = "https://github.com/diasLamka/free-games-claimer-extension/issues/new"
+
+    /** GitHub refuse un lien trop long : le texte de la page raccourcit en premier, le jeu, le verdict et l'adresse restent. */
+    const val MAX_ISSUE_URL = 6000
+    private const val MAX_ISSUE_TITLE = 120
+    private val BACKTICKS = Regex("`{3,}")
+
+    fun issueTitle(offer: Offer): String = tidy("Echec de recuperation : ${offer.shownTitle} (${offer.store})", MAX_ISSUE_TITLE)
+
+    /** Une consigne de relecture (le ticket est public), un espace pour dire ce qu'on a vu, puis le rapport dans un bloc de code. */
+    fun issueBody(report: String): String = listOf(
+        "Relis ce texte avant de l'envoyer : ce ticket sera public. Les codes, les adresses electroniques et les parametres d'adresse sont deja retires du rapport.",
+        "",
+        "Ce que j'ai observe :",
+        "",
+        "",
+        "Rapport de l'appli :",
+        "",
+        "```text",
+        report.replace(BACKTICKS, "'''"),
+        "```",
+    ).joinToString("\n")
+
+    private fun encode(value: String): String = java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
+
+    private fun issueLink(title: String, body: String): String = "$ISSUES_URL?title=${encode(title)}&body=${encode(body)}"
+
+    /** Trop long, le lien perd le texte de la page par moities, puis toute la page : mieux vaut un formulaire a moitie rempli qu'aucun. */
+    fun issueUrl(offer: Offer, attempt: Attempt?, version: String, now: Long): String {
+        val title = issueTitle(offer)
+        val failure = attempt?.failure
+        var text = failure?.text.orEmpty()
+        for (round in 0 until 10) {
+            val shown = if (attempt != null && failure != null) attempt.copy(failure = failure.copy(text = text.ifEmpty { null })) else attempt
+            val url = issueLink(title, issueBody(report(offer, shown, version, now)))
+            if (url.length <= MAX_ISSUE_URL || text.isEmpty()) {
+                if (url.length <= MAX_ISSUE_URL) return url
+                break
+            }
+            text = if (text.length > 40) text.take(text.length / 2).trim() else ""
+        }
+        val bare = if (attempt != null && failure != null) attempt.copy(failure = failure.copy(url = null, title = null, text = null)) else attempt
+        return issueLink(title, issueBody(report(offer, bare, version, now))).take(MAX_ISSUE_URL)
+    }
 }
