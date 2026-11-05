@@ -113,6 +113,15 @@ l'alerte est active. Il nomme le jeu, le magasin et la date ; **jamais le
 code**, qui reste dans l'onglet Codes. Un test le verifie sur ce qui part
 vraiment.
 
+**La hotte** (2.119.0) range a part les codes qu'on ne compte pas echanger, pour les
+offrir. Un code est un porteur : celui qui le lit s'en sert. La hotte vit dans la
+cle locale `veille:hotte`, qui n'est dans **aucune** liste de sauvegarde (complete,
+automatique, `chrome.storage.sync`), ni dans le relais, ni dans une alerte, ni dans
+le webhook Home Assistant. Le QR code ne se dessine qu'a l'ecran, sur demande, et
+n'est jamais enregistre. Un test (`test/hotte.test.mjs`) verifie que la cle n'est
+dans aucune liste de sauvegarde et qu'aucun module d'alerte ne la nomme. Un code
+range sort de la liste a echanger : le moteur ne l'echange donc plus lui-meme.
+
 Le **relais avec le telephone** (2.87.0, `watch/relay.js`) fait se parler
 l'extension et l'appli Android, par ntfy -- `ntfy.sh` par defaut. Il part :
 un verrou avant chaque reclamation, « obtenu » apres chaque succes, un signe

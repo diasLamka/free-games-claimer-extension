@@ -3091,5 +3091,47 @@
   },
   "reportIssueHint": {
     "message": "Ein GitHub-Ticket öffnen, bereits mit diesem Bericht gefüllt. Sie lesen es durch: nichts wird gesendet, bevor Sie auf „Submit new issue“ klicken, und das Ticket ist öffentlich."
+  },
+  "hotteTitle": {
+    "message": "Der Geschenksack"
+  },
+  "hotteHint": {
+    "message": "Doppelte Codes werden zu einem Vorrat zum Verschenken. „Verschenken“ nimmt einen Code aus der Einlöseliste (die Erweiterung löst ihn also nicht selbst ein) und legt ihn hier ab, mit einem QR-Code zum Scannen. Ein Code ist ein Inhaberwert: Der Sack bleibt auf diesem Computer, nie in einer Sicherung, einer Benachrichtigung oder dem Relais."
+  },
+  "hotteEmpty": {
+    "message": "Der Sack ist leer. Ein Code, den Sie nicht einlösen wollen, kommt mit „Verschenken“ hierher."
+  },
+  "hotteGive": {
+    "message": "Verschenken"
+  },
+  "hotteGiveHint": {
+    "message": "Diesen Code aus der Einlöseliste nehmen und zum Verschenken in den Sack legen"
+  },
+  "hotteDuplicate": {
+    "message": "Wahrscheinlich schon in Ihrem Besitz: Das Spiel ist in Ihrem Register oder Ihrer Sammlung bei diesem Shop."
+  },
+  "hotteShelved": {
+    "message": "„$1“ liegt im Sack"
+  },
+  "hotteQrShow": {
+    "message": "QR-Code"
+  },
+  "hotteQrHide": {
+    "message": "QR ausblenden"
+  },
+  "hotteGiven": {
+    "message": "Verschenkt"
+  },
+  "hotteNotGiven": {
+    "message": "Zu verschenken"
+  },
+  "hotteGivenOn": {
+    "message": "Verschenkt am $1"
+  },
+  "hotteTakeBack": {
+    "message": "Zurücknehmen"
+  },
+  "hotteTakeBackHint": {
+    "message": "Diesen Code zurück in die Einlöseliste legen"
   }
 }

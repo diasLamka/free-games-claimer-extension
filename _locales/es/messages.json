@@ -3091,5 +3091,47 @@
   },
   "reportIssueHint": {
     "message": "Abrir una incidencia de GitHub ya rellenada con este informe. Usted la revisa: no se envía nada hasta que pulse « Submit new issue », y la incidencia es pública."
+  },
+  "hotteTitle": {
+    "message": "El saco de regalos"
+  },
+  "hotteHint": {
+    "message": "Los códigos duplicados se convierten en un stock para regalar. « Regalar » saca un código de la lista de canje (la extensión no lo canjeará por su cuenta) y lo guarda aquí, con un código QR para que lo escaneen. Un código es un valor al portador: el saco se queda en este ordenador, nunca en una copia de seguridad, una alerta ni el relé."
+  },
+  "hotteEmpty": {
+    "message": "El saco está vacío. Un código que no piensa canjear se guarda aquí con « Regalar »."
+  },
+  "hotteGive": {
+    "message": "Regalar"
+  },
+  "hotteGiveHint": {
+    "message": "Sacar este código de la lista de canje y guardarlo en el saco, para regalarlo"
+  },
+  "hotteDuplicate": {
+    "message": "Probablemente ya es suyo: el juego está en su registro o su colección de esta tienda."
+  },
+  "hotteShelved": {
+    "message": "« $1 » está en el saco"
+  },
+  "hotteQrShow": {
+    "message": "Código QR"
+  },
+  "hotteQrHide": {
+    "message": "Ocultar QR"
+  },
+  "hotteGiven": {
+    "message": "Regalado"
+  },
+  "hotteNotGiven": {
+    "message": "Por regalar"
+  },
+  "hotteGivenOn": {
+    "message": "Regalado el $1"
+  },
+  "hotteTakeBack": {
+    "message": "Recuperar"
+  },
+  "hotteTakeBackHint": {
+    "message": "Volver a poner este código en la lista de canje"
   }
 }

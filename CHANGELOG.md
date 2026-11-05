@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.119.0 -- 2026-11-05 (appli inchangee, 1.45.0)
+
+**La hotte : les codes en double deviennent un stock a offrir**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Un code pour un jeu qu'on a deja se perdait : il restait dans la liste « a echanger » jusqu'a expiration.
+
+- **Le reperage** (`watch/hotte.js`). Un code dont le jeu est deja au registre ou dans la collection importee DU MEME MAGASIN (titre normalise egal) porte la mention « Probablement deja a vous ». Le reperage dit « probablement », jamais plus : une importation jamais reussie ne compte pas, et un code saisi a la main n'a pas de titre -- il ne se range que par un geste.
+- **« A offrir »** sur chaque code a echanger : le code QUITTE la liste (le moteur ne peut donc plus l'echanger lui-meme pendant qu'on le garde pour un autre) et rejoint la section **La hotte**, onglet Codes. Annulable ; « Reprendre » le remet dans la liste.
+- **Dans la hotte** : le code (copiable), sa date limite, un **QR code** a faire scanner (dessine a l'ecran sur demande, jamais enregistre), « Donne » / « A donner » avec la date, « Reprendre », « Retirer ». Les codes donnes passent apres ceux qui attendent. Bornee a 100.
+- **Un code est un porteur.** La hotte vit dans la cle locale `veille:hotte`, dans AUCUNE liste de sauvegarde (complete, automatique, synchronisee), ni dans le relais, ni dans une alerte, ni dans le webhook Home Assistant. Deux tests le verifient : la cle n'est dans aucune liste de sauvegarde, et aucun module d'alerte ne la nomme. `SECURITY.md` le dit.
+- Moteur inchange. Tests : `test/hotte.test.mjs` (17). Quatorze textes ajoutes en francais, anglais, allemand et espagnol. Le QR du relais et celui de la hotte partagent maintenant le meme dessin (`qrSvg`).
+- Non verifie : le QR n'a pas ete scanne avec un vrai telephone (il est dessine par la meme bibliotheque que celui du relais, deja utilise) ; le reperage ne voit que ce que le registre et la collection savent -- un code Ubisoft ou EA n'est jamais signale, il se range a la main. Pas de version pour l'appli (elle n'a pas d'onglet Codes).
+
 ## Extension 2.118.0 et appli 1.45.0 -- 2026-11-05
 
 **Le signalement en un geste : un echec devient un ticket GitHub deja rempli**

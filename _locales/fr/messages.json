@@ -3091,5 +3091,47 @@
   },
   "reportIssueHint": {
     "message": "Ouvrir un ticket GitHub déjà rempli avec ce rapport. Vous le relisez : rien n'est envoyé avant votre clic sur « Submit new issue », et le ticket est public."
+  },
+  "hotteTitle": {
+    "message": "La hotte"
+  },
+  "hotteHint": {
+    "message": "Les codes en double deviennent un stock à offrir. « À offrir » sort un code de la liste à échanger (l'extension ne l'échangera donc pas elle-même) et le range ici, avec un QR code à faire scanner. Un code est un porteur : la hotte reste sur cet ordinateur, jamais dans une sauvegarde, une alerte ni le relais."
+  },
+  "hotteEmpty": {
+    "message": "La hotte est vide. Un code que vous ne comptez pas échanger se range ici avec « À offrir »."
+  },
+  "hotteGive": {
+    "message": "À offrir"
+  },
+  "hotteGiveHint": {
+    "message": "Sortir ce code de la liste à échanger et le ranger dans la hotte, pour l'offrir"
+  },
+  "hotteDuplicate": {
+    "message": "Probablement déjà à vous : le jeu est dans votre registre ou votre collection sur ce magasin."
+  },
+  "hotteShelved": {
+    "message": "« $1 » est dans la hotte"
+  },
+  "hotteQrShow": {
+    "message": "QR code"
+  },
+  "hotteQrHide": {
+    "message": "Masquer le QR"
+  },
+  "hotteGiven": {
+    "message": "Donné"
+  },
+  "hotteNotGiven": {
+    "message": "À donner"
+  },
+  "hotteGivenOn": {
+    "message": "Donné le $1"
+  },
+  "hotteTakeBack": {
+    "message": "Reprendre"
+  },
+  "hotteTakeBackHint": {
+    "message": "Remettre ce code dans la liste à échanger"
   }
 }

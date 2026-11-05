@@ -3091,5 +3091,47 @@
   },
   "reportIssueHint": {
     "message": "Open a GitHub issue already filled in with this report. You read it over: nothing is sent until you click “Submit new issue”, and the issue is public."
+  },
+  "hotteTitle": {
+    "message": "The gift sack"
+  },
+  "hotteHint": {
+    "message": "Duplicate codes become stock to give away. “Give away” takes a code out of the redeem list (so the extension will not redeem it itself) and stores it here, with a QR code a friend can scan. A code is a bearer token: the sack stays on this computer, never in a backup, an alert or the relay."
+  },
+  "hotteEmpty": {
+    "message": "The sack is empty. A code you do not plan to redeem goes here with “Give away”."
+  },
+  "hotteGive": {
+    "message": "Give away"
+  },
+  "hotteGiveHint": {
+    "message": "Take this code out of the redeem list and put it in the sack, to give it away"
+  },
+  "hotteDuplicate": {
+    "message": "Probably already yours: the game is in your register or collection on this store."
+  },
+  "hotteShelved": {
+    "message": "“$1” is in the sack"
+  },
+  "hotteQrShow": {
+    "message": "QR code"
+  },
+  "hotteQrHide": {
+    "message": "Hide QR"
+  },
+  "hotteGiven": {
+    "message": "Given"
+  },
+  "hotteNotGiven": {
+    "message": "To give"
+  },
+  "hotteGivenOn": {
+    "message": "Given on $1"
+  },
+  "hotteTakeBack": {
+    "message": "Take back"
+  },
+  "hotteTakeBackHint": {
+    "message": "Put this code back in the redeem list"
   }
 }

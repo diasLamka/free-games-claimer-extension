@@ -1063,6 +1063,10 @@
   .field.stack { flex-direction: column; align-items: stretch; gap: 4px; }
   .field.stack input { width: 100%; font-family: var(--mono); font-size: 11px; }
   #phone-fields[hidden], #home-fields[hidden], #seasons-fields[hidden] { display: none; }
+  /* La hotte : le QR code se lit mieux grand, noir sur blanc, quel que soit le theme. */
+  .hotte-qr { margin: 8px 0; }
+  .hotte-qr svg { display: block; width: 180px; height: 180px; margin: 0 auto; background: #FFFFFF; }
+  .ticket.given { opacity: 0.6; }
   input[type="time"] {
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -1503,6 +1507,15 @@
       <details class="fold" id="fold-codes">
       <summary><h2><span data-i18n="codesToRedeem"></span><span class="count" id="codes-count"></span></h2></summary>
       <div id="codes"></div>
+      </details>
+    </section>
+
+    <!-- La hotte (2.119.0) : voir watch/hotte.js. Un code est un porteur : rien de tout cela ne quitte cette machine. -->
+    <section>
+      <details class="fold" id="fold-hotte">
+        <summary><h2><span data-i18n="hotteTitle"></span><span class="count" id="hotte-count"></span></h2></summary>
+        <p class="hint" data-i18n="hotteHint"></p>
+        <div id="hotte"></div>
       </details>
     </section>
 

@@ -58,6 +58,7 @@ import {
   KEY_HOME, KEY_HOME_STATE, homeUrl, originPattern as homeOriginPattern, readHome,
 } from '../watch/homeassistant.js';
 import { KEY_SEASONS, readSeasons, seasonStatus } from '../watch/schedule/seasons.js';
+import { KEY_HOTTE, readHotte, shelve, setGiven, takeOut, qrText, ownedForCodes, duplicateCodes } from '../watch/hotte.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
@@ -235,6 +236,7 @@ const KEY_SEEN = 'FGC_seen_labels';
    whole offer catalogue and the hourly histograms just to draw three toggles. */
 const KEYS_READ = [
   KEY_CODES,
+  KEY_HOTTE,
   'FGC_epic_auto_mode',
   'FGC_luna_auto_mode',
   'FGC_luna_claim_dlc',
@@ -1818,7 +1820,7 @@ function flashCodes(message) {
   setTimeout(() => { zone.textContent = ''; }, 4000);
 }
 
-function renderCodes(codes) {
+function renderCodes(codes, all) {
   const host = document.getElementById('codes');
   host.textContent = '';
   document.getElementById('codes-count').textContent = codes.length ? String(codes.length) : '';
@@ -1828,6 +1830,9 @@ function renderCodes(codes) {
     host.append(el('p', 'empty', t('emptyCodes')));
     return;
   }
+
+  /* Les doublons probables : le jeu du code est deja au compte du MEME magasin (registre, collection importee). */
+  const doublons = duplicateCodes(codes, ownedForCodes(all && all[KEY_LIBRARY], all && all[KEY_COLLECTION], normaliseTitle), normaliseTitle);
 
   codes.forEach((entry, i) => {
     const ticket = el('div', 'ticket');
@@ -1861,6 +1866,8 @@ function renderCodes(codes) {
       ticket.append(line);
     }
 
+    if (doublons.has(entry.code)) ticket.append(el('div', 'deadline urgent', t('hotteDuplicate')));
+
     const actions = el('div', 'code-row');
     actions.style.marginTop = '8px';
 
@@ -1885,10 +1892,112 @@ function renderCodes(codes) {
       await load();
     });
 
-    actions.append(go, drop);
+    /* A offrir : le code quitte la liste a echanger (le moteur ne l'echangera donc plus) et rejoint la hotte. */
+    const give = el('button', 'btn-sm', t('hotteGive'));
+    give.title = t('hotteGiveHint');
+    give.addEventListener('click', () => giveCode(entry));
+
+    actions.append(go, give, drop);
     ticket.append(actions);
     host.append(ticket);
   });
+}
+
+/* --------------------------------------------------------------- la hotte */
+
+/* Les QR codes ouverts : l'etat d'un rendu, jamais enregistre. */
+const hotteQrOpen = new Set();
+
+async function giveCode(entry) {
+  const all = await readAll();
+  const avantCodes = get(all, KEY_CODES, []);
+  const avantHotte = all[KEY_HOTTE] || null;
+  await setValue(KEY_CODES, JSON.stringify(avantCodes.filter((c) => c.code !== entry.code)));
+  await setValue(KEY_HOTTE, shelve(readHotte(avantHotte), entry, Date.now()));
+  offerUndo(t('hotteShelved', entry.title || t('untitledGame')), async () => {
+    await setValue(KEY_CODES, JSON.stringify(avantCodes));
+    await setValue(KEY_HOTTE, readHotte(avantHotte));
+  });
+  await load();
+}
+
+async function writeHotte(next) {
+  await setValue(KEY_HOTTE, next);
+  await load();
+}
+
+function renderHotte(all) {
+  const host = document.getElementById('hotte');
+  const hotte = readHotte(all[KEY_HOTTE]);
+  host.textContent = '';
+  document.getElementById('hotte-count').textContent = hotte.items.length ? String(hotte.items.length) : '';
+  if (!hotte.items.length) {
+    host.append(el('p', 'empty', t('hotteEmpty')));
+    return;
+  }
+
+  // Ceux qui attendent un ami d'abord, ceux deja donnes ensuite.
+  const items = [...hotte.items].sort((a, b) => (a.given ? 1 : 0) - (b.given ? 1 : 0) || b.at - a.at);
+  for (const it of items) {
+    const ticket = el('div', `ticket${it.given ? ' given' : ''}`);
+    const head = el('div', 'ticket-head');
+    head.append(el('span', 'ticket-title', it.title || t('untitledGame')));
+    head.append(storeTag(it.store));
+    ticket.append(head);
+
+    const row = el('div', 'code-row');
+    row.append(el('code', 'code', it.code));
+    const copy = el('button', 'copy', t('copy'));
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(it.code); } catch { return; }
+      copy.textContent = t('copied');
+      setTimeout(() => { copy.textContent = t('copy'); }, 1400);
+    });
+    row.append(copy);
+    ticket.append(row);
+
+    if (it.given) ticket.append(el('div', 'deadline', t('hotteGivenOn', shortDateTime(it.given))));
+    else if (it.deadline) ticket.append(el('div', 'deadline', t('deadlineBefore', it.deadline)));
+
+    // Le QR code ne se dessine que sur demande, et disparait au rendu suivant du popup.
+    if (hotteQrOpen.has(it.code)) {
+      const box = el('div', 'hotte-qr');
+      box.append(qrSvg(qrText(it.code)));
+      ticket.append(box);
+    }
+
+    const actions = el('div', 'code-row');
+    actions.style.marginTop = '8px';
+    actions.style.flexWrap = 'wrap'; // quatre boutons : ils passent a la ligne plutot que de deborder du ticket
+    const qr = el('button', 'btn-sm', t(hotteQrOpen.has(it.code) ? 'hotteQrHide' : 'hotteQrShow'));
+    qr.addEventListener('click', () => {
+      if (hotteQrOpen.has(it.code)) hotteQrOpen.delete(it.code); else hotteQrOpen.add(it.code);
+      renderHotte(all);
+    });
+    const given = el('button', 'btn-sm', t(it.given ? 'hotteNotGiven' : 'hotteGiven'));
+    given.addEventListener('click', () => writeHotte(setGiven(hotte, it.code, it.given ? null : Date.now())));
+    const back = el('button', 'btn-sm', t('hotteTakeBack'));
+    back.title = t('hotteTakeBackHint');
+    back.addEventListener('click', async () => {
+      const sorti = takeOut(hotte, it.code);
+      if (sorti.entry) {
+        const codes = get(await readAll(), KEY_CODES, []);
+        await setValue(KEY_CODES, JSON.stringify(addCodes(codes, [sorti.entry])));
+      }
+      hotteQrOpen.delete(it.code);
+      await writeHotte(sorti.hotte);
+    });
+    const drop = el('button', 'btn-sm danger', t('remove'));
+    drop.addEventListener('click', async () => {
+      const avant = readHotte(all[KEY_HOTTE]);
+      hotteQrOpen.delete(it.code);
+      await writeHotte(takeOut(hotte, it.code).hotte);
+      offerUndo(t('undoRemovedCode', it.title || t('untitledGame')), () => setValue(KEY_HOTTE, avant));
+    });
+    actions.append(qr, given, back, drop);
+    ticket.append(actions);
+    host.append(ticket);
+  }
 }
 
 /* ------------------------------------------------------------------ status */
@@ -2965,7 +3074,8 @@ async function render() {
   renderDlc(all);
   renderWishes(all);
   renderLog(all);
-  renderCodes(get(all, KEY_CODES, []));
+  renderCodes(get(all, KEY_CODES, []), all);
+  renderHotte(all);
   renderTally(all);
   renderFilters(all, behaviourCache);
   renderHealth(all);
@@ -3651,9 +3761,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /* Le QR code, dessine en SVG noeud par noeud (aucun innerHTML), noir sur
    blanc avec sa marge de quatre modules : c'est ce que les lecteurs
    attendent, quel que soit le theme. */
-function drawRelayQr(text) {
-  const box = document.getElementById('relay-qr');
-  if (box.dataset.code === text) return;
+function qrSvg(text) {
   const qr = qrcodegen.QrCode.encodeText(text, qrcodegen.QrCode.Ecc.MEDIUM);
   const marge = 4;
   const n = qr.size + marge * 2;
@@ -3673,7 +3781,13 @@ function drawRelayQr(text) {
   modules.setAttribute('d', d);
   modules.setAttribute('fill', '#000000');
   svg.append(modules);
-  box.replaceChildren(svg);
+  return svg;
+}
+
+function drawRelayQr(text) {
+  const box = document.getElementById('relay-qr');
+  if (box.dataset.code === text) return;
+  box.replaceChildren(qrSvg(text));
   box.dataset.code = text;
   document.getElementById('relay-code').textContent = text;
 }

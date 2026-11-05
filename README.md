@@ -48,6 +48,11 @@ electroniques et parametres d'adresse retires). Rien ne part avant votre clic su
 « Submit new issue », et le ticket est public : relisez-le
 (`watch/failure-report.js`).
 
+**La hotte** (2.119.0) : un code en double (le jeu est deja a vous) se range a part
+avec « A offrir », avec un QR code a faire scanner et la mention « Donne ». Un code
+est un porteur : la hotte reste sur l'ordinateur, dans aucune sauvegarde, aucune
+alerte, jamais dans le relais (`watch/hotte.js`).
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 
@@ -279,6 +284,7 @@ est declare `"type": "module"`.
 | `discord-format.js` | les alertes Discord en cartes : liseré, titre-lien, jaquette, Markdown neutralise, aucune mention |
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `failure-report.js` | le rapport d'echec (ce que la page montrait, nettoye) et le lien qui ouvre un ticket GitHub deja rempli |
+| `hotte.js` | la hotte : les codes en double rangees a part, a offrir par QR code -- jamais dans une sauvegarde ni une alerte |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
