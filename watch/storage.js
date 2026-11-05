@@ -327,6 +327,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * watch/library-watch.js.
    */
   libraryWatch: false,
+  /**
+   * Le compte a rebours (2.120.0) : deux heures avant l'ouverture d'Epic, verifier sessions, relais et alerte telephone, et ne
+   * parler que s'il y a quelque chose a dire. Allume par defaut : sans probleme, il ne dit rien. Voir watch/preflight.js.
+   */
+  preflight: true,
 });
 
 /**

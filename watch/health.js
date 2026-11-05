@@ -27,6 +27,12 @@ import { ALERTS, badgeState, decideAlert, effectiveQuiet } from './notify-policy
 import { NOTICE } from './notify-actions.js';
 import { KEYS, readKeys, readSettings, write } from './storage.js';
 import { t } from '../lib/i18n.js';
+import { hotInstants } from './schedule/scheduler.js';
+import { schedulesWithDefaults } from './schedule/rules.js';
+import { KEY_SEASONS, withSeasons } from './schedule/seasons.js';
+import { NAME as EPIC_SOURCE } from './sources/epic.js';
+import { KEY_RELAY, readRelay } from './relay.js';
+import { KEY_PREFLIGHT, KINDS as PREFLIGHT_KINDS, findProblems, isDue, nextDrop } from './preflight.js';
 
 /** Le dernier tour d'inspection : `{ at }`. Sert a reconnaitre un reveil (2.99.1). */
 export const KEY_INSPECTION = 'veille:inspection';
@@ -53,6 +59,8 @@ export async function inspectHealth({
   const raw = await readKeys(chrome, [
     KEY_CANARY, KEYS.SOURCES, KEY_SESSIONS, KEYS.STATE, KEY_INCIDENTS, KEYS.OFFERS,
     KEY_PHONE, KEY_PHONE_STATE, KEY_INSPECTION,
+    // Le compte a rebours (2.120.0) : les horaires, la saison, le relais, l'etat de la derniere passe.
+    KEYS.SCHEDULES, KEY_SEASONS, KEY_RELAY, KEY_PREFLIGHT,
   ]);
   const settings = await readSettings(chrome);
   const state = raw[KEYS.STATE] || {};
@@ -159,6 +167,14 @@ export async function inspectHealth({
 
   await write(chrome, { [KEY_INCIDENTS]: suivant, [KEY_INSPECTION]: { at: now } });
 
+  let avantSortie = { due: false, problems: 0, notified: false };
+  try {
+    avantSortie = await preflight({ chrome, raw, settings, now, notify, record, fetchImpl, muted: canalCoupe, incidents: suivant });
+  } catch (e) {
+    // Une passe qui ferait tomber le tour d'inspection couterait la panne qu'il cherche a prevenir.
+    record('warn', 'compte a rebours impossible', e);
+  }
+
   /* Le badge, meme sans cycle : c'est le seul canal qui reste quand le systeme
      refuse nos notifications, et le peindre seulement en fin de cycle le
      rendrait muet dans le cas ou il sert le plus. */
@@ -172,7 +188,87 @@ export async function inspectHealth({
     }));
   } catch (e) { /* le badge est un bonus */ }
 
-  return { incidents: suivant, opened, closed, notified };
+  return { incidents: suivant, opened, closed, notified, preflight: avantSortie };
+}
+
+/**
+ * Le compte a rebours (2.120.0) : dans les deux heures avant la prochaine ouverture d'Epic, une passe sur ce qui doit marcher
+ * ce jour-la. Voir watch/preflight.js. Silencieuse quand tout va bien, une fois par ouverture quand quelque chose cloche.
+ */
+async function preflight({ chrome, raw, settings, now, notify, record, fetchImpl, muted, incidents }) {
+  const rien = { due: false, problems: 0, notified: false };
+  if (settings.preflight === false) return rien;
+  if (!(settings.watchedStores || []).includes('epic')) return rien;
+
+  const schedules = withSeasons(schedulesWithDefaults(raw[KEYS.SCHEDULES]), raw[KEY_SEASONS], raw[KEYS.SCHEDULES]);
+  const annoncees = (((raw[KEYS.SOURCES] || {})[EPIC_SOURCE] || {}).announcedWindows || [])
+    .map((f) => (typeof f === 'number' ? f : f && f.start))
+    .filter((x) => typeof x === 'number');
+  const cible = nextDrop(hotInstants({ rules: schedules[EPIC_SOURCE] || [], announcedWindows: annoncees }, now, settings), now);
+  if (!isDue(raw[KEY_PREFLIGHT], cible, now)) return rien;
+
+  const tel = phoneTarget(raw[KEY_PHONE]);
+  const problemes = findProblems({
+    sessions: raw[KEY_SESSIONS] || {},
+    watchedStores: settings.watchedStores,
+    relay: readRelay(raw[KEY_RELAY]),
+    phoneOn: Boolean(tel),
+    phoneState: raw[KEY_PHONE_STATE] || null,
+    incidents,
+    now,
+  });
+
+  const marque = () => write(chrome, { [KEY_PREFLIGHT]: { for: cible, at: now, problems: problemes.length } });
+
+  // Tout va bien : on le note (pas de seconde passe pour cette ouverture) et on ne dit RIEN.
+  if (!problemes.length) {
+    await marque();
+    record('info', 'compte a rebours : tout est pret');
+    return { due: true, problems: 0, notified: false };
+  }
+
+  const decision = muted
+    ? { notify: false, hold: true }
+    : decideAlert({ mode: settings.alertMode || ALERTS.ON, quiet: effectiveQuiet(settings), now, count: problemes.length });
+
+  // Heures calmes ou canal coupe : rien n'est marque, la passe repart au tour suivant tant que l'ouverture n'est pas passee.
+  if (decision.hold) return { due: true, problems: problemes.length, notified: false };
+  // Le silence demande par l'utilisateur vaut pour cette ouverture-la aussi.
+  if (!decision.notify) {
+    await marque();
+    return { due: true, problems: problemes.length, notified: false };
+  }
+
+  const titre = problemes.length === 1 ? t('preflightOneTitle') : t('preflightManyTitle', String(problemes.length));
+  const lignes = problemes.map((p) => preflightLabel(p.kind, p.key));
+  let notified = false;
+  try {
+    await notify({ id: `avant-sortie-${cible}`, title: titre, message: lignes.join('\n'), kind: NOTICE.INCIDENT });
+    notified = true;
+  } catch (e) {
+    record('warn', 'notification du compte a rebours impossible', e);
+  }
+
+  // Le telephone, avec son propre marqueur d'envoi : c'est lui qui joint l'utilisateur quand il n'est pas devant l'ordinateur.
+  if (tel && fetchImpl && mayRetry(raw[KEY_PHONE_STATE], now)) {
+    const msg = incidentsMessage(
+      problemes.map((p) => ({ kind: p.kind, key: p.key, detail: p.detail })),
+      { title: titre, label: preflightLabel },
+    );
+    const r = await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'avant-sortie' });
+    notified = notified || r.ok;
+  }
+
+  if (notified) await marque();
+  return { due: true, problems: problemes.length, notified };
+}
+
+/** La phrase d'une chose a verifier : ce qu'il faut FAIRE, pas seulement ce qui casse. */
+function preflightLabel(kind, key) {
+  if (kind === PREFLIGHT_KINDS.SESSION) return t('preflightSession', STORE_LABELS[key] || String(key));
+  if (kind === PREFLIGHT_KINDS.RELAY) return t('preflightRelay');
+  if (kind === PREFLIGHT_KINDS.PHONE) return t('preflightPhone');
+  return String(kind);
 }
 
 /** La phrase d'un incident pour le telephone : ce qu'il faut FAIRE, pas seulement ce qui casse. */

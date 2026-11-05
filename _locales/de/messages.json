@@ -3133,5 +3133,26 @@
   },
   "hotteTakeBackHint": {
     "message": "Diesen Code zurück in die Einlöseliste legen"
+  },
+  "preflightOneTitle": {
+    "message": "Vor dem Epic-Start: 1 Sache zu prüfen"
+  },
+  "preflightManyTitle": {
+    "message": "Vor dem Epic-Start: $1 Dinge zu prüfen"
+  },
+  "preflightSession": {
+    "message": "$1: Sie sind nicht mehr angemeldet. Melden Sie sich vor dem Start wieder an."
+  },
+  "preflightRelay": {
+    "message": "Das Telefon hat sich seit über 12 Std. nicht mehr über das Relais gemeldet."
+  },
+  "preflightPhone": {
+    "message": "Die Telefon-Benachrichtigung ist beim letzten Senden fehlgeschlagen: Sie warnt Sie nicht."
+  },
+  "preflightSetting": {
+    "message": "Vor dem Epic-Start prüfen"
+  },
+  "preflightSettingHint": {
+    "message": "Zwei Stunden vor der Öffnung werden Sitzungen, Relais und Telefon-Benachrichtigung geprüft; ist alles in Ordnung, bleibt es still."
   }
 }

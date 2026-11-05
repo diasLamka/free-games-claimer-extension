@@ -4,6 +4,21 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.120.0 -- 2026-11-05 (appli inchangee, 1.46.0)
+
+**Le compte a rebours : deux heures avant la sortie d'Epic, verifier que tout est pret -- et se taire quand tout va bien**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Chaque panne se voyait deja quelque part (l'onglet Sessions, le relais, l'etat du telephone), mais personne ne regarde le jeudi a 15 h.
+
+- **Une passe par ouverture** (`watch/preflight.js`, appelee par le tour d'inspection de `watch/health.js`). Dans les deux heures qui precedent la prochaine ouverture d'Epic (la regle du jeudi, une fenetre annoncee, ou une saison), elle regarde l'etat PERSISTE : une session **deconnectee** sur un magasin suivi (« inconnue » ne compte pas), un telephone du relais **muet depuis plus de douze heures**, l'alerte telephone dont le **dernier envoi a rate**. L'etat retient pour quelle ouverture la passe a eu lieu : une seule par ouverture.
+- **Silence quand tout va bien.** Une passe sans probleme ne dit rien, n'envoie rien, et se note ; c'est la regle qui compte le plus (un compte a rebours qui sonne chaque semaine pour dire que tout va bien est un compte a rebours qu'on coupe).
+- **Une notification, qui liste ce qui cloche** (et le meme texte au telephone si l'alerte est active), avec ce qu'il faut FAIRE (« reconnectez-vous avant la sortie »). Elle respecte les memes regles que les autres alertes : heures calmes (la passe repart au tour suivant), silence demande (la passe est notee sans rien dire), canal coupe.
+- **Pas de doublon avec le chien de garde.** Une session perdue que le chien de garde vient de dire (moins de six heures) n'est pas redite ; au-dela, la passe la rappelle -- celui qui a ferme la notification de mardi la revoit le jeudi a 15 h.
+- **Un reglage** : « Verifier avant la sortie d'Epic » (popup, Notifications), allume par defaut.
+- **Ce que la passe ne fait pas** : reparer. Elle dit, le geste reste a l'utilisateur ; pas de bouton « reparer » (comme pour les incidents : un bouton sur une cause qu'on ne connait pas serait un mensonge). Elle ne regarde ni la batterie ni les restrictions d'Android : cela releve de l'appli, qui n'a pas sa passe (voir ci-dessous).
+- Moteur inchange. Tests : `test/preflight.test.mjs` (24), dont dix-sept qui font tourner un vrai tour d'inspection. Sept textes ajoutes en francais, anglais, allemand et espagnol.
+- Non verifie : le relais et l'alerte telephone n'ont ete joues qu'avec des etats fabriques (pas avec un vrai ntfy ni un vrai telephone) ; la fenetre de deux heures est un choix, pas une mesure. **Pas de version appli** : « PC allume » et « batterie non bridee » demandent une passe propre a l'appli (WorkManager, restrictions du constructeur), que je ne peux pas compiler ni essayer ici.
+
 ## Appli 1.46.0 -- 2026-11-05 (extension inchangee, 2.119.0)
 
 **La tuile : le nombre de jeux a prendre dans les reglages rapides, et un appui pour tout recuperer**

@@ -148,7 +148,7 @@ test('branche partout ou l\'on previent, et seulement la', () => {
   assert.match(cycle, /!inQuietHours\(effectiveQuiet\(ctx\.settings\), now\)/, 'le telephone des reclamations manuelles');
   assert.doesNotMatch(cycle, /ctx\.settings\.quiet/);
   const sante = lire('watch/health.js');
-  assert.equal((sante.match(/quiet: effectiveQuiet\(settings\),/g) || []).length, 2);
+  assert.equal((sante.match(/quiet: effectiveQuiet\(settings\),/g) || []).length, 3, 'incidents, telephone, et le compte a rebours (2.120.0)');
   assert.ok(UI_COMMANDS.includes('fgc-vacation-back'));
   assert.equal(messageAllowed('fgc-vacation-back', 'content'), false);
   const popup = lire('pages/popup.js');

@@ -3133,5 +3133,26 @@
   },
   "hotteTakeBackHint": {
     "message": "Put this code back in the redeem list"
+  },
+  "preflightOneTitle": {
+    "message": "Before Epic's drop: 1 thing to check"
+  },
+  "preflightManyTitle": {
+    "message": "Before Epic's drop: $1 things to check"
+  },
+  "preflightSession": {
+    "message": "$1: you are no longer signed in. Sign in again before the drop."
+  },
+  "preflightRelay": {
+    "message": "Your phone has not been heard on the relay for more than 12 h."
+  },
+  "preflightPhone": {
+    "message": "The phone alert failed on its last send: it will not warn you."
+  },
+  "preflightSetting": {
+    "message": "Check before Epic's drop"
+  },
+  "preflightSettingHint": {
+    "message": "Two hours before it opens, looks at sessions, the relay and the phone alert, and says nothing if all is well."
   }
 }

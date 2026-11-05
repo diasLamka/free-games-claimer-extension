@@ -3133,5 +3133,26 @@
   },
   "hotteTakeBackHint": {
     "message": "Remettre ce code dans la liste à échanger"
+  },
+  "preflightOneTitle": {
+    "message": "Avant la sortie d'Epic : 1 chose à vérifier"
+  },
+  "preflightManyTitle": {
+    "message": "Avant la sortie d'Epic : $1 choses à vérifier"
+  },
+  "preflightSession": {
+    "message": "$1 : vous n'êtes plus connecté. Reconnectez-vous avant la sortie."
+  },
+  "preflightRelay": {
+    "message": "Le téléphone ne s'est pas fait entendre du relais depuis plus de 12 h."
+  },
+  "preflightPhone": {
+    "message": "L'alerte téléphone a échoué à son dernier envoi : elle ne vous préviendra pas."
+  },
+  "preflightSetting": {
+    "message": "Vérifier avant la sortie d'Epic"
+  },
+  "preflightSettingHint": {
+    "message": "Deux heures avant l'ouverture, regarde les sessions, le relais et l'alerte téléphone, et ne dit rien si tout va bien."
   }
 }

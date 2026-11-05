@@ -53,6 +53,11 @@ avec « A offrir », avec un QR code a faire scanner et la mention « Donne ». 
 est un porteur : la hotte reste sur l'ordinateur, dans aucune sauvegarde, aucune
 alerte, jamais dans le relais (`watch/hotte.js`).
 
+**Le compte a rebours** (2.120.0) : deux heures avant l'ouverture d'Epic, une passe verifie
+les sessions, le relais et l'alerte telephone, et ne dit RIEN si tout va bien. Une
+notification par ouverture, seulement quand quelque chose cloche (`watch/preflight.js`).
+
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 
@@ -285,6 +290,7 @@ est declare `"type": "module"`.
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `failure-report.js` | le rapport d'echec (ce que la page montrait, nettoye) et le lien qui ouvre un ticket GitHub deja rempli |
 | `hotte.js` | la hotte : les codes en double rangees a part, a offrir par QR code -- jamais dans une sauvegarde ni une alerte |
+| `preflight.js` | le compte a rebours : deux heures avant l'ouverture d'Epic, ce qui cloche (session perdue, relais muet, alerte telephone en panne) -- silence quand tout va bien |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |

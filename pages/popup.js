@@ -2980,6 +2980,8 @@ function renderNotifications(behaviour) {
   document.getElementById('steam-ratings').checked = behaviour.steamRatings !== false;
   // Le recap du jeudi (2.65.0) : actif sauf refus explicite.
   document.getElementById('weekly-recap').checked = behaviour.weeklyRecap !== false;
+  // Le compte a rebours (2.120.0) : actif sauf refus explicite.
+  document.getElementById('preflight-on').checked = behaviour.preflight !== false;
 }
 
 function applyLook() {
@@ -3354,6 +3356,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
 });
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
+document.getElementById('preflight-on').addEventListener('change', (e) => writeBehaviour({ preflight: e.target.checked }));
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));

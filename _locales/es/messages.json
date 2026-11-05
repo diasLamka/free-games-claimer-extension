@@ -3133,5 +3133,26 @@
   },
   "hotteTakeBackHint": {
     "message": "Volver a poner este código en la lista de canje"
+  },
+  "preflightOneTitle": {
+    "message": "Antes del lanzamiento de Epic: 1 cosa por revisar"
+  },
+  "preflightManyTitle": {
+    "message": "Antes del lanzamiento de Epic: $1 cosas por revisar"
+  },
+  "preflightSession": {
+    "message": "$1: ya no ha iniciado sesión. Vuelva a iniciarla antes del lanzamiento."
+  },
+  "preflightRelay": {
+    "message": "El teléfono no se ha dejado oír por el relé desde hace más de 12 h."
+  },
+  "preflightPhone": {
+    "message": "La alerta del teléfono falló en su último envío: no le avisará."
+  },
+  "preflightSetting": {
+    "message": "Comprobar antes del lanzamiento de Epic"
+  },
+  "preflightSettingHint": {
+    "message": "Dos horas antes de la apertura revisa las sesiones, el relé y la alerta del teléfono, y no dice nada si todo va bien."
   }
 }
