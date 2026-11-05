@@ -3154,5 +3154,11 @@
   },
   "preflightSettingHint": {
     "message": "Deux heures avant l'ouverture, regarde les sessions, le relais et l'alerte téléphone, et ne dit rien si tout va bien."
+  },
+  "breatheLabel": {
+    "message": "Souffle : éviter les heures à défis"
+  },
+  "breatheHint": {
+    "message": "Quand une récupération peut attendre (l'offre finit dans plus d'un jour), l'extension la décale, de douze heures au plus, vers une heure où le magasin vous a posé moins de défis, d'après ce qu'elle a elle-même observé. Aucune conclusion sans assez de données ; jamais pour un geste de votre part ; jamais au-delà de la fin de l'offre. Un défi n'est jamais contourné."
   }
 }

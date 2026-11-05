@@ -31,6 +31,7 @@ import {
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
 import { projectDailyRun, startsOf } from './schedule/seasons.js';
+import { readBreath, recordAttempt, heldKeys, localZone, decide as decideBreath } from './breath.js';
 import { NAME as EPIC_SOURCE } from './sources/epic.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { isNetworkFailure } from './net.js';
@@ -238,6 +239,8 @@ export async function runCycle({
   offline = () => false,
   force = false,
   webLocks,
+  /* Le fuseau de l'utilisateur, pour lire l'heure a laquelle un magasin pose des defis (voir watch/breath.js). */
+  zone = localZone(),
   /**
    * Magasins ou l'extension a le droit de cliquer, SANS option. Steam n'y est
    * jamais : il n'y entre qu'a la lecture des reglages, si `steamAutoClaim`
@@ -309,6 +312,10 @@ export async function runCycle({
         || (forcedList ? forcedList.includes(n) : actives.includes(n)),
     );
 
+    /* Le souffle (2.121.0) : les recuperations qui attendent une heure plus calme. Elles ne comptent pas comme « en attente »
+       (sinon la source serait interrogee toutes les dix minutes pour rien), et leur fin d'attente reveille le cycle. */
+    const souffle = breathHolds(ctx.catalog, ctx.settings.breathe !== false ? readBreath(ctx.breath) : null, now, zone);
+
     const plan = schedule({
       sources: names,
       states: ctx.sources,
@@ -328,9 +335,11 @@ export async function runCycle({
             ...startsOf(ctx.catalog, n, now),
           ], now)
           : []),
+        // ...et la fin de l'attente des recuperations que le souffle retient : le cycle se reveille pour elles.
+        ...(souffle.untils[n] || []),
       ]])),
       chasesBySource: Object.fromEntries(
-        names.map((n) => [n, hasPendingOffers(ctx.catalog, n, now)]),
+        names.map((n) => [n, hasPendingOffers(ctx.catalog, n, now, souffle.keys)]),
       ),
       minIntervals: Object.fromEntries(
         names.map((n) => [n, sources[n].minIntervalMs || 0]),
@@ -884,6 +893,9 @@ export async function runCycle({
         collection: ctx.collection,
         maxReclamations,
         record,
+        breath: readBreath(ctx.breath),
+        breathe: ctx.settings.breathe !== false,
+        zone,
         ...(claim ? { claim } : {}),
         held: relais ? relais.held : null,
         onClaimStart: relais ? (offer) => announce({
@@ -911,7 +923,7 @@ export async function runCycle({
         // Le canari part dans la meme transition : un worker mort entre les
         // deux laisserait un magasin marque casse pour une reclamation dont
         // personne n'a garde la trace.
-        await writeCycle(chrome, { catalog, cadence, canary: result.canary });
+        await writeCycle(chrome, { catalog, cadence, canary: result.canary, breath: result.breath });
         const succeeded = claims.filter((x) => x.verdict === VERDICTS.CLAIMED).length;
         const manual = claims.filter((x) => x.verdict === VERDICTS.CHALLENGE).length;
         if (succeeded) await notify({
@@ -1169,8 +1181,15 @@ export async function claimWhatCanBe({
      Rend { owns: true, via, note } ou null. Par defaut : le compte GOG, et l'historique
      des commandes Epic (voir watch/owned-check.js). Remplacable en test, comme `claim`. */
   ownerCheck = undefined,
+  /* Le souffle (2.121.0) : les statistiques de defis (`breath`, jamais null pour qu'elles s'accumulent), et si le cycle a le
+     droit de decaler une recuperation qui peut attendre (`breathe`). Une demande de l'utilisateur (`forced`) n'est JAMAIS
+     decalee, mais ses essais sont notes comme les autres. */
+  breath = null,
+  breathe = false,
+  zone = 'UTC',
 }) {
   const next = { ...catalog };
+  let breathNext = breath;
   let timestamps = cadence;
   let canaryNext = canary;
   const claims = [];
@@ -1203,6 +1222,13 @@ export async function claimWhatCanBe({
     const avant = candidates.length;
     candidates = candidates.filter((o) => !held.has(ownedKeyFor(o.store, normaliseTitle(o.title))));
     if (candidates.length < avant) record('info', `relais : ${avant - candidates.length} jeu(x) en cours sur l'autre appareil`);
+  }
+  if (breath && breathe && !forced && candidates.length) {
+    const retenues = heldKeys(candidates, { breath, now, zone });
+    if (retenues.size) {
+      candidates = candidates.filter((o) => !retenues.has(o.catalogKey));
+      record('info', `souffle : ${retenues.size} recuperation(s) attendent une heure ou le magasin pose moins de defis`);
+    }
   }
   if (dropped.length) {
     record('info', `${dropped.length} offre(s) ecartee(s) par les filtres`, {
@@ -1306,6 +1332,7 @@ export async function claimWhatCanBe({
     const touche = r.touched !== false;
     if (!touche && offer.store === STORES.STEAM) steamThisRun = Math.max(0, steamThisRun - 1);
     if (touche) timestamps = recordClaim(timestamps, Date.now());
+    if (touche && breathNext) breathNext = recordAttempt(breathNext, r.store || offer.store, r.verdict === VERDICTS.CHALLENGE, now, zone);
     claims.push({ title: offer.title, catalogKey: offer.catalogKey, verdict: r.verdict, details: r.details });
     if (onClaimed && (r.verdict === VERDICTS.CLAIMED || r.verdict === VERDICTS.REDEEMED)) {
       try { await onClaimed(offer, r); } catch { /* idem */ }
@@ -1391,7 +1418,7 @@ export async function claimWhatCanBe({
     record('warn', `canari : ${alertLine(alerte)}`);
   }
 
-  return { catalog: next, cadence: timestamps, claims, canary: canaryNext };
+  return { catalog: next, cadence: timestamps, claims, canary: canaryNext, breath: breathNext };
 }
 
 /**
@@ -1445,13 +1472,36 @@ export function windowInstants(windows) {
     .filter((t) => typeof t === 'number');
 }
 
-/** Une source a-t-elle des offres qui attendent encore quelque chose ? */
-function hasPendingOffers(catalog, source, now) {
-  return Object.values(catalog || {}).some(
-    (o) => o.source === source
+/**
+ * Une source a-t-elle des offres qui attendent encore quelque chose ?
+ * `retenues` : les cles que le souffle fait attendre -- elles n'attendent plus la source, mais une heure.
+ */
+function hasPendingOffers(catalog, source, now, retenues = null) {
+  return Object.entries(catalog || {}).some(
+    ([key, o]) => o.source === source
       && !isExpired(o, now)
-      && (o.state === STATES.DISCOVERED || o.state === STATES.RESOLVING),
+      && (o.state === STATES.DISCOVERED || o.state === STATES.RESOLVING)
+      && !(retenues && retenues.has(key)),
   );
+}
+
+/**
+ * Les offres que le souffle retient pour l'instant : leurs cles, et pour chaque source la fin de l'attente (que le cycle prend
+ * pour un creneau ou se reveiller). Rien sans statistiques (`breath` nul).
+ */
+export function breathHolds(catalog, breath, now, zone) {
+  const keys = new Set();
+  const untils = {};
+  if (!breath) return { keys, untils };
+  for (const [key, o] of Object.entries(catalog || {})) {
+    if (!o || o.state !== STATES.DISCOVERED || isExpired(o, now)) continue;
+    if (FINAL_VERDICTS.includes(o.verdict) || o.alreadyOwned === true) continue;
+    const d = decideBreath({ breath, store: o.store, end: o.end, now, zone });
+    if (!d.wait) continue;
+    keys.add(key);
+    (untils[o.source] = untils[o.source] || []).push(d.until);
+  }
+  return { keys, untils };
 }
 
 export { KEYS };

@@ -3154,5 +3154,11 @@
   },
   "preflightSettingHint": {
     "message": "Two hours before it opens, looks at sessions, the relay and the phone alert, and says nothing if all is well."
+  },
+  "breatheLabel": {
+    "message": "Breathing: avoid challenge hours"
+  },
+  "breatheHint": {
+    "message": "When a claim can wait (the offer ends in more than a day), the extension moves it, by twelve hours at most, to an hour when the store has given you fewer challenges, based on what it has observed itself. No conclusion without enough data; never for something you asked for; never past the end of the offer. A challenge is never bypassed."
   }
 }

@@ -3154,5 +3154,11 @@
   },
   "preflightSettingHint": {
     "message": "Zwei Stunden vor der Öffnung werden Sitzungen, Relais und Telefon-Benachrichtigung geprüft; ist alles in Ordnung, bleibt es still."
+  },
+  "breatheLabel": {
+    "message": "Atempause: Zeiten mit Sicherheitsprüfungen meiden"
+  },
+  "breatheHint": {
+    "message": "Wenn eine Abholung warten kann (das Angebot endet in mehr als einem Tag), verschiebt die Erweiterung sie, höchstens um zwölf Stunden, auf eine Stunde, in der der Shop Ihnen weniger Sicherheitsprüfungen gestellt hat, nach eigener Beobachtung. Keine Schlüsse ohne genug Daten; nie bei Ihrer eigenen Anforderung; nie über das Angebotsende hinaus. Eine Prüfung wird nie umgangen."
   }
 }

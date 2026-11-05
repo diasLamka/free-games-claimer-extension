@@ -4,6 +4,21 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.121.0 -- 2026-11-05 (appli inchangee, 1.46.0)
+
+**Le souffle : ne pas se presenter au magasin a l'heure ou il pose le plus de defis**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Un defi (captcha, verification de securite) arrete une recuperation et laisse un onglet ouvert dans la fenetre de l'utilisateur. Les magasins n'en posent pas a toute heure.
+
+- **Des statistiques locales** (`watch/breath.js`, cle `veille:souffle`) : par magasin et par heure de la journee (fuseau de la machine), le nombre d'essais et de defis. Chaque recuperation qui touche le magasin est notee -- celles du cycle comme celles que l'utilisateur demande. Aucun titre, aucune adresse, aucun code ; rien ne quitte la machine ni n'entre dans une sauvegarde. Les compteurs sont divises par deux au-dela de 400 essais, pour suivre le magasin.
+- **Pas de conclusion sans donnees.** Un magasin n'a de profil qu'a partir de 30 essais ET 5 defis. Une heure n'est « mauvaise » qu'avec au moins 6 essais et 3 defis, et un taux au moins double du taux moyen du magasin (et d'au moins 25 %) : un defi isole a 3 h ne ferme pas la nuit, et un magasin aussi gris a toute heure n'a rien a eviter.
+- **Ce qui est decale, et jusqu'ou.** Seule la recuperation AUTOMATIQUE d'une offre dont la fin est connue et a plus de 24 h, et seulement si une heure calme arrive dans les 12 h : elle attend le debut de cette heure. Il reste donc toujours au moins la moitie du delai avant la fin ; une offre qui finit dans moins d'un jour, ou dont la fin est inconnue, n'attend jamais. **« Tout recuperer » et « Recuperer » ne sont jamais decales.**
+- **Sans bruit pour le reste de la veille.** Une offre retenue ne met pas sa source en poursuite (une lecture toutes les dix minutes pour rien) ; le cycle se reveille 30 minutes avant la fin de l'attente, comme pour une ouverture annoncee.
+- **On ne contourne jamais un captcha.** Rien ne tente de le resoudre ni de le masquer : on choisit seulement l'heure a laquelle on se presente. Un defi, quand il arrive, reste rendu a l'humain comme avant.
+- **Un reglage** : « Souffle : eviter les heures a defis » (popup, Veille de fond), allume par defaut ; sans profil, il ne change rien. Coupe, les statistiques continuent de se remplir (elles sont locales), seul le decalage s'arrete.
+- Moteur inchange. Tests : `test/breath.test.mjs` (18) et huit dans `test/cycle.test.mjs`, qui font tourner de vrais cycles et lisent le reveil arme. Deux textes ajoutes en francais, anglais, allemand et espagnol.
+- Non verifie : **aucune statistique reelle** n'a ete observee (le module n'existait pas avant) -- les seuils (30 essais, 5 defis, facteur 2, 12 h) sont des choix prudents, pas des mesures, et l'effet reel ne se verra qu'apres des semaines d'usage ; le journal dit « souffle : N recuperation(s) attendent... » quand il agit. Pas de version appli : son ordonnancement est a part.
+
 ## Extension 2.120.0 -- 2026-11-05 (appli inchangee, 1.46.0)
 
 **Le compte a rebours : deux heures avant la sortie d'Epic, verifier que tout est pret -- et se taire quand tout va bien**

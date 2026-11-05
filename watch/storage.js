@@ -25,6 +25,7 @@ import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale
    les deux laisserait un magasin marque casse pour une reclamation qui, elle,
    n'a jamais ete enregistree. */
 import { KEY_CANARY } from './canary.js';
+import { KEY_BREATH } from './breath.js';
 import { KEY_LIBRARY } from './library.js';
 import { KEY_COLLECTION } from './collection.js';
 /* Les issues d'offres terminees. Ecrites dans la MEME transition que le
@@ -332,6 +333,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * parler que s'il y a quelque chose a dire. Allume par defaut : sans probleme, il ne dit rien. Voir watch/preflight.js.
    */
   preflight: true,
+  /**
+   * Le souffle (2.121.0) : decaler les recuperations qui peuvent attendre vers une heure ou le magasin pose moins de defis,
+   * d'apres ce que l'extension a elle-meme observe. Jamais sans donnees suffisantes, jamais au-dela de la fin d'offre, jamais
+   * pour une demande de l'utilisateur. Allume par defaut : sans profil, il ne change rien. Voir watch/breath.js.
+   */
+  breathe: true,
 });
 
 /**
@@ -428,6 +435,8 @@ export async function readContext(chrome) {
     KEY_HOME,
     // Les grandes saisons (2.117.0) : lues ici, ecrites par le popup seul.
     KEY_SEASONS,
+    // Le souffle (2.121.0) : les statistiques de defis par magasin et par heure. Ecrites par le cycle et les reclamations.
+    KEY_BREATH,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -457,6 +466,7 @@ export async function readContext(chrome) {
     gogWishlist: raw[KEY_GOG_WISHLIST] || null,
     phone: raw[KEY_PHONE] || null,
     home: raw[KEY_HOME] || null,
+    breath: raw[KEY_BREATH] || null,
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),
       lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),
@@ -471,7 +481,7 @@ export async function readContext(chrome) {
  * deux, le service worker peut mourir. On prefere perdre une notification
  * qu'en envoyer deux, et le champ notifieLe rend la reprise possible.
  */
-export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary, rates, outcomes }) {
+export async function writeCycle(chrome, { catalog, sources, state, stats, cadence, canary, rates, outcomes, breath }) {
   const obj = {};
   if (catalog !== undefined) obj[KEYS.OFFERS] = catalog;
   if (sources !== undefined) obj[KEYS.SOURCES] = sources;
@@ -481,6 +491,7 @@ export async function writeCycle(chrome, { catalog, sources, state, stats, caden
   if (canary !== undefined) obj[KEY_CANARY] = canary;
   if (rates !== undefined) obj[KEY_RATES] = rates;
   if (outcomes !== undefined) obj[KEY_OUTCOMES] = outcomes;
+  if (breath !== undefined && breath !== null) obj[KEY_BREATH] = breath;
   return write(chrome, obj);
 }
 

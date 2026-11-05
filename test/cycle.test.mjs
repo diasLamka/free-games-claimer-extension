@@ -1181,3 +1181,108 @@ test('saisons : le meme dimanche, la saison coupee laisse le plancher', async ()
   const res = await c.cycle(MAINTENANT);
   assert.equal(res.nextWake, MAINTENANT - 30 * 60000 + DAY);
 });
+
+/* ------------------------------------------------ le souffle (2.121.0) */
+
+import { KEY_BREATH, readBreath } from '../watch/breath.js';
+
+/** Un magasin qui pose des defis a 12 h et 13 h (UTC) : de quoi faire un profil, le reste de la journee est calme. */
+function souffleMauvaisA12h(store = 'epic') {
+  const n = new Array(24).fill(4);
+  const c = new Array(24).fill(0);
+  n[12] = 10; c[12] = 6;
+  n[13] = 10; c[13] = 5;
+  return { stores: { [store]: { n, c } } };
+}
+
+/**
+ * Une offre Epic qui finit dans `fin` millisecondes, decouverte juste avant, puis un cycle a midi (UTC) le lendemain.
+ * `appels` compte les reclamations tentees.
+ */
+async function souffleCycle({ fin = 4 * DAY, stats = souffleMauvaisA12h(), settings = {}, at = T + DAY, verdict = VERDICTS.CLAIMED } = {}) {
+  const src = sourceFactice('test', [response([offer('Hades', { end: T + DAY + fin })]), response([offer('Hades', { end: T + DAY + fin })])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(at - 5 * 60000, { fetch: fetchNtfy(), autonomousClaim: false });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { ...(await c.faux.chrome.storage.local.get(KEYS.SETTINGS))[KEYS.SETTINGS], ...settings },
+    ...(stats ? { [KEY_BREATH]: stats } : {}),
+  });
+  const appels = [];
+  const res = await c.cycle(at, {
+    claimableStores: ['epic'],
+    zone: 'UTC',
+    claim: async (o) => { appels.push(o.title); return { verdict, store: 'epic' }; },
+  });
+  return { c, res, appels };
+}
+
+test('souffle : une recuperation qui peut attendre est retenue a une heure ou le magasin pose des defis', async () => {
+  const { c, appels } = await souffleCycle();
+  assert.deepEqual(appels, [], 'rien n\'est tente a midi');
+  const hades = Object.values(c.faux.payload()[KEYS.OFFERS]).find((o) => o.title === 'Hades');
+  assert.ok(!hades.attempts, 'ni essai, ni recul : elle repartira d\'elle-meme');
+  assert.ok(c.journal.some((l) => /souffle : 1 recuperation/.test(l)), c.journal.join('\n'));
+});
+
+test('souffle : a une heure calme, elle part', async () => {
+  const { appels } = await souffleCycle({ at: T + DAY + 6 * HOUR });
+  assert.deepEqual(appels, ['Hades']);
+});
+
+test('souffle : une offre qui finit demain n\'attend pas -- jamais au-dela de la fin d\'offre', async () => {
+  const { appels } = await souffleCycle({ fin: 10 * HOUR });
+  assert.deepEqual(appels, ['Hades']);
+});
+
+test('souffle : le reglage coupe, rien n\'est retenu', async () => {
+  const { appels } = await souffleCycle({ settings: { breathe: false } });
+  assert.deepEqual(appels, ['Hades']);
+});
+
+test('souffle : sans assez de defis observes, il n\'y a pas de profil et rien n\'est retenu', async () => {
+  const peu = souffleMauvaisA12h();
+  peu.stores.epic.c = peu.stores.epic.c.map((x) => Math.min(x, 1)); // deux defis seulement
+  const { appels } = await souffleCycle({ stats: peu });
+  assert.deepEqual(appels, ['Hades']);
+});
+
+test('souffle : une demande de l\'utilisateur n\'est jamais decalee', async () => {
+  // Decouverte seule : l'offre n'a jamais ete tentee, elle finit dans quatre jours.
+  const src = sourceFactice('test', [response([offer('Hades', { end: T + 5 * DAY })])]);
+  const c = await contexteDeTest({ test: src });
+  await c.cycle(T + DAY - 5 * 60000, { fetch: fetchNtfy(), autonomousClaim: false });
+  const catalog = c.faux.payload()[KEYS.OFFERS];
+
+  const appels = [];
+  const pose = (forced) => claimWhatCanBe({
+    chrome: c.faux.chrome, now: T + DAY, catalog, filters: {}, claimableStores: ['epic'], watchedStores: ['epic'],
+    cadence: [], maxReclamations: 3,
+    claim: async (o) => { appels.push(o.title); return { verdict: VERDICTS.CLAIMED, store: 'epic' }; },
+    forced, breath: souffleMauvaisA12h(), breathe: true, zone: 'UTC',
+  });
+
+  await pose(false);
+  assert.deepEqual(appels, [], 'automatique : midi est une mauvaise heure, elle attend');
+
+  const r = await pose(true);
+  assert.deepEqual(appels, ['Hades'], 'demandee par l\'utilisateur : elle part, quelle que soit l\'heure');
+  assert.ok(r.breath.stores.epic.n[12] >= 11, 'ses essais nourrissent le profil comme les autres');
+});
+
+test('souffle : chaque essai est note, avec son defi eventuel, a l\'heure locale', async () => {
+  const { c } = await souffleCycle({ at: T + DAY + 6 * HOUR, stats: { stores: {} }, verdict: VERDICTS.CHALLENGE });
+  const b = readBreath(c.faux.payload()[KEY_BREATH]);
+  assert.equal(b.stores.epic.n[18], 1);
+  assert.equal(b.stores.epic.c[18], 1);
+  assert.equal(b.stores.epic.n.reduce((x, y) => x + y, 0), 1);
+});
+
+test('souffle : l\'offre retenue ne met pas la source en poursuite, et le cycle se reveille a la fin de l\'attente', async () => {
+  // 12:00 UTC : la premiere heure calme est 14:00 ; le cycle se reveille 30 minutes avant, comme pour une ouverture annoncee.
+  const retenue = await souffleCycle();
+  assert.equal(new Date(retenue.res.nextWake).toISOString(), '2026-08-28T13:30:00.000Z');
+
+  // Sans le souffle, la meme offre en attente met la source en poursuite : un reveil dix minutes plus tard.
+  const poursuite = await souffleCycle({ settings: { breathe: false } });
+  assert.equal(new Date(poursuite.res.nextWake).toISOString(), '2026-08-28T12:05:00.000Z');
+});

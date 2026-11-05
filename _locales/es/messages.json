@@ -3154,5 +3154,11 @@
   },
   "preflightSettingHint": {
     "message": "Dos horas antes de la apertura revisa las sesiones, el relé y la alerta del teléfono, y no dice nada si todo va bien."
+  },
+  "breatheLabel": {
+    "message": "Respiro: evitar las horas con verificaciones"
+  },
+  "breatheHint": {
+    "message": "Cuando una recogida puede esperar (la oferta termina en más de un día), la extensión la aplaza, doce horas como máximo, a una hora en la que la tienda le ha puesto menos verificaciones, según lo que ella misma ha observado. Sin conclusiones sin datos suficientes; nunca ante algo que usted pida; nunca más allá del fin de la oferta. Una verificación nunca se esquiva."
   }
 }

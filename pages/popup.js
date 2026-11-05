@@ -2560,6 +2560,8 @@ function renderSources(all, behaviour) {
   const floor = Number.isFinite(behaviour.floorPerDay) ? behaviour.floorPerDay : 3;
   document.getElementById('floor').value = String(floor);
   document.getElementById('floor-value').textContent = String(floor);
+  // Le souffle (2.121.0) : actif sauf refus explicite.
+  document.getElementById('breathe-on').checked = behaviour.breathe !== false;
 }
 
 /* -------------------------------------------------------------- prediction */
@@ -3357,6 +3359,7 @@ document.getElementById('reminder').addEventListener('input', (e) => {
 document.getElementById('reminder').addEventListener('change', (e) => writeBehaviour({ reminderHours: Number(e.target.value) }));
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 document.getElementById('preflight-on').addEventListener('change', (e) => writeBehaviour({ preflight: e.target.checked }));
+document.getElementById('breathe-on').addEventListener('change', (e) => writeBehaviour({ breathe: e.target.checked }));
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));

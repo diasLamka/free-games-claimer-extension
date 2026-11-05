@@ -57,6 +57,12 @@ alerte, jamais dans le relais (`watch/hotte.js`).
 les sessions, le relais et l'alerte telephone, et ne dit RIEN si tout va bien. Une
 notification par ouverture, seulement quand quelque chose cloche (`watch/preflight.js`).
 
+**Le souffle** (2.121.0) : l'extension apprend, sur votre machine, a quelles heures chaque
+magasin vous a pose des defis, et decale les recuperations qui peuvent attendre (l'offre
+finit dans plus d'un jour) vers une heure plus calme -- douze heures au plus, jamais sans
+assez de donnees, jamais au-dela de la fin de l'offre, jamais pour un geste de votre part.
+Un defi n'est jamais contourne : on choisit seulement l'heure (`watch/breath.js`).
+
 
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
@@ -291,6 +297,7 @@ est declare `"type": "module"`.
 | `failure-report.js` | le rapport d'echec (ce que la page montrait, nettoye) et le lien qui ouvre un ticket GitHub deja rempli |
 | `hotte.js` | la hotte : les codes en double rangees a part, a offrir par QR code -- jamais dans une sauvegarde ni une alerte |
 | `preflight.js` | le compte a rebours : deux heures avant l'ouverture d'Epic, ce qui cloche (session perdue, relais muet, alerte telephone en panne) -- silence quand tout va bien |
+| `breath.js` | le souffle : les heures ou chaque magasin pose des defis (statistiques locales), et le decalage des recuperations qui peuvent attendre -- jamais un captcha contourne |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |

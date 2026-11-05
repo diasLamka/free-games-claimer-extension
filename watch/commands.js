@@ -12,6 +12,7 @@
 import { readKeys, write, writeCycle, normaliseSettings, KEYS } from './storage.js';
 import { claimWhatCanBe, KEY_STOP } from './cycle.js';
 import { KEY_CANARY } from './canary.js';
+import { KEY_BREATH, readBreath, localZone } from './breath.js';
 import { KEY_LIBRARY } from './library.js';
 import { STATES, isExpired } from './offer.js';
 import { MAX_PER_HOUR } from './claim.js';
@@ -44,10 +45,10 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     return { claimed: 0, left: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION, KEY_BREATH]);
   const settings = normaliseSettings(raw[KEYS.SETTINGS]);
 
-  const { catalog, cadence, claims, canary } = await claimWhatCanBe({
+  const { catalog, cadence, claims, canary, breath } = await claimWhatCanBe({
     chrome,
     now,
     fetch: fetchImpl,
@@ -74,13 +75,16 @@ export async function claimAllNow({ chrome, now = Date.now(), claimableStores, r
     record,
     // Le geste de reclamation, injectable pour les tests (claimOneNow fait de meme) ; absent, c'est claimOffer.
     claim,
+    // Les essais nourrissent le souffle ; jamais decales pour autant (`breathe` reste faux, et `forced` l'interdit).
+    breath: readBreath(raw[KEY_BREATH]),
+    zone: localZone(),
     // Un clic de l'utilisateur : voir `forced` dans claimWhatCanBe.
     forced: true,
     // Mais en bloc : ce que le registre dit pris ne rouvre pas d'onglet (2.114.1).
     trustKnownOwned: true,
   });
 
-  await writeCycle(chrome, { catalog, cadence, canary });
+  await writeCycle(chrome, { catalog, cadence, canary, breath });
 
   const claimed = claims.filter((c) => c.verdict === 'claimed').length;
   return { claimed, left: claims.length - claimed, claims };
@@ -246,7 +250,7 @@ export async function claimOneNow({
     return { claimed: 0, claims: [], stopped: true };
   }
 
-  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION]);
+  const raw = await readKeys(chrome, [KEYS.OFFERS, KEYS.FILTERS, KEYS.CADENCE, KEYS.SETTINGS, KEY_CANARY, KEY_LIBRARY, KEY_COLLECTION, KEY_BREATH]);
   const catalog = raw[KEYS.OFFERS] || {};
   const offer = catalog[catalogKey];
   if (!offer) return { claimed: 0, claims: [], reason: 'unknown' };
@@ -274,6 +278,8 @@ export async function claimOneNow({
     maxReclamations: 1,
     record,
     claim,
+    breath: readBreath(raw[KEY_BREATH]),
+    zone: localZone(),
     forced: true,
   });
 
@@ -283,6 +289,7 @@ export async function claimOneNow({
     catalog: { ...catalog, ...r.catalog },
     cadence: r.cadence,
     canary: r.canary,
+    breath: r.breath,
   });
 
   const claimed = r.claims.filter((c) => c.verdict === 'claimed').length;
