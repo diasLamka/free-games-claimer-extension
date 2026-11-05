@@ -3067,5 +3067,23 @@
   },
   "homeSecretHint": {
     "message": "The webhook address is the secret: pick a long id. No redemption code or account detail is ever sent. Automation examples: docs/home-assistant.md in the repository."
+  },
+  "seasonsLabel": {
+    "message": "Big seasons: a game every day"
+  },
+  "seasonsHint": {
+    "message": "During the year-end giveaway fortnight, Epic gives away a game every day at the same time. In those weeks the watcher checks at every opening, not just on Thursdays. The dates can be changed; the year is ignored."
+  },
+  "seasonsFrom": {
+    "message": "From"
+  },
+  "seasonsUntil": {
+    "message": "To"
+  },
+  "seasonsOn": {
+    "message": "Season in progress: Epic is checked every day at 11:00 New York time, until $1."
+  },
+  "seasonsSoon": {
+    "message": "Next season: from $1. Until then, nothing changes."
   }
 }

@@ -1114,3 +1114,70 @@ test('maison : l\'etat inchange est renvoye apres six heures, comme signe de vie
   assert.equal(f.messages.length, 2, 'six heures passees : un signe de vie');
   assert.equal(f.messages[1].event, 'state');
 });
+
+/* ------------------------------------------------ les grandes saisons (2.117.0) */
+
+import { KEY_SEASONS } from '../watch/schedule/seasons.js';
+import { NAME as EPIC_API } from '../watch/sources/epic.js';
+
+/** Un cycle d'Epic, un vendredi de juillet, avec ces ouvertures deja connues. */
+async function cycleEpicAvecOuvertures(departs, saisons) {
+  const MAINTENANT = Date.UTC(2026, 6, 10, 17, 0, 0);
+  const c = await contexteDeTest({ [EPIC_API]: sourceFactice(EPIC_API, [response([])]) }, { now: MAINTENANT });
+  const catalog = {};
+  departs.forEach((start, i) => {
+    /* Des offres DEJA finies : une offre ouverte et non traitee mettrait Epic en
+       poursuite (due tout de suite), et il n'y aurait plus de reveil a lire. */
+    const o = offer(`Cadeau ${i}`, { source: EPIC_API, start, end: start + HOUR });
+    catalog[`epic:cadeau-${i}`] = o;
+  });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.OFFERS]: catalog,
+    // Epic vient d'etre interroge : le cycle n'est pas du, il arme seulement son reveil.
+    [KEYS.SOURCES]: { [EPIC_API]: { lastCall: MAINTENANT - 30 * 60000 } },
+    [KEYS.SETTINGS]: { activeSources: [EPIC_API], floorPerDay: 1 },
+    ...(saisons ? { [KEY_SEASONS]: saisons } : {}),
+  });
+  const res = await c.cycle(MAINTENANT);
+  return { res, MAINTENANT };
+}
+
+test('saisons : trois ouvertures Epic d\'un jour d\'ecart font armer le reveil sur la suivante', async () => {
+  // Hors calendrier (juillet) : seule la detection peut parler.
+  const departs = [8, 9, 10].map((j) => Date.UTC(2026, 6, j, 15, 0, 0));
+  const { res, MAINTENANT } = await cycleEpicAvecOuvertures(departs, { on: false });
+  // Le 11 juillet a 11:00 a New York (EDT) = 15:00Z ; le reveil vise 30 minutes avant.
+  assert.equal(new Date(res.nextWake).toISOString(), '2026-07-11T14:30:00.000Z');
+  assert.ok(res.nextWake < MAINTENANT + 23.5 * HOUR, 'avant le plancher de 24 h');
+});
+
+test('saisons : sans regime quotidien, le reveil reste celui du plancher', async () => {
+  const departs = [Date.UTC(2026, 6, 9, 15, 0, 0), Date.UTC(2026, 6, 10, 15, 0, 0)];
+  const { res, MAINTENANT } = await cycleEpicAvecOuvertures(departs, { on: false });
+  assert.equal(res.nextWake, MAINTENANT - 30 * 60000 + DAY, 'dernier appel + 24 h');
+});
+
+test('saisons : en decembre, le calendrier arme le reveil sans aucune ouverture connue', async () => {
+  const MAINTENANT = Date.UTC(2026, 11, 20, 17, 0, 0); // dimanche 20 decembre
+  const c = await contexteDeTest({ [EPIC_API]: sourceFactice(EPIC_API, [response([])]) }, { now: MAINTENANT });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SOURCES]: { [EPIC_API]: { lastCall: MAINTENANT - 30 * 60000 } },
+    [KEYS.SETTINGS]: { activeSources: [EPIC_API], floorPerDay: 1 },
+  });
+  const res = await c.cycle(MAINTENANT);
+  // Lundi 21 decembre 11:00 EST = 16:00Z : le reveil, 30 minutes avant. Sans la
+  // saison, il aurait fallu attendre le jeudi (ou le plancher de 24 h).
+  assert.equal(new Date(res.nextWake).toISOString(), '2026-12-21T15:30:00.000Z');
+});
+
+test('saisons : le meme dimanche, la saison coupee laisse le plancher', async () => {
+  const MAINTENANT = Date.UTC(2026, 11, 20, 17, 0, 0);
+  const c = await contexteDeTest({ [EPIC_API]: sourceFactice(EPIC_API, [response([])]) }, { now: MAINTENANT });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SOURCES]: { [EPIC_API]: { lastCall: MAINTENANT - 30 * 60000 } },
+    [KEYS.SETTINGS]: { activeSources: [EPIC_API], floorPerDay: 1 },
+    [KEY_SEASONS]: { on: false },
+  });
+  const res = await c.cycle(MAINTENANT);
+  assert.equal(res.nextWake, MAINTENANT - 30 * 60000 + DAY);
+});

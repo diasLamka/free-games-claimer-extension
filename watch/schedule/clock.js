@@ -122,6 +122,39 @@ export function instantFromLocal(zone, { year, month, day, hour = 0, minute = 0,
   return { instant: Math.max(...candidates), exact: false };
 }
 
+/* ----------------------------------------------------------------- saisons */
+
+/** Jours par mois, fevrier compte pour 29 : une saison peut viser le 29 fevrier. */
+const MAX_DAYS = Object.freeze([31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]);
+
+function validMonthDay(d) {
+  return !!d && Number.isInteger(d.month) && d.month >= 1 && d.month <= 12
+    && Number.isInteger(d.day) && d.day >= 1 && d.day <= MAX_DAYS[d.month - 1];
+}
+
+/**
+ * Une saison borne une regle a une partie de l'annee :
+ *
+ *   { from: { month: 12, day: 15 }, until: { month: 1, day: 2 } }
+ *
+ * Les deux bornes sont COMPRISES, et lues dans le calendrier LOCAL de la
+ * regle (son fuseau), jamais en UTC : le 15 decembre est celui de New York.
+ * Quand `from` tombe apres `until`, la saison enjambe le nouvel an.
+ */
+export function validSeason(season) {
+  return !!season && typeof season === 'object'
+    && validMonthDay(season.from) && validMonthDay(season.until);
+}
+
+/** Le jour (mois, jour) est-il dans la saison ? Sans saison : toujours. */
+export function inSeason(season, month, day) {
+  if (!season) return true;
+  const here = month * 100 + day;
+  const from = season.from.month * 100 + season.from.day;
+  const until = season.until.month * 100 + season.until.day;
+  return from <= until ? (here >= from && here <= until) : (here >= from || here <= until);
+}
+
 /* ------------------------------------------------------------------ regles */
 
 /**
@@ -131,6 +164,9 @@ export function instantFromLocal(zone, { year, month, day, hour = 0, minute = 0,
  *   { fuseau: 'UTC', quotidien: true, heure: 12 }                     // tous les jours
  *
  * `jours` suit la convention JavaScript : 0 = dimanche, 4 = jeudi.
+ *
+ * Une regle peut porter une `season` (voir `validSeason`) : elle ne se declenche
+ * alors que dans cette partie de l'annee.
  */
 export function validRule(rule) {
   if (!rule || typeof rule !== 'object') return false;
@@ -139,6 +175,7 @@ export function validRule(rule) {
   const m = rule.minute === undefined ? 0 : rule.minute;
   if (!Number.isInteger(h) || h < 0 || h > 23) return false;
   if (!Number.isInteger(m) || m < 0 || m > 59) return false;
+  if (rule.season !== undefined && !validSeason(rule.season)) return false;
   if (rule.daily) return true;
   return Array.isArray(rule.dayCount)
     && rule.dayCount.length > 0
@@ -171,6 +208,7 @@ export function nextOccurrence(rule, apres, { limiteJours = 370 } = {}) {
     const weekday = civil.getUTCDay();
 
     if (!rule.daily && !rule.dayCount.includes(weekday)) continue;
+    if (rule.season && !inSeason(rule.season, month, day)) continue;
 
     const { instant, exact } = instantFromLocal(rule.zone, {
       year, month, day, hour: rule.hour, minute,

@@ -3067,5 +3067,23 @@
   },
   "homeSecretHint": {
     "message": "L'adresse du webhook est le secret : choisissez un identifiant long. Rien n'y part d'un code de rachat ni d'un compte. Exemples d'automatisations : docs/home-assistant.md dans le dépôt."
+  },
+  "seasonsLabel": {
+    "message": "Grandes saisons : un jeu chaque jour"
+  },
+  "seasonsHint": {
+    "message": "Pendant les quinze jours de cadeaux de fin d'année, Epic offre un jeu tous les jours à la même heure. Ces semaines-là, la veille regarde à chaque ouverture, pas seulement le jeudi. Les dates sont modifiables ; l'année est ignorée."
+  },
+  "seasonsFrom": {
+    "message": "Du"
+  },
+  "seasonsUntil": {
+    "message": "Au"
+  },
+  "seasonsOn": {
+    "message": "Saison en cours : Epic est regardé chaque jour à 11 h, heure de New York, jusqu'au $1."
+  },
+  "seasonsSoon": {
+    "message": "Prochaine saison : à partir du $1. D'ici là, rien ne change."
   }
 }

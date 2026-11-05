@@ -57,6 +57,7 @@ import {
 import {
   KEY_HOME, KEY_HOME_STATE, homeUrl, originPattern as homeOriginPattern, readHome,
 } from '../watch/homeassistant.js';
+import { KEY_SEASONS, readSeasons, seasonStatus } from '../watch/schedule/seasons.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
@@ -252,6 +253,7 @@ const KEYS_READ = [
   KEY_PHONE_STATE,
   KEY_HOME,
   KEY_HOME_STATE,
+  KEY_SEASONS,
   KEY_TAUGHT,
   KEY_SEEN,
   KEY_COLLECTION,
@@ -2965,6 +2967,7 @@ async function render() {
   renderFallback(all);
   renderSources(all, behaviourCache);
   renderPrediction(all);
+  renderSeasons(all);
   renderNotifications(behaviourCache);
   renderSyncCodes(behaviourCache);
   renderSyncLibrary(behaviourCache);
@@ -3262,6 +3265,66 @@ document.getElementById('floor').addEventListener('change', async (e) => {
   await withWorking(requestCycle, { immediate: true });
   await load();
 });
+
+/* ----------------------------------------------- les grandes saisons (2.117.0) */
+
+/* Le calendrier ne retient que le mois et le jour ; le champ date, lui, porte
+   une annee. On met celle d'aujourd'hui, et on la jette en relisant. */
+function seasonInputValue(md, nextYear = false) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${new Date().getFullYear() + (nextYear ? 1 : 0)}-${pad(md.month)}-${pad(md.day)}`;
+}
+
+function seasonFromInput(value) {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  return m ? { month: Number(m[1]), day: Number(m[2]) } : null;
+}
+
+function seasonDateText(md) {
+  return new Date(Date.UTC(2000, md.month - 1, md.day))
+    .toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', timeZone: 'UTC' });
+}
+
+function renderSeasons(all) {
+  const s = readSeasons(all[KEY_SEASONS]);
+  document.getElementById('seasons-on').checked = s.on;
+  document.getElementById('seasons-fields').hidden = !s.on;
+  const from = document.getElementById('seasons-from');
+  const until = document.getElementById('seasons-until');
+  /* Une saison qui enjambe le nouvel an finit l'annee SUIVANTE : sans cela le
+     champ « Au » afficherait une date anterieure au « Du ». */
+  const enjambe = s.until.month * 100 + s.until.day < s.from.month * 100 + s.from.day;
+  if (document.activeElement !== from) from.value = seasonInputValue(s.from);
+  if (document.activeElement !== until) until.value = seasonInputValue(s.until, enjambe);
+  const etat = seasonStatus(all[KEY_SEASONS], Date.now());
+  const zone = document.getElementById('seasons-state');
+  if (etat.state === 'on') zone.textContent = t('seasonsOn', seasonDateText(etat.until));
+  else if (etat.state === 'soon') zone.textContent = t('seasonsSoon', seasonDateText(etat.from));
+  else zone.textContent = '';
+}
+
+async function writeSeasons(patch) {
+  const actuel = readSeasons((await api.storage.local.get(KEY_SEASONS))[KEY_SEASONS]);
+  await setValue(KEY_SEASONS, { ...actuel, ...patch });
+  /* Un cycle tout de suite : le reveil se recalcule avec les nouvelles dates. */
+  await withWorking(requestCycle, { immediate: true });
+  await load();
+}
+
+document.getElementById('seasons-on').addEventListener('change', (e) => writeSeasons({ on: e.target.checked }));
+
+for (const [id, champ] of [['seasons-from', 'from'], ['seasons-until', 'until']]) {
+  document.getElementById(id).addEventListener('change', async (e) => {
+    const md = seasonFromInput(e.target.value);
+    // Champ vide : on garde la date qui valait, le calendrier n'a jamais de trou.
+    if (!md) {
+      const actuel = readSeasons((await api.storage.local.get(KEY_SEASONS))[KEY_SEASONS]);
+      e.target.value = seasonInputValue(actuel[champ]);
+      return;
+    }
+    await writeSeasons({ [champ]: md });
+  });
+}
 
 /* Sonder les sessions, a la demande. Depuis la 2.99.6 la verification part
    aussi toute seule (reglage « Verifier les connexions automatiquement ») ;

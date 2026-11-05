@@ -16,6 +16,7 @@
 
 import { MIGRATED_KEYS, buildV2Patch } from './migrate.js';
 import { schedulesWithDefaults } from './schedule/rules.js';
+import { KEY_SEASONS, withSeasons } from './schedule/seasons.js';
 import { KEY_RATES } from './rates.js';
 import { KEY_COUNTRY, KEY_LANG, normaliseCountry, normaliseLang } from './locale.js';
 /* Le canari possede sa cle, comme la bibliotheque et le journal. Elle est
@@ -420,6 +421,8 @@ export async function readContext(chrome) {
     KEY_PHONE,
     // La maison (2.116.0) : Home Assistant, lue ici et jamais ecrite -- le popup en est le seul ecrivain.
     KEY_HOME,
+    // Les grandes saisons (2.117.0) : lues ici, ecrites par le popup seul.
+    KEY_SEASONS,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -434,7 +437,7 @@ export async function readContext(chrome) {
     // Les horaires connus des magasins, sauf si l'utilisateur en a pose
     // d'autres : sans cela la cle restait vide et la rotation hebdomadaire
     // n'etait jamais anticipee (cf. watch/schedule/rules.js).
-    schedules: schedulesWithDefaults(raw[KEYS.SCHEDULES]),
+    schedules: withSeasons(schedulesWithDefaults(raw[KEYS.SCHEDULES]), raw[KEY_SEASONS], raw[KEYS.SCHEDULES]),
     state: { ...DEFAULT_STATE, ...(raw[KEYS.STATE] || {}) },
     stats: raw[KEYS.STATS] || {},
     filters: raw[KEYS.FILTERS] || {},

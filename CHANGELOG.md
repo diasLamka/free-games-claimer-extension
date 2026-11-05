@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.117.0 -- 2026-11-05 (appli inchangee, 1.44.0)
+
+**Les grandes saisons : la veille regarde chaque jour pendant les quinze jours de cadeaux de fin d'annee**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Jusqu'ici la veille ne connaissait que la rotation du jeudi (11:00 a New York) : quand Epic offre un jeu CHAQUE JOUR, six jours sur sept n'etaient couverts que par le plancher de verification (trois par jour), donc un jeu pouvait n'etre vu que des heures apres son ouverture.
+
+- **Un calendrier** (`watch/schedule/seasons.js`). Une regle quotidienne a 11:00 heure de New York s'ajoute a celle du jeudi, du 15 decembre au 2 janvier par defaut. Les dates sont modifiables dans le popup (Veille de fond, « Grandes saisons ») ; l'annee est ignoree, une saison peut enjamber le nouvel an, et la case la coupe tout a fait. Une liste Epic videe a la main (choix de l'utilisateur) n'est pas rallumee par la saison.
+- **Une detection**, hors calendrier. Trois ouvertures Epic d'un jour d'ecart (annoncees, ou deja faites et lues dans le catalogue) font attendre la suivante le lendemain, a la meme heure MURALE a New York -- un changement d'heure (23 ou 25 h) ne la decale pas. Un seul jour au-dela de la derniere ouverture connue : si le regime continue, Epic annoncera le suivant ; s'il est fini, le pari coute une fenetre chaude, pas davantage.
+- **Le moteur de regles** (`watch/schedule/clock.js`) : une regle peut porter une `season` (bornes comprises, lues dans le calendrier LOCAL de la regle, jamais en UTC). Sans `season`, tout est comme avant.
+- **Ce que ca ne fait pas.** Cela dit QUAND regarder, jamais QUEL jeu : aucune date de debut ni de fin n'est fabriquee, ce que la source publie reste prioritaire. Aucune permission, aucune requete de plus hors des fenetres chaudes (une quinzaine par jour de saison).
+- Moteur inchange. Tests : `test/seasons.test.mjs` (32) et quatre dans `test/cycle.test.mjs`, dont deux qui font tourner un vrai cycle et lisent le reveil arme. Six textes ajoutes en francais, anglais, allemand et espagnol.
+- Non verifie : **les dates par defaut sont une estimation** (mi-decembre a debut janvier, d'apres les editions passees dont je me souviens) -- Epic ne les publie nulle part a l'avance, et je n'ai pas pu relire ici les fenetres de decembre 2025 pour mesurer si la detection les aurait reperees des le deuxieme jour. Si la saison d'Epic tombe autrement, les dates se changent dans le popup. Le calendrier n'existe pas encore dans l'appli Android (son ordonnancement est a part) ; le popup n'a ete vu que dans un navigateur de test.
+
 ## Extension 2.116.0 -- 2026-11-05 (appli inchangee, 1.44.0)
 
 **La maison : l'extension previent ton Home Assistant quand un jeu gratuit tombe**

@@ -30,6 +30,8 @@ import {
   DEFAULTS as SCHEDULER_DEFAULTS,
 } from './schedule/scheduler.js';
 import { observe, learnedHotInstants, emptyStat } from './schedule/prediction.js';
+import { projectDailyRun, startsOf } from './schedule/seasons.js';
+import { NAME as EPIC_SOURCE } from './sources/epic.js';
 import { KEY_CANARY, observe as observeCanary, newAlerts, alertLine } from './canary.js';
 import { isNetworkFailure } from './net.js';
 import { ownedKeys, ownedKeyFor } from './library.js';
@@ -317,6 +319,15 @@ export async function runCycle({
         ...windowInstants(ctx.sources[n] && ctx.sources[n].announcedWindows),
         // ...et ce que la couche apprenante a deduit de l'historique.
         ...learnedHotInstants((ctx.stats && ctx.stats[n]) || emptyStat(), now),
+        /* ...et, pour Epic, le lendemain d'un regime quotidien (les quinze
+           jours de cadeaux de decembre) : trois ouvertures d'un jour d'ecart,
+           annoncees ou deja faites, font attendre la suivante. */
+        ...(n === EPIC_SOURCE
+          ? projectDailyRun([
+            ...windowInstants(ctx.sources[n] && ctx.sources[n].announcedWindows),
+            ...startsOf(ctx.catalog, n, now),
+          ], now)
+          : []),
       ]])),
       chasesBySource: Object.fromEntries(
         names.map((n) => [n, hasPendingOffers(ctx.catalog, n, now)]),

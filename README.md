@@ -35,6 +35,13 @@ une annonce sur une enceinte. Un webhook, un seul sens, jamais un code ni un
 cookie ; `http` seulement sur le reseau local (`watch/homeassistant.js`,
 guide dans `docs/home-assistant.md`).
 
+**Les grandes saisons** (2.117.0) : les quinze jours de cadeaux de fin d'annee,
+Epic offre un jeu CHAQUE JOUR a la meme heure. La veille ajoute alors une regle
+quotidienne a celle du jeudi, du 15 decembre au 2 janvier par defaut (dates
+modifiables dans Veille de fond), et attend le lendemain d'une suite de trois
+ouvertures d'un jour d'ecart (`watch/schedule/seasons.js`). Elle dit QUAND
+regarder, jamais QUEL jeu.
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 
@@ -229,6 +236,7 @@ est declare `"type": "module"`.
 | `catalog.js` | ce que la veille sait dans le temps : fusion, disparitions, retention |
 | `schedule/clock.js` | horaires ancres sur un fuseau nomme, sans arithmetique sur les heures |
 | `schedule/scheduler.js` | quand interroger quoi : plancher, creneaux chauds, poursuite, freins |
+| `schedule/seasons.js` | les grandes saisons : une regle quotidienne bornee par dates (15 decembre - 2 janvier par defaut, modifiable), et la detection d'un jeu offert chaque jour |
 | `sources/` | une source de decouverte par fichier, meme interface |
 | `storage.js` | cles `veille:`, version de schema, verrou |
 | `cycle.js` | l'enchainement complet d'un reveil |

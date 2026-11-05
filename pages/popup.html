@@ -1062,7 +1062,7 @@
   /* Une adresse ne tient pas a droite d'un libelle a 328 px : elle passe dessous. */
   .field.stack { flex-direction: column; align-items: stretch; gap: 4px; }
   .field.stack input { width: 100%; font-family: var(--mono); font-size: 11px; }
-  #phone-fields[hidden], #home-fields[hidden] { display: none; }
+  #phone-fields[hidden], #home-fields[hidden], #seasons-fields[hidden] { display: none; }
   input[type="time"] {
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -1677,6 +1677,23 @@
           <span class="range-label"><span data-i18n="floorLabel"></span> <b id="floor-value">3</b></span>
           <input type="range" id="floor" min="1" max="24" step="1" value="3">
         </label>
+        <!-- Les grandes saisons (2.117.0) : voir watch/schedule/seasons.js. -->
+        <label class="toggle">
+          <input type="checkbox" id="seasons-on">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="seasonsLabel"></span><small data-i18n="seasonsHint"></small></span>
+        </label>
+        <div id="seasons-fields" hidden>
+          <label class="field stack">
+            <span data-i18n="seasonsFrom"></span>
+            <input type="date" id="seasons-from">
+          </label>
+          <label class="field stack">
+            <span data-i18n="seasonsUntil"></span>
+            <input type="date" id="seasons-until">
+          </label>
+        </div>
+        <p class="hint" id="seasons-state" role="status"></p>
         <div class="actions">
           <button class="primary" id="check-now" data-i18n="checkNow"></button>
         </div>

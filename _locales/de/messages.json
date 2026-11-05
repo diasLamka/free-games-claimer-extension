@@ -3067,5 +3067,23 @@
   },
   "homeSecretHint": {
     "message": "Die Webhook-Adresse ist das Geheimnis: wählen Sie eine lange ID. Es werden weder Einlösecodes noch Kontodaten gesendet. Beispiele für Automatisierungen: docs/home-assistant.md im Repository."
+  },
+  "seasonsLabel": {
+    "message": "Große Saisons: jeden Tag ein Spiel"
+  },
+  "seasonsHint": {
+    "message": "In den Geschenktagen zum Jahresende verschenkt Epic jeden Tag zur selben Uhrzeit ein Spiel. In diesen Wochen prüft die Überwachung zu jeder Öffnung, nicht nur donnerstags. Die Daten sind änderbar; das Jahr wird ignoriert."
+  },
+  "seasonsFrom": {
+    "message": "Von"
+  },
+  "seasonsUntil": {
+    "message": "Bis"
+  },
+  "seasonsOn": {
+    "message": "Saison läuft: Epic wird täglich um 11 Uhr New Yorker Zeit geprüft, bis zum $1."
+  },
+  "seasonsSoon": {
+    "message": "Nächste Saison: ab dem $1. Bis dahin ändert sich nichts."
   }
 }
