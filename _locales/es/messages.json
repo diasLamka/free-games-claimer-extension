@@ -3034,5 +3034,38 @@
   },
   "libWatchWhy": {
     "message": "Retirada de la tienda, reembolso o título distinto: abre tu biblioteca para comprobarlo."
+  },
+  "homeLabel": {
+    "message": "Casa: Home Assistant"
+  },
+  "homeHint": {
+    "message": "Cada juego nuevo, cada juego obtenido y el estado «juegos por obtener» van a su Home Assistant, para una luz, un sensor, un aviso de voz."
+  },
+  "homeUrlLabel": {
+    "message": "Dirección del webhook"
+  },
+  "homeTest": {
+    "message": "Enviar una prueba"
+  },
+  "homeSent": {
+    "message": "Prueba enviada: mire el registro de la automatización en Home Assistant"
+  },
+  "homeFailed": {
+    "message": "Prueba no enviada: $1"
+  },
+  "homeDenied": {
+    "message": "Permiso denegado: la casa sigue apagada"
+  },
+  "homeInvalid": {
+    "message": "Dirección no válida: debe ser http(s)://host:8123/api/webhook/id (http solo en la red local)"
+  },
+  "homeLastOk": {
+    "message": "Último envío correcto: $1"
+  },
+  "homeLastFailed": {
+    "message": "Último envío fallido, $1: $2"
+  },
+  "homeSecretHint": {
+    "message": "La dirección del webhook es el secreto: elija un id largo. Nunca se envía un código de canje ni datos de cuenta. Ejemplos de automatizaciones: docs/home-assistant.md en el repositorio."
   }
 }

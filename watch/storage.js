@@ -33,6 +33,7 @@ import { KEY_COLLECTION } from './collection.js';
 import { KEY_OUTCOMES } from './outcomes.js';
 import { KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST } from './wishlist.js';
 import { KEY_PHONE } from './phone.js';
+import { KEY_HOME } from './homeassistant.js';
 
 export const PREFIX = 'veille:';
 
@@ -417,6 +418,8 @@ export async function readContext(chrome) {
     KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST,
     // Le telephone (2.47.0) : lu ici, jamais ecrit -- le popup en est le seul ecrivain.
     KEY_PHONE,
+    // La maison (2.116.0) : Home Assistant, lue ici et jamais ecrite -- le popup en est le seul ecrivain.
+    KEY_HOME,
     /* Le pays et la langue vivent sous les cles du MOTEUR, pas sous une cle
        de veille a part. Une seule ecriture, deux lecteurs : le moteur les lit
        par GM_getValue (synchrone, prechargees par gm-shim), la veille ici. Un
@@ -445,6 +448,7 @@ export async function readContext(chrome) {
     steamWishlist: raw[KEY_STEAM_WISHLIST] || null,
     gogWishlist: raw[KEY_GOG_WISHLIST] || null,
     phone: raw[KEY_PHONE] || null,
+    home: raw[KEY_HOME] || null,
     locale: {
       country: normaliseCountry(raw[KEY_COUNTRY]),
       lang: normaliseLang(raw[KEY_LANG], raw[KEY_COUNTRY]),

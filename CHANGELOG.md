@@ -4,6 +4,22 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.116.0 -- 2026-11-05 (appli inchangee, 1.44.0)
+
+**La maison : l'extension previent ton Home Assistant quand un jeu gratuit tombe**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Un quatrieme canal d'alerte, a cote de ntfy, Discord et Telegram, mais qui s'ajoute au lieu de les remplacer : une lampe qui clignote, un capteur « jeux a prendre » sur le tableau de bord, une annonce sur une enceinte.
+
+- **Un seul protocole : un webhook** (`watch/homeassistant.js`). L'extension envoie un message JSON a l'adresse `/api/webhook/<identifiant>` de ton Home Assistant. Quatre evenements : `new_offers` (de nouveaux jeux viennent d'etre annonces), `claimed` (l'extension en a pris), `state` (l'etat a change, ou six heures ont passe) et `test`. Chacun porte l'etat complet (`count`, `titles`, `next_end`, `games` jusqu'a douze jeux), si bien qu'une seule lecture tient un capteur a jour. Le drapeau `quiet` dit si tes heures calmes ou ton mode vacances sont actifs : la maison decide, pas l'extension.
+- **Ne part jamais** : un code de rachat, un identifiant de compte, un cookie. La requete part sans cookies (`credentials: omit`), ne suit aucune redirection, et l'adresse -- qui contient le secret -- n'est ecrite ni dans le journal ni dans les notes d'erreur.
+- **Un seul sens.** Home Assistant n'envoie rien a l'extension : aucune porte n'est ouverte.
+- **Reglage** : popup, section Veille, « Maison : Home Assistant » -- l'adresse, un bouton « Envoyer un essai », et l'etat du dernier envoi. Le guide `docs/home-assistant.md` donne le capteur, la lampe qui clignote et la « derniere chance » en YAML.
+- **La permission** (`optional_host_permissions`) : demandee dans le geste, pour CET hote seulement, jamais a l'installation. Le port n'entre pas dans le motif (Chrome ne l'accepte pas), l'hote suffit.
+- **Regle de securite ASSOUPLIE, a savoir.** Jusqu'ici aucun hote en clair (`http`) ne pouvait etre couvert par une permission, et un test du depot le garantissait. Home Assistant tourne presque toujours en `http` sur le reseau local : `http://*/*` est donc maintenant demandable -- **facultative, jamais a l'installation**. La garantie passe du manifeste au code : `isLocalHost` n'accepte `http` que pour une adresse privee (10.x, 127.x, 172.16-31.x, 192.168.x, 169.254.x), `localhost`, un nom en `.local`, `.lan`, `.home.arpa`, `.internal`, un nom sans point, ou une adresse IPv6 de boucle/locale ; tout le reste exige `https`. Les canaux telephone restent en `https` seulement. Le test « un hote en clair n'est jamais couvert » a ete remplace par un test qui verifie cette nouvelle division (rien en `http` dans `host_permissions`, telephone `https` seul, maison `http` seulement en local). `SECURITY.md` et `store/permissions.md` le disent.
+- **Pas de doublon, pas de bruit.** Un evenement `state` n'est envoye que si l'etat a change (empreinte) ou apres six heures ; au premier cycle, seul `state` part (pas de rafale de `new_offers` pour des jeux deja connus). Une panne de Home Assistant n'interrompt jamais le cycle.
+- Moteur inchange. Tests : `test/homeassistant.test.mjs` (21), sept dans `test/cycle.test.mjs`, un remplace dans `test/permissions.test.mjs`. Textes ajoutes en francais, anglais, allemand et espagnol.
+- Non verifie : **les exemples YAML n'ont pas ete executes sur un vrai Home Assistant** (leur syntaxe suit la documentation de HA, mais un nom d'entite ou une version ancienne peut demander une retouche) ; la fenetre de permission du navigateur n'a ete vue que dans un navigateur de test, pas dans Chrome ni Firefox installes. La version pour l'appli Android n'existe pas encore : elle demande une configuration reseau pour le `http` local, que je ne peux pas compiler ici.
+
 ## Extension 2.115.0 et appli 1.44.0 -- 2026-10-25
 
 **Un jeu Epic offert hors de la rotation de la semaine (MAFIA HOTEL) se recupere enfin**

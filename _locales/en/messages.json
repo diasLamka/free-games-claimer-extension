@@ -3034,5 +3034,38 @@
   },
   "libWatchWhy": {
     "message": "Store removal, refund or a different title: open your library to check."
+  },
+  "homeLabel": {
+    "message": "Home: Home Assistant"
+  },
+  "homeHint": {
+    "message": "Each new game, each game taken and the “games to take” state go to your Home Assistant, for a light, a sensor, a spoken announcement."
+  },
+  "homeUrlLabel": {
+    "message": "Webhook address"
+  },
+  "homeTest": {
+    "message": "Send a test"
+  },
+  "homeSent": {
+    "message": "Test sent: check the automation trace in Home Assistant"
+  },
+  "homeFailed": {
+    "message": "Test not sent: $1"
+  },
+  "homeDenied": {
+    "message": "Permission refused: home stays off"
+  },
+  "homeInvalid": {
+    "message": "Invalid address: it must be http(s)://host:8123/api/webhook/id (http on the local network only)"
+  },
+  "homeLastOk": {
+    "message": "Last send succeeded: $1"
+  },
+  "homeLastFailed": {
+    "message": "Last send failed, $1: $2"
+  },
+  "homeSecretHint": {
+    "message": "The webhook address is the secret: pick a long id. No redemption code or account detail is ever sent. Automation examples: docs/home-assistant.md in the repository."
   }
 }

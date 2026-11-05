@@ -54,6 +54,9 @@ import { OPTIONAL, declaresOptional, declaresOptionalOrigin, describeBackground 
 import {
   KEY_PHONE, KEY_PHONE_STATE, SERVICES, newTopicUrl, originPattern, readPhone, serviceUrl, topicUrl,
 } from '../watch/phone.js';
+import {
+  KEY_HOME, KEY_HOME_STATE, homeUrl, originPattern as homeOriginPattern, readHome,
+} from '../watch/homeassistant.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
@@ -247,6 +250,8 @@ const KEYS_READ = [
   KEY_GOG_WISHLIST,
   KEY_PHONE,
   KEY_PHONE_STATE,
+  KEY_HOME,
+  KEY_HOME_STATE,
   KEY_TAUGHT,
   KEY_SEEN,
   KEY_COLLECTION,
@@ -2965,6 +2970,7 @@ async function render() {
   renderSyncLibrary(behaviourCache);
   renderAutoBackup(all);
   renderPhone(all);
+  renderHome(all);
   renderRelay(all);
   if (!guardDrawn) { guardDrawn = true; renderGuard(); }
   renderShortcuts();
@@ -3397,6 +3403,83 @@ function renderPhone(all) {
       : t('phoneLastFailed', shortDateTime(etat.at), etat.note || `HTTP ${etat.status}`);
   } else zone.textContent = '';
 }
+
+/* --- la maison : Home Assistant (2.116.0)
+
+   Meme regle que le telephone : la configuration a sa propre cle, que le popup
+   est seul a ecrire, et l'adresse du webhook -- qui EST le secret -- n'entre
+   jamais dans les reglages que `syncSettings` recopie. */
+
+function renderHome(all) {
+  const h = readHome(all[KEY_HOME]);
+  document.getElementById('home-on').checked = h.on;
+  document.getElementById('home-fields').hidden = !h.on;
+  const url = document.getElementById('home-url');
+  if (document.activeElement !== url) url.value = h.url;
+  const etat = all[KEY_HOME_STATE];
+  const zone = document.getElementById('home-state');
+  if (!h.on) zone.textContent = '';
+  else if (!homeUrl(h.url)) zone.textContent = t('homeInvalid');
+  else if (etat && typeof etat.at === 'number') {
+    zone.textContent = etat.ok
+      ? t('homeLastOk', shortDateTime(etat.at))
+      : t('homeLastFailed', shortDateTime(etat.at), etat.note || `HTTP ${etat.status}`);
+  } else zone.textContent = '';
+}
+
+function homeSay(message) {
+  document.getElementById('home-state').textContent = message;
+}
+
+async function writeHome(patch) {
+  const actuel = readHome((await api.storage.local.get(KEY_HOME))[KEY_HOME]);
+  await setValue(KEY_HOME, { ...actuel, ...patch });
+}
+
+/* La permission de l'hote, demandee DANS le geste (voir askPhoneHost) : un hote
+   local en http n'est accorde que pour l'adresse saisie, et lui seul. */
+async function askHomeHost(url) {
+  const origin = homeOriginPattern(url);
+  if (!origin || !declaresOptionalOrigin(api.runtime.getManifest(), origin)) return false;
+  try {
+    return await api.permissions.request({ origins: [origin] });
+  } catch { return false; }
+}
+
+document.getElementById('home-on').addEventListener('change', async (e) => {
+  const adresse = document.getElementById('home-url').value.trim();
+  if (!e.target.checked) {
+    const origin = homeOriginPattern(adresse);
+    if (origin) { try { await api.permissions.remove({ origins: [origin] }); } catch { /* deja retiree */ } }
+    await writeHome({ on: false });
+    return;
+  }
+  /* Allume tout de suite : l'adresse, que seul l'utilisateur connait, se remplit
+     ensuite, et la permission se demande a ce moment-la. */
+  if (homeUrl(adresse) && !await askHomeHost(adresse)) {
+    e.target.checked = false;
+    homeSay(t('homeDenied'));
+    return;
+  }
+  await writeHome({ on: true });
+  if (!homeUrl(adresse)) homeSay(t('homeInvalid'));
+});
+
+document.getElementById('home-url').addEventListener('change', async (e) => {
+  const adresse = e.target.value.trim();
+  const accorde = homeUrl(adresse) ? await askHomeHost(adresse) : false;
+  await writeHome({ url: adresse });
+  if (!homeUrl(adresse)) homeSay(t('homeInvalid'));
+  else if (!accorde) homeSay(t('homeDenied'));
+});
+
+document.getElementById('home-test').addEventListener('click', async () => {
+  const adresse = document.getElementById('home-url').value.trim();
+  if (!homeUrl(adresse)) { homeSay(t('homeInvalid')); return; }
+  if (!await askHomeHost(adresse)) { homeSay(t('homeDenied')); return; }
+  const r = await tell('fgc-home-test');
+  homeSay(r && r.ok ? t('homeSent') : t('homeFailed', (r && r.note) || '?'));
+});
 
 /* ------------------------------------------- le carnet et le gardien (2.105.0) */
 

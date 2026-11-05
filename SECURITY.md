@@ -88,6 +88,25 @@ mention possible cote Discord (`allowed_mentions` vide) et sans mise en forme
 interpretee cote Telegram : un titre de jeu ne peut ni appeler tout un salon
 ni casser un balisage.
 
+Depuis la 2.116.0, la **maison** (Reglages -> Notifications, `watch/homeassistant.js`,
+`docs/home-assistant.md`) peut prevenir un **Home Assistant** a vous, EN PLUS du
+telephone -- les deux ne s'excluent pas. Un seul sens : un POST en JSON vers
+l'adresse d'un webhook, sans jeton, sans serveur a nous ; l'extension ne recoit
+rien de la maison. Il part, a chaque nouvelle offre, a chaque jeu pris et quand
+l'etat « jeux a prendre » change (au plus toutes les six heures s'il ne change
+pas) : les titres, le magasin, le lien de la fiche, la jaquette, la fin et la
+valeur -- ce que montre n'importe quelle page de magasin. **Jamais un code de
+rachat, jamais un identifiant de compte, jamais un cookie** (`credentials:
+'omit'`, aucune redirection suivie). L'adresse du webhook EST le secret : elle
+vit sous `veille:maison`, n'est jamais synchronisee, n'entre dans aucune
+sauvegarde ni aucun export, et n'est jamais ecrite au journal ni dans l'etat que
+lit le popup. **Le clair n'est accepte que sur le reseau local** : une adresse
+`http://` est refusee si son hote n'est pas une adresse privee, `localhost`, un
+nom en `.local`/`.lan`/`.home.arpa` ou un nom sans point ; hors du reseau local,
+https est exige. Coupee par defaut. Un test (`test/homeassistant.test.mjs`)
+verifie l'adresse, ce qui part, et que rien de tout cela ne sort dans une
+sauvegarde.
+
 Le **rappel des codes** (2.73.0) previent sept jours avant la date limite
 d'un code en attente, puis le dernier jour -- a l'ecran, et au telephone si
 l'alerte est active. Il nomme le jeu, le magasin et la date ; **jamais le
@@ -132,6 +151,7 @@ l'evenement, qui n'en porte qu'une empreinte de 32 bits (`watch/calendar.js`).
 | `www.gamerpower.com` | Rien |
 | `store.steampowered.com` (recherche, et depuis la 2.75.0 la page d'accueil, au plus toutes les six heures, pour les week-ends gratuits ; depuis la 2.78.0 la note des jeux offerts : le TITRE du jeu pour le trouver, puis son identifiant pour lire ses evaluations -- huit jeux au plus par passage, chacun une fois par semaine, coupable dans Reglages -> Magasins -- et, depuis la 2.82.0, le titre de la fiche Epic ou GOG que vous ouvrez, pour en montrer la note dans le panneau ; depuis la 2.81.0 la jaquette des jeux de « Deja recupere » que ni le catalogue ni le registre ne connaissent : le TITRE de chaque jeu affiche, une fois pour toutes ; depuis la 2.92.0 les DLC gratuits de vos jeux : `api/dlcforapp` pour huit de vos jeux Steam par passage, chacun une fois par mois, puis `api/appdetails` pour huit DLC au plus -- coupable dans Reglages -> Magasins ; depuis la 2.94.0 les chances de vos souhaits : le TITRE de huit souhaits au plus par heure pour trouver leur fiche, puis leur `api/appdetails`, chacun une fois par mois ; depuis la 2.95.0, pour « Ce soir je joue a... », le TITRE de huit jeux hors Steam de votre pile par heure au plus, pour trouver leur fiche ; depuis la 2.103.0, pour « Piege ou bonne affaire ? », `api/appdetails?cc=US` des offres en cours : un identifiant de jeu, huit au plus par passage, chacun une fois par mois -- coupable avec les notes Steam), `api.steampowered.com` (confirmation ; depuis la 2.95.0 aussi les etiquettes, la note et la categorie Steam Deck des jeux de votre pile, cent identifiants par heure au plus, chacun tous les deux mois -- coupable dans Reglages -> Magasins ; depuis la 2.99.0, pour « Vos gouts », les etiquettes des jeux que vous aimez ou ecartez et des offres en cours : des NUMEROS de jeux seulement, cent au plus par passage, au plus toutes les six heures, puis le nom des etiquettes (`IStoreService/GetTagList`), au plus tous les deux mois -- coupable dans Reglages -> Magasins) | Les identifiants des jeux candidats, votre pays, votre langue. Sans cookie. La liste de ce que vous possedez (`dynamicstore/userdata`), elle, part avec votre session Steam, comme pour l'import de Ma collection, au plus toutes les six heures. **Depuis la 2.27.0, pour tout le monde** : la detection Steam ne depend plus de l'option de reclamation. Voir la note ci-dessous |
 | `api.frankfurter.dev` | Votre devise, une fois par 24 h. Le seul hote qui ne soit pas une boutique de jeux |
+| Votre Home Assistant (`http://hote-local:8123/api/webhook/...`, ou https) | **Seulement si vous activez la maison** (2.116.0), vers l'adresse que vous avez saisie, et elle seule. Les titres, magasins, liens, jaquettes, fins et valeurs des jeux a prendre, votre adresse IP locale. Rien d'autre : jamais un code, un compte ou un cookie. L'adresse est le secret, et elle ne va jamais au journal. Le clair (http) n'est accepte que sur le reseau local |
 | Votre serveur ntfy (`ntfy.sh` par defaut), ou `discord.com`, ou `api.telegram.org` | **Seulement si vous activez l'alerte, vers le service choisi.** Le texte de l'alerte, votre adresse IP, et le jeton ou l'adresse secrete du service. Rien d'autre. **Depuis la 2.104.0, si vous activez AUSSI « Le bot repond a mes messages » (Telegram seulement, coupe par defaut) :** une lecture `getUpdates` par minute, et les reponses `sendMessage`, vers le meme hote, avec le meme jeton, sans cookie |
 
 **Regarder Steam et y cliquer sont deux choses, depuis la 2.27.0.** La source
@@ -314,7 +334,8 @@ collection importee, libelles appris, preferences, et depuis la 2.95.0 l'etat
 de chaque jeu de Ma collection (a essayer, en cours, fini, abandonne, pas pour
 moi) et sa note. Il se garde donc comme un
 carnet de codes. Il n'emporte PAS l'alerte du telephone -- adresse ntfy,
-webhook Discord, jeton Telegram --, qui suffit a ecrire a votre place. A la
+webhook Discord, jeton Telegram -- ni l'adresse de la maison (webhook Home
+Assistant), qui suffisent a ecrire a votre place. A la
 restauration, le fichier est traite comme une entree non fiable : le service
 worker relit chaque cle avec sa forme, fusionne sans rien ecraser, refait
 passer chaque libelle appris par la garde des montants, et ne rallume jamais
@@ -354,6 +375,7 @@ vous qui decidez.
 | `contextMenus` | Le clic droit « Me prevenir quand ce jeu sera gratuit » (2.79.0), sur les seules fiches Steam, Epic et GOG et les liens qui y menent. N'ouvre l'acces a rien -- Chrome ne l'annonce meme pas. Sur une fiche, le titre est lu par `scripting` sur un hote deja autorise ; sur un lien, rien n'est lu dans la page qui le porte : le nom vient de l'adresse |
 | `steamcommunity.com` (hote) | **Optionnel** (`optional_host_permissions`). Lire VOTRE temps de jeu Steam, sur un clic, par l adresse /my/ qui se resout cote serveur -- aucun identifiant de profil n est demande ni stocke. Demande au moment du geste, retirable ensuite. De la 2.39.0 a la 2.46.0 il n etait declare nulle part, et Chrome refusait la demande : le temps de jeu ne s est jamais lu |
 | `https://*/*` (hote) | **Optionnel, jamais accorde a l installation.** Seulement pour l alerte telephone : l extension demande l hote du service choisi, et lui seul -- VOTRE serveur ntfy (`https://ntfy.sh/*` par defaut), `https://discord.com/*` ou `https://api.telegram.org/*` --, au moment ou vous activez l alerte. Le joker existe parce que le serveur est le votre ; il ne donne rien que vous n ayez accorde hote par hote |
+| `http://*/*` (hote) | **Optionnel, jamais accorde a l installation** (2.116.0). Seulement pour la maison : un Home Assistant tourne le plus souvent en http sur le reseau local, souvent par une adresse IP, et un motif de manifeste ne sait pas dire « les adresses privees ». L extension demande l hote saisi, et lui seul (`http://192.168.1.20/*`), et le retire quand vous coupez la maison. **Le code refuse toute adresse http dont l hote n est pas local**, et le telephone (ntfy, Discord, Telegram) reste en https seulement : un test le verifie. Avant la 2.116.0 le manifeste ne couvrait aucun hote en clair ; la garantie est passee du manifeste au code |
 | `nativeMessaging` | **Optionnelle, coupee par defaut, Chrome seulement.** Ouvrir un canal vers un programme LOCAL que vous avez installe vous-meme, pour lui deposer un instantane de votre ludotheque ; et, depuis la 2.54.0, pour demander au relais de mise a jour (`tools/maj-auto.ps1`) de faire le `git pull` du dossier. Rien n ecoute sur un port, rien ne quitte la machine, et **les codes de rachat n y sont pas**. Voir host/README.md |
 | `downloads` | **Optionnelle, coupee par defaut, Chrome seulement** (2.77.0). Deposer la sauvegarde de la semaine dans Telechargements et effacer la plus ancienne des cinq. Chrome l annonce comme « Gerer vos telechargements » : elle permettrait aussi de LIRE la liste de vos telechargements. L extension n y cherche que ses propres fichiers, par le numero que Chrome lui a rendu en les creant (`watch/auto-backup.js`), et n efface que ceux-la. Demandee sur un geste, retiree du meme geste -- et c est elle, pas un reglage, qui allume la sauvegarde automatique |
 | `background` | **Optionnelle, coupee par defaut, Chrome seulement.** Garder la veille active apres la fermeture de la derniere fenetre. Demandee sur un geste, retirable du meme geste. Absente du manifeste Firefox, qui ne l implemente pas |

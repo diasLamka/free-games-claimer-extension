@@ -1062,7 +1062,7 @@
   /* Une adresse ne tient pas a droite d'un libelle a 328 px : elle passe dessous. */
   .field.stack { flex-direction: column; align-items: stretch; gap: 4px; }
   .field.stack input { width: 100%; font-family: var(--mono); font-size: 11px; }
-  #phone-fields[hidden] { display: none; }
+  #phone-fields[hidden], #home-fields[hidden] { display: none; }
   input[type="time"] {
     background: var(--ink-2);
     border: 1px solid var(--line);
@@ -1791,6 +1791,23 @@
           <p class="hint" id="phone-bot-state" role="status" hidden></p>
           <p class="hint" id="phone-secret-hint" data-i18n="phoneSecretHint"></p>
           <p class="hint" id="phone-state" role="status"></p>
+        </div>
+        <!-- La maison : Home Assistant (2.116.0). Voir watch/homeassistant.js. -->
+        <label class="toggle">
+          <input type="checkbox" id="home-on">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="homeLabel"></span><small data-i18n="homeHint"></small></span>
+        </label>
+        <div id="home-fields" hidden>
+          <label class="field stack">
+            <span data-i18n="homeUrlLabel"></span>
+            <input type="url" id="home-url" placeholder="http://homeassistant.local:8123/api/webhook/…" spellcheck="false" autocomplete="off">
+          </label>
+          <div class="actions">
+            <button id="home-test" data-i18n="homeTest"></button>
+          </div>
+          <p class="hint" data-i18n="homeSecretHint"></p>
+          <p class="hint" id="home-state" role="status"></p>
         </div>
       </details>
     </section>

@@ -29,6 +29,12 @@ qui lui ressemblent portent **Pour vous**, la notification dit de quoi elles se
 rapprochent, et « Ce soir je joue a... » les met devant (`watch/taste.js`).
 Lu sans cookie : des numeros de jeux, jamais un titre.
 
+**La maison** (2.116.0) : l'extension peut prevenir votre Home Assistant d'un
+jeu gratuit qui tombe -- une lampe qui clignote, un capteur « jeux a prendre »,
+une annonce sur une enceinte. Un webhook, un seul sens, jamais un code ni un
+cookie ; `http` seulement sur le reseau local (`watch/homeassistant.js`,
+guide dans `docs/home-assistant.md`).
+
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
 le magasin de la fois d'avant (`secondChance` dans `watch/recurrence.js`). 
@@ -259,6 +265,7 @@ est declare `"type": "module"`.
 | `discord-format.js` | les alertes Discord en cartes : liseré, titre-lien, jaquette, Markdown neutralise, aucune mention |
 | `telegram-format.js` | les messages Telegram mis en page : icone du genre, logo du magasin, jaquette en photo, bouton pour le lien -- tout texte de magasin echappe |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
+| `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |
 | `sources/fab.js` | les assets gratuits de Fab (« Limited-Time Free ») : le bloc de donnees embarque dans la page, lu sans compte ni cookie -- detectes, jamais reclames |
 | `deck.js` | Steam Deck : verifie, jouable ou non, lu dans la reponse GetItems deja demandee |

@@ -29,7 +29,7 @@
  *     developpeur. On pose notre propre plancher a 60 s pour ne dependre
  *     d'aucun des deux.
  */
-import { runCycle, KEY_STOP } from './watch/cycle.js';
+import { runCycle, KEY_STOP, offersToTake } from './watch/cycle.js';
 import { SOURCES, CLAIMABLE_STORES, claimableStoresFor } from './watch/sources/index.js';
 import {
   readState, readKeys, readSettings, write, writeCycle, KEYS, DEFAULT_SETTINGS, normaliseSettings,
@@ -68,6 +68,7 @@ import { KEY_GOG_WISHLIST, KEY_STEAM_WISHLIST, KEY_WISHLIST, makeImportedWishlis
 import { escapeXml, omniSuggestions, omniTarget } from './watch/omnibox.js';
 import { MENU_LINK, MENU_PAGE, menuItems, wishFromClick } from './watch/context-wish.js';
 import { KEY_PHONE, PRIORITY, phoneTarget, pushToPhone } from './watch/phone.js';
+import { EVENTS as HOME_EVENTS, KEY_HOME, homeEvent, homeTarget, pushHome } from './watch/homeassistant.js';
 import { currentLocale, intlLocale, keysWith, setLocale, t } from './lib/i18n.js';
 import { composeEngineText, engineTemplates, engineTitle } from './watch/engine-text.js';
 import { ALARM_DISK, DISK_PERIOD_MIN, checkDisk, requestUpdate, updatedNotice } from './watch/self-update.js';
@@ -2187,6 +2188,34 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
           target: tel,
           msg: { title: t('phoneTestTitle'), message: t('phoneTestBody'), priority: PRIORITY.DEFAULT, tags: ['white_check_mark'] },
           now: Date.now(),
+          record,
+          why: 'essai',
+        });
+      })
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, status: 0, note: String((e && e.message) || e) }));
+    return true;
+  }
+
+  /* L'essai de la maison, depuis le popup : le meme chemin que les vrais
+     evenements, avec l'etat reel du catalogue -- ce que l'automatisation
+     recevra demain est ce qu'elle recoit ici. */
+  if (msg.type === 'fgc-home-test') {
+    readKeys(api, [KEY_HOME, KEY_LIBRARY, KEYS.OFFERS, KEYS.SETTINGS, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST])
+      .then((raw) => {
+        const cible = homeTarget(raw[KEY_HOME]);
+        if (!cible) return { ok: false, status: 0, note: 'adresse invalide ou maison coupee' };
+        const now = Date.now();
+        const offres = offersToTake({
+          catalog: raw[KEYS.OFFERS], now, settings: normaliseSettings(raw[KEYS.SETTINGS]), library: raw[KEY_LIBRARY],
+          wishlist: raw[KEY_WISHLIST], steamWishlist: raw[KEY_STEAM_WISHLIST], gogWishlist: raw[KEY_GOG_WISHLIST],
+        });
+        return pushHome({
+          chrome: api,
+          fetch: (u, i) => fetch(u, i),
+          target: cible,
+          corps: homeEvent(HOME_EVENTS.TEST, { offers: offres, now, labels: STORE_LABELS, version: api.runtime.getManifest().version }),
+          now,
           record,
           why: 'essai',
         });

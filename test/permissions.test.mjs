@@ -10,6 +10,7 @@
  * l'observation sans la situer. Le manque est la couverture, pas
  * l'apprentissage.
  */
+import { originPattern as homeOriginPattern } from '../watch/homeassistant.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -103,8 +104,28 @@ for (const f of ['manifest.json', 'manifest.firefox.json']) {
   });
 }
 
-test('un hote en clair n\'est jamais couvert', () => {
-  assert.equal(declaresOptionalOrigin(manifeste('manifest.json'), 'http://ntfy.sh/*'), false);
+// Le clair (http) etait refuse par le manifeste lui-meme. Home Assistant (2.116.0)
+// tourne en http sur le reseau local, souvent par une adresse IP, et un motif de
+// manifeste ne sait pas dire « les adresses privees » : l'hote joker http devient
+// une permission OPTIONNELLE, comme son pendant https. La garantie change de
+// place, elle ne disparait pas :
+//   - jamais accordee a l'installation (host_permissions n'a aucun http) ;
+//   - le code ne demande un hote en clair que s'il est LOCAL (homeUrl) ;
+//   - tout le reste -- ntfy, Discord, Telegram -- reste en https seulement.
+test('le clair n\'est jamais accorde d\'office, ni demande hors du reseau local', () => {
+  for (const f of ['manifest.json', 'manifest.firefox.json']) {
+    const m = manifeste(f);
+    assert.ok(!(m.host_permissions || []).some((h) => h.startsWith('http://')), `${f} : aucun http a l'installation`);
+    assert.ok(!(m.permissions || []).some((p) => String(p).startsWith('http://')), f);
+  }
+  // Le telephone : https seulement, quel que soit le manifeste.
+  assert.equal(originPattern('http://ntfy.sh/fgc-test'), null);
+  assert.equal(originPattern('http://192.168.1.20/fgc-test'), null);
+  // La maison : le clair seulement sur un hote local.
+  const id = 'fgc-9f3a1c7e5b2d4a6c8e0f';
+  assert.equal(homeOriginPattern(`http://example.com/api/webhook/${id}`), null);
+  assert.equal(homeOriginPattern(`http://8.8.8.8:8123/api/webhook/${id}`), null);
+  assert.equal(homeOriginPattern(`http://192.168.1.20:8123/api/webhook/${id}`), 'http://192.168.1.20/*');
 });
 
 test('les hotes optionnels ne sont pas des hotes d\'office', () => {

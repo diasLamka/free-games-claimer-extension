@@ -993,3 +993,124 @@ test('un echec ne se dit ni « seul » ni « avec toi »', async () => {
   const hades = Object.values(r.catalog).find((o) => o.title === 'Hades');
   assert.equal(hades.alone ?? null, null);
 });
+
+/* ------------------------------------------- la maison : Home Assistant (2.116.0) */
+
+import { KEY_HOME, KEY_HOME_STATE } from '../watch/homeassistant.js';
+
+const WEBHOOK = 'http://homeassistant.local:8123/api/webhook/fgc-9f3a1c7e5b2d4a6c8e0f';
+
+/** Un fetch qui ne repond qu'a Home Assistant, et garde ce qui y part. */
+function fetchMaison(statut = 200) {
+  const messages = [];
+  const f = async (url, init) => {
+    if (String(url) === WEBHOOK) { messages.push(JSON.parse(init.body)); return { ok: statut < 400, status: statut }; }
+    return { ok: false, status: 503 };
+  };
+  f.messages = messages;
+  return f;
+}
+
+async function cycleAvecMaison({ home = { on: true, url: WEBHOOK }, settings = {}, statut = 200, offres } = {}) {
+  const liste = offres || [
+    // Les fins se comptent depuis le SECOND cycle (un jour plus tard) : une offre deja finie n'est pas a prendre.
+    response([offer('Jeu A', { end: T + DAY + 30 * HOUR })]),
+    response([offer('Jeu A', { end: T + DAY + 30 * HOUR }), offer('Jeu B', { end: T + DAY + 5 * HOUR, image: 'https://cdn.exemple.com/b.jpg' })]),
+  ];
+  const src = sourceFactice('test', liste);
+  const c = await contexteDeTest({ test: src });
+  await c.faux.chrome.storage.local.set({
+    [KEYS.SETTINGS]: { activeSources: ['test'], ...settings },
+    ...(home ? { [KEY_HOME]: home } : {}),
+  });
+  const f = fetchMaison(statut);
+  return { c, f };
+}
+
+test('maison : l\'amorcage donne son etat au capteur, mais n\'annonce aucune « nouvelle offre »', async () => {
+  const { c, f } = await cycleAvecMaison();
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  assert.equal(f.messages.length, 1, 'un seul message');
+  assert.equal(f.messages[0].event, 'state');
+  assert.equal(f.messages[0].count, 1);
+  assert.equal(f.messages[0].source, 'free-games-claimer');
+});
+
+test('maison : une nouvelle offre part avec l\'etat complet, la plus pressante en tete, une seule fois', async () => {
+  const { c, f } = await cycleAvecMaison();
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  f.messages.length = 0;
+  await c.cycle(T + DAY, { force: true, fetch: f, autonomousClaim: false });
+  const nouveau = f.messages.filter((m) => m.event === 'new_offers');
+  assert.equal(nouveau.length, 1);
+  assert.deepEqual(nouveau[0].new.map((g) => g.title), ['Jeu B']);
+  assert.equal(nouveau[0].count, 2, 'tout ce qui est a prendre, pas seulement le nouveau');
+  assert.equal(nouveau[0].games[0].title, 'Jeu B', 'la fin la plus proche d\'abord');
+  assert.equal(nouveau[0].games[0].end, new Date(T + DAY + 5 * HOUR).toISOString());
+  assert.equal(nouveau[0].games[0].image, 'https://cdn.exemple.com/b.jpg');
+  assert.equal(nouveau[0].games[0].store_label, 'Epic Games Store');
+  assert.equal(nouveau[0].quiet, false);
+  assert.equal(f.messages.filter((m) => m.event === 'state').length, 0, 'l\'etat n\'est pas renvoye en double : le message qui vient de partir le portait deja');
+
+  f.messages.length = 0;
+  await c.cycle(T + DAY + HOUR, { force: true, fetch: f, autonomousClaim: false });
+  assert.equal(f.messages.length, 0, 'rien n\'a change : rien ne part');
+});
+
+test('maison : en vacances ou notifications coupees, ca part quand meme -- et le dit (quiet)', async () => {
+  const { c, f } = await cycleAvecMaison({ settings: { notifyMode: 'off', vacation: { from: T - HOUR, until: T + 10 * DAY } } });
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  f.messages.length = 0;
+  await c.cycle(T + DAY, { force: true, fetch: f, autonomousClaim: false });
+  const nouveau = f.messages.find((m) => m.event === 'new_offers');
+  assert.ok(nouveau, 'la maison n\'est pas retenue comme une notification');
+  assert.equal(nouveau.quiet, true, 'l\'automatisation sait que c\'est une periode calme');
+  assert.equal(c.notifications.length, 0, 'et l\'ordinateur, lui, se tait');
+});
+
+test('maison : un jeu pris est annonce, avec ce qu\'il reste a prendre', async () => {
+  const { c, f } = await cycleAvecMaison();
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  f.messages.length = 0;
+  await c.cycle(T + DAY, {
+    force: true, fetch: f, claimableStores: ['epic'],
+    claim: async (o) => ({ verdict: o.title === 'Jeu B' ? VERDICTS.CLAIMED : VERDICTS.FAILURE, store: 'epic' }),
+  });
+  const pris = f.messages.find((m) => m.event === 'claimed');
+  assert.ok(pris);
+  assert.deepEqual(pris.claimed, ['Jeu B']);
+  assert.equal(pris.count, 1, 'Jeu B est pris : il ne reste que Jeu A');
+  assert.deepEqual(pris.games.map((g) => g.title), ['Jeu A']);
+});
+
+test('maison : coupee par defaut, ou avec une adresse refusee, rien ne part', async () => {
+  for (const home of [null, { on: false, url: WEBHOOK }, { on: true, url: 'http://example.com/api/webhook/fgc-9f3a1c7e5b2d4a6c8e0f' }, { on: true, url: '' }]) {
+    const { c, f } = await cycleAvecMaison({ home });
+    await c.cycle(T, { fetch: f, autonomousClaim: false });
+    await c.cycle(T + DAY, { force: true, fetch: f, autonomousClaim: false });
+    assert.equal(f.messages.length, 0, JSON.stringify(home));
+  }
+});
+
+test('maison : Home Assistant en panne ne casse pas le cycle, et l\'etat dit pourquoi', async () => {
+  const { c, f } = await cycleAvecMaison({ statut: 500 });
+  const r = await c.cycle(T, { fetch: f, autonomousClaim: false });
+  assert.ok(!r.ignore);
+  const etat = c.faux.payload()[KEY_HOME_STATE];
+  assert.equal(etat.ok, false);
+  assert.match(etat.note, /HTTP 500/);
+  assert.equal(etat.hash, undefined, 'un echec ne marque pas l\'etat comme envoye : le cycle suivant reessaie');
+  assert.ok(c.journal.some((l) => /maison : .* non envoye/.test(l)));
+  assert.ok(!c.journal.join('\n').includes('fgc-9f3a1c7e5b2d4a6c8e0f'), 'l\'adresse n\'est jamais au journal');
+});
+
+test('maison : l\'etat inchange est renvoye apres six heures, comme signe de vie', async () => {
+  const { c, f } = await cycleAvecMaison({ offres: [response([offer('Jeu A', { end: T + 60 * HOUR })])] });
+  await c.cycle(T, { fetch: f, autonomousClaim: false });
+  assert.equal(f.messages.length, 1);
+  await c.cycle(T + HOUR, { force: true, fetch: f, autonomousClaim: false });
+  assert.equal(f.messages.length, 1, 'une heure plus tard : rien');
+  await c.cycle(T + 7 * HOUR, { force: true, fetch: f, autonomousClaim: false });
+  assert.equal(f.messages.length, 2, 'six heures passees : un signe de vie');
+  assert.equal(f.messages[1].event, 'state');
+});

@@ -3034,5 +3034,38 @@
   },
   "libWatchWhy": {
     "message": "Retrait du magasin, remboursement ou titre différent : ouvrez votre bibliothèque pour vérifier."
+  },
+  "homeLabel": {
+    "message": "Maison : Home Assistant"
+  },
+  "homeHint": {
+    "message": "Chaque nouveau jeu, chaque jeu pris et l'état « jeux à prendre » partent vers votre Home Assistant, pour une lampe, un capteur, une annonce vocale."
+  },
+  "homeUrlLabel": {
+    "message": "Adresse du webhook"
+  },
+  "homeTest": {
+    "message": "Envoyer un essai"
+  },
+  "homeSent": {
+    "message": "Essai envoyé : regardez la trace de l'automatisation dans Home Assistant"
+  },
+  "homeFailed": {
+    "message": "Essai non envoyé : $1"
+  },
+  "homeDenied": {
+    "message": "Permission refusée : la maison reste coupée"
+  },
+  "homeInvalid": {
+    "message": "Adresse invalide : il faut http(s)://hôte:8123/api/webhook/identifiant (http seulement sur le réseau local)"
+  },
+  "homeLastOk": {
+    "message": "Dernier envoi réussi : $1"
+  },
+  "homeLastFailed": {
+    "message": "Dernier envoi raté, $1 : $2"
+  },
+  "homeSecretHint": {
+    "message": "L'adresse du webhook est le secret : choisissez un identifiant long. Rien n'y part d'un code de rachat ni d'un compte. Exemples d'automatisations : docs/home-assistant.md dans le dépôt."
   }
 }

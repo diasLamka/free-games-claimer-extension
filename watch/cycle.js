@@ -44,6 +44,7 @@ import {
   MODES, decideAnnouncement, endingSoon, badgeCount, onlyWatched, inQuietHours, effectiveQuiet, lastChanceOffers,
 } from './notify-policy.js';
 import { PRIORITY, mobileMessage, phoneTarget, pushToPhone, wishedMessage } from './phone.js';
+import { EVENTS as HOME_EVENTS, KEY_HOME_STATE, homeEvent, homeTarget, pushHome, shouldSendState } from './homeassistant.js';
 import { t, intlLocale } from '../lib/i18n.js';
 import { ratingLine } from './steam-ratings.js';
 import { deferredDue } from './taste.js';
@@ -76,6 +77,21 @@ import {
   SCHEMA,
   KEYS,
 } from './storage.js';
+
+/**
+ * Ce qu'il y a a PRENDRE maintenant (2.116.0) : les offres ouvertes des magasins
+ * suivis, ni deja prises ni deja a nous. C'est la liste que la maison lit -- le
+ * capteur « jeux a prendre » --, et le popup l'utilise pour son essai : ce que
+ * l'automatisation recoit demain est ce qu'elle recoit au test. Pure.
+ */
+export function offersToTake({ catalog, now, settings, library, wishlist, steamWishlist, gogWishlist }) {
+  const possede = ownedKeys(library || {}, normaliseTitle);
+  const suivies = onlyWatched(openOffers(catalog || {}, now), settings && settings.watchedStores);
+  return markWished(suivies, wishlist || [], normaliseTitle, steamWishlist || null, gogWishlist || null)
+    .filter((o) => !FINAL_VERDICTS.includes(o.verdict)
+      && o.alreadyOwned !== true
+      && !possede.has(ownedKeyFor(o.store, normaliseTitle(o.title || ''))));
+}
 
 /**
  * Reclamations par cycle. Le service worker meurt au-dela de cinq minutes par
@@ -658,6 +674,24 @@ export async function runCycle({
       if (msg && fetchImpl) await pushToPhone({ chrome, fetch: fetchImpl, target: tel, msg, now, record, why: 'jeu mobile Epic' });
     }
 
+    /* La maison (2.116.0) : Home Assistant. Tout ce qui vient d'etre annonce
+       sur un magasin suivi, MEME en heures calmes ou notifications coupees --
+       c'est l'automatisation qui decide de ce qu'elle en fait, et le message dit
+       `quiet` pour qu'elle puisse s'en servir. Jamais a l'amorcage : `suivies`
+       est vide tant que le premier cycle n'a pas eu lieu. */
+    const maison = homeTarget(ctx.home);
+    const aPrendre = () => offersToTake({
+      catalog, now, settings: ctx.settings, library: ctx.library,
+      wishlist: ctx.wishlist, steamWishlist: ctx.steamWishlist, gogWishlist: ctx.gogWishlist,
+    });
+    const quietNow = inQuietHours(effectiveQuiet(ctx.settings), now);
+    if (maison && fetchImpl && suivies.length) {
+      await pushHome({
+        chrome, fetch: fetchImpl, target: maison, now, record, why: 'nouvelles offres',
+        corps: homeEvent(HOME_EVENTS.NEW, { offers: aPrendre(), fresh: suivies, now, quiet: quietNow, labels: STORE_LABELS }),
+      });
+    }
+
     /* ---- rappel avant expiration ---- */
 
     // Une offre qui se termine bientot et qui n'a pas ete traitee merite un
@@ -874,6 +908,15 @@ export async function runCycle({
           text: claims.filter((x) => x.verdict === VERDICTS.CLAIMED).map((x) => x.title).join(', '),
           id: `reclame-${now}`,
         });
+        if (succeeded && maison && fetchImpl) {
+          await pushHome({
+            chrome, fetch: fetchImpl, target: maison, now, record, why: 'jeux recuperes',
+            corps: homeEvent(HOME_EVENTS.CLAIMED, {
+              offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS,
+              claimed: claims.filter((x) => x.verdict === VERDICTS.CLAIMED).map((x) => x.title),
+            }),
+          });
+        }
         if (manual) await notify({
           title: t('notifyChallengeTitle'),
           text: t('notifyChallengeBody'),
@@ -924,6 +967,18 @@ export async function runCycle({
             why: 'defi de securite',
           });
         }
+      }
+    }
+
+    /* L'etat (2.116.0) : le capteur « jeux a prendre ». Envoye quand il a
+       change -- ou toutes les six heures, pour qu'un capteur qui ne bouge pas ne
+       se croie pas mort. Les deux evenements ci-dessus portent deja l'etat : un
+       envoi reussi l'a note, et celui-ci n'en part pas en double. */
+    if (maison && fetchImpl) {
+      const corps = homeEvent(HOME_EVENTS.STATE, { offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS });
+      const prev = (await chrome.storage.local.get(KEY_HOME_STATE))[KEY_HOME_STATE];
+      if (shouldSendState(prev, corps, now)) {
+        await pushHome({ chrome, fetch: fetchImpl, target: maison, now, record, why: 'etat', corps });
       }
     }
 
