@@ -3160,5 +3160,41 @@
   },
   "breatheHint": {
     "message": "Cuando una recogida puede esperar (la oferta termina en más de un día), la extensión la aplaza, doce horas como máximo, a una hora en la que la tienda le ha puesto menos verificaciones, según lo que ella misma ha observado. Sin conclusiones sin datos suficientes; nunca ante algo que usted pida; nunca más allá del fin de la oferta. Una verificación nunca se esquiva."
+  },
+  "shieldHeadingWarn": {
+    "message": "Atención: esta página puede no ser lo que dice"
+  },
+  "shieldHeadingDanger": {
+    "message": "Página sospechosa: no introduzca ninguna contraseña"
+  },
+  "shieldReasonTypo": {
+    "message": "La dirección $1 imita la de $2 sin serlo."
+  },
+  "shieldReasonBrandInName": {
+    "message": "La dirección $1 reutiliza el nombre de $2: no es su sitio."
+  },
+  "shieldReasonSameName": {
+    "message": "La dirección $1 lleva el mismo nombre que $2 con otra extensión."
+  },
+  "shieldReasonFakeLogin": {
+    "message": "Pide una contraseña presentándose como $1."
+  },
+  "shieldReasonLure": {
+    "message": "Promete regalos gratuitos (tarjetas, V-Bucks, generadores de claves): la marca de las estafas."
+  },
+  "shieldOfficial": {
+    "message": "Los sitios oficiales: $1."
+  },
+  "shieldLabel": {
+    "message": "Escudo antiestafas"
+  },
+  "shieldHint": {
+    "message": "Avisa cuando una página se hace pasar por Epic, Steam o GOG: dirección que imita la verdadera, falsa página de inicio de sesión, promesas de regalos. Calculado en su equipo, no se envía nada. Pide acceso a todos los sitios; se retira al desmarcar."
+  },
+  "shieldOn": {
+    "message": "El escudo vigila ahora las páginas que abre."
+  },
+  "shieldDenied": {
+    "message": "Sin acceso a los sitios, el escudo no puede leer las páginas. El botón « Esta página » sigue disponible."
   }
 }

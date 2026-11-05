@@ -3160,5 +3160,41 @@
   },
   "breatheHint": {
     "message": "Quand une récupération peut attendre (l'offre finit dans plus d'un jour), l'extension la décale, de douze heures au plus, vers une heure où le magasin vous a posé moins de défis, d'après ce qu'elle a elle-même observé. Aucune conclusion sans assez de données ; jamais pour un geste de votre part ; jamais au-delà de la fin de l'offre. Un défi n'est jamais contourné."
+  },
+  "shieldHeadingWarn": {
+    "message": "Attention : cette page n'est peut-être pas ce qu'elle prétend"
+  },
+  "shieldHeadingDanger": {
+    "message": "Page suspecte : ne saisissez aucun mot de passe"
+  },
+  "shieldReasonTypo": {
+    "message": "L'adresse $1 imite celle de $2 sans être la sienne."
+  },
+  "shieldReasonBrandInName": {
+    "message": "L'adresse $1 reprend le nom de $2 : ce n'est pas son site."
+  },
+  "shieldReasonSameName": {
+    "message": "L'adresse $1 porte le même nom que $2 sous une autre extension."
+  },
+  "shieldReasonFakeLogin": {
+    "message": "Elle demande un mot de passe en se présentant comme $1."
+  },
+  "shieldReasonLure": {
+    "message": "Elle promet des cadeaux gratuits (cartes, V-Bucks, générateurs de clés) : c'est la marque des arnaques."
+  },
+  "shieldOfficial": {
+    "message": "Les sites officiels : $1."
+  },
+  "shieldLabel": {
+    "message": "Bouclier anti-arnaque"
+  },
+  "shieldHint": {
+    "message": "Prévient quand une page se fait passer pour Epic, Steam ou GOG : adresse qui imite la vraie, fausse page de connexion, promesses de cadeaux. Calculé sur votre machine, rien ne part. Demande l'accès à tous les sites ; il est retiré en décochant."
+  },
+  "shieldOn": {
+    "message": "Le bouclier surveille maintenant les pages que vous ouvrez."
+  },
+  "shieldDenied": {
+    "message": "Sans l'accès aux sites, le bouclier ne peut pas lire les pages. Le bouton « Cette page » reste disponible."
   }
 }

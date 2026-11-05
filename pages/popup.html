@@ -1063,6 +1063,12 @@
   .field.stack { flex-direction: column; align-items: stretch; gap: 4px; }
   .field.stack input { width: 100%; font-family: var(--mono); font-size: 11px; }
   #phone-fields[hidden], #home-fields[hidden], #seasons-fields[hidden] { display: none; }
+  /* Le bouclier : un avertissement sur la page lue, jamais discret quand c'est un danger. */
+  .scan-shield { margin: 8px 0; padding: 8px 10px; border: 3px solid #000; color: #000; line-height: 1.45; }
+  .scan-shield[hidden] { display: none; }
+  .scan-shield.warn { background: #E8FF00; }
+  .scan-shield.danger { background: #FF3B30; }
+  .scan-shield b { display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
   /* La hotte : le QR code se lit mieux grand, noir sur blanc, quel que soit le theme. */
   .hotte-qr { margin: 8px 0; }
   .hotte-qr svg { display: block; width: 180px; height: 180px; margin: 0 auto; background: #FFFFFF; }
@@ -1388,6 +1394,7 @@
         <h2><span data-i18n="scanTitle"></span><span class="count" id="scan-count"></span></h2>
         <button class="icon-button" id="scan-close" data-i18n-attr="title:sentinelClose,aria-label:sentinelClose">&#x2715;</button>
       </div>
+      <p class="scan-shield" id="scan-shield" hidden role="alert"></p>
       <p class="scan-say" id="scan-say" hidden></p>
       <ul class="scan-list" id="scan-list"></ul>
     </section>
@@ -1908,6 +1915,13 @@
         <p class="hint"><b data-i18n="guardSitesTitle"></b> <span data-i18n="guardSitesHint"></span></p>
         <div id="guard-list"></div>
         <p class="hint" id="guard-note" role="status"></p>
+        <!-- Le bouclier anti-arnaque (2.122.0) : voir watch/shield.js et content/shield.js. -->
+        <label class="toggle">
+          <input type="checkbox" id="shield-on">
+          <span class="switch"></span>
+          <span class="toggle-label"><span data-i18n="shieldLabel"></span><small data-i18n="shieldHint"></small></span>
+        </label>
+        <p class="hint" id="shield-note" role="status"></p>
       </details>
     </section>
 

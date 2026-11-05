@@ -59,6 +59,7 @@ import {
 } from '../watch/homeassistant.js';
 import { KEY_SEASONS, readSeasons, seasonStatus } from '../watch/schedule/seasons.js';
 import { KEY_HOTTE, readHotte, shelve, setGiven, takeOut, qrText, ownedForCodes, duplicateCodes } from '../watch/hotte.js';
+import { assessPage, officialDomains, shieldLines, LEVELS as SHIELD_LEVELS, BRANDS as SHIELD_BRANDS, SHIELD_SCRIPT_ID, SHIELD_ORIGINS } from '../watch/shield.js';
 import { updateMessage } from '../watch/self-update.js';
 import { DASHBOARD_PAGE, isDashboard } from '../lib/dashboard.js';
 import { ALL, byStore, storeChips } from '../lib/store-chips.js';
@@ -3100,6 +3101,7 @@ async function render() {
   renderHome(all);
   renderRelay(all);
   if (!guardDrawn) { guardDrawn = true; renderGuard(); }
+  renderShield();
   renderShortcuts();
 
   document.getElementById('epic-auto').checked = all.FGC_epic_auto_mode !== false;
@@ -3905,6 +3907,74 @@ document.getElementById('relay-unpair').addEventListener('click', async (e) => {
   renderRelay(await readAll());
 });
 
+/* ------------------------------------------------- le bouclier anti-arnaque */
+
+/* Le verdict sur la page lue, au-dessus des jeux : un avertissement ne se cache pas derriere « aucun jeu reconnu ». */
+function showShield(page) {
+  const zone = document.getElementById('scan-shield');
+  if (!zone) return;
+  zone.replaceChildren();
+  zone.hidden = true;
+  zone.className = 'scan-shield';
+  if (!page) return;
+  const r = assessPage(page);
+  if (r.level === SHIELD_LEVELS.OK) return;
+  const titre = document.createElement('b');
+  titre.textContent = t(r.level === SHIELD_LEVELS.DANGER ? 'shieldHeadingDanger' : 'shieldHeadingWarn');
+  zone.append(titre);
+  for (const ligne of shieldLines(r, t)) {
+    const p = document.createElement('div');
+    p.textContent = `> ${ligne}`;
+    zone.append(p);
+  }
+  if (SHIELD_BRANDS[r.brand]) {
+    const o = document.createElement('div');
+    o.textContent = t('shieldOfficial', officialDomains(r.brand).join(', '));
+    zone.append(o);
+  }
+  zone.className = `scan-shield ${r.level}`;
+  zone.hidden = false;
+}
+
+/* Le bouclier permanent : une case. Cochee, elle demande l'acces a tous les sites -- dans le geste, sans rien attendre avant --
+   puis enregistre le script de page. Decochee, elle retire les deux. */
+let shieldDrawn = false;
+
+async function renderShield() {
+  const box = document.getElementById('shield-on');
+  if (!box || !api.scripting || !api.scripting.getRegisteredContentScripts) return;
+  let inscrit = false;
+  let permis = false;
+  try { inscrit = (await api.scripting.getRegisteredContentScripts()).some((x) => x.id === SHIELD_SCRIPT_ID); } catch { inscrit = false; }
+  try { permis = await api.permissions.contains({ origins: [...SHIELD_ORIGINS] }); } catch { permis = false; }
+  box.checked = inscrit && permis;
+  if (shieldDrawn) return;
+  shieldDrawn = true;
+  box.addEventListener('change', () => toggleShield(box.checked, box));
+}
+
+async function toggleShield(on, input) {
+  const note = document.getElementById('shield-note');
+  if (on) {
+    let accorde = false;
+    if (SHIELD_ORIGINS.every((o) => declaresOptionalOrigin(api.runtime.getManifest(), o))) {
+      try { accorde = await api.permissions.request({ origins: [...SHIELD_ORIGINS] }); } catch { accorde = false; }
+    }
+    if (!accorde) { input.checked = false; note.textContent = t('shieldDenied'); return; }
+    try {
+      await api.scripting.registerContentScripts([{
+        id: SHIELD_SCRIPT_ID, matches: [...SHIELD_ORIGINS], js: ['content/shield.js'],
+        runAt: 'document_idle', persistAcrossSessions: true,
+      }]);
+    } catch { /* deja inscrit */ }
+    note.textContent = t('shieldOn');
+  } else {
+    try { await api.scripting.unregisterContentScripts({ ids: [SHIELD_SCRIPT_ID] }); } catch { /* deja retire */ }
+    try { await api.permissions.remove({ origins: [...SHIELD_ORIGINS] }); } catch { /* deja retiree */ }
+    note.textContent = '';
+  }
+}
+
 /* ---------------------------------------------------------- l'anti-doublon */
 
 /* Une case par boutique ou l'on paie. Cochee, elle demande l'acces a la
@@ -4644,6 +4714,7 @@ async function scanThisPage() {
   count.textContent = '';
   const dire = (texte) => { say.textContent = texte; say.hidden = !texte; };
   dire('');
+  showShield(null);
 
   let page = null;
   try {
@@ -4654,6 +4725,7 @@ async function scanThisPage() {
     }
   } catch { page = null; }
   if (!page) { dire(t('scanBlocked')); return; }
+  showShield(page);
 
   const raw = await api.storage.local.get([
     KEY_CATALOG, KEY_LIBRARY, KEY_COLLECTION, KEY_OUTCOMES, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST,

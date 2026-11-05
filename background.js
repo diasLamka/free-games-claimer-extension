@@ -61,6 +61,7 @@ import { localizeFor } from './watch/localizer.js';
 import { KEY_INCIDENTS } from './watch/incidents.js';
 import { factLines, freeNowList, launcherLabels, lookup, pageGame } from './watch/lookup.js';
 import { ownedElsewhere, guardLines, guardStoreOf, isProductPage } from './watch/owned-guard.js';
+import { assessPage, officialDomains, shieldLines, LEVELS as SHIELD_LEVELS, BRANDS as SHIELD_BRANDS } from './watch/shield.js';
 import { KEY_COLLECTION as KEY_COLLECTION_LOOKUP } from './watch/collection.js';
 import { KEY_OUTCOMES } from './watch/outcomes.js';
 import { normaliseTitle } from './watch/offer.js';
@@ -2068,6 +2069,32 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         intro: t('guardIntro'),
         close: t('sentinelClose'),
         lines: guardLines(r, { t, storeLabel, dateText }),
+      });
+    })().catch(() => sendResponse({ show: false }));
+    return true;
+  }
+
+  /* Le bouclier (2.122.0) : cette page se fait-elle passer pour un magasin ? La decision est dans watch/shield.js ; ici, les mots.
+     L'adresse vient de `sender.tab`, jamais du message, et rien n'est garde. */
+  if (msg.type === 'fgc-shield') {
+    (async () => {
+      await langue;
+      const url = String((sender && sender.tab && sender.tab.url) || '');
+      const r = assessPage({
+        url,
+        title: typeof msg.title === 'string' ? msg.title.slice(0, 300) : '',
+        text: typeof msg.text === 'string' ? msg.text.slice(0, 3000) : '',
+        hasPassword: msg.hasPassword === true,
+      });
+      if (r.level === SHIELD_LEVELS.OK) { sendResponse({ show: false }); return; }
+      const brand = SHIELD_BRANDS[r.brand] || null;
+      sendResponse({
+        show: true,
+        level: r.level,
+        heading: t(r.level === SHIELD_LEVELS.DANGER ? 'shieldHeadingDanger' : 'shieldHeadingWarn'),
+        intro: brand ? t('shieldOfficial', officialDomains(r.brand).join(', ')) : '',
+        close: t('sentinelClose'),
+        lines: shieldLines(r, t),
       });
     })().catch(() => sendResponse({ show: false }));
     return true;

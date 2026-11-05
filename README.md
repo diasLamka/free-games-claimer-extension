@@ -63,6 +63,12 @@ finit dans plus d'un jour) vers une heure plus calme -- douze heures au plus, ja
 assez de donnees, jamais au-dela de la fin de l'offre, jamais pour un geste de votre part.
 Un defi n'est jamais contourne : on choisit seulement l'heure (`watch/breath.js`).
 
+**Le bouclier anti-arnaque** (2.122.0) : « Cette page » dit si la page ouverte se fait passer pour
+Epic, Steam ou GOG -- adresse qui imite la vraie, fausse page de connexion, promesses de cadeaux --,
+sans aucune permission de plus. En option, une case l'applique a toutes les pages (acces facultatif
+a tous les sites, retire en decochant). Calcule sur la machine ; les sites officiels ne declenchent
+jamais rien (`watch/shield.js`, `content/shield.js`).
+
 
 **Deuxieme chance** (2.98.0) : un jeu que vous aviez rate et qui revient
 est etiquete, passe devant le tout-venant et s'annonce a part, avec la date et
@@ -298,6 +304,7 @@ est declare `"type": "module"`.
 | `hotte.js` | la hotte : les codes en double rangees a part, a offrir par QR code -- jamais dans une sauvegarde ni une alerte |
 | `preflight.js` | le compte a rebours : deux heures avant l'ouverture d'Epic, ce qui cloche (session perdue, relais muet, alerte telephone en panne) -- silence quand tout va bien |
 | `breath.js` | le souffle : les heures ou chaque magasin pose des defis (statistiques locales), et le decalage des recuperations qui peuvent attendre -- jamais un captcha contourne |
+| `shield.js` | le bouclier : reconnaitre une page qui se fait passer pour Epic, Steam ou GOG (adresse imitee, fausse connexion, promesses) -- conservateur, calcule sur la machine |
 | `phone.js` | l'alerte telephone par ntfy, Discord ou Telegram : pannes, defis, jeux attendus, recap -- jamais un code, jamais un cookie |
 | `homeassistant.js` | l'alerte Home Assistant par webhook : nouveaux jeux, jeux pris, etat toutes les six heures -- http seulement en local, l'adresse (le secret) jamais journalisee |
 | `sources/epic-mobile.js` | les jeux mobiles offerts par Epic : l'API de decouverte de l'appli, rubrique « mobile-*-free-game » -- detectes, jamais reclames ; leur prix normal et leur fiche sur le site d'Epic |

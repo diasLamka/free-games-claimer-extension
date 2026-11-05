@@ -4,6 +4,20 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.122.0 -- 2026-11-05 (appli inchangee, 1.46.0)
+
+**Le bouclier anti-arnaque : reconnaitre une page qui se fait passer pour Epic, Steam ou GOG**
+
+Fonction demandee (retenue sur la liste des grosses fonctions). Le scanner de page savait lire les jeux qu'une page cite ; il ne savait pas reconnaitre un piege.
+
+- **Le jugement** (`watch/shield.js`, pur, sur la machine). D'apres l'adresse et ce que la page montre : une **imitation d'adresse** (une lettre de travers, un chiffre a la place d'une lettre, « rn » pour « m » : `epicgarnes.com`, `st3ampowered.com`, `steamcommunnity.com`), le **nom habille** (`epicgames-free.com`), le meme nom sous une autre extension, une **fausse page de connexion** (un champ de mot de passe sous un titre qui cite la marque), des **promesses d'arnaque** (« V-Bucks gratuits », « generateur de cles Steam », en francais, anglais et allemand). Deux niveaux : *attention* et *danger* ; le danger est reserve aux imitations d'adresse AVEC un signe de page.
+- **Conservateur par construction**, parce qu'un avertissement a tort apprend a ignorer les vrais. Les sites officiels (et leurs CDN) ne declenchent JAMAIS rien, meme avec un champ de mot de passe. Un nom qui contient « steam » ou « gog » ne suffit pas : steamdb.info, steamgifts.com, steamspy.com, isthereanydeal.com ne sont pas des imitations (un test les garde). Un nom qui n'imite rien ne devient suspect qu'avec un signe de plus sur la page, et alors seulement en « attention ».
+- **Deux usages.** (1) Le bouton **« Cette page »** du popup montre le verdict au-dessus des jeux reconnus, **sans aucune permission de plus** (il lit l'onglet actif sur un clic, comme avant). (2) La case **« Bouclier anti-arnaque »** (Reglages, coupee par defaut) l'applique a toutes les pages : elle demande l'acces facultatif a tous les sites (`https://*/*` et `http://*/*`, deja declares au manifeste comme facultatifs -- rien de nouveau a l'installation), enregistre `content/shield.js` (absent du manifeste), et retire les deux en decochant. Un bandeau (rouge pour un danger, jaune pour une attention, dans une racine fantome fermee) nomme la raison et rappelle les domaines officiels.
+- **Ce que le script lit, et ne fait pas.** Le titre, un champ de mot de passe, les 3000 premiers signes du texte ; il ne questionne le service worker que si la page a de quoi inquieter (mot de passe, marque ou promesse dans le titre), pour ne pas le reveiller a chaque page. **Aucune requete, aucun cookie, rien de garde ni d'envoye** ; le worker lit l'adresse dans l'onglet expediteur, jamais dans le message. Trois tests le gardent (pas de reseau, pas de stockage, pas de clic ; motifs identiques a ceux du module ; manifeste inchange).
+- Moteur inchange. Tests : `test/shield.test.mjs` (30). Onze textes ajoutes en francais, anglais, allemand et espagnol. `SECURITY.md` et `store/permissions.md` disent l'usage nouveau des deux permissions facultatives.
+- Verifie : le script de page, joue dans Chromium sur des pages de test avec un worker simule, ne questionne le worker que pour une page qui a de quoi inquieter, et dessine le bandeau (rouge ou jaune) seulement quand le worker le demande ; `content/shield.js` est bien dans l'archive (le test d'empaquetage l'a signale avant qu'il parte).
+- Non verifie : le bandeau n'a pas ete vu sur de vraies imitations ni sur de vrais sites officiels (ni dans Chrome ou Firefox installes) ; la liste des domaines officiels (Epic, Steam, GOG) est faite de memoire et pourra demander des retouches -- un domaine officiel oublie donnerait un faux avertissement sur ce site. Une imitation qui sait cacher son champ de mot de passe et son titre echappe au script de page (pas au bouton « Cette page »). Pas de version appli.
+
 ## Extension 2.121.0 -- 2026-11-05 (appli inchangee, 1.46.0)
 
 **Le souffle : ne pas se presenter au magasin a l'heure ou il pose le plus de defis**

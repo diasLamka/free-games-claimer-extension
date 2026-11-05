@@ -49,6 +49,8 @@ export function readPage() {
   return {
     url: location.href,
     title: propre(document.title, 200),
+    // Le bouclier (2.122.0) : un champ de mot de passe, la seule chose de plus qu'il lui faut.
+    hasPassword: !!document.querySelector('input[type="password"]'),
     links,
     strong,
     text: document.body ? String(document.body.innerText || '').slice(0, 400000) : '',

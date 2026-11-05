@@ -3160,5 +3160,41 @@
   },
   "breatheHint": {
     "message": "When a claim can wait (the offer ends in more than a day), the extension moves it, by twelve hours at most, to an hour when the store has given you fewer challenges, based on what it has observed itself. No conclusion without enough data; never for something you asked for; never past the end of the offer. A challenge is never bypassed."
+  },
+  "shieldHeadingWarn": {
+    "message": "Warning: this page may not be what it claims"
+  },
+  "shieldHeadingDanger": {
+    "message": "Suspicious page: do not enter any password"
+  },
+  "shieldReasonTypo": {
+    "message": "The address $1 imitates the one of $2 without being it."
+  },
+  "shieldReasonBrandInName": {
+    "message": "The address $1 reuses the name of $2: it is not its site."
+  },
+  "shieldReasonSameName": {
+    "message": "The address $1 has the same name as $2 under another extension."
+  },
+  "shieldReasonFakeLogin": {
+    "message": "It asks for a password while presenting itself as $1."
+  },
+  "shieldReasonLure": {
+    "message": "It promises free gifts (cards, V-Bucks, key generators): the mark of scams."
+  },
+  "shieldOfficial": {
+    "message": "The official sites: $1."
+  },
+  "shieldLabel": {
+    "message": "Scam shield"
+  },
+  "shieldHint": {
+    "message": "Warns when a page poses as Epic, Steam or GOG: an address imitating the real one, a fake sign-in page, promises of gifts. Worked out on your machine, nothing is sent. Asks for access to all sites; it is removed when you untick."
+  },
+  "shieldOn": {
+    "message": "The shield now watches the pages you open."
+  },
+  "shieldDenied": {
+    "message": "Without access to sites, the shield cannot read pages. The “This page” button stays available."
   }
 }

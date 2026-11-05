@@ -43,6 +43,9 @@ const PAGES_A_L_EXECUTION = Object.freeze([
   'pages/historique.html',
   'pages/offscreen-html.html',
   'pages/probe-offscreen.html',
+  /* Le script du bouclier (2.122.0) : enregistre a l'execution, apres la permission facultative, jamais declare au manifeste
+     (ce serait une permission a l'installation). Il doit pourtant etre DANS l'archive. */
+  'content/shield.js',
 ]);
 
 /** Les manifestes, par variante. La cle est le nom DANS l'archive. */

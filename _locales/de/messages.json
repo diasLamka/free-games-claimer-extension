@@ -3160,5 +3160,41 @@
   },
   "breatheHint": {
     "message": "Wenn eine Abholung warten kann (das Angebot endet in mehr als einem Tag), verschiebt die Erweiterung sie, höchstens um zwölf Stunden, auf eine Stunde, in der der Shop Ihnen weniger Sicherheitsprüfungen gestellt hat, nach eigener Beobachtung. Keine Schlüsse ohne genug Daten; nie bei Ihrer eigenen Anforderung; nie über das Angebotsende hinaus. Eine Prüfung wird nie umgangen."
+  },
+  "shieldHeadingWarn": {
+    "message": "Achtung: Diese Seite ist vielleicht nicht, was sie vorgibt"
+  },
+  "shieldHeadingDanger": {
+    "message": "Verdächtige Seite: Geben Sie kein Passwort ein"
+  },
+  "shieldReasonTypo": {
+    "message": "Die Adresse $1 ahmt die von $2 nach, ohne sie zu sein."
+  },
+  "shieldReasonBrandInName": {
+    "message": "Die Adresse $1 übernimmt den Namen von $2: Es ist nicht dessen Seite."
+  },
+  "shieldReasonSameName": {
+    "message": "Die Adresse $1 trägt denselben Namen wie $2 unter einer anderen Endung."
+  },
+  "shieldReasonFakeLogin": {
+    "message": "Sie verlangt ein Passwort und gibt sich als $1 aus."
+  },
+  "shieldReasonLure": {
+    "message": "Sie verspricht Geschenke (Karten, V-Bucks, Schlüsselgeneratoren): das Kennzeichen von Betrug."
+  },
+  "shieldOfficial": {
+    "message": "Die offiziellen Seiten: $1."
+  },
+  "shieldLabel": {
+    "message": "Betrugsschutz"
+  },
+  "shieldHint": {
+    "message": "Warnt, wenn eine Seite sich als Epic, Steam oder GOG ausgibt: nachgeahmte Adresse, gefälschte Anmeldeseite, Geschenkversprechen. Auf Ihrem Rechner berechnet, nichts wird gesendet. Verlangt Zugriff auf alle Seiten; beim Abwählen wird er entfernt."
+  },
+  "shieldOn": {
+    "message": "Der Schutz überwacht jetzt die Seiten, die Sie öffnen."
+  },
+  "shieldDenied": {
+    "message": "Ohne Zugriff auf Seiten kann der Schutz sie nicht lesen. Die Schaltfläche „Diese Seite“ bleibt verfügbar."
   }
 }
