@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Appli 1.46.0 -- 2026-11-05 (extension inchangee, 2.119.0)
+
+**La tuile : le nombre de jeux a prendre dans les reglages rapides, et un appui pour tout recuperer**
+
+Fonction demandee (retenue sur la liste des grosses fonctions) : zero ouverture d'appli a la main.
+
+- **Une tuile des reglages rapides d'Android** (`tile/ClaimTileService.kt`) : « Gratuit maintenant », avec en sous-titre le nombre de jeux gratuits que tu n'as pas encore (le meme compte que le widget du meme nom). Allumee quand il y en a, eteinte sinon. Elle se redessine chaque fois que le panneau s'ouvre.
+- **Un seul geste**, le meme que le bouton du widget : un appui ouvre l'appli sur l'onglet des jeux en demandant « Tout recuperer » (ou seulement l'appli, s'il n'y a rien que l'appli sache prendre). La recuperation est menee par l'appli, sous tes yeux ; rien ne tourne dans la tuile, rien ne part sans appui. Telephone verrouille : Android demande d'abord de le deverrouiller.
+- **Android 14 et plus** : l'ouverture depuis une tuile passe par un `PendingIntent` (l'ancienne forme est refusee aux applis recentes) ; en dessous, l'ancienne.
+- Aucune permission nouvelle, aucun texte nouveau (la tuile reprend « Gratuit maintenant » et « N jeux a recuperer » de l'appli). Extension inchangee.
+- Tests : sept dans `ClaimTileTest.kt` (ce que la tuile compte, et l'intent d'un appui).
+- Non verifie : **le code Kotlin n'a pas ete compile ici** (pas de SDK Android) -- la CI le fait ; la tuile n'a pas ete ajoutee a un vrai panneau de reglages rapides (il faut la glisser dans le panneau a la main, comme toute tuile) ; son comportement a l'ecran verrouille et sous Android 14 n'a ete verifie ni sur telephone ni sur emulateur.
+
 ## Extension 2.119.0 -- 2026-11-05 (appli inchangee, 1.45.0)
 
 **La hotte : les codes en double deviennent un stock a offrir**
