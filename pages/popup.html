@@ -654,6 +654,25 @@
   }
   .horizon .n { order: 2; font-variant-numeric: tabular-nums; }
 
+  /* Le groupe se replie (2.125.0) : un chevron comme celui des sections, et ses cartes se cachent par une classe de la liste. */
+  .horizon { cursor: pointer; user-select: none; }
+  .horizon::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform .16s;
+    flex: none;
+  }
+  .horizon.off::before { transform: rotate(-45deg); }
+  .horizon:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  #games.off-unknown .h-unknown, #games.off-today .h-today, #games.off-week .h-week, #games.off-later .h-later { display: none; }
+
+  /* « Tout replier / Tout deplier » : une ligne, a droite, en tete du volet. */
+  .folds-bar { display: flex; justify-content: flex-end; padding: 8px var(--pad) 0; }
+
   /* Nouveau depuis la derniere ouverture. Une marque, pas une couleur de fond :
      a la troisieme ouverture de la journee, on veut voir ce qui a bouge sans
      que la liste change d'aspect. */
@@ -1311,7 +1330,7 @@
 <link rel="stylesheet" href="brut.css">
 </head>
 <body>
-  <header>
+  <header class="top">
     <img src="../icons/icon128.png" alt="">
     <span class="wordmark">Free Games</span>
     <span class="version" id="version"></span>

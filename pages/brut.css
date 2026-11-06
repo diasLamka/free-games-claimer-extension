@@ -593,6 +593,11 @@ a.link:hover { background: var(--accent); color: #000; }
 .tc-digits { font-family: var(--display); font-size: 20px; color: var(--accent); letter-spacing: .02em; font-variant-numeric: tabular-nums; flex: none; }
 .timecode.hot .tc-digits { animation: tc-blink 1s steps(2, start) infinite; }
 .tc-title { font-family: var(--mono); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Le nom du jeu en entier (2.125.0) : il passe sur sa propre ligne, sous « Prochaine fin » et les chiffres, et se coupe aux
+   mots plutot qu'en « Letter Qu... ». Dans le tableau de bord, assez large, il reste sur la meme ligne. */
+.timecode { flex-wrap: wrap; row-gap: 3px; }
+.tc-title { flex: 1 1 100%; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; font-size: 11px; line-height: 1.3; }
+:root[data-vue="onglet"] .tc-title { flex: 1 1 14em; }
 @keyframes tc-blink { 50% { color: #FFFFFF; } }
 @media (prefers-reduced-motion: reduce) { .timecode.hot .tc-digits { animation: none; } }
 :root[data-vue="onglet"] .timecode { margin-top: 14px; }
@@ -602,6 +607,24 @@ a.link:hover { background: var(--accent); color: #000; }
 .scan-button { white-space: nowrap; flex: none; padding: 3px 7px; font-size: 10px; }
 header .wordmark { white-space: nowrap; }
 :root[data-vue="onglet"] .scan-button { display: none; }
+
+/* L'en-tete du popup (2.125.0) : le nom au-dessus de la version, et non plus cote a cote.
+   A 328 px, « logo + nom + version + Cette page + agrandir » faisait plus de 349 px : le bouton d'agrandissement DEPASSAIT, et
+   Chrome dimensionne la fenetre d'un popup sur ce qui deborde -- d'ou la bande noire a droite des sections. La colonne du milieu
+   se contracte (`minmax(0, 1fr)`) : rien ne peut plus elargir la fenetre. */
+header.top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "logo word scan dash" "logo ver scan dash";
+  align-items: center;
+  column-gap: 9px;
+  row-gap: 1px;
+}
+header.top img { grid-area: logo; }
+header.top .wordmark { grid-area: word; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+header.top .version { grid-area: ver; margin-left: 0; font-size: 10.5px; line-height: 1.2; }
+header.top .scan-button { grid-area: scan; }
+header.top #open-dashboard { grid-area: dash; }
 .scan {
   margin: 12px 0 4px;
   border: 3px solid var(--txt);

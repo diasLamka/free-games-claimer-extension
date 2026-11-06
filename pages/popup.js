@@ -320,6 +320,8 @@ const DEFAULT_UI = {
   /** Les plis de Jeux et de Codes qu'on a ouverts ou refermes (2.81.1) : { id: ouvert }. */
   foldsPopup: {},
   foldsTab: {},
+  /** Les groupes d'echeance refermes dans la liste des jeux (2.125.0) : { today: true, week: true... }. */
+  horizonsOff: {},
 };
 
 /* Behaviour the service worker reads too. Imported, never re-declared: a
@@ -502,6 +504,41 @@ function applyFolds() {
     if (!pli || pli.dataset.init) continue;
     pli.dataset.init = '1';
     pli.open = typeof memo[id] === 'boolean' ? memo[id] : EN_ONGLET && id !== 'fold-claimed';
+  }
+}
+
+/* « Tout replier / Tout deplier » (2.125.0) : un bouton par volet, en tete, qui agit sur les sections VISIBLES du volet. Il dit ce
+   qu'il fera : « Tout replier » tant qu'une section est ouverte, « Tout deplier » quand toutes sont fermees. Les plis retenus
+   (REMEMBERED_FOLDS) le restent : le meme `toggle` que pour un geste a la main. */
+const FOLD_PANES = ['pane-games', 'pane-codes', 'pane-settings'];
+
+function visibleFolds(pane) {
+  // Une section masquee (rien a montrer) ne compte pas ; le volet, lui, est masque quand son onglet n'est pas choisi.
+  return [...pane.querySelectorAll('details.fold')].filter((f) => { const sec = f.closest('section'); return !(sec && sec.hidden); });
+}
+
+function updateFoldsBars() {
+  for (const id of FOLD_PANES) {
+    const pane = document.getElementById(id);
+    if (!pane) continue;
+    let bar = pane.querySelector(':scope > .folds-bar');
+    if (!bar) {
+      bar = el('div', 'folds-bar');
+      const bouton = el('button', 'btn-sm');
+      bouton.type = 'button';
+      bouton.addEventListener('click', () => {
+        const plis = visibleFolds(pane);
+        const ouvrir = !plis.some((f) => f.open);
+        for (const f of plis) f.open = ouvrir;
+      });
+      bar.append(bouton);
+      pane.insertBefore(bar, pane.querySelector(':scope > section'));
+      // `toggle` ne remonte pas : on l'ecoute a la descente.
+      pane.addEventListener('toggle', updateFoldsBars, true);
+    }
+    const plis = visibleFolds(pane);
+    bar.hidden = plis.length < 2;
+    bar.firstChild.textContent = t(plis.some((f) => f.open) ? 'foldsCollapseAll' : 'foldsExpandAll');
   }
 }
 
@@ -1215,22 +1252,51 @@ function renderGames(all, behaviour) {
      l'epinglage cesse de vouloir dire quelque chose. */
   const grouper = ui.sort === 'ending';
   let horizonCourant = null;
+  const fermes = (ui.horizonsOff && typeof ui.horizonsOff === 'object') ? ui.horizonsOff : {};
+  // Les groupes refermes se cachent par une classe sur la liste : replier ou deplier ne redessine rien, le focus reste.
+  for (const x of HORIZONS) host.classList.toggle(`off-${x.key}`, grouper && fermes[x.key] === true);
 
   for (const ligne of visible) {
-    if (grouper && !ui.pinned.includes(ligne.key)) {
+    const epingle = ui.pinned.includes(ligne.key);
+    if (grouper && !epingle) {
       const h = horizonOf(ligne.offer, now);
       if (h.key !== horizonCourant) {
         horizonCourant = h.key;
         const compte = visible.filter(
           (r) => !ui.pinned.includes(r.key) && horizonOf(r.offer, now).key === h.key,
         ).length;
-        const sep = el('div', 'horizon');
-        sep.append(el('span', null, t(h.label)), el('span', 'n', String(compte)));
-        host.append(sep);
+        host.append(horizonHeader(host, h, compte, fermes[h.key] === true));
       }
     }
-    host.append(gameCard(ligne, ctx));
+    const carte = gameCard(ligne, ctx);
+    if (grouper && !epingle) carte.classList.add(`h-${horizonCourant}`);
+    host.append(carte);
   }
+}
+
+/* Un groupe d'echeance qui se replie (2.125.0) : « Fini aujourd'hui », « Cette semaine »... Un toucher, ou Entree, ou Espace. Le
+   choix est retenu (`ui.horizonsOff`). Le compte reste affiche : replie, on sait ce qu'il cache. */
+function horizonHeader(host, h, compte, ferme) {
+  const sep = el('div', `horizon${ferme ? ' off' : ''}`);
+  sep.setAttribute('role', 'button');
+  sep.tabIndex = 0;
+  sep.setAttribute('aria-expanded', String(!ferme));
+  sep.title = t(ferme ? 'horizonUnfold' : 'horizonFold', t(h.label));
+  sep.append(el('span', null, t(h.label)), el('span', 'n', String(compte)));
+  const basculer = () => {
+    const replie = !sep.classList.contains('off');
+    sep.classList.toggle('off', replie);
+    sep.setAttribute('aria-expanded', String(!replie));
+    sep.title = t(replie ? 'horizonUnfold' : 'horizonFold', t(h.label));
+    host.classList.toggle(`off-${h.key}`, replie);
+    ui = { ...ui, horizonsOff: { ...(ui.horizonsOff || {}), [h.key]: replie } };
+    setValue(KEY_UI, ui);
+  };
+  sep.addEventListener('click', basculer);
+  sep.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); basculer(); }
+  });
+  return sep;
 }
 
 /* ---------------------------------------------------------------- upcoming */
@@ -3191,6 +3257,7 @@ async function render() {
   const cooldowns = get(all, 'FGC_auto_state', {});
   const paused = Object.values(cooldowns).filter((ts) => ts > Date.now()).length;
   document.getElementById('foot').textContent = t(paused ? 'footPaused' : 'footIdle');
+  updateFoldsBars();
 }
 
 /* ------------------------------------------------------------------ writes */

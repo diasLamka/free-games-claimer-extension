@@ -3280,5 +3280,17 @@
   },
   "priceCredit": {
     "message": "Preise von $1."
+  },
+  "foldsCollapseAll": {
+    "message": "Alle einklappen"
+  },
+  "foldsExpandAll": {
+    "message": "Alle ausklappen"
+  },
+  "horizonFold": {
+    "message": "Gruppe „$1“ einklappen"
+  },
+  "horizonUnfold": {
+    "message": "Gruppe „$1“ ausklappen"
   }
 }

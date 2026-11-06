@@ -3280,5 +3280,17 @@
   },
   "priceCredit": {
     "message": "Prix fournis par $1."
+  },
+  "foldsCollapseAll": {
+    "message": "Tout replier"
+  },
+  "foldsExpandAll": {
+    "message": "Tout déplier"
+  },
+  "horizonFold": {
+    "message": "Replier le groupe « $1 »"
+  },
+  "horizonUnfold": {
+    "message": "Déplier le groupe « $1 »"
   }
 }

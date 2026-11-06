@@ -4,6 +4,19 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.125.0 -- 2026-11-06 (appli inchangee, 1.48.0)
+
+**La bande noire du popup, le nom du prochain jeu en entier, et des sections qui se replient**
+
+Signale sur une capture : une bande noire a droite des sections, « Letter Qu… » coupe dans le compte a rebours, et l'envie de plus de plis.
+
+- **La bande noire** (`pages/brut.css`, `header.top`). L'en-tete -- logo, « Free Games », la version, « Cette page », le bouton d'agrandissement -- faisait 349 px dans un popup de 328 : le bouton DEPASSAIT, et Chrome dimensionne la fenetre d'un popup sur ce qui deborde ; la fenetre devenait plus large que les sections, et le fond noir se voyait. L'en-tete est une grille dont la colonne du milieu se contracte, et la version passe SOUS le nom : mesure a 328 px exactement, plus rien ne depasse.
+- **Le nom du prochain jeu en entier.** « Prochaine fin 20:17:49 » garde sa ligne ; le nom passe dessous, a la ligne si besoin, au lieu d'etre coupe. Dans le tableau de bord, assez large, il reste sur la meme ligne.
+- **Les groupes d'echeance se replient** : « Finit aujourd'hui », « Cette semaine », « Plus tard »... un toucher (ou Entree, ou Espace) sur le titre cache ses cartes ; le compte reste affiche. Le choix est retenu. Replier ne redessine pas la liste : le focus reste ou il etait.
+- **« Tout replier / Tout deplier »** : une ligne en tete de chaque volet (Jeux, Codes, Reglages). Elle agit sur les sections visibles du volet, et dit ce qu'elle fera : « Tout replier » tant qu'une section est ouverte, « Tout deplier » quand toutes sont fermees.
+- Tests : `test/popup-layout.test.mjs` (5). Mesure faite dans un vrai navigateur sur le vrai popup (largeur 328 px, echelle 1,5) : aucun debordement, la barre et les groupes se replient, les plis retenus le restent.
+- Non verifie : le rendu sous VOTRE Chrome. Si une bande noire reste, envoyez une capture et dites-moi quelle section est ouverte.
+
 ## Extension 2.124.1 et appli 1.48.0 -- 2026-11-06
 
 **Les memes prix de souhaits dans l'appli : IsThereAnyDeal avec votre cle, CheapShark sans**
