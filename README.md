@@ -83,6 +83,12 @@ les jeux qui se jouent a deux ou plus.
 **Attendez, il sera offert** (2.94.0) : dans « Vos souhaits », les chances
 de chaque jeu attendu de passer gratuit, et pourquoi (`watch/odds.js`).
 
+**Les prix de vos souhaits** (2.124.0, coupe par defaut) : sous chaque souhait, le meilleur prix
+du moment, le marchand, la remise et le plus bas jamais vu, en euros comme dans l'appli. Avec votre
+cle gratuite IsThereAnyDeal (isthereanydeal.com/apps/my/), ce sont ses prix ; sans cle, ceux de
+CheapShark, en dollars lus en euros au taux du jour. La cle reste sur votre machine, hors de toute
+sauvegarde ; aucune permission de plus (`watch/prices.js`).
+
 **Votre annee en image** (2.93.0) : la valeur, les jeux, les magasins, les
 plus chers, en une image a partager (`watch/year.js`, `lib/year-card.js`).
 

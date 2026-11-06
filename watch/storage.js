@@ -339,6 +339,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
    * pour une demande de l'utilisateur. Allume par defaut : sans profil, il ne change rien. Voir watch/breath.js.
    */
   breathe: true,
+  /**
+   * Les prix des souhaits (2.124.0) : le meilleur prix du moment et le plus bas jamais vu, par IsThereAnyDeal (cle personnelle)
+   * ou CheapShark. COUPE par defaut : le titre de chaque souhait part vers ce service. Voir watch/prices.js et SECURITY.md.
+   */
+  wishPrices: false,
 });
 
 /**

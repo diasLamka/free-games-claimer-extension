@@ -3196,5 +3196,89 @@
   },
   "shieldDenied": {
     "message": "Ohne Zugriff auf Seiten kann der Schutz sie nicht lesen. Die Schaltfläche „Diese Seite“ bleibt verfügbar."
+  },
+  "wishPricesLabel": {
+    "message": "Preise der Wünsche"
+  },
+  "wishPricesHint": {
+    "message": "Der beste aktuelle Preis und der niedrigste je gesehene für jeden Wunsch, mit dem Shop. Der Titel (oder die Steam-ID) jedes Wunsches wird an IsThereAnyDeal oder CheapShark gesendet. Standardmäßig aus."
+  },
+  "itadKeyLabel": {
+    "message": "IsThereAnyDeal-Schlüssel (optional, persönlich)"
+  },
+  "itadKeyPlaceholder": {
+    "message": "Schlüssel einfügen"
+  },
+  "itadKeyStored": {
+    "message": "Schlüssel gespeichert (verborgen): zum Ersetzen einen anderen einfügen"
+  },
+  "itadSave": {
+    "message": "Speichern"
+  },
+  "itadTest": {
+    "message": "Schlüssel testen"
+  },
+  "itadClear": {
+    "message": "Schlüssel löschen"
+  },
+  "itadCreate": {
+    "message": "Schlüssel erstellen"
+  },
+  "pricesRefresh": {
+    "message": "Preise aktualisieren"
+  },
+  "itadHelp": {
+    "message": "Mit Schlüssel sind es die Preise von IsThereAnyDeal in Euro (das gewählte Land), wie in der App. Ohne: CheapShark, Dollar zum Tageskurs in Euro gelesen (≈). Der Schlüssel ist kostenlos (isthereanydeal.com/apps/my/, persönliche Nutzung). Er bleibt auf diesem Rechner: nie in einer Sicherung, nie an andere als IsThereAnyDeal gesendet."
+  },
+  "itadSaved": {
+    "message": "Schlüssel gespeichert."
+  },
+  "itadCleared": {
+    "message": "Schlüssel gelöscht."
+  },
+  "itadBadKey": {
+    "message": "Dieser Schlüssel hat nicht die richtige Form (Buchstaben, Ziffern, Bindestriche)."
+  },
+  "itadNoKey": {
+    "message": "Kein Schlüssel gespeichert."
+  },
+  "itadOk": {
+    "message": "Der Schlüssel funktioniert."
+  },
+  "itadRefused": {
+    "message": "IsThereAnyDeal lehnt diesen Schlüssel ab."
+  },
+  "itadBusy": {
+    "message": "IsThereAnyDeal bittet um Langsamkeit: in einigen Minuten erneut versuchen."
+  },
+  "itadNet": {
+    "message": "IsThereAnyDeal ist nicht erreichbar."
+  },
+  "itadUnexpected": {
+    "message": "Unerwartete Antwort von IsThereAnyDeal."
+  },
+  "priceSourceItad": {
+    "message": "Preisquelle: IsThereAnyDeal (Euro)."
+  },
+  "priceSourceShark": {
+    "message": "Preisquelle: CheapShark (Dollar zum Tageskurs in Euro gelesen)."
+  },
+  "priceKeyRefused": {
+    "message": "IsThereAnyDeal lehnt den gespeicherten Schlüssel ab: CheapShark übernimmt."
+  },
+  "priceBest": {
+    "message": "Bester Preis: $1 bei $2"
+  },
+  "priceLow": {
+    "message": "niedrigster: $1"
+  },
+  "priceVia": {
+    "message": "Preis: $1"
+  },
+  "priceOpenDeal": {
+    "message": "Angebot ansehen"
+  },
+  "priceCredit": {
+    "message": "Preise von $1."
   }
 }

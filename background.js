@@ -81,6 +81,7 @@ import { restoreBackup } from './watch/full-backup.js';
 import { KEY_WEEKENDS, nextWeekends, refreshWeekends, weekendsDue } from './watch/steam-weekends.js';
 import { KEY_STEAM_DLC, dlcPassDue, runDlcPass } from './watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, PASS_EVERY_MS as ODDS_EVERY_MS, recordGivers, refreshOddsInfo, wishTargets } from './watch/odds.js';
+import { KEY_PRICES, KEY_ITAD, itadKey, refreshPrices, testItad } from './watch/prices.js';
 import { KEY_TASTE, MIN_LIKED as TASTE_MIN_LIKED, fetchGames as fetchTasteGames, notForYou, readTasteState, refreshTaste, signalsFrom, tagLanguage, tastePassDue, tasteFor, tasteNames } from './watch/taste.js';
 import { KEY_TONIGHT, buildPile, pickTonight, playLinks, readTonightState, refreshTonight, steamLanguage, tonightPassDue } from './watch/tonight.js';
 import { KEY_PLAYTIME } from './watch/playtime.js';
@@ -458,6 +459,7 @@ async function startCycle(origine, options = {}) {
         await maybeWeekends(Date.now());
         await maybeSteamDlc(Date.now());
         await maybeOdds(Date.now());
+        await maybePrices(Date.now());
         await maybeTonight(Date.now());
         await maybeTaste(Date.now());
         await maybeSessions(Date.now());
@@ -646,6 +648,41 @@ function maybeOdds(now = Date.now()) {
     .catch((e) => record('warn', 'chances des souhaits impossibles', e))
     .finally(() => { oddsRunning = null; });
   return oddsRunning;
+}
+
+/**
+ * Les prix des souhaits (2.124.0) : si la case est cochee, six souhaits au plus par passage, une demi-heure entre deux passages.
+ * IsThereAnyDeal avec la cle de l'utilisateur, sinon CheapShark. Voir watch/prices.js.
+ */
+let pricesRunning = null;
+const PRICES_EVERY_MS = 30 * 60 * 1000;
+
+function maybePrices(now = Date.now(), { force = false } = {}) {
+  if (pricesRunning) return pricesRunning;
+  pricesRunning = (async () => {
+    const settings = await readSettings(api);
+    if (settings.wishPrices !== true) return null;
+    const raw = await readKeys(api, [KEY_PRICES, KEY_ITAD, KEY_ODDS, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEY_COUNTRY]);
+    const cache = raw[KEY_PRICES] || {};
+    if (!force && cache.__at && now - cache.__at < PRICES_EVERY_MS) return null;
+    const odds = raw[KEY_ODDS] || {};
+    // L'appid trouve par la fiche Steam sert aussi ici : un souhait de la saisie n'en a pas autrement.
+    const targets = wishTargets({
+      wishlist: raw[KEY_WISHLIST] || [], steamWishlist: raw[KEY_STEAM_WISHLIST] || null, gogWishlist: raw[KEY_GOG_WISHLIST] || null,
+    }).map((x) => ({ ...x, appid: x.appid || (odds[x.key] && odds[x.key].appid) || null }));
+    if (!targets.length) return null;
+    const key = itadKey(raw[KEY_ITAD]);
+    const r = await refreshPrices({
+      targets, cache, key, country: normaliseCountry(raw[KEY_COUNTRY]) || 'FR', fetch: (u, i) => fetch(u, i), now, record,
+    });
+    await write(api, { [KEY_PRICES]: { ...r.cache, __at: now } });
+    // Une cle refusee se dit dans les reglages : la date est gardee avec la cle, et une nouvelle saisie l'efface.
+    if (r.keyRefused && key) await write(api, { [KEY_ITAD]: { key, refused: now } });
+    return r.cache;
+  })()
+    .catch((e) => record('warn', 'prix des souhaits impossibles', e))
+    .finally(() => { pricesRunning = null; });
+  return pricesRunning;
 }
 
 /**
@@ -2265,6 +2302,21 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     wish({ chrome: api, title: msg.title, on: msg.on === true })
       .then(sendResponse)
       .catch(() => sendResponse({ wishes: 0 }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-prices-refresh') {
+    maybePrices(Date.now(), { force: true })
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'fgc-itad-test') {
+    readKeys(api, [KEY_ITAD])
+      .then((raw) => testItad({ key: itadKey(raw[KEY_ITAD]), fetch: (u, i) => fetch(u, i) }))
+      .then(sendResponse)
+      .catch(() => sendResponse({ ok: false, status: 0, note: 'net' }));
     return true;
   }
 

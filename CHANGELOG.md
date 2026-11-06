@@ -4,6 +4,21 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.124.0 -- 2026-11-06 (appli inchangee, 1.47.0)
+
+**Les prix de vos souhaits : le meilleur prix du moment et le plus bas jamais vu, avec le marchand -- IsThereAnyDeal avec votre cle, CheapShark sans**
+
+Demande : les souhaits de l'appli montrent des prix (CheapShark) que l'extension n'avait pas, et une cle IsThereAnyDeal permet les memes resultats des deux cotes. Cette version fait le cote extension ; l'appli suit (1.48.0).
+
+- **Une case, « Prix des souhaits »** (Vos souhaits, coupee par defaut) : sous chaque souhait, « Meilleur prix : 4,99 EUR chez Steam · -50 % · plus bas : 3,99 EUR », un bouton « Voir l'offre », et dans l'infobulle les cinq meilleures offres et la source. Les montants en dollars (CheapShark) se lisent en euros au taux du jour, avec « ≈ » ; sans taux, ils restent en dollars.
+- **IsThereAnyDeal avec votre cle** (`watch/prices.js`). Collez la cle gratuite (isthereanydeal.com/apps/my/) : « Enregistrer » la sauvegarde ET l'essaie. Les prix sont ceux du service, dans la devise de votre pays, non retouches (ses conditions), avec son nom en bas de la liste. Le jeu est trouve par son identifiant Steam d'abord, puis par son titre exact.
+- **CheapShark sans cle** : meme forme, trouve par l'identifiant Steam, sinon par le titre EXACT -- jamais un autre jeu, mieux vaut pas de prix qu'un prix faux.
+- **Une cle refusee ou un service en panne** ne laisse jamais un souhait sans prix : CheapShark prend le relais, et la popup le dit. Une reponse « trop de requetes » arrete le passage tout de suite.
+- **Mesure** : six souhaits au plus par passage, un passage au plus toutes les 30 minutes, chaque prix relu au plus toutes les six heures (trois jours pour un jeu introuvable), pause entre deux requetes.
+- **La cle est un secret** : hors de toute sauvegarde, de toute alerte, du relais et des rapports ; la popup ne la reaffiche jamais. Aucune permission de plus. Un test verifie que seuls ce module, le worker et la popup la nomment.
+- Tests : `test/prices.test.mjs` (29).
+- Non verifie : **aucune vraie cle IsThereAnyDeal n'a ete essayee ici** -- les formes de reponse suivent sa specification publique, et les tests rejouent des reponses ecrites a la main. Si « Enregistrer » dit que la cle est refusee alors qu'elle est bonne, c'est ce qu'il faut me dire.
+
 ## Extension 2.123.0 et appli 1.47.0 -- 2026-11-06
 
 **La chasse aux dollars : les montants que les sources ecrivent en dollars se lisent partout en euros**

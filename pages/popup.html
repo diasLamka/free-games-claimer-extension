@@ -1486,7 +1486,29 @@
       <details class="fold" id="fold-wishes">
       <summary><h2><span data-i18n="wishesTitle"></span><span class="count" id="wishes-count"></span></h2></summary>
       <p class="hint" data-i18n="oddsHint"></p>
+      <!-- Les prix des souhaits (2.124.0) : voir watch/prices.js. Coupes par defaut : le titre de chaque souhait part vers le service. -->
+      <label class="toggle">
+        <input type="checkbox" id="wish-prices-on">
+        <span class="switch"></span>
+        <span class="toggle-label"><span data-i18n="wishPricesLabel"></span><small data-i18n="wishPricesHint"></small></span>
+      </label>
+      <div id="wish-prices-fields" hidden>
+        <label class="field stack">
+          <span data-i18n="itadKeyLabel"></span>
+          <input type="password" id="itad-key" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder:itadKeyPlaceholder">
+        </label>
+        <div class="actions">
+          <button class="btn-sm" id="itad-save" data-i18n="itadSave"></button>
+          <button class="btn-sm" id="itad-test" data-i18n="itadTest"></button>
+          <button class="btn-sm" id="itad-clear" data-i18n="itadClear"></button>
+          <button class="btn-sm" id="itad-create" data-i18n="itadCreate"></button>
+          <button class="btn-sm" id="prices-refresh" data-i18n="pricesRefresh"></button>
+        </div>
+        <p class="hint" data-i18n="itadHelp"></p>
+        <p class="hint" id="itad-state" role="status"></p>
+      </div>
       <div id="wishes-list"></div>
+      <p class="hint" id="wish-prices-credit" hidden></p>
       </details>
     </section>
 

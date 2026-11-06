@@ -3196,5 +3196,89 @@
   },
   "shieldDenied": {
     "message": "Without access to sites, the shield cannot read pages. The “This page” button stays available."
+  },
+  "wishPricesLabel": {
+    "message": "Wish prices"
+  },
+  "wishPricesHint": {
+    "message": "The best current price and the lowest ever seen for each wish, with the shop. The title (or Steam id) of each wish is sent to IsThereAnyDeal or CheapShark. Off by default."
+  },
+  "itadKeyLabel": {
+    "message": "IsThereAnyDeal key (optional, personal)"
+  },
+  "itadKeyPlaceholder": {
+    "message": "Paste your key"
+  },
+  "itadKeyStored": {
+    "message": "Key saved (hidden): paste another to replace it"
+  },
+  "itadSave": {
+    "message": "Save"
+  },
+  "itadTest": {
+    "message": "Try the key"
+  },
+  "itadClear": {
+    "message": "Clear the key"
+  },
+  "itadCreate": {
+    "message": "Create a key"
+  },
+  "pricesRefresh": {
+    "message": "Refresh prices"
+  },
+  "itadHelp": {
+    "message": "With a key, prices are IsThereAnyDeal's, in euros (the chosen country), like in the app. Without one: CheapShark, dollars read as euros at today's rate (≈). The key is free (isthereanydeal.com/apps/my/, personal use). It stays on this computer: never in a backup, never sent anywhere but IsThereAnyDeal."
+  },
+  "itadSaved": {
+    "message": "Key saved."
+  },
+  "itadCleared": {
+    "message": "Key cleared."
+  },
+  "itadBadKey": {
+    "message": "This key has the wrong shape (letters, digits, dashes)."
+  },
+  "itadNoKey": {
+    "message": "No key saved."
+  },
+  "itadOk": {
+    "message": "The key works."
+  },
+  "itadRefused": {
+    "message": "IsThereAnyDeal refuses this key."
+  },
+  "itadBusy": {
+    "message": "IsThereAnyDeal asks to slow down: try again in a few minutes."
+  },
+  "itadNet": {
+    "message": "IsThereAnyDeal cannot be reached."
+  },
+  "itadUnexpected": {
+    "message": "Unexpected answer from IsThereAnyDeal."
+  },
+  "priceSourceItad": {
+    "message": "Price source: IsThereAnyDeal (euros)."
+  },
+  "priceSourceShark": {
+    "message": "Price source: CheapShark (dollars read as euros at today's rate)."
+  },
+  "priceKeyRefused": {
+    "message": "IsThereAnyDeal refuses the saved key: CheapShark takes over."
+  },
+  "priceBest": {
+    "message": "Best price: $1 at $2"
+  },
+  "priceLow": {
+    "message": "lowest: $1"
+  },
+  "priceVia": {
+    "message": "Price: $1"
+  },
+  "priceOpenDeal": {
+    "message": "See the deal"
+  },
+  "priceCredit": {
+    "message": "Prices provided by $1."
   }
 }

@@ -37,6 +37,7 @@ import { factLines } from '../watch/lookup.js';
 import { KEY_OUTCOMES } from '../watch/outcomes.js';
 import { KEY_STEAM_DLC, pendingFreeDlc } from '../watch/steam-dlc.js';
 import { KEY_ODDS, KEY_GIVERS, LEVELS as ODDS, rankWishes, wishTargets } from '../watch/odds.js';
+import { KEY_PRICES, KEY_ITAD, cleanKey, sourceLabel } from '../watch/prices.js';
 import { recurrenceIndex, secondChance } from '../watch/recurrence.js';
 import { KEY_TONIGHT, TIMES, PICK_KEEP_MS, buildPile, pickTonight, playLinks, keptPick, tonightImage } from '../watch/tonight.js';
 import { KEY_PLAYTIME } from '../watch/playtime.js';
@@ -278,6 +279,7 @@ const KEYS_READ = [
   KEY_PLAYTIME,
   KEY_ANNOTATIONS,
   KEY_TASTE,
+  KEY_PRICES, KEY_ITAD,
 ];
 
 const readAll = () => api.storage.local.get(KEYS_READ);
@@ -1556,6 +1558,24 @@ function oddsReason(r) {
   return t(r.key, ...(r.args || []).map((x) => String(x ?? '')));
 }
 
+/**
+ * La ligne de prix d'un souhait, ou null : "Meilleur prix : 4,99 EUR chez Steam - 50 % - plus bas : 3,99 EUR". Les montants
+ * passent par moneyInBase : un prix en dollars (CheapShark) se lit en euros, avec le signe "environ".
+ */
+function wishPriceLine(p) {
+  if (!p || p.found === false || !p.best || !Number.isFinite(p.best.amount)) return null;
+  const fmt = moneyInBase(ratesCache, Date.now());
+  const parts = [t('priceBest', fmt(p.best.amount, p.currency), String(p.best.shop || ''))];
+  if (Number.isFinite(p.best.cut) && p.best.cut > 0) parts.push(`−${Math.round(p.best.cut)} %`);
+  if (Number.isFinite(p.low)) parts.push(t('priceLow', fmt(p.low, p.currency)));
+  const autres = (Array.isArray(p.deals) ? p.deals : []).slice(0, 5)
+    .filter((d) => d && Number.isFinite(d.amount))
+    .map((d) => `${d.shop} : ${fmt(d.amount, p.currency)}`);
+  const title = [...autres, t('priceVia', sourceLabel(p))].join('\n');
+  const url = p.best.url && /^https:\/\//i.test(p.best.url) ? p.best.url : null;
+  return { text: parts.join(' · '), title, url };
+}
+
 function renderWishes(all) {
   const section = document.getElementById('wishes-section');
   const host = document.getElementById('wishes-list');
@@ -1576,10 +1596,22 @@ function renderWishes(all) {
     body.append(tete);
     const raisons = (w.reasons || []).map(oddsReason).filter(Boolean);
     if (raisons.length) body.append(el('span', 'soon-price wish-why', raisons.join(' · ')));
+    // Le prix du moment (2.124.0) : seulement si la case est cochee, et seulement ce que la source a vraiment rendu.
+    const prix = behaviourCache.wishPrices === true ? wishPriceLine(get(all, KEY_PRICES, {})[w.key]) : null;
+    if (prix) {
+      const ligne = el('span', 'soon-price wish-price', prix.text);
+      ligne.title = prix.title;
+      body.append(ligne);
+    }
     row.append(body);
     const badge = el('span', 'wish-odds', t(ODDS_LABELS[w.level]));
     badge.title = t('oddsHint');
     row.append(badge);
+    if (prix && prix.url) {
+      const offre = el('button', 'btn-sm', t('priceOpenDeal'));
+      offre.addEventListener('click', () => openTab(prix.url));
+      row.append(offre);
+    }
     if (w.info && w.info.appid) {
       const fiche = el('button', 'btn-sm', t('scanOpen'));
       fiche.addEventListener('click', () => openTab(`https://store.steampowered.com/app/${w.info.appid}/`));
@@ -1595,6 +1627,44 @@ function renderWishes(all) {
     host.append(row);
   }
   if (rangs.length > MAX_WISHES_SHOWN) host.append(el('p', 'hint', t('wishesMore', String(rangs.length - MAX_WISHES_SHOWN))));
+}
+
+/* Les prix des souhaits (2.124.0) : la case, la cle (jamais affichee : on dit seulement qu'elle existe), la source, la mention.
+   Le dernier message d'une action (cle enregistree, essai) reste jusqu'au prochain rendu qui n'a rien de plus urgent a dire. */
+let itadNote = '';
+let itadNoteTimer = null;
+function sayItad(text) {
+  itadNote = text;
+  clearTimeout(itadNoteTimer);
+  itadNoteTimer = setTimeout(() => { itadNote = ''; scheduleRefresh(); }, 10000);
+}
+
+function renderWishPrices(all) {
+  const box = document.getElementById('wish-prices-on');
+  if (!box) return;
+  const on = behaviourCache.wishPrices === true;
+  box.checked = on;
+  document.getElementById('wish-prices-fields').hidden = !on;
+  const stored = get(all, KEY_ITAD, null);
+  const hasKey = !!(stored && typeof stored.key === 'string' && stored.key);
+  document.getElementById('itad-key').placeholder = hasKey ? t('itadKeyStored') : t('itadKeyPlaceholder');
+  document.getElementById('itad-clear').hidden = !hasKey;
+  document.getElementById('itad-test').hidden = !hasKey;
+  const refused = hasKey && Number.isFinite(stored.refused);
+  let state = itadNote;
+  if (!state) state = refused ? t('priceKeyRefused') : t(hasKey ? 'priceSourceItad' : 'priceSourceShark');
+  document.getElementById('itad-state').textContent = state;
+
+  // La mention des sources : celles dont on affiche vraiment un prix.
+  const prix = get(all, KEY_PRICES, {});
+  const sources = new Set();
+  for (const [k, v] of Object.entries(prix)) {
+    if (k.startsWith('__') || !v || v.found === false || !v.best) continue;
+    sources.add(sourceLabel(v));
+  }
+  const credit = document.getElementById('wish-prices-credit');
+  credit.hidden = !on || !sources.size;
+  credit.textContent = sources.size ? t('priceCredit', [...sources].join(' / ')) : '';
 }
 
 function renderUpcoming(all) {
@@ -3079,6 +3149,7 @@ async function render() {
   renderTonight(all);
   renderDlc(all);
   renderWishes(all);
+  renderWishPrices(all);
   renderLog(all);
   renderCodes(get(all, KEY_CODES, []), all);
   renderHotte(all);
@@ -3363,6 +3434,65 @@ document.getElementById('reminder').addEventListener('change', (e) => writeBehav
 document.getElementById('weekly-recap').addEventListener('change', (e) => writeBehaviour({ weeklyRecap: e.target.checked }));
 document.getElementById('preflight-on').addEventListener('change', (e) => writeBehaviour({ preflight: e.target.checked }));
 document.getElementById('breathe-on').addEventListener('change', (e) => writeBehaviour({ breathe: e.target.checked }));
+
+// Les prix des souhaits (2.124.0). La cle ne quitte jamais cet ordinateur que vers IsThereAnyDeal ; voir watch/prices.js.
+document.getElementById('wish-prices-on').addEventListener('change', async (e) => {
+  await writeBehaviour({ wishPrices: e.target.checked });
+  if (e.target.checked) await tell('fgc-prices-refresh');
+});
+
+/** Enregistre la cle tapee, si elle en est une. Rend true quand une cle est maintenant enregistree par ce geste. */
+async function saveTypedItadKey() {
+  const input = document.getElementById('itad-key');
+  const typed = input.value.trim();
+  if (!typed) return false;
+  const k = cleanKey(typed);
+  if (!k) { sayItad(t('itadBadKey')); await load(); return null; }
+  await setValue(KEY_ITAD, { key: k });
+  input.value = '';
+  sayItad(t('itadSaved'));
+  await load();
+  return true;
+}
+
+/** Essaie la cle enregistree et le dit ; le worker fait l'appel, la cle ne passe pas par ici. */
+async function testItadKey() {
+  document.getElementById('itad-state').textContent = '\u2026';
+  const r = await tell('fgc-itad-test');
+  const words = { refused: 'itadRefused', busy: 'itadBusy', net: 'itadNet', unexpected: 'itadUnexpected', form: 'itadBadKey' };
+  sayItad(r && r.ok ? t('itadOk') : t(words[r && r.note] || 'itadNet'));
+  await load();
+}
+
+// Enregistrer, c'est aussi essayer : on sait tout de suite si la cle est la bonne, puis les prix se relisent.
+document.getElementById('itad-save').addEventListener('click', async () => {
+  const saved = await saveTypedItadKey();
+  if (saved === false) { sayItad(t('itadNoKey')); await load(); return; }
+  if (!saved) return;
+  await testItadKey();
+  await tell('fgc-prices-refresh');
+});
+
+document.getElementById('itad-test').addEventListener('click', async () => {
+  const saved = await saveTypedItadKey();
+  if (saved === null) return;
+  await testItadKey();
+});
+
+document.getElementById('itad-clear').addEventListener('click', async () => {
+  await api.storage.local.remove(KEY_ITAD);
+  sayItad(t('itadCleared'));
+  await load();
+});
+
+document.getElementById('itad-create').addEventListener('click', () => openTab('https://isthereanydeal.com/apps/my/'));
+
+document.getElementById('prices-refresh').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  await tell('fgc-prices-refresh');
+  e.target.disabled = false;
+  await load();
+});
 document.getElementById('steam-weekends').addEventListener('change', (e) => writeBehaviour({ steamWeekends: e.target.checked }));
 document.getElementById('steam-dlc').addEventListener('change', (e) => writeBehaviour({ steamDlc: e.target.checked }));
 document.getElementById('tonight-ratings').addEventListener('change', (e) => writeBehaviour({ tonight: e.target.checked }));

@@ -3196,5 +3196,89 @@
   },
   "shieldDenied": {
     "message": "Sin acceso a los sitios, el escudo no puede leer las páginas. El botón « Esta página » sigue disponible."
+  },
+  "wishPricesLabel": {
+    "message": "Precios de los deseos"
+  },
+  "wishPricesHint": {
+    "message": "El mejor precio actual y el más bajo jamás visto para cada deseo, con la tienda. El título (o el id de Steam) de cada deseo se envía a IsThereAnyDeal o a CheapShark. Desactivado por defecto."
+  },
+  "itadKeyLabel": {
+    "message": "Clave de IsThereAnyDeal (opcional, personal)"
+  },
+  "itadKeyPlaceholder": {
+    "message": "Pegue su clave"
+  },
+  "itadKeyStored": {
+    "message": "Clave guardada (oculta): pegue otra para sustituirla"
+  },
+  "itadSave": {
+    "message": "Guardar"
+  },
+  "itadTest": {
+    "message": "Probar la clave"
+  },
+  "itadClear": {
+    "message": "Borrar la clave"
+  },
+  "itadCreate": {
+    "message": "Crear una clave"
+  },
+  "pricesRefresh": {
+    "message": "Actualizar precios"
+  },
+  "itadHelp": {
+    "message": "Con clave, los precios son los de IsThereAnyDeal, en euros (el país elegido), como en la app. Sin clave: CheapShark, dólares leídos en euros al cambio del día (≈). La clave es gratuita (isthereanydeal.com/apps/my/, uso personal). Se queda en este ordenador: nunca en una copia de seguridad, nunca enviada a otro sitio que IsThereAnyDeal."
+  },
+  "itadSaved": {
+    "message": "Clave guardada."
+  },
+  "itadCleared": {
+    "message": "Clave borrada."
+  },
+  "itadBadKey": {
+    "message": "Esta clave no tiene la forma correcta (letras, cifras, guiones)."
+  },
+  "itadNoKey": {
+    "message": "Ninguna clave guardada."
+  },
+  "itadOk": {
+    "message": "La clave funciona."
+  },
+  "itadRefused": {
+    "message": "IsThereAnyDeal rechaza esta clave."
+  },
+  "itadBusy": {
+    "message": "IsThereAnyDeal pide ir más despacio: inténtelo de nuevo en unos minutos."
+  },
+  "itadNet": {
+    "message": "No se puede contactar con IsThereAnyDeal."
+  },
+  "itadUnexpected": {
+    "message": "Respuesta inesperada de IsThereAnyDeal."
+  },
+  "priceSourceItad": {
+    "message": "Fuente de precios: IsThereAnyDeal (euros)."
+  },
+  "priceSourceShark": {
+    "message": "Fuente de precios: CheapShark (dólares leídos en euros al cambio del día)."
+  },
+  "priceKeyRefused": {
+    "message": "IsThereAnyDeal rechaza la clave guardada: CheapShark toma el relevo."
+  },
+  "priceBest": {
+    "message": "Mejor precio: $1 en $2"
+  },
+  "priceLow": {
+    "message": "más bajo: $1"
+  },
+  "priceVia": {
+    "message": "Precio: $1"
+  },
+  "priceOpenDeal": {
+    "message": "Ver la oferta"
+  },
+  "priceCredit": {
+    "message": "Precios proporcionados por $1."
   }
 }
