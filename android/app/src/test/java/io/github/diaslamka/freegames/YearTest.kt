@@ -8,11 +8,13 @@ import io.github.diaslamka.freegames.data.Year
 import io.github.diaslamka.freegames.model.AppState
 import io.github.diaslamka.freegames.model.LibraryEntry
 import io.github.diaslamka.freegames.model.Rating
+import io.github.diaslamka.freegames.model.RateTable
 import io.github.diaslamka.freegames.model.Stores
 import io.github.diaslamka.freegames.ui.YearCard
 import io.github.diaslamka.freegames.ui.yearTexts
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -72,5 +74,21 @@ class YearTest {
         assertEquals(0xFFE8FF00.toInt(), bmp.getPixel(900, 380))
         val dir = File(System.getProperty("screenshots") ?: "build/screenshots").apply { mkdirs() }
         File(dir, "E-1-annee.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Test
+    fun aYearIsAddedUpInEurosAndTheDearestAreRankedInEuros() {
+        val table = RateTable("EUR", "2026-10-16", mapOf("USD" to 1.1253), System.currentTimeMillis())
+        val withDollars = state.copy(
+            library = state.library + e(Stores.EPIC, "bonus", "Bonus", t(2026, 8), "$30.00"),
+            rates = table,
+        )
+        val r = Year.recap(withDollars, 2026, "EUR")
+        assertEquals("EUR", r.currency)
+        assertEquals(91.76 + 30.0 / 1.1253, r.value!!, 0.01)
+        assertTrue("la somme vient d'une conversion", r.approx)
+        // 30 $ valent 26,66 € : derriere Tunic (29,99 €), devant Hades (24,99 €) -- classe en euros, pas en chiffre brut.
+        assertEquals(listOf("Tunic", "Bonus", "Hades"), r.top.map { it.title })
+        assertTrue(r.top[1].worth, r.top[1].worth.startsWith("≈ "))
     }
 }

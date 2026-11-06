@@ -4,6 +4,26 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.123.0 et appli 1.47.0 -- 2026-11-06
+
+**La chasse aux dollars : les montants que les sources ecrivent en dollars se lisent partout en euros**
+
+Signale : des prix restaient en dollars dans l'appli et dans l'extension, alors que la conversion (la 1.43.0 pour l'appli, la 2.x pour l'extension) existait deja pour les cartes de jeux. Elle ne couvrait pas tous les endroits ou un montant s'affiche ; voici ceux qui l'etaient oublies.
+
+**Dans l'extension**
+- **Le verdict « Piege ou bonne affaire ? »** (`lib/money.js`, `moneyInBase`). Il compare la valeur annoncee a la fiche Steam AMERICAINE, donc en dollars, et ses raisons (« annonce 24,99 USD, reel 9,99 USD ») sortaient telles quelles, dans l'infobulle comme dans la ligne de la notification. Elles sont converties au taux du jour et marquees « ≈ » ; la comparaison elle-meme reste faite en dollars, la seule monnaie qui la rend juste.
+- **Le recap du jeudi** (`watch/recap.js`). Son total « valeur $2 » n'etait dit qu'en l'absence de plusieurs devises, et dans la devise de la source : trois jeux GamerPower faisaient « 45,97 $ ». Il est maintenant additionne en euros (« ≈ 45,97 € ») ; sans taux, l'ancien comportement.
+- **Home Assistant** (`watch/homeassistant.js`) : chaque jeu porte `worth_eur`, la valeur convertie en euros au taux du jour (ou `null`), a cote de `worth` tel que la source l'ecrit. Le taux qui bouge ne declenche pas de message d'etat.
+
+**Dans l'appli**
+- **Le grand chiffre de l'accueil et de « Recuperes »** (`Rates.showTotal`). Il additionnait seulement la devise LA PLUS REPRESENTEE et ignorait les autres : trois valeurs en dollars et une en euros donnaient un total en dollars, sans l'euro. Tout est maintenant additionne en euros quand un taux sert, marque « ≈ » ; ce qu'on ne sait pas convertir reste dans sa devise, a cote.
+- **La ligne « verifie / a confirmer / ecarte »** (`Rates.showTotals`) : meme correction (elle ecrivait « 120 $ + 40 € »).
+- **La notification d'un nouveau jeu** : « Valeur : $19.99 » devient « Valeur : ≈ 17,76 € ».
+- **Ton annee** (`Year.recap`) : la valeur est additionnee en euros et les trois plus chers sont classes en euros (20 $ ne valent pas 20 €) ; leurs valeurs sont dites en euros sur l'image.
+- **Les raisons du verdict** (`BargainRow.kt`) et **celles des chances d'un souhait** (`WishlistScreen.kt`) : elles lisent maintenant leurs montants par le meme formateur que le reste.
+- Tests : trois dans `test/rates.test.mjs`, deux dans `test/recap.test.mjs`, deux dans `test/homeassistant.test.mjs` ; quatre dans `RatesTest.kt` et un dans `YearTest.kt`.
+- Non verifie : **le code Kotlin n'a pas ete compile ici** (la CI le fait). Le taux vient de la BCE (api.frankfurter.dev, une fois par jour) : **sans taux** (premiere ouverture, hors ligne, taux de plus de 30 jours), un montant en dollars reste en dollars -- on ne l'invente pas. Si tu vois encore un « $ » apres la mise a jour, dis-moi OU : c'est soit un endroit que je n'ai pas trouve, soit un taux qui ne s'est pas charge.
+
 ## Extension 2.122.0 -- 2026-11-05 (appli inchangee, 1.46.0)
 
 **Le bouclier anti-arnaque : reconnaitre une page qui se fait passer pour Epic, Steam ou GOG**

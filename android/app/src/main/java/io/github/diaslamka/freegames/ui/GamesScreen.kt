@@ -184,8 +184,9 @@ fun GamesScreen(
                 // Le grand chiffre n'a de sens qu'une fois un jeu recupere : un « 0,00 EUR, 0 jeu » ne dit rien (1.32.0).
                 if (state.library.isNotEmpty()) item("hero", span = full) {
                     val cur = Countries.of(state.settings.country).currency
-                    val total = Money.total(state.library.values.map { it.worth }, cur)
-                    Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
+                    // En devise de base quand un taux sert (1.47.0) : plus de « 123 $ » parce que GamerPower ecrit en dollars.
+                    val total = io.github.diaslamka.freegames.data.Rates.showTotal(state.library.values.map { it.worth }, state.rates, cur, System.currentTimeMillis())
+                    Hero(total ?: Money.format(0.0, cur), state.library.size, stringResource(R.string.hero_caption))
                 }
                 val next = pc.filter { it.end != null && it.end > now && it.end - now < 8 * 86_400_000L }.minByOrNull { it.end!! }
                 if (next != null) item("timecode", span = full) {

@@ -22,7 +22,7 @@ import {
   preview, judge, REASONS, readWorth, isExtraContent, baseGameMissing,
 } from '../watch/filters.js';
 import { KEY_RATES, toBase, baseOf } from '../watch/rates.js';
-import { money, worthLabel as worthLabelIn } from '../lib/money.js';
+import { money, moneyInBase, worthLabel as worthLabelIn } from '../lib/money.js';
 import { KEY_COUNTRY, KEY_LANG, COUNTRIES, currencyFor, normaliseCountry, normaliseLang } from '../watch/locale.js';
 import { installLinkLocalizer } from '../watch/localizer.js';
 import { claimsMade, tally, mainStore, exportFileName, alreadyYours } from '../watch/tally.js';
@@ -770,7 +770,8 @@ function bargainTag(ctx, offer) {
   if (offer.store === STORES.FAB) return null;
   const v = verdictFor(offer, { ratings: ctx.ratings, checks: ctx.checks, facts: ctx.facts });
   const tag = el('span', `bargain ${gradeTone(v.grade) || 'none'}`, v.grade || '?');
-  tag.title = verdictTitle(v, t, { money, number: (n) => n.toLocaleString(intlLocale()) });
+  // Les montants de la comparaison sont en dollars : ils se lisent en euros quand un taux sert.
+  tag.title = verdictTitle(v, t, { money: moneyInBase(ratesCache, Date.now()), number: (n) => n.toLocaleString(intlLocale()) });
   return tag;
 }
 

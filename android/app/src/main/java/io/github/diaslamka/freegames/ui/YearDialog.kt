@@ -55,7 +55,7 @@ fun yearTexts(context: Context, r: Year.Recap): YearCard.Texts {
         title = context.getString(R.string.year_title, r.year),
         subtitle = context.getString(R.string.year_subtitle),
         valueLabel = context.getString(R.string.year_value),
-        value = r.value?.let { Money.format(it, r.currency) } ?: "—",
+        value = r.value?.let { (if (r.approx) "≈ " else "") + Money.format(it, r.currency) } ?: "—",
         gamesStamp = res.getQuantityString(R.plurals.games_count, r.count, r.count),
         stores = r.stores.map { (s, n) -> "${shortStore(s)} $n" },
         topLabel = context.getString(R.string.year_top),
@@ -85,7 +85,7 @@ fun YearDialog(state: AppState, onDismiss: () -> Unit) {
     val years = remember(state.library) { Year.years(state) }
     var year by remember { mutableIntStateOf(years.firstOrNull() ?: 0) }
     val cur = Countries.of(state.settings.country).currency
-    val recap = remember(state.library, state.ratings, year) { Year.recap(state, year, cur) }
+    val recap = remember(state.library, state.ratings, state.rates, year) { Year.recap(state, year, cur) }
     val bmp = remember(recap) { if (recap.count > 0) YearCard.draw(context, yearTexts(context, recap)) else null }
     AlertDialog(
         onDismissRequest = onDismiss,

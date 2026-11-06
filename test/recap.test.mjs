@@ -58,8 +58,8 @@ function semaine() {
     GOG: { 'slug:dwarf': { status: 'claimed', ts: le(21, 9), title: 'Dwarf Test' } },
   };
   const catalog = {
-    'epic:shogun-showdown': { store: 'epic', title: 'Shogun Showdown', worth: '14,99 €', state: 'resolved', verdict: 'claimed' },
-    'gog:dwarf': { store: 'gog', title: 'Dwarf Test', worth: '9,99 €', state: 'resolved' },
+    'epic:shogun-showdown': { store: 'epic', title: 'Shogun Showdown', worth: '14,99 \u20ac', state: 'resolved', verdict: 'claimed' },
+    'gog:dwarf': { store: 'gog', title: 'Dwarf Test', worth: '9,99 \u20ac', state: 'resolved' },
     'steam:1': { store: 'steam', title: 'Dwarven Realms (Steam) Key Giveaway', state: 'queued', end: NOW + 3 * J },
     'steam:2': { store: 'steam', title: 'Deadshot', state: 'resolved', verdict: 'claimed', lastAttemptAt: le(22, 8) },
     'epic-mobile:m': { store: 'epic-mobile', title: 'Mindcop', state: 'discovered', end: NOW + 6 * J },
@@ -91,7 +91,7 @@ test('la semaine : recupere, a prendre soi-meme, rate, annonce', () => {
   assert.equal(hasNews(r), true);
 });
 
-test('avec la recuperation Steam activee, un jeu Steam n\'est plus « a prendre soi-meme »', () => {
+test('avec la recuperation Steam activee, un jeu Steam n\'est plus \u00ab a prendre soi-meme \u00bb', () => {
   const s = semaine();
   const r = buildRecap({ ...s, settings: { ...s.settings, steamAutoClaim: true } });
   assert.ok(!r.manual.some((m) => m.store === 'steam'));
@@ -101,17 +101,17 @@ test('le texte, en francais, avec la valeur quand elle est dans une seule devise
   setLocale('fr');
   try {
     const r = buildRecap(semaine());
-    const format = (n, c) => `${n.toFixed(2).replace('.', ',')} ${c === 'EUR' ? '€' : c}`;
+    const format = (n, c) => `${n.toFixed(2).replace('.', ',')} ${c === 'EUR' ? '\u20ac' : c}`;
     const total = recapTotal(r.claimed, format);
-    assert.equal(total, '24,98 €');
+    assert.equal(total, '24,98 \u20ac');
     const { title, text } = composeRecap(r, { t, storeLabel: (s) => ({ steam: 'Steam', 'epic-mobile': 'Epic Games (mobile)', epic: 'Epic Games Store' })[s] || s, total });
-    assert.equal(title, 'Votre semaine : 3 jeux récupérés');
+    assert.equal(title, 'Votre semaine : 3 jeux r\u00e9cup\u00e9r\u00e9s');
     const lignes = text.split('\n');
-    assert.match(lignes[0], /^Récupérés : .*Shogun Showdown.* \(valeur 24,98 €\)$/);
-    assert.equal(lignes[1], 'À prendre vous-même : Bloque (Epic Games Store), Dwarven Realms (Steam), Mindcop (Epic Games (mobile))');
-    assert.equal(lignes[2], 'Ratés : Rate cette semaine');
-    assert.equal(lignes[3], 'Bientôt : Cardpocalypse');
-    assert.equal(composeRecap({ claimed: [{ title: 'A' }], manual: [], missed: [], upcoming: [] }, { t }).title, 'Votre semaine : 1 jeu récupéré');
+    assert.match(lignes[0], /^R\u00e9cup\u00e9r\u00e9s : .*Shogun Showdown.* \(valeur 24,98 \u20ac\)$/);
+    assert.equal(lignes[1], '\u00c0 prendre vous-m\u00eame : Bloque (Epic Games Store), Dwarven Realms (Steam), Mindcop (Epic Games (mobile))');
+    assert.equal(lignes[2], 'Rat\u00e9s : Rate cette semaine');
+    assert.equal(lignes[3], 'Bient\u00f4t : Cardpocalypse');
+    assert.equal(composeRecap({ claimed: [{ title: 'A' }], manual: [], missed: [], upcoming: [] }, { t }).title, 'Votre semaine : 1 jeu r\u00e9cup\u00e9r\u00e9');
     assert.equal(composeRecap({ claimed: [], manual: [{ title: 'B', store: 'steam' }], missed: [], upcoming: [] }, { t, storeLabel: () => 'Steam' }).title,
       'Votre semaine de jeux gratuits');
   } finally { setLocale(null); }
@@ -160,7 +160,7 @@ test('le recap part une fois : la date est ecrite avant de prevenir', async () =
     const vus = [];
     const tel = [];
     const opts = {
-      chrome, t, storeLabel: (s) => s, format: (n) => `${n} €`,
+      chrome, t, storeLabel: (s) => s, format: (n) => `${n} \u20ac`,
       notify: async (n) => { vus.push({ ...n, dejaNote: Boolean(chrome.d[KEY_RECAP]) }); },
       phone: async (m) => { tel.push(m); },
     };
@@ -168,7 +168,7 @@ test('le recap part une fois : la date est ecrite avant de prevenir', async () =
     assert.equal(r.sent, true);
     assert.equal(vus.length, 1);
     assert.equal(vus[0].dejaNote, true, 'ecrite AVANT la notification');
-    assert.equal(vus[0].title, 'Votre semaine : 3 jeux récupérés');
+    assert.equal(vus[0].title, 'Votre semaine : 3 jeux r\u00e9cup\u00e9r\u00e9s');
     assert.equal(tel.length, 1);
     assert.equal(tel[0].message, vus[0].message);
 
@@ -217,4 +217,25 @@ test('le reglage, le telephone et le worker', () => {
   const js = lire('pages/popup.js');
   assert.match(js, /writeBehaviour\(\{ weeklyRecap: e\.target\.checked \}\)/);
   assert.match(js, /const upcomingWindows = announcedWindows;/, 'le popup et le recap lisent la meme liste');
+});
+
+/* ------------------------------------------- chasse aux dollars (2.123.0) */
+
+import { parseRates } from '../watch/rates.js';
+
+test('le total de la semaine se dit en euros : les dollars sont convertis, le total marque environ', () => {
+  const taux = parseRates({ amount: 1, base: 'EUR', date: '2026-10-16', rates: { USD: 1.125 } }, 1000);
+  const format = (n, c) => `${n.toFixed(2)} ${c}`;
+  // 22,50 $ valent 20,00 EUR au taux du jour : 20 + 5 = 25 EUR.
+  assert.equal(recapTotal([{ worth: 22.5, currency: 'USD' }, { worth: 5, currency: 'EUR' }], format, taux, 2000), '\u2248 25.00 EUR');
+  // Des dollars seuls, un taux qui sert : en euros, et approximatif.
+  assert.equal(recapTotal([{ worth: 22.5, currency: 'USD' }], format, taux, 2000), '\u2248 20.00 EUR');
+  // Des euros seuls : jamais approximatif.
+  assert.equal(recapTotal([{ worth: 5, currency: 'EUR' }], format, taux, 2000), '5.00 EUR');
+});
+
+test('sans taux, le total de la semaine garde l\'ancien comportement : une devise se dit seule, plusieurs jamais', () => {
+  const format = (n, c) => `${n.toFixed(2)} ${c}`;
+  assert.equal(recapTotal([{ worth: 22.5, currency: 'USD' }], format, null, 2000), '22.50 USD');
+  assert.equal(recapTotal([{ worth: 22.5, currency: 'USD' }, { worth: 5, currency: 'EUR' }], format, null, 2000), null);
 });

@@ -100,7 +100,8 @@ import {
 } from './watch/library-watch.js';
 import { openOffers } from './watch/catalog.js';
 import { KEY_COVERS, refreshCovers } from './watch/covers.js';
-import { money } from './lib/money.js';
+import { money, moneyInBase } from './lib/money.js';
+import { KEY_RATES } from './watch/rates.js';
 import { DASHBOARD_PAGE } from './lib/dashboard.js';
 import { ACTIONS, actionAt, buttonsFor } from './watch/notify-actions.js';
 import { notificationImage } from './watch/notify-image.js';
@@ -971,9 +972,10 @@ async function verdictOne(offer) {
       ensureChecks([offer], { limit: 1, timeoutMs: 4000 }),
       new Promise((fin) => setTimeout(fin, 5000)),
     ]);
-    const raw = await readKeys(api, [KEY_RATINGS, KEY_CHECKS, KEY_COLLECTION_LOOKUP]);
+    const raw = await readKeys(api, [KEY_RATINGS, KEY_CHECKS, KEY_COLLECTION_LOOKUP, KEY_RATES]);
     const res = verdictFor(offer, { ratings: raw[KEY_RATINGS], checks: raw[KEY_CHECKS], facts: collectionFacts(raw[KEY_COLLECTION_LOOKUP]) });
-    return verdictLine(res, t, { money, number: (n) => n.toLocaleString(intlLocale()) }) || null;
+    // Les montants de la comparaison sont en dollars : la notification les dit en euros quand un taux sert.
+    return verdictLine(res, t, { money: moneyInBase(raw[KEY_RATES], Date.now()), number: (n) => n.toLocaleString(intlLocale()) }) || null;
   } catch { return null; }
 }
 
@@ -2228,7 +2230,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
      evenements, avec l'etat reel du catalogue -- ce que l'automatisation
      recevra demain est ce qu'elle recoit ici. */
   if (msg.type === 'fgc-home-test') {
-    readKeys(api, [KEY_HOME, KEY_LIBRARY, KEYS.OFFERS, KEYS.SETTINGS, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST])
+    readKeys(api, [KEY_HOME, KEY_LIBRARY, KEYS.OFFERS, KEYS.SETTINGS, KEY_WISHLIST, KEY_STEAM_WISHLIST, KEY_GOG_WISHLIST, KEY_RATES])
       .then((raw) => {
         const cible = homeTarget(raw[KEY_HOME]);
         if (!cible) return { ok: false, status: 0, note: 'adresse invalide ou maison coupee' };
@@ -2241,7 +2243,7 @@ api.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
           chrome: api,
           fetch: (u, i) => fetch(u, i),
           target: cible,
-          corps: homeEvent(HOME_EVENTS.TEST, { offers: offres, now, labels: STORE_LABELS, version: api.runtime.getManifest().version }),
+          corps: homeEvent(HOME_EVENTS.TEST, { offers: offres, now, labels: STORE_LABELS, version: api.runtime.getManifest().version, rates: raw[KEY_RATES] || null }),
           now,
           record,
           why: 'essai',

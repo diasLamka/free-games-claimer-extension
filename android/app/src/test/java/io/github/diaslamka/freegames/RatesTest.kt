@@ -89,4 +89,40 @@ class RatesTest {
         // Un changement de pays ne garde pas un taux d'une autre base.
         assertNull(Rates.refresh(fetcher(HttpResult(500, "")), s, now, "GBP"))
     }
+
+    /* Chasse aux dollars (1.47.0) : les totaux et les valeurs se lisent en euros, au lieu de la devise la plus representee. */
+    @Test
+    fun dollarsAndEurosAddUpInEurosWhenARateServes() {
+        val t = Rates.total(listOf("$19.99", "23,99 €", null), table, "EUR", now)!!
+        assertEquals(19.99 / 1.1253 + 23.99, t.value, 0.0001)
+        assertTrue(t.approx)
+        assertEquals(2, t.count)
+        assertTrue(t.rest.isEmpty())
+    }
+
+    @Test
+    fun withoutARateWhatCannotBeConvertedStaysBesideTheTotal() {
+        val t = Rates.total(listOf("$19.99", "23,99 €"), null, "EUR", now)!!
+        assertEquals(23.99, t.value, 0.0001)
+        assertFalse(t.approx)
+        assertEquals(19.99, t.rest.getValue("USD"), 0.0001)
+        assertNull("rien n'entre dans la base : l'appelant garde son ancien calcul", Rates.total(listOf("$19.99"), null, "EUR", now))
+    }
+
+    @Test
+    fun theHeroTotalSpeaksEurosNotTheMajorityCurrency() {
+        // Trois dollars et un euro : l'ancien calcul rendait des dollars.
+        val shown = Rates.showTotal(listOf("$10.00", "$20.00", "$30.00", "5,00 €"), table, "EUR", now, Locale.FRANCE)!!
+        assertTrue(shown, shown.startsWith("≈ "))
+        assertTrue(shown, shown.contains("€"))
+        assertFalse(shown, shown.contains("$"))
+    }
+
+    @Test
+    fun perCurrencyTotalsAreBroughtBackToTheBaseCurrency() {
+        val shown = Rates.showTotals(mapOf<String?, Double>("USD" to 100.0, "EUR" to 10.0, null to 1.0), table, "EUR", now, Locale.FRANCE)!!
+        assertTrue(shown, shown.startsWith("≈ "))
+        assertFalse(shown, shown.contains("$") || shown.contains(" + "))
+        assertNull(Rates.showTotals(emptyMap(), table, "EUR", now, Locale.FRANCE))
+    }
 }

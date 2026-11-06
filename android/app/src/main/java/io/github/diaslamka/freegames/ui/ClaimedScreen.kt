@@ -70,8 +70,9 @@ fun ClaimedScreen(state: AppState, onOpen: (String) -> Unit, now: Long = System.
             ) {
                 item("hero", span = full) {
                     val cur = Countries.of(state.settings.country).currency
-                    val total = Money.total(state.library.values.map { it.worth }, cur)
-                    Hero(Money.format(total?.first ?: 0.0, total?.second ?: cur), state.library.size, stringResource(R.string.hero_caption))
+                    // En devise de base quand un taux sert (1.47.0) : plus de « 123 $ » parce que GamerPower ecrit en dollars.
+                    val total = io.github.diaslamka.freegames.data.Rates.showTotal(state.library.values.map { it.worth }, state.rates, cur, System.currentTimeMillis())
+                    Hero(total ?: Money.format(0.0, cur), state.library.size, stringResource(R.string.hero_caption))
                 }
                 // Ce que ce chiffre vaut vraiment (1.22.0) : verifie, a confirmer, ecarte.
                 item("verified", span = full) { VerifiedLine(state) }
@@ -145,7 +146,8 @@ private fun VerifiedLine(state: AppState) {
     val b = LocalBrut.current
     val c = remember(state.library, state.ratings, state.checks) { io.github.diaslamka.freegames.data.Bargain.certify(state.library.values, state) }
     val cur = Countries.of(state.settings.country).currency
-    fun shown(bag: Map<String?, Double>): String? = totalsText(bag, cur)
+    val now = System.currentTimeMillis()
+    fun shown(bag: Map<String?, Double>): String? = io.github.diaslamka.freegames.data.Rates.showTotals(bag, state.rates, cur, now)
     val parts = listOfNotNull(
         shown(c.verified)?.let { stringResource(R.string.claimed_verified, it) },
         shown(c.unverified)?.let { stringResource(R.string.claimed_unverified, it) },
@@ -161,11 +163,4 @@ private fun VerifiedLine(state: AppState) {
         modifier = Modifier.padding(bottom = 4.dp).clickable { hint = !hint },
     )
     if (hint) Text(stringResource(R.string.claimed_verified_hint), style = MaterialTheme.typography.bodySmall, color = b.mute)
-}
-
-/** Les totaux par devise, celle du pays d'abord, puis la plus grosse somme. */
-private fun totalsText(bag: Map<String?, Double>, preferred: String): String? {
-    if (bag.isEmpty()) return null
-    val order = bag.entries.sortedWith(compareByDescending<Map.Entry<String?, Double>> { it.key == preferred }.thenByDescending { it.value })
-    return order.joinToString(" + ") { Money.format(it.value, it.key ?: preferred) }
 }

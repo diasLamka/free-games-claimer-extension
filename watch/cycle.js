@@ -708,7 +708,7 @@ export async function runCycle({
     if (maison && fetchImpl && suivies.length) {
       await pushHome({
         chrome, fetch: fetchImpl, target: maison, now, record, why: 'nouvelles offres',
-        corps: homeEvent(HOME_EVENTS.NEW, { offers: aPrendre(), fresh: suivies, now, quiet: quietNow, labels: STORE_LABELS }),
+        corps: homeEvent(HOME_EVENTS.NEW, { offers: aPrendre(), fresh: suivies, now, quiet: quietNow, labels: STORE_LABELS, rates: ctx.rates }),
       });
     }
 
@@ -935,7 +935,7 @@ export async function runCycle({
           await pushHome({
             chrome, fetch: fetchImpl, target: maison, now, record, why: 'jeux recuperes',
             corps: homeEvent(HOME_EVENTS.CLAIMED, {
-              offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS,
+              offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS, rates: ctx.rates,
               claimed: claims.filter((x) => x.verdict === VERDICTS.CLAIMED).map((x) => x.title),
             }),
           });
@@ -998,7 +998,7 @@ export async function runCycle({
        se croie pas mort. Les deux evenements ci-dessus portent deja l'etat : un
        envoi reussi l'a note, et celui-ci n'en part pas en double. */
     if (maison && fetchImpl) {
-      const corps = homeEvent(HOME_EVENTS.STATE, { offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS });
+      const corps = homeEvent(HOME_EVENTS.STATE, { offers: aPrendre(), now, quiet: quietNow, labels: STORE_LABELS, rates: ctx.rates });
       const prev = (await chrome.storage.local.get(KEY_HOME_STATE))[KEY_HOME_STATE];
       if (shouldSendState(prev, corps, now)) {
         await pushHome({ chrome, fetch: fetchImpl, target: maison, now, record, why: 'etat', corps });

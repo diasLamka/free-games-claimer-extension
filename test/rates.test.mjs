@@ -151,3 +151,38 @@ test('sans fetch injecte, le module ne cherche pas a en trouver un', async () =>
   assert.equal(run.rates, null);
   assert.equal(run.changed, false);
 });
+
+/* ------------------------------------------- chasse aux dollars (2.123.0) */
+
+import { moneyInBase } from '../lib/money.js';
+import { reasonText } from '../watch/bargain.js';
+
+test('moneyInBase : un montant en dollars se lit en euros, marque environ ; un montant en euros reste intact', () => {
+  const fmt = moneyInBase(tauxConnu(), T);
+  const converti = fmt(10.8, 'USD');
+  assert.ok(converti.startsWith('\u2248'), converti);
+  assert.ok(/10[,.]00/.test(converti) && converti.includes('\u20ac'), converti);
+  const euros = fmt(12.49, 'EUR');
+  assert.ok(!euros.startsWith('\u2248'), euros);
+  assert.ok(euros.includes('\u20ac'), euros);
+});
+
+test('moneyInBase : sans taux, une devise inconnue ou un taux trop vieux, le montant garde sa devise', () => {
+  const sans = moneyInBase(null, T)(10, 'USD');
+  assert.ok(!sans.startsWith('\u2248') && /\$|USD/.test(sans), sans);
+  const inconnue = moneyInBase(tauxConnu(), T)(10, 'JPY');
+  assert.ok(!inconnue.startsWith('\u2248'), inconnue);
+  const vieux = moneyInBase(tauxConnu(), T + TRUST_FOR_MS + 1)(10, 'USD');
+  assert.ok(!vieux.startsWith('\u2248'), vieux);
+  assert.ok(!moneyInBase(tauxConnu(), T)(10, null).startsWith('\u2248'));
+});
+
+test('piege ou bonne affaire : les montants de la comparaison, en dollars, se disent en euros', () => {
+  const t = (cle, ...args) => `${cle}(${args.join('|')})`;
+  const nombre = (n) => String(n);
+  const dollars = reasonText({ key: 'bargainInflated', args: ['24.99 USD', '9.99 USD'] }, t, { money: (n, c) => `${n} ${c}`, number: nombre });
+  assert.match(dollars, /24\.99 USD/, 'sans conversion, le formateur de base voit des dollars');
+  const euros = reasonText({ key: 'bargainInflated', args: ['24.99 USD', '9.99 USD'] }, t, { money: moneyInBase(tauxConnu(), T), number: nombre });
+  assert.ok(!/USD|\$/.test(euros), euros);
+  assert.equal((euros.match(/\u2248/g) || []).length, 2, euros);
+});

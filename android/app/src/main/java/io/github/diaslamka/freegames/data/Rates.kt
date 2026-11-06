@@ -67,6 +67,61 @@ object Rates {
         return show(a.value, cur, t, base, now, locale)
     }
 
+    /** Une somme de valeurs de sources, ramenee a la devise de base : ce qui n'a pas pu l'etre reste dans sa devise, a cote. */
+    data class Total(val value: Double, val count: Int, val approx: Boolean, val rest: Map<String, Double>)
+
+    /**
+     * Les valeurs (« $19.99 », « 23,99 € ») additionnees DANS la devise de base (1.47.0). Ce qu'on sait convertir y entre, et la somme
+     * est marquee approximative ; ce qu'on ne sait pas convertir reste dans sa devise, a cote, plutot que de disparaitre. Une valeur
+     * sans devise compte comme celle de la base. Null quand rien ne se lit, ou quand rien n'entre dans la base (pas de taux) :
+     * l'appelant garde alors son ancien comportement.
+     */
+    fun total(raws: List<String?>, t: RateTable?, base: String, now: Long): Total? {
+        val amounts = raws.mapNotNull { Money.parse(it) }
+        if (amounts.isEmpty()) return null
+        var sum = 0.0
+        var approx = false
+        var inBase = 0
+        val rest = linkedMapOf<String, Double>()
+        for (a in amounts) {
+            val cur = a.currency
+            if (cur == null || cur == base) { sum += a.value; inBase++; continue }
+            val converted = if (t != null && t.base == base) toBase(a.value, cur, t, now) else null
+            if (converted != null) { sum += converted; approx = true; inBase++ } else rest[cur] = (rest[cur] ?: 0.0) + a.value
+        }
+        if (inBase == 0) return null
+        return Total(sum, amounts.size, approx, rest)
+    }
+
+    /** Le total des valeurs, ecrit en devise de base (« ≈ 91,76 € ») ; l'ancien calcul quand aucun taux ne sert. */
+    fun showTotal(raws: List<String?>, t: RateTable?, base: String, now: Long, locale: Locale = Locale.getDefault()): String? {
+        val tot = total(raws, t, base, now)
+        if (tot == null) {
+            val old = Money.total(raws, base) ?: return null
+            return Money.format(old.first, old.second ?: base, locale)
+        }
+        val head = (if (tot.approx) "≈ " else "") + Money.format(tot.value, base, locale)
+        return (listOf(head) + tot.rest.map { (c, v) -> Money.format(v, c, locale) }).joinToString(" + ")
+    }
+
+    /** Les totaux PAR DEVISE du verificateur, ramenes a la devise de base quand on sait ; le reste garde sa devise. */
+    fun showTotals(bag: Map<String?, Double>, t: RateTable?, base: String, now: Long, locale: Locale = Locale.getDefault()): String? {
+        if (bag.isEmpty()) return null
+        var sum = 0.0
+        var approx = false
+        var inBase = 0
+        val rest = linkedMapOf<String, Double>()
+        for ((cur, v) in bag) {
+            if (cur == null || cur == base) { sum += v; inBase++; continue }
+            val converted = if (t != null && t.base == base) toBase(v, cur, t, now) else null
+            if (converted != null) { sum += converted; approx = true; inBase++ } else rest[cur] = (rest[cur] ?: 0.0) + v
+        }
+        val parts = mutableListOf<String>()
+        if (inBase > 0) parts += (if (approx) "≈ " else "") + Money.format(sum, base, locale)
+        parts += rest.entries.sortedByDescending { it.value }.map { Money.format(it.value, it.key, locale) }
+        return parts.joinToString(" + ")
+    }
+
     /** Relit le taux s'il est vieux. Une panne ne perd jamais l'ancien. */
     suspend fun refresh(fetcher: Fetcher, s: AppState, now: Long, base: String): RateTable? {
         if (!due(s.rates, base, now)) return s.rates

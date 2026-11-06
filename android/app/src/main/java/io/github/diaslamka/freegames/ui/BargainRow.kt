@@ -64,10 +64,12 @@ private val AMOUNT = Regex("^(\\d+(?:\\.\\d+)?)\\s*([A-Za-z?]*)$")
 @Composable
 fun reasonText(r: Bargain.Reason): String {
     val res = REASON_RES[r.key] ?: return r.key
+    // Les montants de la comparaison sont en dollars (la fiche Steam americaine) : ils se lisent en euros (1.47.0).
+    val money = LocalMoney.current
     val args = r.args.mapIndexed { i, a ->
         when {
             MONEY_ARGS[r.key]?.contains(i) == true -> AMOUNT.matchEntire(a)?.let { m ->
-                Money.format(m.groupValues[1].toDouble(), m.groupValues[2].takeIf { it.length == 3 })
+                money.show(m.groupValues[1].toDouble(), m.groupValues[2].takeIf { it.length == 3 })
             } ?: a
             COUNT_ARGS[r.key]?.contains(i) == true -> a.toLongOrNull()?.let { NumberFormat.getIntegerInstance().format(it) } ?: a
             else -> a

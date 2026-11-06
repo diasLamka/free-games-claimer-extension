@@ -117,11 +117,15 @@ object Notifier {
         }
     }
 
-    private fun details(context: Context, o: Offer, now: Long): String {
+    private fun details(context: Context, o: Offer, now: Long, s: AppState): String {
         val parts = mutableListOf<String>()
         parts += if (o.end != null) context.getString(R.string.notif_until, Fmt.dateTime(o.end), Fmt.left(context, o.end, now))
         else context.getString(R.string.notif_no_end)
-        o.worth?.let { parts += context.getString(R.string.notif_worth, it) }
+        // La valeur annoncee par la source (« $19.99 ») se lit en euros quand un taux sert (1.47.0).
+        o.worth?.let { w ->
+            val base = io.github.diaslamka.freegames.sources.Countries.of(s.settings.country).currency
+            parts += context.getString(R.string.notif_worth, io.github.diaslamka.freegames.data.Rates.showWorth(w, s.rates, base, now) ?: w)
+        }
         return parts.joinToString(" · ")
     }
 
@@ -139,7 +143,7 @@ object Notifier {
         val b = NotificationCompat.Builder(context, CH_NEW)
             .setSmallIcon(R.drawable.ic_stat_ticket)
             .setContentTitle(title)
-            .setContentText(details(context, o, now))
+            .setContentText(details(context, o, now, s))
             .setAutoCancel(true)
             .setContentIntent(openApp(context, id))
             .setPriority(if (wished || second != null) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
@@ -150,7 +154,7 @@ object Notifier {
             val noms = Taste.names(s, m.top)
             lignes += if (noms.isEmpty()) context.getString(R.string.notif_taste_line_bare) else context.getString(R.string.notif_taste_line, noms.joinToString(", "))
         }
-        val texte = (listOf(details(context, o, now)) + lignes).joinToString("\n")
+        val texte = (listOf(details(context, o, now, s)) + lignes).joinToString("\n")
         if (lignes.isNotEmpty()) b.setContentText(texte).setStyle(NotificationCompat.BigTextStyle().bigText(texte))
         // Avec une jaquette, le style change : les lignes de plus passent dans le sous-titre du grand format.
         cover(o.image)?.let {

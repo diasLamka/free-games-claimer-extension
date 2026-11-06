@@ -316,8 +316,8 @@ fun PriceLines(info: WishInfo?, compact: Boolean = true) {
         return
     }
     val b = LocalBrut.current
-    val local = info.localPrice?.let { Money.format(it, info.localCurrency) }
     val money = LocalMoney.current
+    val local = info.localPrice?.let { money.show(it, info.localCurrency) }
     val bestUsd = info.best?.let { money.show(it, "USD") }
     // Plusieurs etiquettes : elles passent a la ligne plutot que d'etre coupees (grande police, petit ecran).
     @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -350,13 +350,14 @@ fun OddsBadge(level: String, modifier: Modifier = Modifier) {
 /** Les raisons de l'estimation, sur une ligne. */
 @Composable
 fun OddsReasons(e: Odds.Estimate) {
+    val money = LocalMoney.current
     val lines = e.reasons.map { r ->
         when (r.key) {
             "odds_given_before" -> stringResource(R.string.odds_given_before, r.args[0] as Int, Fmt.monthInText(r.args[1] as Long), Stores.label(r.args[2] as String))
             "odds_publisher_gave" -> stringResource(R.string.odds_publisher_gave, r.args[0] as String, r.args[1] as Int)
             "odds_old" -> stringResource(R.string.odds_old, r.args[0] as Int)
-            "odds_expensive" -> stringResource(R.string.odds_expensive, Money.format(r.args[0] as Double, r.args[1] as String?))
-            "odds_cheap" -> stringResource(R.string.odds_cheap, Money.format(r.args[0] as Double, r.args[1] as String?))
+            "odds_expensive" -> stringResource(R.string.odds_expensive, money.show(r.args[0] as Double, r.args[1] as String?))
+            "odds_cheap" -> stringResource(R.string.odds_cheap, money.show(r.args[0] as Double, r.args[1] as String?))
             "odds_unreleased" -> stringResource(R.string.odds_unreleased)
             "odds_recent" -> stringResource(R.string.odds_recent)
             "odds_free_to_play" -> stringResource(R.string.odds_free_to_play)

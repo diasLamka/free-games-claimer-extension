@@ -28,6 +28,7 @@ import { claimsMade } from './tally.js';
 import { OUTCOMES, outcomeEntries } from './outcomes.js';
 import { claimableStoresFor } from './sources/index.js';
 import { KEYS, normaliseSettings } from './storage.js';
+import { KEY_RATES, baseOf, toBase } from './rates.js';
 import { KEY_OUTCOMES } from './outcomes.js';
 import { KEY_LIBRARY } from './library.js';
 
@@ -179,17 +180,34 @@ export function composeRecap(recap, { t, storeLabel = (s) => s, total = null }) 
   return { title, lines, icons, text: lines.join('\n') };
 }
 
-/** La valeur recuperee, dans une seule devise ; plusieurs devises ne s'additionnent pas. */
-export function recapTotal(claimed, format) {
-  const parDevise = {};
+/**
+ * La valeur recuperee, dite dans UNE devise : celle de la table de taux (l'euro par defaut). Ce qu'une source ecrit en
+ * dollars est converti et marque "environ" quand un taux sert. Sans taux, l'ancien comportement : une seule devise se dit,
+ * plusieurs ne s'additionnent pas.
+ */
+export function recapTotal(claimed, format, rates = null, now = Date.now()) {
+  const base = baseOf(rates);
+  let somme = 0;
+  let converti = false;
+  const reste = {};
   for (const c of claimed || []) {
     if (typeof c.worth !== 'number' || !c.currency || c.currency === '?') continue;
-    parDevise[c.currency] = (parDevise[c.currency] || 0) + c.worth;
+    if (c.currency === base) { somme += c.worth; continue; }
+    const enBase = toBase(c.worth, c.currency, rates, now);
+    if (enBase === null) { reste[c.currency] = (reste[c.currency] || 0) + c.worth; continue; }
+    somme += enBase;
+    converti = true;
   }
-  const devises = Object.keys(parDevise);
-  if (devises.length !== 1) return null;
-  const montant = Math.round(parDevise[devises[0]] * 100) / 100;
-  return montant > 0 ? format(montant, devises[0]) : null;
+  const devises = Object.keys(reste);
+  // Du reste sans taux, et rien dans la base : l'ancien comportement (une devise se dit toute seule).
+  if (somme === 0 && devises.length === 1) {
+    const montant = Math.round(reste[devises[0]] * 100) / 100;
+    return montant > 0 ? format(montant, devises[0]) : null;
+  }
+  // Du reste ET de la base : aucun total honnete a dire d'un seul nombre.
+  if (devises.length) return null;
+  const montant = Math.round(somme * 100) / 100;
+  return montant > 0 ? (converti ? '\u2248 ' : '') + format(montant, base) : null;
 }
 
 /**
@@ -203,7 +221,7 @@ export function recapTotal(claimed, format) {
 export async function runRecap({
   chrome, now, t, storeLabel, format, notify, phone = null, quietNow = false, record = () => {},
 }) {
-  const cles = [KEYS.SETTINGS, KEYS.OFFERS, KEYS.SOURCES, KEY_OUTCOMES, KEY_LIBRARY, KEY_RECAP,
+  const cles = [KEYS.SETTINGS, KEYS.OFFERS, KEYS.SOURCES, KEY_OUTCOMES, KEY_LIBRARY, KEY_RECAP, KEY_RATES,
     ...Object.values(HISTORY_KEYS)];
   const raw = await chrome.storage.local.get(cles);
   const settings = normaliseSettings(raw[KEYS.SETTINGS]);
@@ -239,7 +257,7 @@ export async function runRecap({
     record('info', 'recap du jeudi : rien a dire cette semaine');
     return { sent: false, why: 'empty', recap };
   }
-  const { title, text, icons } = composeRecap(recap, { t, storeLabel, total: recapTotal(recap.claimed, format) });
+  const { title, text, icons } = composeRecap(recap, { t, storeLabel, total: recapTotal(recap.claimed, format, raw[KEY_RATES] || null, now) });
   if (ordinateur) await notify({ id: `recap-${now}`, title, message: text });
   if (phone) await phone({ title, message: text, priority: 3, tags: ['calendar'], icons });
   record('info', `recap du jeudi : ${recap.claimed.length} recupere(s), ${recap.manual.length} a prendre, ${recap.missed.length} rate(s), ${recap.upcoming.length} annonce(s)`);

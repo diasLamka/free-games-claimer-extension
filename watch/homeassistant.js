@@ -29,6 +29,9 @@
  */
 
 /** La configuration. Ecrite par le popup seul ; jamais synchronisee (l'adresse est un secret). */
+import { readWorth, readCurrency } from './filters.js';
+import { toBase, baseOf } from './rates.js';
+
 export const KEY_HOME = 'veille:maison';
 
 /** Le dernier envoi, et l'empreinte du dernier etat envoye : ecrit par le worker seul. */
@@ -136,7 +139,20 @@ const str = (v) => (typeof v === 'string' ? v : '');
 const https = (v) => (typeof v === 'string' && /^https:\/\/[^\s"'<>]{1,500}$/i.test(v) ? v : null);
 
 /** Un jeu, tel que l'automatisation le lit. Rien qui ne soit deja public. */
-export function gameEntry(o, { labels = {} } = {}) {
+/**
+ * La valeur d'un jeu en euros, ou null : convertie au taux du jour quand la source l'ecrit dans une autre devise (GamerPower
+ * ecrit en dollars). Jamais un chiffre invente : sans taux utilisable, ou sans devise lisible, null.
+ */
+export function worthInEuros(raw, rates, now) {
+  if (baseOf(rates) !== 'EUR') return null;
+  const n = readWorth(raw);
+  const cur = readCurrency(raw);
+  if (typeof n !== 'number' || !Number.isFinite(n) || !cur || cur === '?') return null;
+  const v = toBase(n, cur, rates, now);
+  return v === null ? null : Math.round(v * 100) / 100;
+}
+
+export function gameEntry(o, { labels = {}, rates = null, now = Date.now() } = {}) {
   const fin = typeof o.end === 'number' && Number.isFinite(o.end) ? new Date(o.end).toISOString() : null;
   return {
     title: str(o.title).slice(0, 120),
@@ -146,6 +162,8 @@ export function gameEntry(o, { labels = {} } = {}) {
     image: https(o.image),
     end: fin,
     worth: str(o.worth) || null,
+    // La meme valeur en euros (2.123.0) : de quoi tenir un tableau de bord en euros sans parler dollars.
+    worth_eur: worthInEuros(o.worth, rates, now),
     wished: o.wished === true,
   };
 }
@@ -154,14 +172,14 @@ export function gameEntry(o, { labels = {} } = {}) {
  * L'etat : ce qu'il y a a prendre maintenant. `count` dit TOUT, `games` n'en
  * montre que douze, les plus pressantes d'abord (fin la plus proche).
  */
-export function snapshot(offers, { labels = {} } = {}) {
+export function snapshot(offers, { labels = {}, rates = null, now = Date.now() } = {}) {
   const liste = (offers || []).filter((o) => o && o.title);
   const tries = [...liste].sort((a, b) => {
     const ea = typeof a.end === 'number' ? a.end : Infinity;
     const eb = typeof b.end === 'number' ? b.end : Infinity;
     return ea - eb;
   });
-  const games = tries.slice(0, MAX_GAMES).map((o) => gameEntry(o, { labels }));
+  const games = tries.slice(0, MAX_GAMES).map((o) => gameEntry(o, { labels, rates, now }));
   const premiere = games.find((g) => g.end);
   return {
     count: liste.length,
@@ -182,16 +200,16 @@ export function snapshot(offers, { labels = {} } = {}) {
  *   state      : l'etat a change, ou six heures ont passe ;
  *   test       : le bouton « Essayer » du popup.
  */
-export function homeEvent(event, { offers = [], fresh = [], claimed = [], now, quiet = false, labels = {}, version = null } = {}) {
+export function homeEvent(event, { offers = [], fresh = [], claimed = [], now, quiet = false, labels = {}, version = null, rates = null } = {}) {
   const corps = {
     source: SOURCE,
     format: FORMAT,
     event,
     at: new Date(typeof now === 'number' ? now : Date.now()).toISOString(),
     quiet: quiet === true,
-    ...snapshot(offers, { labels }),
+    ...snapshot(offers, { labels, rates, now: typeof now === 'number' ? now : Date.now() }),
   };
-  if (event === EVENTS.NEW) corps.new = (fresh || []).filter((o) => o && o.title).slice(0, MAX_GAMES).map((o) => gameEntry(o, { labels }));
+  if (event === EVENTS.NEW) corps.new = (fresh || []).filter((o) => o && o.title).slice(0, MAX_GAMES).map((o) => gameEntry(o, { labels, rates, now: typeof now === 'number' ? now : Date.now() }));
   if (event === EVENTS.CLAIMED) corps.claimed = (claimed || []).map(str).filter(Boolean).slice(0, 20);
   if (version) corps.version = str(version);
   return corps;

@@ -103,13 +103,13 @@ test('la configuration : coupee par defaut, et la cible n\'existe que si tout es
 
 const offre = (title, extra = {}) => ({
   title, store: 'epic', url: `https://store.epicgames.com/p/${title}`, image: `https://cdn1.epicgames.com/${title}.jpg`,
-  end: T + 24 * HEURE, worth: '19,99 €', ...extra,
+  end: T + 24 * HEURE, worth: '19,99 \u20ac', ...extra,
 });
 const LABELS = { epic: 'Epic Games', gog: 'GOG' };
 
 test('un jeu : ce qu\'une page de magasin montre, et rien d\'autre', () => {
   const g = gameEntry(offre('Hades', { wished: true, codeRachat: 'ABC-123', accountId: 'u1', cookie: 'x' }), { labels: LABELS });
-  assert.deepEqual(Object.keys(g).sort(), ['end', 'image', 'store', 'store_label', 'title', 'url', 'wished', 'worth']);
+  assert.deepEqual(Object.keys(g).sort(), ['end', 'image', 'store', 'store_label', 'title', 'url', 'wished', 'worth', 'worth_eur']);
   assert.equal(g.store_label, 'Epic Games');
   assert.equal(g.end, new Date(T + 24 * HEURE).toISOString());
   assert.equal(g.wished, true);
@@ -262,8 +262,8 @@ test('pushHome : garde le resultat pour le popup, ecrit l\'empreinte d\'un envoi
 });
 
 test('pushHome ne jette pas quand le stockage refuse', async () => {
-  const cassé = { storage: { local: { get: async () => { throw new Error('plein'); }, set: async () => { throw new Error('plein'); } } } };
-  const r = await pushHome({ chrome: cassé, fetch: async () => ({ ok: true, status: 200 }), target: { url: URL_LAN }, corps: homeEvent(EVENTS.TEST, { now: T }), now: T });
+  const cass\u00e9 = { storage: { local: { get: async () => { throw new Error('plein'); }, set: async () => { throw new Error('plein'); } } } };
+  const r = await pushHome({ chrome: cass\u00e9, fetch: async () => ({ ok: true, status: 200 }), target: { url: URL_LAN }, corps: homeEvent(EVENTS.TEST, { now: T }), now: T });
   assert.equal(r.ok, true);
 });
 
@@ -278,4 +278,28 @@ test('l\'adresse du webhook ne sort jamais dans une sauvegarde ni dans un export
 test('l\'essai du popup est une commande de page : un script de contenu ne peut pas la demander', () => {
   assert.ok(UI_COMMANDS.includes('fgc-home-test'));
   assert.ok(!CONTENT_MESSAGES.includes('fgc-home-test'));
+});
+
+/* ------------------------------------------- chasse aux dollars (2.123.0) */
+
+import { worthInEuros } from '../watch/homeassistant.js';
+import { parseRates } from '../watch/rates.js';
+
+test('worth_eur : la valeur ecrite en dollars par la source, convertie en euros au taux du jour', () => {
+  const taux = parseRates({ amount: 1, base: 'EUR', date: '2026-10-16', rates: { USD: 1.125 } }, 1000);
+  assert.equal(worthInEuros('$22.50', taux, 2000), 20);
+  assert.equal(worthInEuros('22.50 USD', taux, 2000), 20);
+  assert.equal(worthInEuros('19,99 \u20ac', taux, 2000), 19.99, 'deja en euros : tel quel');
+  assert.equal(worthInEuros('Gratuit', taux, 2000), null);
+  assert.equal(worthInEuros(null, taux, 2000), null);
+  assert.equal(worthInEuros('$22.50', null, 2000), null, 'sans taux : jamais un chiffre invente');
+  assert.equal(worthInEuros('$22.50', { ...taux, base: 'GBP' }, 2000), null, 'une autre base n\'est pas des euros');
+});
+
+test('worth_eur : dans le jeu envoye, a cote de la valeur d\'origine', () => {
+  const taux = parseRates({ amount: 1, base: 'EUR', date: '2026-10-16', rates: { USD: 1.125 } }, 1000);
+  const g = gameEntry({ title: 'Hades', store: 'epic', worth: '$22.50' }, { rates: taux, now: 2000 });
+  assert.equal(g.worth, '$22.50');
+  assert.equal(g.worth_eur, 20);
+  assert.equal(gameEntry({ title: 'Hades', store: 'epic', worth: '$22.50' }).worth_eur, null);
 });

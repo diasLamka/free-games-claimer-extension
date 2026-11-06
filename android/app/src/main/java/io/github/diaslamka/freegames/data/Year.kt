@@ -30,6 +30,8 @@ object Year {
         val top: List<Top>,
         val bestRated: Rated?,
         val byPc: Int,
+        /** La valeur est une conversion en devise de base (1.47.0) : l'image la marque « ≈ ». */
+        val approx: Boolean = false,
     )
 
     private fun yearOf(ts: Long): Int = Calendar.getInstance(UTC).apply { timeInMillis = ts }.get(Calendar.YEAR)
@@ -43,12 +45,20 @@ object Year {
 
     fun recap(s: AppState, year: Int, preferredCurrency: String?): Recap {
         val games = s.library.values.filter { counted(it) && yearOf(it.ts!!) == year }
-        val total = Money.total(games.map { it.worth }, preferredCurrency)
+        val base = preferredCurrency ?: "EUR"
+        val now = System.currentTimeMillis()
+        // Ramene a la devise de base quand un taux sert (1.47.0) ; l'ancien calcul sinon.
+        val converted = Rates.total(games.map { it.worth }, s.rates, base, now)
+        val total = converted?.let { Triple(it.value, base as String?, it.count) } ?: Money.total(games.map { it.worth }, preferredCurrency)
         val stores = games.groupingBy { it.store }.eachCount().toList().sortedByDescending { it.second }
         val month = games.groupingBy { monthOf(it.ts!!) }.eachCount().toList()
             .sortedWith(compareByDescending<Pair<String, Int>> { it.second }.thenBy { it.first }).firstOrNull()
-        val top = games.mapNotNull { e -> Money.parse(e.worth)?.let { e to it.value } }
-            .sortedByDescending { it.second }.take(3).map { (e, _) -> Top(e.title!!, e.worth!!) }
+        // Les plus chers se classent en devise de base quand on sait convertir : 20 $ ne valent pas 20 €.
+        val top = games.mapNotNull { e ->
+            Money.parse(e.worth)?.let { a -> e to (a.currency?.let { Rates.toBase(a.value, it, s.rates, now) } ?: a.value) }
+        }.sortedByDescending { it.second }.take(3).map { (e, _) ->
+            Top(e.title!!, (if (s.rates != null) Rates.showWorth(e.worth, s.rates, base, now) else null) ?: e.worth!!)
+        }
         val rated = games.mapNotNull { e ->
             val key = if (e.store == Stores.STEAM) "app:${e.id}" else "t:${Titles.normalise(e.title)}"
             val r = s.ratings[key] ?: s.ratings["t:${Titles.normalise(e.title)}"]
@@ -64,6 +74,7 @@ object Year {
             top = top,
             bestRated = rated?.let { Rated(it.first, it.second) },
             byPc = games.count { it.via == "pc" },
+            approx = converted?.approx == true,
         )
     }
 }

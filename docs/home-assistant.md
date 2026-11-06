@@ -17,10 +17,12 @@ protocole est un **webhook**, une adresse qui reçoit un message JSON.
 | `count` | le nombre de jeux à prendre maintenant |
 | `titles` | leurs titres, séparés par des virgules |
 | `next_end`, `next_end_title` | la fin de l'offre la plus pressante, et son jeu |
-| `games` | jusqu'à douze jeux : `title`, `store`, `store_label`, `url`, `image`, `end`, `worth`, `wished` |
+| `games` | jusqu'à douze jeux : `title`, `store`, `store_label`, `url`, `image`, `end`, `worth`, `worth_eur`, `wished` |
 | `new` | `new_offers` seulement : les jeux qui viennent d'être annoncés |
 | `claimed` | `claimed` seulement : les titres pris |
 | `version` | `test` seulement : la version de l'extension |
+
+`worth` est la valeur telle que la source l'écrit (GamerPower écrit en dollars) ; `worth_eur` est la même valeur convertie en euros au taux du jour de la BCE, ou `null` quand on ne sait pas convertir.
 
 Chaque évènement porte l'état complet (`count`, `games`…), si bien qu'une seule
 lecture suffit à tenir un capteur à jour.
