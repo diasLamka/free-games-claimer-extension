@@ -318,18 +318,20 @@ fun PriceLines(info: WishInfo?, compact: Boolean = true) {
     val b = LocalBrut.current
     val money = LocalMoney.current
     val local = info.localPrice?.let { money.show(it, info.localCurrency) }
-    val bestUsd = info.best?.let { money.show(it, "USD") }
+    // La devise des prix de la fiche : celle du pays quand ils viennent d'IsThereAnyDeal, le dollar de CheapShark sinon.
+    val cur = info.currency ?: "USD"
+    val bestPrice = info.best?.let { money.show(it, cur) }
     // Plusieurs etiquettes : elles passent a la ligne plutot que d'etre coupees (grande police, petit ecran).
     @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(3.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-        Text(local ?: bestUsd ?: "", style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 1)
+        Text(local ?: bestPrice ?: "", style = MaterialTheme.typography.titleSmall, color = Color.Black, maxLines = 1)
         val off = Wish.discount(info)
         if (off > 0) Tag(stringResource(R.string.wl_off, off), b.accent, b.onAccent)
         if (Wish.atLow(info)) Tag(stringResource(R.string.wl_at_low).uppercase(), Color.Black, Color.White)
         else if (Wish.nearLow(info)) Tag(stringResource(R.string.wl_near_low).uppercase(), Color.White, Color.Black, bordered = true)
     }
     if (!compact || info.lowest != null) info.lowest?.let { low ->
-        Text(stringResource(R.string.wl_lowest_short, money.show(low, "USD")), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 1)
+        Text(stringResource(R.string.wl_lowest_short, money.show(low, cur)), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A), maxLines = 1)
     }
 }
 

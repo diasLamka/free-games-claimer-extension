@@ -224,12 +224,23 @@ object Watcher {
     suspend fun refreshWishes(now: Long, force: Boolean = false) {
         val s = Graph.store.value
         if (!force && s.wishAt != null && now - s.wishAt < Wish.PASS_EVERY_MS) return
-        if (Wish.targets(s).none { Wish.needs(s.wishInfo[Wish.key(it.first)], now) }) return
-        val next = Wish.refresh(Graph.http, s, now, Countries.of(s.settings.country).code)
+        // La cle IsThereAnyDeal de l'utilisateur (1.48.0), s'il en a mis une : lue ici, jamais gardee dans l'etat.
+        val itad = runCatching { ItadKey.load(Graph.app) }.getOrNull()?.let { ItadPass(it) }
+        if (Wish.targets(s).none { Wish.needs(s.wishInfo[Wish.key(it.first)], now, itad != null) }) return
+        val next = Wish.refresh(Graph.http, s, now, Countries.of(s.settings.country).code, itad)
         // Fusionne : un souhait ajoute ou retire pendant la lecture n'est ni perdu ni ressuscite.
         Graph.store.update { st ->
             val keep = Wish.targets(st).map { Wish.key(it.first) }.toSet()
-            st.copy(wishInfo = (st.wishInfo + next).filterKeys { it in keep }, wishAt = now)
+            st.copy(
+                wishInfo = (st.wishInfo + next).filterKeys { it in keep }, wishAt = now,
+                // Une cle refusee se dit dans les reglages ; une cle qui a servi, ou plus de cle, efface la date.
+                itadRefusedAt = when {
+                    itad == null -> null
+                    itad.refused -> now
+                    itad.worked -> null
+                    else -> st.itadRefusedAt
+                },
+            )
         }
     }
 

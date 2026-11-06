@@ -69,9 +69,13 @@ fun WishDetail(
                 info?.localPrice?.let { p ->
                     if (info.best != null) Text(stringResource(R.string.wl_steam_price, money.show(p, info.localCurrency)), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
                 }
+                val cur = info?.currency ?: "USD"
                 info?.lowest?.let { low ->
+                    // IsThereAnyDeal ne dit pas quand : la date n'est pas inventee, la phrase n'en porte pas.
+                    val lowDate = info.lowestAt
                     Text(
-                        stringResource(R.string.wl_lowest, money.show(low, "USD"), info.lowestAt?.let { Fmt.date(it) } ?: "?"),
+                        if (lowDate != null) stringResource(R.string.wl_lowest, money.show(low, cur), Fmt.date(lowDate))
+                        else stringResource(R.string.wl_lowest_nodate, money.show(low, cur)),
                         style = MaterialTheme.typography.bodySmall, color = Color.Black,
                     )
                 }
@@ -80,26 +84,33 @@ fun WishDetail(
                 if (info != null && info.deals.isNotEmpty()) {
                     Section(stringResource(R.string.wl_stores))
                     for (d in info.deals.take(6)) {
+                        // L'adresse que le service donne (IsThereAnyDeal), telle quelle ; sinon la redirection de CheapShark.
+                        val dealLink = d.url ?: d.dealId?.let { Wish.dealUrl(it) }
                         Row(
                             Modifier.fillMaxWidth().brut(if (d == info.deals.first()) b.accent else Color.White, border = 2.dp)
-                                .then(if (d.dealId != null) Modifier.clickableNoRipple { onOpen(Wish.dealUrl(d.dealId)) } else Modifier)
+                                .then(if (dealLink != null) Modifier.clickableNoRipple { onOpen(dealLink) } else Modifier)
                                 .minTouchTarget().padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(Wish.storeName(d.store), style = MaterialTheme.typography.bodyMedium, color = Color.Black, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (d.savings > 0) Text(stringResource(R.string.wl_off, d.savings), style = MaterialTheme.typography.labelSmall, color = Color.Black)
-                            Text(money.show(d.price, "USD"), style = MaterialTheme.typography.titleSmall, color = Color.Black)
+                            Text(money.show(d.price, cur), style = MaterialTheme.typography.titleSmall, color = Color.Black)
                         }
                     }
-                    Text(stringResource(R.string.wl_stores_note), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
+                    Text(
+                        if (info.source == Wish.SRC_ITAD) stringResource(R.string.wl_stores_note_itad, cur) else stringResource(R.string.wl_stores_note),
+                        style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A),
+                    )
                 }
+                // Le lien et le nom de la source accompagnent ses prix (conditions d'IsThereAnyDeal).
+                info?.page?.let { page -> BrutButton(stringResource(R.string.wl_open_itad), { onOpen(page) }, primary = false) }
 
                 // L'historique : les prix que l'appli a releves, et le plus bas jamais vu en repere.
                 Section(stringResource(R.string.wl_history))
                 val points = info?.history.orEmpty()
                 if (points.size >= 2) {
-                    PriceChart(points, info?.lowest)
+                    PriceChart(points, info?.lowest, cur)
                     Text(stringResource(R.string.wl_history_note, points.size, Fmt.date(points.first().at)), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
                 } else Text(stringResource(R.string.wl_history_empty), style = MaterialTheme.typography.bodySmall, color = Color(0xFF4A4A4A))
 
@@ -134,7 +145,7 @@ private fun Section(label: String) {
  * l'echelle. Aucun axe invente : le plus haut et le plus bas sont ecrits.
  */
 @Composable
-fun PriceChart(points: List<PricePoint>, lowest: Double?, modifier: Modifier = Modifier) {
+fun PriceChart(points: List<PricePoint>, lowest: Double?, currency: String = "USD", modifier: Modifier = Modifier) {
     val b = LocalBrut.current
     val money = LocalMoney.current
     val lo = minOf(points.minOf { it.price }, lowest ?: Double.MAX_VALUE)
@@ -143,7 +154,7 @@ fun PriceChart(points: List<PricePoint>, lowest: Double?, modifier: Modifier = M
     val t0 = points.first().at
     val dt = (points.last().at - t0).coerceAtLeast(1L).toDouble()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(money.show(hi, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
+        Text(money.show(hi, currency), style = MaterialTheme.typography.labelSmall, color = Color.Black)
         Canvas(Modifier.fillMaxWidth().height(90.dp).brut(Color.White, border = 2.dp).padding(8.dp)) {
             fun x(p: PricePoint) = ((p.at - t0) / dt * size.width).toFloat()
             fun y(v: Double) = (size.height - ((v - lo) / span * size.height)).toFloat()
@@ -161,6 +172,6 @@ fun PriceChart(points: List<PricePoint>, lowest: Double?, modifier: Modifier = M
             drawCircle(b.accent, radius = 9f, center = Offset(x(last), y(last.price)))
             drawCircle(Color.Black, radius = 9f, center = Offset(x(last), y(last.price)), style = Stroke(width = 3f))
         }
-        Text(money.show(lo, "USD"), style = MaterialTheme.typography.labelSmall, color = Color.Black)
+        Text(money.show(lo, currency), style = MaterialTheme.typography.labelSmall, color = Color.Black)
     }
 }

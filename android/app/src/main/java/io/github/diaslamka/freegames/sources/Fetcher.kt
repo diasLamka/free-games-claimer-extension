@@ -15,6 +15,12 @@ data class HttpResult(val code: Int, val body: String, val finalUrl: String? = n
  */
 interface Fetcher {
     suspend fun get(url: String, withCookies: Boolean = false, accept: String = "application/json"): HttpResult
+
+    /**
+     * Un POST JSON, sans cookies : IsThereAnyDeal ne rend les prix que par POST (1.48.0). Les fausses sources des tests n'en
+     * ont pas besoin : 405, « methode refusee », par defaut.
+     */
+    suspend fun post(url: String, json: String, accept: String = "application/json"): HttpResult = HttpResult(405, "")
 }
 
 /** Ce qu'une source a trouve. `ok` faux : la liste n'est pas a croire. */

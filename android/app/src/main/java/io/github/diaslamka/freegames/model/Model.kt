@@ -402,6 +402,11 @@ data class AppState(
     /** Les souhaits en detail (1.42.0) : prix, plus bas historique, releves, image ; par titre normalise. */
     val wishInfo: Map<String, WishInfo> = emptyMap(),
     val wishAt: Long? = null,
+    /**
+     * Quand IsThereAnyDeal a refuse la cle de l'utilisateur pour la derniere fois (1.48.0) ; absent : jamais, ou la cle a ete
+     * changee depuis. Une date, pas la cle : celle-ci n'est jamais dans l'etat (voir data/ItadKey.kt).
+     */
+    val itadRefusedAt: Long? = null,
     /** Le taux du jour (1.43.0) : pour lire des euros ce qui est publie en dollars. */
     val rates: RateTable? = null,
     /** Les jaquettes retrouvees par une recherche (1.42.0), par titre normalise : un jeu sans image n'en cherche qu'une fois par semaine. */
@@ -573,9 +578,16 @@ data class RateTable(val base: String, val date: String? = null, val rates: Map<
 @Serializable
 data class CoverNote(val at: Long, val url: String? = null, val thumb: String? = null)
 
-/** Une offre chez un marchand (CheapShark), en dollars : la seule devise commune a tous. */
+/**
+ * Une offre chez un marchand. CheapShark : `store` est son identifiant, le prix est en dollars, `dealId` mene a la page.
+ * IsThereAnyDeal (1.48.0) : `store` est le NOM du marchand, le prix est dans la devise du pays (`WishInfo.currency`), et `url` est
+ * l'adresse que le service donne, gardee telle quelle.
+ */
 @Serializable
-data class Deal(val store: String, val price: Double, val retail: Double? = null, val savings: Int = 0, val dealId: String? = null)
+data class Deal(
+    val store: String, val price: Double, val retail: Double? = null, val savings: Int = 0, val dealId: String? = null,
+    val url: String? = null,
+)
 
 /** Un prix releve par l'appli, en dollars. */
 @Serializable
@@ -607,6 +619,17 @@ data class WishInfo(
     val lowestAt: Long? = null,
     val deals: List<Deal> = emptyList(),
     val history: List<PricePoint> = emptyList(),
+    /**
+     * La devise de `best`, `retail`, `lowest`, des offres et de l'historique. Absente : le dollar de CheapShark (toutes les
+     * fiches d'avant la 1.48.0). IsThereAnyDeal rend la devise du pays choisi.
+     */
+    val currency: String? = null,
+    /** D'ou viennent ces prix : « itad » ou « cheapshark » (absent : CheapShark, comme avant la 1.48.0). */
+    val source: String? = null,
+    /** La source VISEE a la lecture (« itad » quand une cle etait la) : un changement de cle relit la fiche. */
+    val want: String? = null,
+    /** La page du jeu chez IsThereAnyDeal, pour le lien qui accompagne ses prix. */
+    val page: String? = null,
 )
 
 @Serializable

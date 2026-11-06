@@ -76,6 +76,9 @@ test('la cle ITAD : seule une valeur qui a la forme d\'une cle est retenue', () 
   }
   assert.equal(cleanKey(` ${KEY} `), KEY);
   assert.equal(cleanKey('pas une cle!'), null);
+  // La cle part en parametre d'adresse, sans troncature : la forme la borne a 100 signes (celles du service en ont 40).
+  assert.equal(cleanKey('k'.repeat(100)), 'k'.repeat(100));
+  assert.equal(cleanKey('k'.repeat(101)), null);
 });
 
 test('la cle et le cache sont hors de toute sauvegarde : une cle est un secret', () => {

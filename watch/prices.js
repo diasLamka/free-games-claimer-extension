@@ -44,7 +44,7 @@ const enc = (s) => encodeURIComponent(String(s ?? '').slice(0, 120));
 
 /* ----------------------------------------------------------------- la cle */
 
-const KEY_FORM = /^[A-Za-z0-9_-]{8,128}$/;
+const KEY_FORM = /^[A-Za-z0-9_-]{8,100}$/;
 
 /** La cle ITAD stockee, ou null : une valeur qui n'a pas la forme d'une cle n'est pas envoyee. */
 export function itadKey(raw) {

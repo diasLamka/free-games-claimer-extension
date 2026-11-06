@@ -4,6 +4,25 @@ Extrait du bandeau de commentaires de la v2.7.0, sorti du code le 2026-08-27
 lors du decoupage en modules. Le fichier `free-games-claimer.js` est desormais
 genere : voir `build/build.mjs`.
 
+## Extension 2.124.1 et appli 1.48.0 -- 2026-11-06
+
+**Les memes prix de souhaits dans l'appli : IsThereAnyDeal avec votre cle, CheapShark sans**
+
+Suite de la 2.124.0 : l'appli lit maintenant les prix de ses souhaits comme l'extension, avec la meme cle.
+
+**Dans l'appli**
+- **Reglages -> Veille -> « Prix des souhaits : cle IsThereAnyDeal »** (facultatif). Collez la cle gratuite (isthereanydeal.com/apps/my/) : « Enregistrer et essayer » la sauvegarde et dit tout de suite si elle marche (bonne, refusee, trop de requetes, service injoignable). « Creer une cle » ouvre la page ; « Retirer la cle » la supprime.
+- **La cle est un secret** (`data/ItadKey.kt`) : chiffree par le Keystore d'Android, comme le jeton de mise a jour ; jamais dans l'etat de l'appli, l'export ni une sauvegarde ; jamais reaffichee ; envoyee a api.isthereanydeal.com et a personne d'autre.
+- **Les prix sont ceux d'IsThereAnyDeal** (`Wish.kt`) : le meilleur prix par marchand, le plus bas historique, dans la devise du pays choisi -- ni convertis ni retouches ; les adresses des offres sont gardees telles quelles ; le nom du service et un lien vers sa page accompagnent les prix (ses conditions). Le jeu est trouve par son identifiant Steam, puis son titre exact, puis la recherche -- jamais « le premier venu ».
+- **Sans cle, ou si elle est refusee, CheapShark prend le relais** : un souhait n'est jamais sans prix pour une cle mal recopiee, et la ligne des reglages le dit. « Trop de requetes » arrete le passage sans declarer un souhait introuvable.
+- **Une cle ajoutee ou retiree relit les fiches** (six par passage, comme avant) ; les fiches d'avant la 1.48.0 comptent pour CheapShark, rien n'est relu a tort.
+- **La devise suit la source** : les montants d'une fiche ne sont plus supposes en dollars (`WishInfo.currency`) ; la courbe des prix ne melange jamais deux devises, elle recommence quand la source change. Pas de date inventee pour le plus bas historique : IsThereAnyDeal ne la donne pas, la phrase n'en porte pas.
+- Tests : `ItadWishTest.kt` (17), qui rejouent le meme scenario que `test/prices.test.mjs`.
+- Non verifie : **le code Kotlin n'a pas ete compile ici** (la CI le fait), et **aucune vraie cle IsThereAnyDeal n'a ete essayee** : les reponses suivent sa specification publique.
+
+**Dans l'extension (2.124.1)**
+- La cle IsThereAnyDeal est bornee a 100 signes (celles du service en ont 40) : elle part en parametre d'adresse, et une adresse tronquee aurait ete une cle fausse.
+
 ## Extension 2.124.0 -- 2026-11-06 (appli inchangee, 1.47.0)
 
 **Les prix de vos souhaits : le meilleur prix du moment et le plus bas jamais vu, avec le marchand -- IsThereAnyDeal avec votre cle, CheapShark sans**

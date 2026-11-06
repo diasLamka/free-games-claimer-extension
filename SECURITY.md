@@ -141,6 +141,11 @@ deux services repondent avec les en-tetes CORS et sont appeles par le service wo
 module d'alerte, de relais ou de rapport ne la nomme, et la popup ne la reaffiche pas (le champ est masque et vide apres
 l'enregistrement). Les prix d'IsThereAnyDeal sont montres tels que le service les rend, avec son nom ; ils ne sont pas retouches.
 
+**Dans l'appli (1.48.0)**, la meme cle IsThereAnyDeal se saisit dans Reglages -> Veille. Elle est chiffree par le Keystore d'Android
+(`data/ItadKey.kt`, comme le jeton de mise a jour), n'est ni dans l'etat de l'appli, ni dans l'export, ni dans une sauvegarde
+(`allowBackup=false`), ni dans un rapport, et n'est jamais reaffichee ; elle ne part que vers `api.isthereanydeal.com`. Sans cle,
+l'appli lit CheapShark, comme avant. Un test garde la cle hors des fiches serialisees (`ItadWishTest.kt`).
+
 Le **relais avec le telephone** (2.87.0, `watch/relay.js`) fait se parler
 l'extension et l'appli Android, par ntfy -- `ntfy.sh` par defaut. Il part :
 un verrou avant chaque reclamation, « obtenu » apres chaque succes, un signe

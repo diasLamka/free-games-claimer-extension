@@ -4,8 +4,10 @@ import io.github.diaslamka.freegames.sources.Fetcher
 import io.github.diaslamka.freegames.sources.HttpResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
 /**
@@ -32,6 +34,17 @@ class Http(private val userAgent: () -> String, private val cookies: (String) ->
 
     override suspend fun get(url: String, withCookies: Boolean, accept: String): HttpResult = withContext(Dispatchers.IO) {
         client.newCall(request(url, withCookies, accept)).execute().use { r ->
+            HttpResult(r.code, r.body.string(), r.request.url.toString())
+        }
+    }
+
+    override suspend fun post(url: String, json: String, accept: String): HttpResult = withContext(Dispatchers.IO) {
+        val req = Request.Builder().url(url)
+            .header("User-Agent", userAgent())
+            .header("Accept", accept)
+            .post(json.toRequestBody("application/json; charset=utf-8".toMediaType()))
+            .build()
+        client.newCall(req).execute().use { r ->
             HttpResult(r.code, r.body.string(), r.request.url.toString())
         }
     }

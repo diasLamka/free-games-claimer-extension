@@ -67,6 +67,10 @@ import io.github.diaslamka.freegames.data.Accounts
 import io.github.diaslamka.freegames.data.AppUpdate
 import io.github.diaslamka.freegames.data.UpdateRunner
 import io.github.diaslamka.freegames.data.Graph
+import io.github.diaslamka.freegames.data.ItadKey
+import io.github.diaslamka.freegames.data.ItadTest
+import io.github.diaslamka.freegames.data.Wish
+import io.github.diaslamka.freegames.data.Watcher
 import io.github.diaslamka.freegames.data.Install
 import io.github.diaslamka.freegames.data.Rules
 import io.github.diaslamka.freegames.data.UpdateToken
@@ -195,6 +199,7 @@ fun SettingsScreen(
                     if (v) lastChanceInfo = true else onSettings { it.copy(lastChance = false) }
                 }
                 Box(Modifier.padding(top = 6.dp)) { BrutButton(stringResource(R.string.check_now), onCheckNow, primary = false) }
+                ItadGroup(state)
             }
         },
         Entry(
@@ -288,7 +293,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleSmall, color = Color.Black,
                     )
                     Text(stringResource(R.string.section_privacy).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.Black, modifier = Modifier.padding(top = 6.dp))
-                    listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5, R.string.privacy_6).forEach { id ->
+                    listOf(R.string.privacy_1, R.string.privacy_2, R.string.privacy_3, R.string.privacy_4, R.string.privacy_5, R.string.privacy_6, R.string.privacy_7).forEach { id ->
                         Text("> " + stringResource(id), style = MaterialTheme.typography.bodySmall, color = Color.Black)
                     }
                     UpdateGroup(s, onSettings)
@@ -371,6 +376,86 @@ fun SettingsScreen(
             dismissButton = { TextButton(onClick = { clearConfirm = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+}
+
+/** Ce que dit l'essai de la cle. */
+private fun itadNoteOf(t: ItadTest): Int = when (t) {
+    ItadTest.OK -> R.string.itad_ok
+    ItadTest.REFUSED -> R.string.itad_refused
+    ItadTest.BUSY -> R.string.itad_busy
+    ItadTest.NET -> R.string.itad_net
+    ItadTest.UNEXPECTED -> R.string.itad_unexpected
+}
+
+/**
+ * La cle IsThereAnyDeal (1.48.0), facultative et personnelle. Avec elle, les prix des souhaits sont ceux d'IsThereAnyDeal, dans
+ * la devise du pays -- les memes que dans l'extension ; sans elle, ceux de CheapShark. Chiffree par le Keystore, envoyee a
+ * IsThereAnyDeal et a personne d'autre, jamais dans l'etat, l'export ni une sauvegarde (data/ItadKey.kt) ; jamais reaffichee.
+ */
+@Composable
+private fun ItadGroup(state: AppState) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var hasKey by remember { mutableStateOf(ItadKey.present(context)) }
+    var input by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf<Int?>(null) }
+    var open by remember { mutableStateOf(false) }
+    var working by remember { mutableStateOf(false) }
+
+    Text(
+        (if (open) "▾ " else "▸ ") + stringResource(R.string.itad_title).uppercase(),
+        style = MaterialTheme.typography.labelLarge, color = Color.Black,
+        modifier = Modifier.padding(top = 8.dp).clickableNoRipple { open = !open },
+    )
+    if (!open) return
+    Text(stringResource(R.string.itad_hint), style = MaterialTheme.typography.bodySmall, color = Color.Black)
+    if (hasKey) {
+        Text(
+            "> " + stringResource(if (state.itadRefusedAt != null) R.string.itad_state_refused else R.string.itad_state_on),
+            style = MaterialTheme.typography.bodySmall, color = Color.Black,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BrutButton(stringResource(R.string.itad_test), {
+                if (!working) scope.launch {
+                    working = true
+                    val k = ItadKey.load(context)
+                    note = if (k == null) R.string.itad_bad else itadNoteOf(Wish.testItad(Graph.http, k))
+                    working = false
+                }
+            }, primary = false)
+            BrutButton(stringResource(R.string.itad_clear), {
+                ItadKey.clear(context); hasKey = false; note = null
+                // Sans cle, la source visee redevient CheapShark : les fiches se relisent au prochain passage.
+                scope.launch { Graph.store.update { it.copy(itadRefusedAt = null) } }
+            }, primary = false)
+        }
+    } else {
+        BrutField(input, { input = it.filter { c -> !c.isWhitespace() } }, stringResource(R.string.itad_placeholder), onDone = null, secret = true)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BrutButton(stringResource(R.string.itad_save), {
+                if (ItadKey.save(context, input)) {
+                    hasKey = true; input = ""
+                    scope.launch {
+                        Graph.store.update { it.copy(itadRefusedAt = null) }
+                        val k = ItadKey.load(context)
+                        note = if (k == null) R.string.itad_saved else itadNoteOf(Wish.testItad(Graph.http, k))
+                        runCatching { Watcher.refreshWishes(System.currentTimeMillis(), force = true) }
+                    }
+                } else {
+                    note = R.string.itad_bad
+                }
+            })
+            BrutButton(stringResource(R.string.itad_create), {
+                runCatching {
+                    context.startActivity(
+                        android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://isthereanydeal.com/apps/my/"))
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+            }, primary = false)
+        }
+    }
+    note?.let { Text("> " + stringResource(it), style = MaterialTheme.typography.bodySmall, color = Color.Black) }
 }
 
 /**
